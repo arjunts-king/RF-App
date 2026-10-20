@@ -6,7 +6,9 @@ interface AuthContextType {
   currentUser: User;
   users: User[];
   switchUserRole: (role: UserRole) => void;
-  inviteUser: (email: string, role: UserRole, name?: string) => { success: boolean; message: string };
+  inviteUser: (email: string, role: UserRole, name?: string) => { success: boolean; message: string; newUser?: User };
+  deleteUser: (userId: string) => { success: boolean; message: string; deletedUser?: User };
+  updateUser: (userId: string, updates: { name?: string; role?: UserRole; designation?: string }) => { success: boolean; message: string; updatedUser?: User };
   permissions: {
     isOwnerAdmin: boolean;
     isMasterAccountant: boolean;
@@ -19,6 +21,8 @@ interface AuthContextType {
     canCreateEditPurchases: boolean;
     canViewAuditLog: boolean;
     canInviteUsers: boolean;
+    canDeleteUsers: boolean;
+    canManageStaff: boolean;
   };
 }
 
@@ -79,7 +83,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const inviteUser = (email: string, role: UserRole, name?: string): { success: boolean; message: string } => {
+  const inviteUser = (
+    email: string,
+    role: UserRole,
+    name?: string
+  ): { success: boolean; message: string; newUser?: User } => {
     if (currentUser.role !== 'admin') {
       return { success: false, message: 'Unauthorized: Only Owner/Admin can invite users and assign roles.' };
     }
@@ -110,7 +118,98 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     setUsers((prev) => [...prev, newUser]);
-    return { success: true, message: `Invitation email dispatched to ${email} with designation ${designationMap[role]}.` };
+    return {
+      success: true,
+      message: `Invitation email dispatched to ${email} with designation ${designationMap[role]}.`,
+      newUser
+    };
+  };
+
+  const deleteUser = (userId: string): { success: boolean; message: string; deletedUser?: User } => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can remove staff members.' };
+    }
+
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) {
+      return { success: false, message: 'Staff member record not found.' };
+    }
+
+    if (targetUser.id === currentUser.id) {
+      return { success: false, message: 'Cannot remove your own active logged-in Admin account.' };
+    }
+
+    if (targetUser.role === 'admin') {
+      const adminCount = users.filter((u) => u.role === 'admin').length;
+      if (adminCount <= 1) {
+        return { success: false, message: 'Cannot remove the last remaining Owner / Admin in the system.' };
+      }
+    }
+
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    return {
+      success: true,
+      message: `Staff member "${targetUser.name}" (${targetUser.email}) was successfully removed.`,
+      deletedUser: targetUser
+    };
+  };
+
+  const updateUser = (
+    userId: string,
+    updates: { name?: string; role?: UserRole; designation?: string }
+  ): { success: boolean; message: string; updatedUser?: User } => {
+    if (currentUser.role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can modify staff members.' };
+    }
+
+    const target = users.find((u) => u.id === userId);
+    if (!target) {
+      return { success: false, message: 'Staff member record not found.' };
+    }
+
+    if (target.role === 'admin' && updates.role && updates.role !== 'admin') {
+      const adminCount = users.filter((u) => u.role === 'admin').length;
+      if (adminCount <= 1) {
+        return { success: false, message: 'Cannot demote the only remaining Owner / Admin account.' };
+      }
+    }
+
+    const designationMap: Record<UserRole, string> = {
+      admin: 'Managing Partner / Admin',
+      master_accountant: 'Senior Finance Manager',
+      junior_accountant: 'Harbour Purchase Officer',
+      viewer: 'Executive Observer'
+    };
+
+    let updatedRecord: User | undefined;
+
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const nextRole = updates.role || u.role;
+          const nextDesignation =
+            updates.designation?.trim() || (updates.role ? designationMap[nextRole] : u.designation);
+          updatedRecord = {
+            ...u,
+            name: updates.name?.trim() || u.name,
+            role: nextRole,
+            designation: nextDesignation
+          };
+          return updatedRecord;
+        }
+        return u;
+      })
+    );
+
+    if (currentUser.id === userId && updatedRecord) {
+      setCurrentUser(updatedRecord);
+    }
+
+    return {
+      success: true,
+      message: `Staff member "${updates.name || target.name}" updated successfully.`,
+      updatedUser: updatedRecord
+    };
   };
 
   const permissions = {
@@ -126,7 +225,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     canManagePayments: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
     canCreateEditPurchases: currentUser.role === 'admin' || currentUser.role === 'master_accountant' || currentUser.role === 'junior_accountant',
     canViewAuditLog: currentUser.role === 'admin', // EXCLUSIVE Owner/Admin surveillance view
-    canInviteUsers: currentUser.role === 'admin'
+    canInviteUsers: currentUser.role === 'admin',
+    canDeleteUsers: currentUser.role === 'admin',
+    canManageStaff: currentUser.role === 'admin'
   };
 
   return (
@@ -136,6 +237,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         users,
         switchUserRole,
         inviteUser,
+        deleteUser,
+        updateUser,
         permissions
       }}
     >

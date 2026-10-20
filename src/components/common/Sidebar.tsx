@@ -89,9 +89,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         },
         {
           id: 'user-mgmt',
-          label: 'User Provisioning & Roles',
+          label: 'Staff & User Management',
           icon: UserPlus,
-          show: permissions.canInviteUsers // Exclusive to Owner/Admin
+          show: permissions.canInviteUsers || permissions.canManageStaff // Exclusive to Owner/Admin
         },
         {
           id: 'audit-log',

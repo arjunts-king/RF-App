@@ -119,6 +119,13 @@ interface DataContextType {
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
   ) => { added: number; errors: string[]; createdSuppliers: number; createdSpecies: number; createdLocations: number };
+
+  logAudit: (
+    action: AuditAction,
+    entityName: string,
+    entityId: string,
+    options?: { oldValues?: any; newValues?: any; changeReason?: string }
+  ) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -1794,7 +1801,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bulkImportLocations,
         bulkImportBankAccounts,
         bulkImportExpenseTypes,
-        bulkImportPurchases
+        bulkImportPurchases,
+        logAudit
       }}
     >
       {children}
