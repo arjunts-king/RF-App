@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { ExpenseType } from '../types';
 
 export type ImportEntityType =
   | 'multi-sheet'
@@ -119,7 +120,7 @@ export async function parseExcelWorkbook(file: File): Promise<{
 /**
  * Generates and triggers instant download of pre-formatted Excel templates.
  */
-export function downloadExcelTemplate(type: ImportEntityType): void {
+export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: ExpenseType[]): void {
   const wb = XLSX.utils.book_new();
 
   if (type === 'suppliers') {
@@ -242,49 +243,67 @@ export function downloadExcelTemplate(type: ImportEntityType): void {
   }
 
   if (type === 'purchases') {
-    const data = [
-      {
-        'Purchase Date (YYYY-MM-DD)': '2026-10-18',
-        'Supplier Code or Name': 'Kochi Sea Harvesters',
-        'Location Code or Name': 'Munambam Harbour',
-        'Species Code or Name': 'Vannamei Shrimp',
-        'Grade Code or Name': 'Grade A',
-        'Size Count': '20/30',
-        'Weight (Kg)': 450.5,
-        'Rate per Kg (INR)': 380,
-        'No of Boxes': 15,
-        'Damage Weight (Kg)': 10,
-        'Damage Rate per Kg': 120,
-        'Ice Expense (INR)': 1200,
-        'Transport Expense (INR)': 2500,
-        'Labour Expense (INR)': 800,
-        'Amount Paid Now (INR)': 50000,
-        'Invoice / Bill No': 'INV-2026-88',
-        'Batch No': 'BATCH-OCT-01',
-        'Remarks': 'Prime morning landing'
-      },
-      {
-        'Purchase Date (YYYY-MM-DD)': '2026-10-19',
-        'Supplier Code or Name': 'Malabar Coast Fisheries',
-        'Location Code or Name': 'Beypore Port Jetty',
-        'Species Code or Name': 'Yellowfin Tuna',
-        'Grade Code or Name': 'Grade A',
-        'Size Count': '',
-        'Weight (Kg)': 820,
-        'Rate per Kg (INR)': 260,
-        'No of Boxes': 20,
-        'Damage Weight (Kg)': 0,
-        'Damage Rate per Kg': 0,
-        'Ice Expense (INR)': 2000,
-        'Transport Expense (INR)': 3000,
-        'Labour Expense (INR)': 1000,
-        'Amount Paid Now (INR)': 0,
-        'Invoice / Bill No': 'BILL-904',
-        'Batch No': '',
-        'Remarks': 'Export grade tuna'
-      }
-    ];
-    const ws = XLSX.utils.json_to_sheet(data);
+    // Collect all direct landing expenses from registered master data or standard presets
+    const activeExpenses: { name: string; category?: string }[] =
+      expenseTypes && expenseTypes.filter((e) => e.active).length > 0
+        ? expenseTypes.filter((e) => e.active)
+        : [
+            { name: 'Ice & Crushed Flake', category: 'Preservation' },
+            { name: 'Vehicle Rent / Transport', category: 'Logistics' },
+            { name: 'Commission & Dalali', category: 'Brokerage' },
+            { name: 'Loading / Unloading Labour', category: 'Handling' }
+          ];
+
+    const row1: Record<string, any> = {
+      'Purchase Date (YYYY-MM-DD)': '2026-10-18',
+      'Supplier Code or Name': 'Kochi Sea Harvesters',
+      'Location Code or Name': 'Munambam Harbour',
+      'Species Code or Name': 'Vannamei Shrimp',
+      'Grade Code or Name': 'Grade A',
+      'Size Count': '20/30',
+      'Weight (Kg)': 450.5,
+      'Rate per Kg (INR)': 380,
+      'No of Boxes': 15,
+      'Damage Weight (Kg)': 10,
+      'Damage Rate per Kg': 120
+    };
+
+    // Integrate all direct landing expenses displayed in the harbour purchase entry form
+    const sampleAmounts1 = [1200, 2500, 1500, 800, 500, 350, 200];
+    activeExpenses.forEach((exp, idx) => {
+      row1[`${exp.name} (INR)`] = sampleAmounts1[idx % sampleAmounts1.length];
+    });
+
+    row1['Amount Paid Now (INR)'] = 50000;
+    row1['Invoice / Bill No'] = 'INV-2026-88';
+    row1['Batch No'] = 'BATCH-OCT-01';
+    row1['Remarks'] = 'Prime morning landing';
+
+    const row2: Record<string, any> = {
+      'Purchase Date (YYYY-MM-DD)': '2026-10-19',
+      'Supplier Code or Name': 'Malabar Coast Fisheries',
+      'Location Code or Name': 'Beypore Port Jetty',
+      'Species Code or Name': 'Yellowfin Tuna',
+      'Grade Code or Name': 'Grade A',
+      'Size Count': '',
+      'Weight (Kg)': 820,
+      'Rate per Kg (INR)': 260,
+      'No of Boxes': 20,
+      'Damage Weight (Kg)': 0,
+      'Damage Rate per Kg': 0
+    };
+
+    const sampleAmounts2 = [2000, 3000, 2000, 1000, 750, 400, 300];
+    activeExpenses.forEach((exp, idx) => {
+      row2[`${exp.name} (INR)`] = sampleAmounts2[idx % sampleAmounts2.length];
+    });
+
+    row2['Amount Paid Now (INR)'] = 0;
+    row2['Invoice / Bill No'] = 'BILL-904';
+    row2['Batch No'] = '';
+    row2['Remarks'] = 'Export grade tuna';
+
+    const ws = XLSX.utils.json_to_sheet([row1, row2]);
     XLSX.utils.book_append_sheet(wb, ws, 'Purchases');
     XLSX.writeFile(wb, 'Purchase_Transactions_Template.xlsx');
     return;
@@ -334,27 +353,42 @@ export function downloadExcelTemplate(type: ImportEntityType): void {
     const wsSz = XLSX.utils.json_to_sheet(sizesData);
     XLSX.utils.book_append_sheet(wb, wsSz, 'Sizes');
 
-    // 6. Purchases Sheet
-    const purchasesData = [
-      {
-        'Purchase Date': '2026-10-18',
-        'Supplier Name': 'Kochi Sea Harvesters',
-        'Location Name': 'Munambam Harbour',
-        'Species Name': 'Vannamei Shrimp',
-        'Grade Name': 'Grade A',
-        'Size Count': '20/30 count',
-        'Weight (Kg)': 450.5,
-        'Rate per Kg': 380,
-        'No of Boxes': 15,
-        'Damage Weight': 10,
-        'Damage Rate': 120,
-        'Amount Paid': 50000,
-        'Invoice No': 'INV-2026-88',
-        'Batch No': 'BATCH-01',
-        'Remarks': 'Prime shrimp landing'
-      }
-    ];
-    const wsPur = XLSX.utils.json_to_sheet(purchasesData);
+    // 6. Purchases Sheet with all direct landing expenses
+    const activeExpenses: { name: string; category?: string }[] =
+      expenseTypes && expenseTypes.filter((e) => e.active).length > 0
+        ? expenseTypes.filter((e) => e.active)
+        : [
+            { name: 'Ice & Crushed Flake', category: 'Preservation' },
+            { name: 'Vehicle Rent / Transport', category: 'Logistics' },
+            { name: 'Commission & Dalali', category: 'Brokerage' },
+            { name: 'Loading / Unloading Labour', category: 'Handling' }
+          ];
+
+    const purchasesRow: Record<string, any> = {
+      'Purchase Date': '2026-10-18',
+      'Supplier Name': 'Kochi Sea Harvesters',
+      'Location Name': 'Munambam Harbour',
+      'Species Name': 'Vannamei Shrimp',
+      'Grade Name': 'Grade A',
+      'Size Count': '20/30 count',
+      'Weight (Kg)': 450.5,
+      'Rate per Kg': 380,
+      'No of Boxes': 15,
+      'Damage Weight': 10,
+      'Damage Rate': 120
+    };
+
+    const sampleAmountsMulti = [1200, 2500, 1500, 800, 500];
+    activeExpenses.forEach((exp, idx) => {
+      purchasesRow[`${exp.name} (INR)`] = sampleAmountsMulti[idx % sampleAmountsMulti.length];
+    });
+
+    purchasesRow['Amount Paid'] = 50000;
+    purchasesRow['Invoice No'] = 'INV-2026-88';
+    purchasesRow['Batch No'] = 'BATCH-01';
+    purchasesRow['Remarks'] = 'Prime shrimp landing';
+
+    const wsPur = XLSX.utils.json_to_sheet([purchasesRow]);
     XLSX.utils.book_append_sheet(wb, wsPur, 'Purchases');
 
     XLSX.writeFile(wb, 'Complete_Seafood_System_Template.xlsx');

@@ -41,6 +41,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     grades,
     sizes,
     locations,
+    expenseTypes,
     purchases,
     bulkImportSuppliers,
     bulkImportSpecies,
@@ -74,7 +75,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       id: 'purchases',
       label: 'Purchase Transactions',
       icon: Receipt,
-      desc: 'Import daily purchase sheets, landing bills & rates'
+      desc: 'Import daily purchase sheets, landing bills, rates & direct landing expenses (Ice, Transport, Dalali, Labour)'
     },
     {
       id: 'suppliers',
@@ -340,6 +341,12 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         'Damage Rate': p.damageRatePerKg,
         'Damage Amount': p.damageAmount,
         'Gross Value': p.grossPurchaseValue,
+        ...expenseTypes
+          .filter((e) => e.active)
+          .reduce((acc, exp) => {
+            acc[`${exp.name} (INR)`] = p.expenseBreakdown?.[exp.id] || 0;
+            return acc;
+          }, {} as Record<string, number>),
         'Total Expenses': p.totalExpenses,
         'Total Cost': p.totalCost,
         'Effective Rate/Kg': p.effectiveRatePerKg,
@@ -413,7 +420,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
             Step 1: Select What You Want to Import
           </h3>
           <button
-            onClick={() => downloadExcelTemplate(selectedEntity)}
+            onClick={() => downloadExcelTemplate(selectedEntity, expenseTypes)}
             className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition"
           >
             <Download className="w-3.5 h-3.5" />

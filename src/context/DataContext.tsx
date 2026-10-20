@@ -1622,19 +1622,122 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const batchNo = String(getFlexibleValue(row, ['batchno', 'batch', 'lotno', 'lot']) || '').trim() || undefined;
       const remarks = String(getFlexibleValue(row, ['remarks', 'notes', 'comments']) || '');
 
-      // Parse Dynamic Expenses
+      // Parse Dynamic Direct Landing & Procurement Expenses
       const expenseBreakdown: Record<string, number> = {};
-      const iceExp = Number(getFlexibleValue(row, ['iceexpenseinr', 'iceexpense', 'ice', 'icecost'])) || 0;
-      const trnExp = Number(getFlexibleValue(row, ['transportexpenseinr', 'transportexpense', 'transport', 'vehicle'])) || 0;
-      const lbrExp = Number(getFlexibleValue(row, ['labourexpenseinr', 'labourexpense', 'labour', 'labor', 'loading'])) || 0;
 
-      const iceId = iceExp > 0 ? getExpenseTypeId(['ice'], 'Ice Charges', 'Harbour Landing') : '';
-      const trnId = trnExp > 0 ? getExpenseTypeId(['transport', 'freight', 'vehicle'], 'Transport & Freight', 'Logistics') : '';
-      const lbrId = lbrExp > 0 ? getExpenseTypeId(['labour', 'labor', 'loading', 'handling'], 'Labour & Handling', 'Harbour Landing') : '';
-
+      // 1. Ice & Preservation Charges
+      const iceExp = Number(getFlexibleValue(row, [
+        'icecrushedflakeinr',
+        'icecrushedflake',
+        'iceexpenseinr',
+        'iceexpense',
+        'ice',
+        'icecost',
+        'crushedice',
+        'salting'
+      ])) || 0;
+      const iceId = iceExp > 0 ? getExpenseTypeId(['ice', 'flake'], 'Ice & Crushed Flake', 'Preservation') : '';
       if (iceExp > 0 && iceId) expenseBreakdown[iceId] = iceExp;
+
+      // 2. Transport & Logistics Charges
+      const trnExp = Number(getFlexibleValue(row, [
+        'vehiclerenttransportinr',
+        'vehiclerenttransport',
+        'transportexpenseinr',
+        'transportexpense',
+        'vehiclerent',
+        'transport',
+        'vehicle',
+        'freight',
+        'truck',
+        'vanrent'
+      ])) || 0;
+      const trnId = trnExp > 0 ? getExpenseTypeId(['transport', 'freight', 'vehicle', 'truck'], 'Vehicle Rent / Transport', 'Logistics') : '';
       if (trnExp > 0 && trnId) expenseBreakdown[trnId] = trnExp;
+
+      // 3. Commission & Dalali Charges
+      const comExp = Number(getFlexibleValue(row, [
+        'commissiondalaliinr',
+        'commissiondalali',
+        'commissioninr',
+        'dalaliinr',
+        'commission',
+        'dalali',
+        'brokerage',
+        'agentcommission',
+        'dalalicharges'
+      ])) || 0;
+      const comId = comExp > 0 ? getExpenseTypeId(['commission', 'dalali', 'brokerage'], 'Commission & Dalali', 'Brokerage') : '';
+      if (comExp > 0 && comId) expenseBreakdown[comId] = comExp;
+
+      // 4. Loading / Unloading Labour Charges
+      const lbrExp = Number(getFlexibleValue(row, [
+        'loadingunloadinglabourinr',
+        'loadingunloadinglabour',
+        'loadingunloadinglaborinr',
+        'labourexpenseinr',
+        'labourexpense',
+        'labour',
+        'labor',
+        'loading',
+        'unloading',
+        'handling',
+        'coolie',
+        'hamali'
+      ])) || 0;
+      const lbrId = lbrExp > 0 ? getExpenseTypeId(['labour', 'labor', 'loading', 'unloading', 'handling', 'coolie'], 'Loading / Unloading Labour', 'Handling') : '';
       if (lbrExp > 0 && lbrId) expenseBreakdown[lbrId] = lbrExp;
+
+      // 5. Dynamic Check for all other registered active Expense Heads
+      mutableExpenseTypes.forEach((et) => {
+        if (!et.active) return;
+        if (expenseBreakdown[et.id]) return; // Already resolved above
+
+        const cleanName = et.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanCode = et.code.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        const keysToTry = [
+          cleanName,
+          `${cleanName}inr`,
+          `${cleanName}expense`,
+          `${cleanName}expenseinr`,
+          `${cleanName}charges`,
+          `${cleanName}cost`,
+          cleanCode,
+          `${cleanCode}inr`
+        ];
+
+        const rawVal = getFlexibleValue(row, keysToTry);
+        if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
+          const num = Number(rawVal);
+          if (num > 0) {
+            expenseBreakdown[et.id] = num;
+          }
+        }
+      });
+
+      // 6. Optional auto-creation of unknown custom direct landing expense columns
+      if (autoCreateMaster) {
+        Object.keys(row).forEach((colHeader) => {
+          const lower = colHeader.toLowerCase().trim();
+          if (
+            (lower.includes('expense') || lower.includes('charges') || lower.includes('cost') || lower.includes('fee')) &&
+            !lower.includes('total') && !lower.includes('damage') && !lower.includes('rate') && !lower.includes('weight')
+          ) {
+            const rawVal = row[colHeader];
+            if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
+              const num = Number(rawVal);
+              if (num > 0) {
+                const baseName = colHeader.replace(/\(inr\)|\(rs\)|\(₹\)|expense|charges|cost/gi, '').trim() || colHeader.trim();
+                const expId = getExpenseTypeId([baseName], colHeader.trim(), 'Harbour Landing');
+                if (expId && !expenseBreakdown[expId]) {
+                  expenseBreakdown[expId] = num;
+                }
+              }
+            }
+          }
+        });
+      }
 
       if (!resolvedSupplier || !resolvedLocation || !resolvedSpecies) {
         errors.push(`Row ${rowNum}: Could not resolve required references (Supplier, Location, Species).`);
