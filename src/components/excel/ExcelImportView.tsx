@@ -134,6 +134,42 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       const { sheets } = await parseExcelWorkbook(file);
       setSheetsData(sheets);
       setActiveSheetIndex(0);
+
+      // Intelligent Auto-Detection of Sheet / Entity
+      if (sheets.length > 1) {
+        const names = sheets.map((s) => s.name.toLowerCase().trim());
+        const hasSupp = names.some((n) => n.includes('supplier'));
+        const hasSpec = names.some((n) => n.includes('specie') || n.includes('product'));
+        const hasPur = names.some((n) => n.includes('purchase'));
+        if ((hasSupp && hasSpec) || (hasSupp && hasPur) || (hasSpec && hasPur)) {
+          setSelectedEntity('multi-sheet');
+          showToast('Detected multi-sheet workbook. Automatically set to Multi-Sheet Workbook.', 'info');
+        }
+      } else if (sheets.length === 1) {
+        const sheet = sheets[0];
+        const sName = sheet.name.toLowerCase();
+        const fRow = sheet.rows[0] || {};
+        const colKeys = Object.keys(fRow).map((k) => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+        if (sName.includes('supplier') || (colKeys.includes('suppliername') && !colKeys.includes('weightkg') && !colKeys.includes('weight'))) {
+          setSelectedEntity('suppliers');
+          showToast('Detected Supplier master sheet. Category switched to Suppliers & Boat Owners.', 'info');
+        } else if (sName.includes('specie') || sName.includes('product') || (colKeys.includes('speciesname') && !colKeys.includes('weightkg'))) {
+          setSelectedEntity('species');
+          showToast('Detected Species master sheet. Category switched to Species & Products.', 'info');
+        } else if (sName.includes('location') || sName.includes('harbour') || (colKeys.includes('locationname') && !colKeys.includes('weightkg'))) {
+          setSelectedEntity('locations');
+          showToast('Detected Landing Centre sheet. Category switched to Landing Centres & Harbours.', 'info');
+        } else if (sName.includes('grade')) {
+          setSelectedEntity('grades');
+          showToast('Detected Grades sheet. Category switched to Quality Grades.', 'info');
+        } else if (sName.includes('size')) {
+          setSelectedEntity('sizes');
+          showToast('Detected Size/Counts sheet. Category switched to Size / Counts.', 'info');
+        } else if (sName.includes('purchase') || colKeys.includes('weightkg') || colKeys.includes('weight')) {
+          setSelectedEntity('purchases');
+        }
+      }
     } catch (err: any) {
       showToast(err.message || 'Error reading Excel file', 'error');
       setSelectedFile(null);
@@ -178,21 +214,21 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         sheetsData.forEach((sheet) => {
           const sheetNameNorm = sheet.name.toLowerCase().trim();
           if (sheetNameNorm.includes('supplier')) {
-            const res = bulkImportSuppliers(sheet.rows as any, updateExistingMaster);
+            const res = bulkImportSuppliers(sheet.rows, updateExistingMaster);
             totalSuppliersAdded += res.added;
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
-            const res = bulkImportSpecies(sheet.rows as any);
+            const res = bulkImportSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('location') || sheetNameNorm.includes('harbour')) {
-            const res = bulkImportLocations(sheet.rows as any);
+            const res = bulkImportLocations(sheet.rows);
             totalLocationsAdded += res.added;
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('grade')) {
-            bulkImportGrades(sheet.rows as any);
+            bulkImportGrades(sheet.rows);
           } else if (sheetNameNorm.includes('size')) {
-            bulkImportSizes(sheet.rows as any);
+            bulkImportSizes(sheet.rows);
           } else if (sheetNameNorm.includes('purchase')) {
             const res = bulkImportPurchases(sheet.rows, autoCreateMaster);
             totalPurchasesAdded += res.added;
@@ -217,55 +253,57 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           createdLocations: res.createdLocations
         });
       } else if (selectedEntity === 'suppliers') {
-        const res = bulkImportSuppliers(activeRows as any, updateExistingMaster);
+        const res = bulkImportSuppliers(activeRows, updateExistingMaster);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'species') {
-        const res = bulkImportSpecies(activeRows as any);
+        const res = bulkImportSpecies(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'grades') {
-        const res = bulkImportGrades(activeRows as any);
+        const res = bulkImportGrades(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'sizes') {
-        const res = bulkImportSizes(activeRows as any);
+        const res = bulkImportSizes(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'locations') {
-        const res = bulkImportLocations(activeRows as any);
+        const res = bulkImportLocations(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'bank-accounts') {
-        const res = bulkImportBankAccounts(activeRows as any);
+        const res = bulkImportBankAccounts(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       } else if (selectedEntity === 'expense-types') {
-        const res = bulkImportExpenseTypes(activeRows as any);
+        const res = bulkImportExpenseTypes(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
           errors: res.errors
         });
       }
+
+      showToast('Import completed. Check summary below for details.', 'success');
     } catch (e: any) {
       showToast(`Import error: ${e.message}`, 'error');
     } finally {

@@ -22,15 +22,32 @@ export function normalizeKey(key: string): string {
 
 /**
  * Finds the first value in an object whose key matches one of the candidate normalized keys.
+ * Supports exact normalized matching as well as fuzzy substring matching (e.g. "Supplier Name *" -> matches "suppliername").
  */
 export function getFlexibleValue(row: Record<string, any>, candidateKeys: string[]): any {
+  if (!row || typeof row !== 'object') return undefined;
   const normalizedCandidateKeys = candidateKeys.map(normalizeKey);
+
+  // 1. Exact match on normalized key
   for (const [key, val] of Object.entries(row)) {
     const norm = normalizeKey(key);
-    if (normalizedCandidateKeys.includes(norm) && val !== undefined && val !== null && val !== '') {
-      return val;
+    if (normalizedCandidateKeys.includes(norm) && val !== undefined && val !== null && String(val).trim() !== '') {
+      return typeof val === 'string' ? val.trim() : val;
     }
   }
+
+  // 2. Substring / Prefix match (e.g. "Supplier Name (Required)" matches "suppliername")
+  for (const [key, val] of Object.entries(row)) {
+    const norm = normalizeKey(key);
+    for (const cand of normalizedCandidateKeys) {
+      if (cand.length >= 4 && (norm.includes(cand) || cand.includes(norm))) {
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+          return typeof val === 'string' ? val.trim() : val;
+        }
+      }
+    }
+  }
+
   return undefined;
 }
 

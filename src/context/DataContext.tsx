@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   Supplier,
+  SupplierType,
   Species,
   Grade,
   SizeCount,
@@ -107,13 +108,13 @@ interface DataContextType {
   loadStarterPresets: () => void;
 
   // Bulk Excel Import Actions
-  bulkImportSuppliers: (records: Partial<Supplier>[], updateExisting?: boolean) => { added: number; updated: number; errors: string[] };
-  bulkImportSpecies: (records: Partial<Species>[]) => { added: number; updated: number; errors: string[] };
-  bulkImportGrades: (records: Partial<Grade>[]) => { added: number; updated: number; errors: string[] };
-  bulkImportSizes: (records: Partial<SizeCount>[]) => { added: number; updated: number; errors: string[] };
-  bulkImportLocations: (records: Partial<PurchaseLocation>[]) => { added: number; updated: number; errors: string[] };
-  bulkImportBankAccounts: (records: Partial<BankAccount>[]) => { added: number; updated: number; errors: string[] };
-  bulkImportExpenseTypes: (records: Partial<ExpenseType>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportSuppliers: (records: Record<string, any>[], updateExisting?: boolean) => { added: number; updated: number; errors: string[] };
+  bulkImportSpecies: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportGrades: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportSizes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportLocations: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportBankAccounts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportExpenseTypes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportPurchases: (
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
@@ -867,343 +868,478 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showToast('Common seafood master presets loaded. You can edit or delete them anytime.', 'success');
   };
 
-  const bulkImportSuppliers = (records: Partial<Supplier>[], updateExisting = true) => {
+  const bulkImportSuppliers = (records: Record<string, any>[], updateExisting = true) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...suppliers];
 
-    setSuppliers((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Supplier name is required.`);
-          return;
-        }
+    records.forEach((row, idx) => {
+      // Skip completely empty rows
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        const existingIdx = currentList.findIndex(
-          (s) =>
-            (rec.code && normalizeKey(s.code) === normalizeKey(rec.code)) ||
-            normalizeKey(s.name) === normalizeKey(name)
-        );
+      const rawName = getFlexibleValue(row, [
+        'suppliername',
+        'supplier',
+        'partyname',
+        'party',
+        'vendorname',
+        'vendor',
+        'boatowner',
+        'boat',
+        'firmname',
+        'firm',
+        'client',
+        'name'
+      ]);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Supplier name is required.`);
+        return;
+      }
 
-        if (existingIdx >= 0) {
-          if (updateExisting) {
-            currentList[existingIdx] = {
-              ...currentList[existingIdx],
-              ...rec,
-              code: rec.code || currentList[existingIdx].code,
-              name: name || currentList[existingIdx].name,
-              type: rec.type || currentList[existingIdx].type,
-              active: rec.active ?? currentList[existingIdx].active
-            };
-            updated++;
-          }
-        } else {
-          const newCode = rec.code || `SUP-${String(currentList.length + 1).padStart(3, '0')}`;
-          const newSupplier: Supplier = {
-            id: `supp-${Date.now()}-${idx}`,
-            code: newCode,
+      const rawCode = getFlexibleValue(row, ['suppliercode', 'code', 'partycode', 'vendorcode', 'suppcode', 'id', 'supplierid']);
+      const code = rawCode ? String(rawCode).trim() : '';
+
+      const rawType = String(getFlexibleValue(row, ['type', 'suppliertype', 'category', 'kind']) || '').toLowerCase();
+      let type: SupplierType = 'boat_owner';
+      if (rawType.includes('auction')) type = 'auctioneer_agent';
+      else if (rawType.includes('trade')) type = 'trader';
+      else if (rawType.includes('farm')) type = 'farm';
+      else if (rawType.includes('other')) type = 'other';
+
+      const contactPerson = String(getFlexibleValue(row, ['contactperson', 'contact', 'person']) || '').trim();
+      const phone = String(getFlexibleValue(row, ['phone', 'mobile', 'contactno', 'tel', 'cell', 'phonenumber']) || '').trim();
+      const email = String(getFlexibleValue(row, ['email', 'emailid']) || '').trim();
+      const address = String(getFlexibleValue(row, ['address', 'street', 'locationaddress']) || '').trim();
+      const district = String(getFlexibleValue(row, ['district', 'city']) || '').trim();
+      const state = String(getFlexibleValue(row, ['state', 'province']) || '').trim();
+      const gstin = String(getFlexibleValue(row, ['gstin', 'gst', 'gstno']) || '').trim();
+      const pan = String(getFlexibleValue(row, ['pan', 'panno']) || '').trim();
+      const bankName = String(getFlexibleValue(row, ['bankname', 'bank']) || '').trim();
+      const bankAccount = String(getFlexibleValue(row, ['bankaccountno', 'bankaccount', 'accountno', 'account', 'acno']) || '').trim();
+      const bankIfsc = String(getFlexibleValue(row, ['bankifsc', 'ifsc', 'ifsccode']) || '').trim();
+
+      const rawCreditDays = getFlexibleValue(row, ['creditdays', 'creditterms', 'creditperiod', 'days']);
+      const creditDays = (rawCreditDays !== undefined && rawCreditDays !== '' && !isNaN(Number(rawCreditDays)))
+        ? Number(rawCreditDays)
+        : 7;
+
+      const rawOpeningBal = getFlexibleValue(row, ['openingbalance', 'balance', 'openingbal', 'opbal']);
+      const openingBalance = (rawOpeningBal !== undefined && rawOpeningBal !== '' && !isNaN(Number(rawOpeningBal)))
+        ? Number(rawOpeningBal)
+        : 0;
+
+      const existingIdx = currentList.findIndex(
+        (s) =>
+          (code && normalizeKey(s.code) === normalizeKey(code)) ||
+          normalizeKey(s.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        if (updateExisting) {
+          currentList[existingIdx] = {
+            ...currentList[existingIdx],
+            code: code || currentList[existingIdx].code,
             name,
-            type: rec.type || 'boat_owner',
-            contactPerson: rec.contactPerson || '',
-            phone: rec.phone || '',
-            email: rec.email || '',
-            address: rec.address || '',
-            district: rec.district || '',
-            state: rec.state || '',
-            gstin: rec.gstin || '',
-            pan: rec.pan || '',
-            bankName: rec.bankName || '',
-            bankAccount: rec.bankAccount || (rec as any).bankAccountNo || '',
-            bankIfsc: rec.bankIfsc || '',
-            paymentTerms: rec.paymentTerms || `Net ${rec.creditDays || 7} Days`,
-            creditDays: Number(rec.creditDays) || 0,
-            openingBalance: Number(rec.openingBalance) || 0,
-            active: true,
-            createdAt: new Date().toISOString()
+            type: type || currentList[existingIdx].type,
+            contactPerson: contactPerson || currentList[existingIdx].contactPerson,
+            phone: phone || currentList[existingIdx].phone,
+            email: email || currentList[existingIdx].email,
+            address: address || currentList[existingIdx].address,
+            district: district || currentList[existingIdx].district,
+            state: state || currentList[existingIdx].state,
+            gstin: gstin || currentList[existingIdx].gstin,
+            pan: pan || currentList[existingIdx].pan,
+            bankName: bankName || currentList[existingIdx].bankName,
+            bankAccount: bankAccount || currentList[existingIdx].bankAccount,
+            bankIfsc: bankIfsc || currentList[existingIdx].bankIfsc,
+            creditDays: creditDays !== undefined ? creditDays : currentList[existingIdx].creditDays,
+            openingBalance: openingBalance !== undefined ? openingBalance : currentList[existingIdx].openingBalance
           };
-          currentList.push(newSupplier);
-          added++;
+          updated++;
         }
-      });
-      return currentList;
+      } else {
+        const newCode = code || `SUP-${String(currentList.length + 1).padStart(3, '0')}`;
+        const newSupplier: Supplier = {
+          id: `supp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code: newCode,
+          name,
+          type,
+          contactPerson,
+          phone,
+          email,
+          address,
+          district,
+          state,
+          gstin,
+          pan,
+          bankName,
+          bankAccount,
+          bankIfsc,
+          paymentTerms: `Net ${creditDays || 7} Days`,
+          creditDays,
+          openingBalance,
+          active: true,
+          createdAt: new Date().toISOString()
+        };
+        currentList.push(newSupplier);
+        added++;
+      }
     });
 
-    logAudit('CREATE', 'Supplier', `Bulk import: ${added} added, ${updated} updated`, {
-      newValues: { added, updated }
-    });
+    if (added > 0 || updated > 0) {
+      setSuppliers(currentList);
+      logAudit('CREATE', 'Supplier', `Bulk import: ${added} added, ${updated} updated`, {
+        newValues: { added, updated }
+      });
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportSpecies = (records: Partial<Species>[]) => {
+  const bulkImportSpecies = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...species];
 
-    setSpecies((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Species name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (s) =>
-            (rec.code && normalizeKey(s.code) === normalizeKey(rec.code)) ||
-            normalizeKey(s.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          const code = rec.code || name.slice(0, 3).toUpperCase();
-          currentList.push({
-            id: `sp-${Date.now()}-${idx}`,
-            code,
-            name,
-            scientificName: rec.scientificName || '',
-            category: rec.category || 'Fish',
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, [
+        'speciesname',
+        'species',
+        'fish',
+        'productname',
+        'product',
+        'item',
+        'variety',
+        'name'
+      ]);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Species name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['speciescode', 'code', 'productcode', 'itemcode']);
+      const code = rawCode ? String(rawCode).trim() : name.slice(0, 3).toUpperCase();
+      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
+      const category = String(getFlexibleValue(row, ['category', 'type', 'group']) || 'Fish').trim();
+
+      const existingIdx = currentList.findIndex(
+        (s) =>
+          (code && normalizeKey(s.code) === normalizeKey(code)) ||
+          normalizeKey(s.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          scientificName: scientificName || currentList[existingIdx].scientificName,
+          category: category || currentList[existingIdx].category
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `sp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          scientificName,
+          category,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setSpecies(currentList);
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportGrades = (records: Partial<Grade>[]) => {
+  const bulkImportGrades = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...grades];
 
-    setGrades((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Grade name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (g) =>
-            (rec.code && normalizeKey(g.code) === normalizeKey(rec.code)) ||
-            normalizeKey(g.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          currentList.push({
-            id: `grd-${Date.now()}-${idx}`,
-            code: rec.code || `GR-${String(currentList.length + 1).padStart(2, '0')}`,
-            name,
-            appliesToSpeciesId: rec.appliesToSpeciesId || undefined,
-            description: rec.description || '',
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, ['gradename', 'grade', 'quality', 'name']);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Grade name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['gradecode', 'code']);
+      const code = rawCode ? String(rawCode).trim() : `GR-${String(currentList.length + 1).padStart(2, '0')}`;
+      const description = String(getFlexibleValue(row, ['description', 'desc', 'remarks', 'notes']) || '').trim();
+
+      const existingIdx = currentList.findIndex(
+        (g) =>
+          (code && normalizeKey(g.code) === normalizeKey(code)) ||
+          normalizeKey(g.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          description: description || currentList[existingIdx].description
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `grd-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          description,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setGrades(currentList);
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportSizes = (records: Partial<SizeCount>[]) => {
+  const bulkImportSizes = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...sizes];
 
-    setSizes((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Size count name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (s) =>
-            (rec.code && normalizeKey(s.code) === normalizeKey(rec.code)) ||
-            normalizeKey(s.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          currentList.push({
-            id: `sz-${Date.now()}-${idx}`,
-            code: rec.code || `SZ-${String(currentList.length + 1).padStart(2, '0')}`,
-            name,
-            description: rec.description || '',
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, ['sizecount', 'size', 'count', 'countsize', 'counts', 'name', 'gradecount']);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Size count name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['sizecode', 'code']);
+      const code = rawCode ? String(rawCode).trim() : `SZ-${String(currentList.length + 1).padStart(2, '0')}`;
+      const description = String(getFlexibleValue(row, ['description', 'desc', 'notes']) || '').trim();
+
+      const existingIdx = currentList.findIndex(
+        (s) =>
+          (code && normalizeKey(s.code) === normalizeKey(code)) ||
+          normalizeKey(s.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          description: description || currentList[existingIdx].description
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `sz-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          description,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setSizes(currentList);
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportLocations = (records: Partial<PurchaseLocation>[]) => {
+  const bulkImportLocations = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...locations];
 
-    setLocations((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Location name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (l) =>
-            (rec.code && normalizeKey(l.code) === normalizeKey(rec.code)) ||
-            normalizeKey(l.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          currentList.push({
-            id: `loc-${Date.now()}-${idx}`,
-            code: rec.code || `LOC-${String(currentList.length + 1).padStart(2, '0')}`,
-            name,
-            district: rec.district || '',
-            state: rec.state || '',
-            harbourCentre: rec.harbourCentre || name,
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, [
+        'locationname',
+        'location',
+        'harbourcentre',
+        'harbour',
+        'landingcentre',
+        'port',
+        'wharf',
+        'place',
+        'jetty',
+        'name'
+      ]);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Location name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['locationcode', 'code', 'portcode']);
+      const code = rawCode ? String(rawCode).trim() : `LOC-${String(currentList.length + 1).padStart(2, '0')}`;
+      const district = String(getFlexibleValue(row, ['district', 'city']) || '').trim();
+      const state = String(getFlexibleValue(row, ['state', 'province']) || '').trim();
+      const rawHarbour = getFlexibleValue(row, ['harbourwharf', 'harbourcentre', 'harbour', 'wharf', 'jetty']);
+      const harbourCentre = String(rawHarbour || name).trim();
+
+      const existingIdx = currentList.findIndex(
+        (l) =>
+          (code && normalizeKey(l.code) === normalizeKey(code)) ||
+          normalizeKey(l.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          district: district || currentList[existingIdx].district,
+          state: state || currentList[existingIdx].state,
+          harbourCentre: harbourCentre || currentList[existingIdx].harbourCentre
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `loc-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          district,
+          state,
+          harbourCentre,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setLocations(currentList);
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportBankAccounts = (records: Partial<BankAccount>[]) => {
+  const bulkImportBankAccounts = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...bankAccounts];
 
-    setBankAccounts((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Account name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (b) =>
-            (rec.code && normalizeKey(b.code) === normalizeKey(rec.code)) ||
-            normalizeKey(b.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          currentList.push({
-            id: `acc-${Date.now()}-${idx}`,
-            code: rec.code || `ACC-${String(currentList.length + 1).padStart(2, '0')}`,
-            name,
-            bank: rec.bank || '',
-            accountType: (rec.accountType as any) || 'Current',
-            openingBalance: Number(rec.openingBalance) || 0,
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, ['accountname', 'name', 'account', 'bankaccount']);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Account name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['accountcode', 'code']);
+      const code = rawCode ? String(rawCode).trim() : `ACC-${String(currentList.length + 1).padStart(2, '0')}`;
+      const bank = String(getFlexibleValue(row, ['bankname', 'bank']) || '').trim();
+      const rawAccType = String(getFlexibleValue(row, ['accounttype', 'type', 'category']) || '').toLowerCase();
+      let accountType: 'Current' | 'Savings' | 'Cash Float' = 'Current';
+      if (rawAccType.includes('saving')) accountType = 'Savings';
+      else if (rawAccType.includes('cash')) accountType = 'Cash Float';
+      const openingBalance = Number(getFlexibleValue(row, ['openingbalance', 'balance', 'openingbal'])) || 0;
+
+      const existingIdx = currentList.findIndex(
+        (b) =>
+          (code && normalizeKey(b.code) === normalizeKey(code)) ||
+          normalizeKey(b.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          bank: bank || currentList[existingIdx].bank,
+          accountType,
+          openingBalance: openingBalance !== undefined ? openingBalance : currentList[existingIdx].openingBalance
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `acc-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          bank,
+          accountType,
+          openingBalance,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setBankAccounts(currentList);
+    }
     return { added, updated, errors };
   };
 
-  const bulkImportExpenseTypes = (records: Partial<ExpenseType>[]) => {
+  const bulkImportExpenseTypes = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
     const errors: string[] = [];
+    const currentList = [...expenseTypes];
 
-    setExpenseTypes((prev) => {
-      const currentList = [...prev];
-      records.forEach((rec, idx) => {
-        const name = (rec.name || '').trim();
-        if (!name) {
-          errors.push(`Row ${idx + 1}: Expense type name is required.`);
-          return;
-        }
-        const existingIdx = currentList.findIndex(
-          (e) =>
-            (rec.code && normalizeKey(e.code) === normalizeKey(rec.code)) ||
-            normalizeKey(e.name) === normalizeKey(name)
-        );
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
 
-        if (existingIdx >= 0) {
-          currentList[existingIdx] = {
-            ...currentList[existingIdx],
-            ...rec,
-            name,
-            active: rec.active ?? currentList[existingIdx].active
-          };
-          updated++;
-        } else {
-          currentList.push({
-            id: `exp-${Date.now()}-${idx}`,
-            code: rec.code || `EXP-${String(currentList.length + 1).padStart(2, '0')}`,
-            name,
-            category: rec.category || 'Landing',
-            active: true
-          });
-          added++;
-        }
-      });
-      return currentList;
+      const rawName = getFlexibleValue(row, ['expensename', 'name', 'expensetype', 'expense', 'head']);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Expense type name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['expensecode', 'code']);
+      const code = rawCode ? String(rawCode).trim() : `EXP-${String(currentList.length + 1).padStart(2, '0')}`;
+      const category = String(getFlexibleValue(row, ['category', 'type']) || 'Landing').trim();
+
+      const existingIdx = currentList.findIndex(
+        (e) =>
+          (code && normalizeKey(e.code) === normalizeKey(code)) ||
+          normalizeKey(e.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          category: category || currentList[existingIdx].category
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `exp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          category,
+          active: true
+        });
+        added++;
+      }
     });
 
+    if (added > 0 || updated > 0) {
+      setExpenseTypes(currentList);
+    }
     return { added, updated, errors };
   };
 
