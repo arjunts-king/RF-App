@@ -1449,9 +1449,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const weightVal = Number(
         getFlexibleValue(row, ['weightkg', 'weight', 'kg', 'quantity', 'qty', 'netweight'])
       );
-      const rateVal = Number(
+      let rateVal = Number(
         getFlexibleValue(row, ['rateperkginr', 'rateperkg', 'ratekg', 'rate', 'price', 'unitprice', 'pricekg'])
       );
+
+      // If rate is missing or zero, auto-derive from Fish Purchase Total if provided
+      if ((isNaN(rateVal) || rateVal <= 0) && weightVal > 0) {
+        const fishTotal = Number(
+          getFlexibleValue(row, [
+            'fishpurchasetotalinr',
+            'fishpurchasetotal',
+            'fishtotal',
+            'grosspurchasevalue',
+            'purchasevalue',
+            'grossvalue'
+          ])
+        );
+        if (fishTotal > 0) {
+          rateVal = Number((fishTotal / weightVal).toFixed(2));
+        }
+      }
 
       if (!weightVal || weightVal <= 0) {
         errors.push(`Row ${rowNum}: Invalid or zero Weight.`);
@@ -1722,7 +1739,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const lower = colHeader.toLowerCase().trim();
           if (
             (lower.includes('expense') || lower.includes('charges') || lower.includes('cost') || lower.includes('fee')) &&
-            !lower.includes('total') && !lower.includes('damage') && !lower.includes('rate') && !lower.includes('weight')
+            !lower.includes('total') && !lower.includes('damage') && !lower.includes('rate') && !lower.includes('weight') &&
+            !lower.includes('fish') && !lower.includes('purchase')
           ) {
             const rawVal = row[colHeader];
             if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {

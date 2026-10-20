@@ -265,15 +265,20 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Rate per Kg (INR)': 380,
       'No of Boxes': 15,
       'Damage Weight (Kg)': 10,
-      'Damage Rate per Kg': 120
+      'Damage Rate per Kg': 120,
+      'Fish Purchase Total (INR)': 172390
     };
 
     // Integrate all direct landing expenses displayed in the harbour purchase entry form
+    let totalExp1 = 0;
     const sampleAmounts1 = [1200, 2500, 1500, 800, 500, 350, 200];
     activeExpenses.forEach((exp, idx) => {
-      row1[`${exp.name} (INR)`] = sampleAmounts1[idx % sampleAmounts1.length];
+      const amt = sampleAmounts1[idx % sampleAmounts1.length];
+      row1[`${exp.name} (INR)`] = amt;
+      totalExp1 += amt;
     });
 
+    row1['Total Purchase Value (including landing costs)'] = 172390 + totalExp1;
     row1['Amount Paid Now (INR)'] = 50000;
     row1['Invoice / Bill No'] = 'INV-2026-88';
     row1['Batch No'] = 'BATCH-OCT-01';
@@ -290,14 +295,19 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Rate per Kg (INR)': 260,
       'No of Boxes': 20,
       'Damage Weight (Kg)': 0,
-      'Damage Rate per Kg': 0
+      'Damage Rate per Kg': 0,
+      'Fish Purchase Total (INR)': 213200
     };
 
+    let totalExp2 = 0;
     const sampleAmounts2 = [2000, 3000, 2000, 1000, 750, 400, 300];
     activeExpenses.forEach((exp, idx) => {
-      row2[`${exp.name} (INR)`] = sampleAmounts2[idx % sampleAmounts2.length];
+      const amt = sampleAmounts2[idx % sampleAmounts2.length];
+      row2[`${exp.name} (INR)`] = amt;
+      totalExp2 += amt;
     });
 
+    row2['Total Purchase Value (including landing costs)'] = 213200 + totalExp2;
     row2['Amount Paid Now (INR)'] = 0;
     row2['Invoice / Bill No'] = 'BILL-904';
     row2['Batch No'] = '';
@@ -375,14 +385,19 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Rate per Kg': 380,
       'No of Boxes': 15,
       'Damage Weight': 10,
-      'Damage Rate': 120
+      'Damage Rate': 120,
+      'Fish Purchase Total (INR)': 172390
     };
 
+    let totalExpMulti = 0;
     const sampleAmountsMulti = [1200, 2500, 1500, 800, 500];
     activeExpenses.forEach((exp, idx) => {
-      purchasesRow[`${exp.name} (INR)`] = sampleAmountsMulti[idx % sampleAmountsMulti.length];
+      const amt = sampleAmountsMulti[idx % sampleAmountsMulti.length];
+      purchasesRow[`${exp.name} (INR)`] = amt;
+      totalExpMulti += amt;
     });
 
+    purchasesRow['Total Purchase Value (including landing costs)'] = 172390 + totalExpMulti;
     purchasesRow['Amount Paid'] = 50000;
     purchasesRow['Invoice No'] = 'INV-2026-88';
     purchasesRow['Batch No'] = 'BATCH-01';

@@ -341,6 +341,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         'Damage Rate': p.damageRatePerKg,
         'Damage Amount': p.damageAmount,
         'Gross Value': p.grossPurchaseValue,
+        'Fish Purchase Total (INR)': p.grossPurchaseValue,
         ...expenseTypes
           .filter((e) => e.active)
           .reduce((acc, exp) => {
@@ -348,6 +349,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
             return acc;
           }, {} as Record<string, number>),
         'Total Expenses': p.totalExpenses,
+        'Total Purchase Value (including landing costs)': p.totalCost,
         'Total Cost': p.totalCost,
         'Effective Rate/Kg': p.effectiveRatePerKg,
         'Amount Paid': p.amountPaid,
