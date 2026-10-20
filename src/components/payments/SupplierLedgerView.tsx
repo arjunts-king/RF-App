@@ -180,7 +180,7 @@ export const SupplierLedgerView: React.FC = () => {
           >
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.code} · Credit: {s.creditDays}d)
+                {s.name} ({s.code}{s.creditDays ? ` · Credit: ${s.creditDays}d` : ' · Immediate'})
               </option>
             ))}
           </select>
@@ -252,7 +252,14 @@ export const SupplierLedgerView: React.FC = () => {
               <span className="text-ink-500 block uppercase font-bold text-[10px]">Bank &amp; Credit Terms:</span>
               <p className="text-ink-900 font-semibold mt-0.5">{selectedSupplier.bankName}</p>
               <p className="text-ink-700">A/c: <strong>{selectedSupplier.bankAccount}</strong> (IFSC: {selectedSupplier.bankIfsc})</p>
-              <p className="text-ink-700 mt-1">Terms: {selectedSupplier.paymentTerms} (<strong>{selectedSupplier.creditDays} Credit Days</strong>)</p>
+              <p className="text-ink-700 mt-1">
+                Terms: {selectedSupplier.paymentTerms || (selectedSupplier.creditDays ? `Net ${selectedSupplier.creditDays} Days` : 'Immediate')}{' '}
+                {selectedSupplier.creditDays ? (
+                  <strong>({selectedSupplier.creditDays} Credit Days)</strong>
+                ) : (
+                  <span className="text-ink-500">(Immediate / No Credit Terms)</span>
+                )}
+              </p>
             </div>
           </div>
         )}

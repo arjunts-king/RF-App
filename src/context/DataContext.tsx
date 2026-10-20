@@ -921,10 +921,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const bankAccount = String(getFlexibleValue(row, ['bankaccountno', 'bankaccount', 'accountno', 'account', 'acno']) || '').trim();
       const bankIfsc = String(getFlexibleValue(row, ['bankifsc', 'ifsc', 'ifsccode']) || '').trim();
 
-      const rawCreditDays = getFlexibleValue(row, ['creditdays', 'creditterms', 'creditperiod', 'days']);
+      const rawCreditDays = getFlexibleValue(row, ['creditdays', 'creditperiod', 'days']);
       const creditDays = (rawCreditDays !== undefined && rawCreditDays !== '' && !isNaN(Number(rawCreditDays)))
         ? Number(rawCreditDays)
-        : 7;
+        : 0;
+
+      const rawTerms = getFlexibleValue(row, ['paymentterms', 'terms', 'paymentterm', 'creditterms']);
+      const paymentTerms = rawTerms ? String(rawTerms).trim() : (creditDays > 0 ? `Net ${creditDays} Days` : 'Immediate / Cash');
 
       const rawOpeningBal = getFlexibleValue(row, ['openingbalance', 'balance', 'openingbal', 'opbal']);
       const openingBalance = (rawOpeningBal !== undefined && rawOpeningBal !== '' && !isNaN(Number(rawOpeningBal)))
@@ -955,6 +958,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             bankName: bankName || currentList[existingIdx].bankName,
             bankAccount: bankAccount || currentList[existingIdx].bankAccount,
             bankIfsc: bankIfsc || currentList[existingIdx].bankIfsc,
+            paymentTerms: paymentTerms || currentList[existingIdx].paymentTerms,
             creditDays: creditDays !== undefined ? creditDays : currentList[existingIdx].creditDays,
             openingBalance: openingBalance !== undefined ? openingBalance : currentList[existingIdx].openingBalance
           };
@@ -978,7 +982,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bankName,
           bankAccount,
           bankIfsc,
-          paymentTerms: `Net ${creditDays || 7} Days`,
+          paymentTerms,
           creditDays,
           openingBalance,
           active: true,
@@ -1478,7 +1482,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             bankName: '',
             bankAccount: '',
             bankIfsc: '',
-            paymentTerms: 'Net 7 Days',
+            paymentTerms: 'Immediate / Cash',
             creditDays: 0,
             openingBalance: 0,
             active: true,

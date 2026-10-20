@@ -198,7 +198,7 @@ export const OutstandingReport: React.FC = () => {
                     {row.name}
                     <div className="text-[10px] text-ink-500 font-normal">{row.code}</div>
                   </td>
-                  <td className="py-3 px-2 text-center text-ink-500">{row.creditDays}d</td>
+                  <td className="py-3 px-2 text-center text-ink-500">{row.creditDays ? `${row.creditDays}d` : '—'}</td>
                   <td className="py-3 px-3 text-right">{formatINR(row.openingBalance)}</td>
                   <td className="py-3 px-3 text-right font-semibold text-rose-900">{formatINR(row.purchasesTotal)}</td>
                   <td className="py-3 px-3 text-right font-semibold text-emerald-700">{formatINR(row.paymentsTotal)}</td>

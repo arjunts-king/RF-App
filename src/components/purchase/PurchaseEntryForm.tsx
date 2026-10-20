@@ -276,7 +276,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                 <option value="">-- Select Master Supplier --</option>
                 {activeSuppliers.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.code} · Credit: {s.creditDays}d)
+                    {s.name} ({s.code}{s.creditDays ? ` · Credit: ${s.creditDays}d` : ' · Immediate'})
                   </option>
                 ))}
               </select>
@@ -597,7 +597,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
           <div className="flex items-center justify-between text-xs text-ink-500 pt-2 border-t border-gray-100">
             <span>
-              Supplier Credit Days: <strong>{selectedSupplier?.creditDays || 0} days</strong>
+              Supplier Credit Days: <strong>{selectedSupplier?.creditDays ? `${selectedSupplier.creditDays} days` : '0 days (Immediate)'}</strong>
             </span>
             <span>
               Calculated Due Date: <strong>{liveDerived.dueDate || 'N/A'}</strong>

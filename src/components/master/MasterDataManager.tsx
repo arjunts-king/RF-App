@@ -90,8 +90,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   const [supBank, setSupBank] = useState('');
   const [supAcc, setSupAcc] = useState('');
   const [supIfsc, setSupIfsc] = useState('');
-  const [supTerms, setSupTerms] = useState('Net 7 Days');
-  const [supCreditDays, setSupCreditDays] = useState('7');
+  const [supTerms, setSupTerms] = useState('');
+  const [supCreditDays, setSupCreditDays] = useState('');
   const [supOpeningBal, setSupOpeningBal] = useState('0');
 
   // Species form state
@@ -155,8 +155,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setSupBank('');
       setSupAcc('');
       setSupIfsc('');
-      setSupTerms('Net 7 Days');
-      setSupCreditDays('7');
+      setSupTerms('');
+      setSupCreditDays('');
       setSupOpeningBal('0');
     } else if (activeTab === 'species') {
       setSpCode(`SPE-${String(species.length + 1).padStart(3, '0')}`);
@@ -209,8 +209,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setSupBank(s.bankName);
       setSupAcc(s.bankAccount);
       setSupIfsc(s.bankIfsc);
-      setSupTerms(s.paymentTerms);
-      setSupCreditDays(String(s.creditDays));
+      setSupTerms(s.paymentTerms || '');
+      setSupCreditDays(s.creditDays !== undefined && s.creditDays !== null && s.creditDays > 0 ? String(s.creditDays) : '');
       setSupOpeningBal(String(s.openingBalance));
     } else if (activeTab === 'species') {
       const sp = item as Species;
@@ -270,7 +270,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
         bankName: supBank,
         bankAccount: supAcc,
         bankIfsc: supIfsc,
-        paymentTerms: supTerms,
+        paymentTerms: supTerms.trim() || (parseInt(supCreditDays, 10) > 0 ? `Net ${parseInt(supCreditDays, 10)} Days` : 'Immediate / Cash'),
         creditDays: parseInt(supCreditDays, 10) || 0,
         openingBalance: parseFloat(supOpeningBal) || 0,
         active: true
@@ -410,8 +410,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                         <div className="text-[10px] text-ink-500">{s.phone}</div>
                       </td>
                       <td className="py-3 px-3">
-                        <div>{s.creditDays} Credit Days</div>
-                        <div className="text-[10px] text-ink-500">{s.paymentTerms}</div>
+                        <div>{s.creditDays > 0 ? `${s.creditDays} Credit Days` : 'Immediate / Cash'}</div>
+                        <div className="text-[10px] text-ink-500">{s.paymentTerms || (s.creditDays > 0 ? `Net ${s.creditDays} Days` : 'No Credit Terms')}</div>
                       </td>
                       <td className="py-3 px-3 text-[11px]">
                         <div>{s.bankName}</div>
@@ -722,14 +722,31 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold mb-1">Phone</label>
                   <input type="text" value={supPhone} onChange={(e) => setSupPhone(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Credit Days (Drives Due Date)</label>
-                  <input type="number" min="0" value={supCreditDays} onChange={(e) => setSupCreditDays(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+                  <label className="block font-semibold mb-1">Credit Days <span className="font-normal text-ink-500 text-[10px]">(Optional)</span></label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0 (Immediate)"
+                    value={supCreditDays}
+                    onChange={(e) => setSupCreditDays(e.target.value)}
+                    className="w-full p-2 bg-gray-50 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Payment Terms <span className="font-normal text-ink-500 text-[10px]">(Optional)</span></label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Immediate, Net 15"
+                    value={supTerms}
+                    onChange={(e) => setSupTerms(e.target.value)}
+                    className="w-full p-2 bg-gray-50 border rounded-lg"
+                  />
                 </div>
               </div>
 
