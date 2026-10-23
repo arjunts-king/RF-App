@@ -8,6 +8,7 @@ export type ImportEntityType =
   | 'species'
   | 'grades'
   | 'sizes'
+  | 'counts'
   | 'locations'
   | 'bank-accounts'
   | 'expense-types';
@@ -195,14 +196,31 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
 
   if (type === 'sizes') {
     const data = [
-      { 'Code': 'SZ-1020', 'Size Count': '10/20 count', 'Description': '10 to 20 pcs per Kg' },
-      { 'Code': 'SZ-2030', 'Size Count': '20/30 count', 'Description': '20 to 30 pcs per Kg' },
-      { 'Code': 'SZ-3040', 'Size Count': '30/40 count', 'Description': '30 to 40 pcs per Kg' },
-      { 'Code': 'SZ-5060', 'Size Count': '50/60 count', 'Description': '50 to 60 pcs per Kg' }
+      { 'Code': 'SZ-S', 'Size Name': 'Small', 'Description': 'Under 500g / Small grade' },
+      { 'Code': 'SZ-M', 'Size Name': 'Medium', 'Description': '500g - 1kg / Medium grade' },
+      { 'Code': 'SZ-L', 'Size Name': 'Large', 'Description': '1kg - 2kg / Large grade' },
+      { 'Code': 'SZ-XL', 'Size Name': 'Extra Large', 'Description': 'Over 2kg / Jumbo size' }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'Sizes');
     XLSX.writeFile(wb, 'Sizes_Import_Template.xlsx');
+    return;
+  }
+
+  if (type === 'counts') {
+    const data = [
+      { 'Code': 'CNT-1620', 'Count Name': '16/20', 'Description': '16 to 20 pcs per Kg (Jumbo)' },
+      { 'Code': 'CNT-2125', 'Count Name': '21/25', 'Description': '21 to 25 pcs per Kg (Large)' },
+      { 'Code': 'CNT-2630', 'Count Name': '26/30', 'Description': '26 to 30 pcs per Kg (Medium-Large)' },
+      { 'Code': 'CNT-3140', 'Count Name': '31/40', 'Description': '31 to 40 pcs per Kg (Medium)' },
+      { 'Code': 'CNT-4150', 'Count Name': '41/50', 'Description': '41 to 50 pcs per Kg (Standard)' },
+      { 'Code': 'CNT-5160', 'Count Name': '51/60', 'Description': '51 to 60 pcs per Kg (Small)' },
+      { 'Code': 'CNT-7190', 'Count Name': '71/90', 'Description': '71 to 90 pcs per Kg (PUD/Small)' },
+      { 'Code': 'CNT-100P', 'Count Name': '100+', 'Description': '100+ pcs per Kg (Cocktail / Tiny)' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Counts');
+    XLSX.writeFile(wb, 'Counts_Import_Template.xlsx');
     return;
   }
 
@@ -260,7 +278,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Location Code or Name': 'Munambam Harbour',
       'Species Code or Name': 'Vannamei Shrimp',
       'Grade Code or Name': 'Grade A',
-      'Size Count': '20/30',
+      'Size Code or Name': 'Medium',
+      'Count Code or Name': '20/30',
       'Weight (Kg)': 450.5,
       'Rate per Kg (INR)': 380,
       'No of Boxes': 15,
@@ -290,7 +309,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Location Code or Name': 'Beypore Port Jetty',
       'Species Code or Name': 'Yellowfin Tuna',
       'Grade Code or Name': 'Grade A',
-      'Size Count': '',
+      'Size Code or Name': 'Large',
+      'Count Code or Name': '',
       'Weight (Kg)': 820,
       'Rate per Kg (INR)': 260,
       'No of Boxes': 20,
@@ -356,14 +376,26 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
 
     // 5. Sizes Sheet
     const sizesData = [
-      { 'Code': 'SZ-1020', 'Size Count': '10/20 count', 'Description': 'Large' },
-      { 'Code': 'SZ-2030', 'Size Count': '20/30 count', 'Description': 'Medium' },
-      { 'Code': 'SZ-3040', 'Size Count': '30/40 count', 'Description': 'Standard' }
+      { 'Code': 'SZ-S', 'Size Name': 'Small', 'Description': 'Under 500g / Small grade' },
+      { 'Code': 'SZ-M', 'Size Name': 'Medium', 'Description': '500g - 1kg / Medium grade' },
+      { 'Code': 'SZ-L', 'Size Name': 'Large', 'Description': '1kg - 2kg / Large grade' },
+      { 'Code': 'SZ-XL', 'Size Name': 'Extra Large', 'Description': 'Over 2kg / Jumbo size' }
     ];
     const wsSz = XLSX.utils.json_to_sheet(sizesData);
     XLSX.utils.book_append_sheet(wb, wsSz, 'Sizes');
 
-    // 6. Purchases Sheet with all direct landing expenses
+    // 6. Counts Sheet
+    const countsData = [
+      { 'Code': 'CNT-1620', 'Count Name': '16/20', 'Description': '16 to 20 pcs per Kg' },
+      { 'Code': 'CNT-2125', 'Count Name': '21/25', 'Description': '21 to 25 pcs per Kg' },
+      { 'Code': 'CNT-2630', 'Count Name': '26/30', 'Description': '26 to 30 pcs per Kg' },
+      { 'Code': 'CNT-3140', 'Count Name': '31/40', 'Description': '31 to 40 pcs per Kg' },
+      { 'Code': 'CNT-4150', 'Count Name': '41/50', 'Description': '41 to 50 pcs per Kg' }
+    ];
+    const wsCnt = XLSX.utils.json_to_sheet(countsData);
+    XLSX.utils.book_append_sheet(wb, wsCnt, 'Counts');
+
+    // 7. Purchases Sheet with all direct landing expenses
     const activeExpenses: { name: string; category?: string }[] =
       expenseTypes && expenseTypes.filter((e) => e.active).length > 0
         ? expenseTypes.filter((e) => e.active)
@@ -380,7 +412,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Location Name': 'Munambam Harbour',
       'Species Name': 'Vannamei Shrimp',
       'Grade Name': 'Grade A',
-      'Size Count': '20/30 count',
+      'Size Name': 'Medium',
+      'Count Name': '21/25',
       'Weight (Kg)': 450.5,
       'Rate per Kg': 380,
       'No of Boxes': 15,

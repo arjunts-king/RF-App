@@ -2,7 +2,8 @@ import {
   Supplier,
   Species,
   Grade,
-  SizeCount,
+  Size,
+  Count,
   PurchaseLocation,
   BankAccount,
   ExpenseType,
@@ -66,7 +67,8 @@ export const INITIAL_USERS: User[] = [
 export const INITIAL_SUPPLIERS: Supplier[] = [];
 export const INITIAL_SPECIES: Species[] = [];
 export const INITIAL_GRADES: Grade[] = [];
-export const INITIAL_SIZES: SizeCount[] = [];
+export const INITIAL_SIZES: Size[] = [];
+export const INITIAL_COUNTS: Count[] = [];
 export const INITIAL_LOCATIONS: PurchaseLocation[] = [];
 export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [];
 export const INITIAL_EXPENSE_TYPES: ExpenseType[] = [];
@@ -134,14 +136,20 @@ export const SAMPLE_STARTER_PRESETS = {
     { id: 'grd-3', code: 'GRD-003', name: 'Reject / Damage', description: 'Broken, discolored', active: true }
   ],
   sizes: [
-    { id: 'siz-1', code: 'SIZ-001', name: '16/20', description: '16 to 20 pcs per kg', active: true },
-    { id: 'siz-2', code: 'SIZ-002', name: '21/25', description: '21 to 25 pcs per kg', active: true },
-    { id: 'siz-3', code: 'SIZ-003', name: '26/30', description: '26 to 30 pcs per kg', active: true },
-    { id: 'siz-4', code: 'SIZ-004', name: '31/40', description: '31 to 40 pcs per kg', active: true },
-    { id: 'siz-5', code: 'SIZ-005', name: '41/50', description: '41 to 50 pcs per kg', active: true },
-    { id: 'siz-6', code: 'SIZ-006', name: '51/60', description: '51 to 60 pcs per kg', active: true },
-    { id: 'siz-7', code: 'SIZ-007', name: '71/90', description: '71 to 90 pcs per kg', active: true },
-    { id: 'siz-8', code: 'SIZ-008', name: '100+', description: 'Over 100 small count pcs', active: true }
+    { id: 'siz-1', code: 'SIZ-001', name: 'Small', description: 'Under 500g / Small fish', active: true },
+    { id: 'siz-2', code: 'SIZ-002', name: 'Medium', description: '500g to 1 Kg / Medium', active: true },
+    { id: 'siz-3', code: 'SIZ-003', name: 'Large', description: '1 Kg to 2 Kg / Large', active: true },
+    { id: 'siz-4', code: 'SIZ-004', name: 'Extra Large (Jumbo)', description: 'Above 2 Kg / Jumbo catch', active: true }
+  ],
+  counts: [
+    { id: 'cnt-1', code: 'CNT-001', name: '16/20', description: '16 to 20 pcs per kg', active: true },
+    { id: 'cnt-2', code: 'CNT-002', name: '21/25', description: '21 to 25 pcs per kg', active: true },
+    { id: 'cnt-3', code: 'CNT-003', name: '26/30', description: '26 to 30 pcs per kg', active: true },
+    { id: 'cnt-4', code: 'CNT-004', name: '31/40', description: '31 to 40 pcs per kg', active: true },
+    { id: 'cnt-5', code: 'CNT-005', name: '41/50', description: '41 to 50 pcs per kg', active: true },
+    { id: 'cnt-6', code: 'CNT-006', name: '51/60', description: '51 to 60 pcs per kg', active: true },
+    { id: 'cnt-7', code: 'CNT-007', name: '71/90', description: '71 to 90 pcs per kg', active: true },
+    { id: 'cnt-8', code: 'CNT-008', name: '100+', description: 'Over 100 small count pcs', active: true }
   ],
   locations: [
     { id: 'loc-1', code: 'LOC-001', name: 'Kochi Fisheries Harbour', district: 'Ernakulam', state: 'Kerala', harbourCentre: 'Thoppumpady Main Wharf', active: true },

@@ -69,10 +69,18 @@ export interface Grade {
   active: boolean;
 }
 
-export interface SizeCount {
+export interface Size {
   id: string;
   code: string;
-  name: string; // e.g. "16/20", "21/25"
+  name: string; // e.g. "Small", "Medium", "Large", "1-2 Kg"
+  description: string;
+  active: boolean;
+}
+
+export interface Count {
+  id: string;
+  code: string;
+  name: string; // e.g. "16/20", "21/25", "31/40"
   description: string;
   active: boolean;
 }
@@ -121,6 +129,7 @@ export interface Purchase {
   speciesId: string;
   gradeId: string;
   sizeId: string;
+  countId: string;
   boxesCount: number;
   weightKg: number;
   ratePerKg: number;

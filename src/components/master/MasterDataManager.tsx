@@ -15,11 +15,12 @@ import {
   Pencil,
   Trash2,
   Inbox,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Hash
 } from 'lucide-react';
-import { Supplier, Species, Grade, SizeCount, PurchaseLocation, BankAccount, ExpenseType } from '../../types';
+import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType } from '../../types';
 
-type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'locations' | 'accounts' | 'expenses';
+type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses';
 
 export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = ({ onNavigate }) => {
   const {
@@ -27,6 +28,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     species,
     grades,
     sizes,
+    counts,
     locations,
     bankAccounts,
     expenseTypes,
@@ -45,6 +47,9 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     addSize,
     updateSize,
     deleteSize,
+    addCount,
+    updateCount,
+    deleteCount,
     addLocation,
     updateLocation,
     deleteLocation,
@@ -69,6 +74,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     else if (deleteTarget.type === 'species') deleteSpecies(deleteTarget.id);
     else if (deleteTarget.type === 'grade') deleteGrade(deleteTarget.id);
     else if (deleteTarget.type === 'size') deleteSize(deleteTarget.id);
+    else if (deleteTarget.type === 'count') deleteCount(deleteTarget.id);
     else if (deleteTarget.type === 'location') deleteLocation(deleteTarget.id);
     else if (deleteTarget.type === 'account') deleteBankAccount(deleteTarget.id);
     else if (deleteTarget.type === 'expense') deleteExpenseType(deleteTarget.id);
@@ -110,6 +116,11 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   const [szName, setSzName] = useState('');
   const [szDesc, setSzDesc] = useState('');
 
+  // Count form state
+  const [cntCode, setCntCode] = useState('');
+  const [cntName, setCntName] = useState('');
+  const [cntDesc, setCntDesc] = useState('');
+
   // Location form state
   const [locCode, setLocCode] = useState('');
   const [locName, setLocName] = useState('');
@@ -133,7 +144,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     { id: 'suppliers', label: 'Suppliers', icon: Truck, count: suppliers.length },
     { id: 'species', label: 'Species / Product', icon: Fish, count: species.length },
     { id: 'grades', label: 'Grades', icon: Grid, count: grades.length },
-    { id: 'sizes', label: 'Sizes / Counts', icon: Scale, count: sizes.length },
+    { id: 'sizes', label: 'Sizes', icon: Scale, count: sizes.length },
+    { id: 'counts', label: 'Counts / Pcs', icon: Hash, count: counts.length },
     { id: 'locations', label: 'Harbour Locations', icon: Building, count: locations.length },
     { id: 'accounts', label: 'Bank / Cash Accounts', icon: CreditCard, count: bankAccounts.length },
     { id: 'expenses', label: 'Dynamic Expense Heads', icon: Layers, count: expenseTypes.length }
@@ -168,9 +180,13 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setGrdName('');
       setGrdDesc('');
     } else if (activeTab === 'sizes') {
-      setSzCode(`SIZ-${String(sizes.length + 1).padStart(3, '0')}`);
+      setSzCode(`SZ-${String(sizes.length + 1).padStart(3, '0')}`);
       setSzName('');
       setSzDesc('');
+    } else if (activeTab === 'counts') {
+      setCntCode(`CNT-${String(counts.length + 1).padStart(3, '0')}`);
+      setCntName('');
+      setCntDesc('');
     } else if (activeTab === 'locations') {
       setLocCode(`LOC-${String(locations.length + 1).padStart(3, '0')}`);
       setLocName('');
@@ -224,10 +240,15 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setGrdName(g.name);
       setGrdDesc(g.description);
     } else if (activeTab === 'sizes') {
-      const sz = item as SizeCount;
+      const sz = item as Size;
       setSzCode(sz.code);
       setSzName(sz.name);
-      setSzDesc(sz.description);
+      setSzDesc(sz.description || '');
+    } else if (activeTab === 'counts') {
+      const cnt = item as Count;
+      setCntCode(cnt.code);
+      setCntName(cnt.name);
+      setCntDesc(cnt.description || '');
     } else if (activeTab === 'locations') {
       const l = item as PurchaseLocation;
       setLocCode(l.code);
@@ -289,6 +310,10 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       const payload = { code: szCode, name: szName, description: szDesc, active: true };
       if (editingId) updateSize(editingId, payload);
       else addSize(payload);
+    } else if (activeTab === 'counts') {
+      const payload = { code: cntCode, name: cntName, description: cntDesc, active: true };
+      if (editingId) updateCount(editingId, payload);
+      else addCount(payload);
     } else if (activeTab === 'locations') {
       const payload = { code: locCode, name: locName, district: locDistrict, state: locState, harbourCentre: locWharf, active: true };
       if (editingId) updateLocation(editingId, payload);
@@ -578,8 +603,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
           </div>
         )}
 
-        {/* GRADES, SIZES, LOCATIONS, ACCOUNTS TABLES */}
-        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'locations' || activeTab === 'accounts') && (
+        {/* GRADES, SIZES, COUNTS, LOCATIONS, ACCOUNTS TABLES */}
+        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'locations' || activeTab === 'accounts') && (
           <div className="p-4 text-xs">
             {activeTab === 'grades' && (
               grades.length === 0 ? (
@@ -612,7 +637,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
 
             {activeTab === 'sizes' && (
               sizes.length === 0 ? (
-                <div className="py-12 text-center text-ink-500">No size counts configured yet. Add 16/20, 21/25, 26/30, etc.</div>
+                <div className="py-12 text-center text-ink-500">No physical sizes configured yet. Add Small, Medium, Large, Extra Large, etc.</div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {sizes.map((sz) => (
@@ -624,6 +649,27 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleOpenEdit(sz)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
                         <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {activeTab === 'counts' && (
+              counts.length === 0 ? (
+                <div className="py-12 text-center text-ink-500">No piece counts configured yet. Add 10/20, 20/30, 31/40, 41/50, 71/90, 100+, etc.</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {counts.map((cnt) => (
+                    <div key={cnt.id} className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-ink-900 block">{cnt.name}</span>
+                        <span className="text-[10px] text-ink-500 block">{cnt.description || cnt.code}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleOpenEdit(cnt)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
+                        <button onClick={() => setDeleteTarget({ type: 'count', id: cnt.id, name: cnt.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </div>
                   ))}
@@ -829,12 +875,29 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                 <input type="text" value={szCode} onChange={(e) => setSzCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Size / Count (e.g. 26/30)</label>
-                <input type="text" value={szName} onChange={(e) => setSzName(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+                <label className="block font-semibold mb-1">Size Name (e.g. Small, Medium, Large, 1-2kg)</label>
+                <input type="text" placeholder="e.g. Medium (500g - 1kg)" value={szName} onChange={(e) => setSzName(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
               </div>
               <div>
                 <label className="block font-semibold mb-1">Description</label>
-                <input type="text" value={szDesc} onChange={(e) => setSzDesc(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
+                <input type="text" placeholder="e.g. Fish weighing 500g to 1kg" value={szDesc} onChange={(e) => setSzDesc(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'counts' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block font-semibold mb-1">Code</label>
+                <input type="text" value={cntCode} onChange={(e) => setCntCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Piece Count (e.g. 10/20, 20/30, 41/50, 100+)</label>
+                <input type="text" placeholder="e.g. 20/30 count" value={cntName} onChange={(e) => setCntName(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Description</label>
+                <input type="text" placeholder="e.g. 20 to 30 pcs per Kg" value={cntDesc} onChange={(e) => setCntDesc(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
               </div>
             </div>
           )}

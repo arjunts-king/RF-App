@@ -267,7 +267,7 @@ export const BusinessSettingsView: React.FC = () => {
             <div>
               <span className="font-bold text-emerald-950 block text-sm">Load Starter Presets</span>
               <p className="text-ink-500 mt-1">
-                Quickly imports standard seafood presets (Vannamei, Sizes, Kochi Harbour, Ice, Transport) which you can freely customize.
+                Quickly imports standard seafood presets (Vannamei, Sizes, Counts, Kochi Harbour, Ice, Transport) which you can freely customize.
               </p>
             </div>
             <button
@@ -318,7 +318,7 @@ export const BusinessSettingsView: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 space-y-1">
                 <span className="font-bold text-rose-800 uppercase text-[10px] tracking-wider block">Irreversible Action</span>
                 <p className="text-[11px] leading-relaxed">
-                  This permanently removes <strong>ALL transactions, purchases, payments, audit logs, and master records</strong> (suppliers, species, grades, sizes, locations, bank accounts, and expenses).
+                  This permanently removes <strong>ALL transactions, purchases, payments, audit logs, and master records</strong> (suppliers, species, grades, sizes, counts, locations, bank accounts, and expenses).
                 </p>
               </div>
             </>

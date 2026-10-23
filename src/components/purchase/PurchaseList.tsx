@@ -26,6 +26,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
     species,
     grades,
     sizes,
+    counts,
     locations,
     expenseTypes,
     updatePurchase,
@@ -57,6 +58,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
     speciesId: '',
     gradeId: '',
     sizeId: '',
+    countId: '',
     boxesCount: 0,
     weightKg: 0,
     ratePerKg: 0,
@@ -72,6 +74,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
   const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
   const gradeMap = new Map(grades.map((g) => [g.id, g]));
   const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
+  const countMap = new Map(counts.map((c) => [c.id, c]));
   const locationMap = new Map(locations.map((l) => [l.id, l]));
   const expenseTypeMap = new Map(expenseTypes.map((e) => [e.id, e]));
 
@@ -125,6 +128,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       speciesId: p.speciesId,
       gradeId: p.gradeId || '',
       sizeId: p.sizeId || '',
+      countId: p.countId || '',
       boxesCount: p.boxesCount || 0,
       weightKg: p.weightKg || 0,
       ratePerKg: p.ratePerKg || 0,
@@ -152,6 +156,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
         speciesId: editForm.speciesId,
         gradeId: editForm.gradeId,
         sizeId: editForm.sizeId,
+        countId: editForm.countId,
         boxesCount: Number(editForm.boxesCount) || 0,
         weightKg: Number(editForm.weightKg) || 0,
         ratePerKg: Number(editForm.ratePerKg) || 0,
@@ -193,6 +198,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
       Size: sizeMap.get(p.sizeId)?.name || 'N/A',
+      Count: countMap.get(p.countId)?.name || 'N/A',
       WeightKg: p.weightKg,
       RatePerKg: p.ratePerKg,
       PurchaseValue: p.purchaseValue,
@@ -218,7 +224,8 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       { key: 'BatchNo', label: 'Batch No' },
       { key: 'Species', label: 'Species' },
       { key: 'Grade', label: 'Grade' },
-      { key: 'Size', label: 'Size/Count' },
+      { key: 'Size', label: 'Physical Size' },
+      { key: 'Count', label: 'Piece Count' },
       { key: 'WeightKg', label: 'Weight (Kg)' },
       { key: 'RatePerKg', label: 'Rate (INR/Kg)' },
       { key: 'PurchaseValue', label: 'Purchase Value' },
@@ -349,7 +356,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                 <th className="py-3 px-4">Purchase ID</th>
                 <th className="py-3 px-4">Date &amp; FY</th>
                 <th className="py-3 px-4">Supplier</th>
-                <th className="py-3 px-4">Species &amp; Count</th>
+                <th className="py-3 px-4">Species, Size &amp; Count</th>
                 <th className="py-3 px-4 text-right">Weight</th>
                 <th className="py-3 px-4 text-right">Rate / Kg</th>
                 <th className="py-3 px-4 text-right">Landed Cost</th>
@@ -370,6 +377,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                   const supp = supplierMap.get(p.supplierId);
                   const spec = speciesMap.get(p.speciesId);
                   const sz = sizeMap.get(p.sizeId);
+                  const cnt = countMap.get(p.countId);
 
                   return (
                     <tr
@@ -400,7 +408,9 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
 
                       <td className="py-3 px-4">
                         <div className="font-semibold text-ink-900 line-clamp-1">{spec?.name || 'Species'}</div>
-                        <div className="text-[10px] text-ink-500">Count: {sz?.name || 'Standard'}</div>
+                        <div className="text-[10px] text-ink-500">
+                          {[sz?.name ? `Size: ${sz.name}` : '', cnt?.name ? `Count: ${cnt.name}` : ''].filter(Boolean).join(' · ') || 'Standard'}
+                        </div>
                       </td>
 
                       <td className="py-3 px-4 text-right font-bold whitespace-nowrap">
@@ -553,7 +563,10 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                   <strong>Grade:</strong> {gradeMap.get(selectedPurchase.gradeId)?.name || 'Standard'}
                 </div>
                 <div>
-                  <strong>Size / Count:</strong> {sizeMap.get(selectedPurchase.sizeId)?.name || 'N/A'}
+                  <strong>Physical Size:</strong> {sizeMap.get(selectedPurchase.sizeId)?.name || 'N/A'}
+                </div>
+                <div>
+                  <strong>Piece Count:</strong> {countMap.get(selectedPurchase.countId)?.name || 'N/A'}
                 </div>
                 <div>
                   <strong>Total Boxes:</strong> {selectedPurchase.boxesCount}
@@ -780,7 +793,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block font-semibold text-ink-700 mb-1">Species</label>
               <select
@@ -808,7 +821,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-ink-700 mb-1">Size / Count</label>
+              <label className="block font-semibold text-ink-700 mb-1">Physical Size</label>
               <select
                 value={editForm.sizeId}
                 onChange={(e) => setEditForm({ ...editForm, sizeId: e.target.value })}
@@ -817,6 +830,19 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                 <option value="">None / Standard</option>
                 {sizes.map((sz) => (
                   <option key={sz.id} value={sz.id}>{sz.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-ink-700 mb-1">Piece Count</label>
+              <select
+                value={editForm.countId}
+                onChange={(e) => setEditForm({ ...editForm, countId: e.target.value })}
+                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+              >
+                <option value="">None / Standard</option>
+                {counts.map((cnt) => (
+                  <option key={cnt.id} value={cnt.id}>{cnt.name}</option>
                 ))}
               </select>
             </div>

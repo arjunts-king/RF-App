@@ -4,7 +4,8 @@ import {
   SupplierType,
   Species,
   Grade,
-  SizeCount,
+  Size,
+  Count,
   PurchaseLocation,
   BankAccount,
   ExpenseType,
@@ -20,6 +21,7 @@ import {
   INITIAL_SPECIES,
   INITIAL_GRADES,
   INITIAL_SIZES,
+  INITIAL_COUNTS,
   INITIAL_LOCATIONS,
   INITIAL_BANK_ACCOUNTS,
   INITIAL_EXPENSE_TYPES,
@@ -40,7 +42,8 @@ interface DataContextType {
   suppliers: Supplier[];
   species: Species[];
   grades: Grade[];
-  sizes: SizeCount[];
+  sizes: Size[];
+  counts: Count[];
   locations: PurchaseLocation[];
   bankAccounts: BankAccount[];
   expenseTypes: ExpenseType[];
@@ -66,10 +69,15 @@ interface DataContextType {
   deleteGrade: (id: string) => { success: boolean; message?: string };
   toggleGradeActive: (id: string) => void;
 
-  addSize: (size: Omit<SizeCount, 'id'>) => void;
-  updateSize: (id: string, updates: Partial<SizeCount>) => void;
+  addSize: (size: Omit<Size, 'id'>) => void;
+  updateSize: (id: string, updates: Partial<Size>) => void;
   deleteSize: (id: string) => { success: boolean; message?: string };
   toggleSizeActive: (id: string) => void;
+
+  addCount: (count: Omit<Count, 'id'>) => void;
+  updateCount: (id: string, updates: Partial<Count>) => void;
+  deleteCount: (id: string) => { success: boolean; message?: string };
+  toggleCountActive: (id: string) => void;
 
   addLocation: (loc: Omit<PurchaseLocation, 'id'>) => void;
   updateLocation: (id: string, updates: Partial<PurchaseLocation>) => void;
@@ -112,6 +120,7 @@ interface DataContextType {
   bulkImportSpecies: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportGrades: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportSizes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportCounts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportLocations: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportBankAccounts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportExpenseTypes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
@@ -157,9 +166,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_GRADES;
   });
 
-  const [sizes, setSizes] = useState<SizeCount[]>(() => {
+  const [sizes, setSizes] = useState<Size[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}sizes`);
     return saved ? JSON.parse(saved) : INITIAL_SIZES;
+  });
+
+  const [counts, setCounts] = useState<Count[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}counts`);
+    return saved ? JSON.parse(saved) : INITIAL_COUNTS;
   });
 
   const [locations, setLocations] = useState<PurchaseLocation[]>(() => {
@@ -224,6 +238,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(species)); }, [species]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}grades`, JSON.stringify(grades)); }, [grades]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}sizes`, JSON.stringify(sizes)); }, [sizes]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}counts`, JSON.stringify(counts)); }, [counts]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}locations`, JSON.stringify(locations)); }, [locations]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}bank_accounts`, JSON.stringify(bankAccounts)); }, [bankAccounts]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}expense_types`, JSON.stringify(expenseTypes)); }, [expenseTypes]);
@@ -361,14 +376,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // SIZES
-  const addSize = (sizeData: Omit<SizeCount, 'id'>) => {
-    const newSize: SizeCount = { ...sizeData, id: `siz-${Date.now()}` };
+  const addSize = (sizeData: Omit<Size, 'id'>) => {
+    const newSize: Size = { ...sizeData, id: `siz-${Date.now()}` };
     setSizes((prev) => [...prev, newSize]);
-    logAudit('CREATE', 'SizeCount', newSize.code, { newValues: newSize });
+    logAudit('CREATE', 'Size', newSize.code, { newValues: newSize });
     showToast(`Size "${newSize.name}" added.`, 'success');
   };
 
-  const updateSize = (id: string, updates: Partial<SizeCount>) => {
+  const updateSize = (id: string, updates: Partial<Size>) => {
     setSizes((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
     showToast('Size updated.', 'success');
   };
@@ -386,6 +401,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const toggleSizeActive = (id: string) => {
     setSizes((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
+  };
+
+  // COUNTS
+  const addCount = (countData: Omit<Count, 'id'>) => {
+    const newCount: Count = { ...countData, id: `cnt-${Date.now()}` };
+    setCounts((prev) => [...prev, newCount]);
+    logAudit('CREATE', 'Count', newCount.code, { newValues: newCount });
+    showToast(`Count "${newCount.name}" added.`, 'success');
+  };
+
+  const updateCount = (id: string, updates: Partial<Count>) => {
+    setCounts((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+    showToast('Count updated.', 'success');
+  };
+
+  const deleteCount = (id: string) => {
+    const hasTransactions = purchases.some((p) => p.countId === id);
+    if (hasTransactions) {
+      showToast('Cannot delete count referenced in purchases. Deactivate instead.', 'error');
+      return { success: false };
+    }
+    setCounts((prev) => prev.filter((c) => c.id !== id));
+    showToast('Count deleted.', 'info');
+    return { success: true };
+  };
+
+  const toggleCountActive = (id: string) => {
+    setCounts((prev) => prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c)));
   };
 
   // LOCATIONS
@@ -540,6 +583,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       speciesId: purchaseData.speciesId,
       gradeId: purchaseData.gradeId || '',
       sizeId: purchaseData.sizeId || '',
+      countId: purchaseData.countId || '',
       boxesCount: Number(purchaseData.boxesCount) || 0,
       weightKg: Number(purchaseData.weightKg),
       ratePerKg: Number(purchaseData.ratePerKg),
@@ -857,6 +901,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSpecies([]);
     setGrades([]);
     setSizes([]);
+    setCounts([]);
     setLocations([]);
     setBankAccounts([]);
     setExpenseTypes([]);
@@ -869,6 +914,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSpecies(SAMPLE_STARTER_PRESETS.species);
     setGrades(SAMPLE_STARTER_PRESETS.grades);
     setSizes(SAMPLE_STARTER_PRESETS.sizes);
+    setCounts(SAMPLE_STARTER_PRESETS.counts);
     setLocations(SAMPLE_STARTER_PRESETS.locations);
     setBankAccounts(SAMPLE_STARTER_PRESETS.bankAccounts);
     setExpenseTypes(SAMPLE_STARTER_PRESETS.expenseTypes);
@@ -1133,10 +1179,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
       if (!hasData) return;
 
-      const rawName = getFlexibleValue(row, ['sizecount', 'size', 'count', 'countsize', 'counts', 'name', 'gradecount']);
+      const rawName = getFlexibleValue(row, ['sizename', 'size', 'name', 'physicalsize', 'sizecodeorname']);
       const name = String(rawName || '').trim();
       if (!name) {
-        errors.push(`Row ${idx + 1}: Size count name is required.`);
+        errors.push(`Row ${idx + 1}: Size name is required.`);
         return;
       }
       const rawCode = getFlexibleValue(row, ['sizecode', 'code']);
@@ -1170,6 +1216,57 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (added > 0 || updated > 0) {
       setSizes(currentList);
+    }
+    return { added, updated, errors };
+  };
+
+  const bulkImportCounts = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...counts];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const rawName = getFlexibleValue(row, ['countname', 'count', 'piececount', 'counts', 'pcs', 'name', 'countcodeorname']);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Count name is required.`);
+        return;
+      }
+      const rawCode = getFlexibleValue(row, ['countcode', 'code']);
+      const code = rawCode ? String(rawCode).trim() : `CNT-${String(currentList.length + 1).padStart(2, '0')}`;
+      const description = String(getFlexibleValue(row, ['description', 'desc', 'notes']) || '').trim();
+
+      const existingIdx = currentList.findIndex(
+        (c) =>
+          (code && normalizeKey(c.code) === normalizeKey(code)) ||
+          normalizeKey(c.name) === normalizeKey(name)
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          description: description || currentList[existingIdx].description
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `cnt-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          code,
+          name,
+          description,
+          active: true
+        });
+        added++;
+      }
+    });
+
+    if (added > 0 || updated > 0) {
+      setCounts(currentList);
     }
     return { added, updated, errors };
   };
@@ -1369,6 +1466,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const mutableLocations = [...locations];
     const mutableGrades = [...grades];
     const mutableSizes = [...sizes];
+    const mutableCounts = [...counts];
     const mutableExpenseTypes = [...expenseTypes];
 
     const getExpenseTypeId = (keywords: string[], defaultName: string, category: string): string => {
@@ -1444,7 +1542,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ]);
 
       const gradeVal = getFlexibleValue(row, ['gradecodeorname', 'grade', 'gradename', 'quality']);
-      const sizeVal = getFlexibleValue(row, ['sizecount', 'size', 'count', 'countsize', 'counts']);
+      const sizeVal = getFlexibleValue(row, ['sizecodeorname', 'size', 'sizename', 'physicalsize']);
+      const countVal = getFlexibleValue(row, ['countcodeorname', 'count', 'countname', 'piececount', 'counts', 'pcs']);
 
       const weightVal = Number(
         getFlexibleValue(row, ['weightkg', 'weight', 'kg', 'quantity', 'qty', 'netweight'])
@@ -1618,7 +1717,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (matched) {
           resolvedSizeId = matched.id;
         } else if (autoCreateMaster) {
-          const newSz: SizeCount = {
+          const newSz: Size = {
             id: `sz-auto-${Date.now()}-${idx}`,
             code: `SZ-${String(mutableSizes.length + 1).padStart(2, '0')}`,
             name: String(sizeVal).trim(),
@@ -1627,6 +1726,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           };
           mutableSizes.push(newSz);
           resolvedSizeId = newSz.id;
+        }
+      }
+
+      let resolvedCountId = '';
+      if (countVal) {
+        const cntNorm = normalizeKey(String(countVal));
+        const matched = mutableCounts.find(
+          (c) => normalizeKey(c.code) === cntNorm || normalizeKey(c.name) === cntNorm
+        );
+        if (matched) {
+          resolvedCountId = matched.id;
+        } else if (autoCreateMaster) {
+          const newCnt: Count = {
+            id: `cnt-auto-${Date.now()}-${idx}`,
+            code: `CNT-${String(mutableCounts.length + 1).padStart(2, '0')}`,
+            name: String(countVal).trim(),
+            description: '',
+            active: true
+          };
+          mutableCounts.push(newCnt);
+          resolvedCountId = newCnt.id;
         }
       }
 
@@ -1789,6 +1909,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         speciesId: resolvedSpecies.id,
         gradeId: resolvedGradeId,
         sizeId: resolvedSizeId,
+        countId: resolvedCountId,
         boxesCount,
         weightKg: weightVal,
         ratePerKg: rateVal,
@@ -1825,6 +1946,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (createdLocations > 0) setLocations([...mutableLocations]);
       if (mutableGrades.length > grades.length) setGrades([...mutableGrades]);
       if (mutableSizes.length > sizes.length) setSizes([...mutableSizes]);
+      if (mutableCounts.length > counts.length) setCounts([...mutableCounts]);
       if (mutableExpenseTypes.length > expenseTypes.length) setExpenseTypes([...mutableExpenseTypes]);
 
       logAudit('CREATE', 'Purchase', `Excel bulk import: ${newPurchases.length} purchases imported`, {
@@ -1856,6 +1978,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         species,
         grades,
         sizes,
+        counts,
         locations,
         bankAccounts,
         expenseTypes,
@@ -1884,6 +2007,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateSize,
         deleteSize,
         toggleSizeActive,
+
+        addCount,
+        updateCount,
+        deleteCount,
+        toggleCountActive,
 
         addLocation,
         updateLocation,
@@ -1919,6 +2047,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bulkImportSpecies,
         bulkImportGrades,
         bulkImportSizes,
+        bulkImportCounts,
         bulkImportLocations,
         bulkImportBankAccounts,
         bulkImportExpenseTypes,

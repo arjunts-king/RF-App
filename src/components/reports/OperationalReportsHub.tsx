@@ -23,7 +23,7 @@ type ReportTab =
   | 'price-analysis';
 
 export const OperationalReportsHub: React.FC = () => {
-  const { purchases, suppliers, species, grades, sizes, locations, businessSettings } = useData();
+  const { purchases, suppliers, species, grades, sizes, counts, locations, businessSettings } = useData();
 
   const [activeReport, setActiveReport] = useState<ReportTab>('daily');
 
@@ -36,6 +36,7 @@ export const OperationalReportsHub: React.FC = () => {
   const [paSpeciesId, setPaSpeciesId] = useState<string>(species[0]?.id || '');
   const [paGradeId, setPaGradeId] = useState<string>('');
   const [paSizeId, setPaSizeId] = useState<string>('');
+  const [paCountId, setPaCountId] = useState<string>('');
   const [paLocationId, setPaLocationId] = useState<string>('');
 
   // Lookup maps
@@ -96,13 +97,13 @@ export const OperationalReportsHub: React.FC = () => {
   }).filter((sp) => sp.lotsCount > 0);
 
   // --------------------------------------------------------------------------
-  // 4. GRADE & SIZE MATRIX ANALYSIS
+  // 4. GRADE, SIZE & COUNT MATRIX ANALYSIS
   // --------------------------------------------------------------------------
   interface MatrixCell {
     gradeId: string;
     gradeName: string;
-    sizeId: string;
-    sizeName: string;
+    type: 'Physical Size' | 'Piece Count';
+    specName: string;
     weight: number;
     value: number;
     avgRate: number;
@@ -128,8 +129,35 @@ export const OperationalReportsHub: React.FC = () => {
         matrixCells.push({
           gradeId: g.id,
           gradeName: g.name,
-          sizeId: sz.id,
-          sizeName: sz.name,
+          type: 'Physical Size',
+          specName: sz.name,
+          weight,
+          value,
+          avgRate,
+          minRate,
+          maxRate,
+          weightedAvgRate,
+          lotsCount: match.length
+        });
+      }
+    });
+
+    counts.forEach((cnt) => {
+      const match = activePurchases.filter((p) => p.gradeId === g.id && p.countId === cnt.id);
+      if (match.length > 0) {
+        const weight = match.reduce((s, p) => s + p.weightKg, 0);
+        const value = match.reduce((s, p) => s + p.purchaseValue, 0);
+        const rates = match.map((p) => p.ratePerKg);
+        const minRate = Math.min(...rates);
+        const maxRate = Math.max(...rates);
+        const avgRate = rates.reduce((s, r) => s + r, 0) / rates.length;
+        const weightedAvgRate = weight > 0 ? value / weight : 0;
+
+        matrixCells.push({
+          gradeId: g.id,
+          gradeName: g.name,
+          type: 'Piece Count',
+          specName: cnt.name,
           weight,
           value,
           avgRate,
@@ -194,6 +222,7 @@ export const OperationalReportsHub: React.FC = () => {
     if (paSpeciesId && p.speciesId !== paSpeciesId) return false;
     if (paGradeId && p.gradeId !== paGradeId) return false;
     if (paSizeId && p.sizeId !== paSizeId) return false;
+    if (paCountId && p.countId !== paCountId) return false;
     if (paLocationId && p.locationId !== paLocationId) return false;
     return true;
   });
@@ -316,7 +345,8 @@ export const OperationalReportsHub: React.FC = () => {
                   exportData = matrixCells;
                   cols = [
                     { key: 'gradeName', label: 'Grade' },
-                    { key: 'sizeName', label: 'Size / Count' },
+                    { key: 'type', label: 'Type' },
+                    { key: 'specName', label: 'Size / Count Specification' },
                     { key: 'lotsCount', label: 'Lots' },
                     { key: 'weight', label: 'Total Weight (Kg)' },
                     { key: 'minRate', label: 'Min Rate' },
@@ -589,13 +619,13 @@ export const OperationalReportsHub: React.FC = () => {
         </div>
       )}
 
-      {/* 4. GRADE & SIZE MATRIX ANALYSIS */}
+      {/* 4. GRADE, SIZE & COUNT MATRIX ANALYSIS */}
       {activeReport === 'grade-size' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-ink-900">Grade × Size/Count Procurement Matrix</h3>
+            <h3 className="text-sm font-bold text-ink-900">Grade × Size &amp; Count Procurement Matrix</h3>
             <p className="text-xs text-ink-500">
-              Min, max, and weighted-average rates across seafood size counts and quality gradings.
+              Min, max, and weighted-average rates across physical sizes, piece counts, and quality gradings.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -603,7 +633,8 @@ export const OperationalReportsHub: React.FC = () => {
               <thead>
                 <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
                   <th className="py-2.5 px-3">Quality Grade</th>
-                  <th className="py-2.5 px-3">Size / Count</th>
+                  <th className="py-2.5 px-3">Type</th>
+                  <th className="py-2.5 px-3">Size / Count Spec</th>
                   <th className="py-2.5 px-3 text-center">Lots</th>
                   <th className="py-2.5 px-3 text-right">Total Weight</th>
                   <th className="py-2.5 px-3 text-right">Min Rate</th>
@@ -615,15 +646,20 @@ export const OperationalReportsHub: React.FC = () => {
               <tbody className="divide-y divide-gray-100 font-medium">
                 {matrixCells.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-ink-500">
-                      No grade or size transactions recorded yet.
+                    <td colSpan={9} className="py-8 text-center text-ink-500">
+                      No grade, size, or count transactions recorded yet.
                     </td>
                   </tr>
                 ) : (
                   matrixCells.map((cell, idx) => (
                     <tr key={idx} className="hover:bg-rose-50/30">
                       <td className="py-2.5 px-3 font-bold text-ink-900">{cell.gradeName}</td>
-                      <td className="py-2.5 px-3 font-semibold text-rose-700">{cell.sizeName}</td>
+                      <td className="py-2.5 px-3 text-ink-500">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cell.type === 'Physical Size' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                          {cell.type}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-rose-700">{cell.specName}</td>
                       <td className="py-2.5 px-3 text-center">{cell.lotsCount}</td>
                       <td className="py-2.5 px-3 text-right font-bold">{formatKg(cell.weight)}</td>
                       <td className="py-2.5 px-3 text-right text-ink-500">₹{cell.minRate.toFixed(2)}</td>
@@ -740,7 +776,7 @@ export const OperationalReportsHub: React.FC = () => {
           </div>
 
           {/* Filter Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs bg-gray-50 p-4 rounded-xl border border-gray-200">
             <div>
               <label className="block text-[11px] font-semibold text-ink-700 mb-1">Species</label>
               <select
@@ -774,7 +810,7 @@ export const OperationalReportsHub: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-ink-700 mb-1">Size / Count</label>
+              <label className="block text-[11px] font-semibold text-ink-700 mb-1">Physical Size</label>
               <select
                 value={paSizeId}
                 onChange={(e) => setPaSizeId(e.target.value)}
@@ -784,6 +820,22 @@ export const OperationalReportsHub: React.FC = () => {
                 {sizes.map((sz) => (
                   <option key={sz.id} value={sz.id}>
                     {sz.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-ink-700 mb-1">Piece Count</label>
+              <select
+                value={paCountId}
+                onChange={(e) => setPaCountId(e.target.value)}
+                className="w-full p-2 bg-white border border-gray-300 rounded-lg outline-none"
+              >
+                <option value="">All Counts</option>
+                {counts.map((cnt) => (
+                  <option key={cnt.id} value={cnt.id}>
+                    {cnt.name}
                   </option>
                 ))}
               </select>

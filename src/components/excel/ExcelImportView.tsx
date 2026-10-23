@@ -40,6 +40,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     species,
     grades,
     sizes,
+    counts,
     locations,
     expenseTypes,
     purchases,
@@ -47,6 +48,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     bulkImportSpecies,
     bulkImportGrades,
     bulkImportSizes,
+    bulkImportCounts,
     bulkImportLocations,
     bulkImportBankAccounts,
     bulkImportExpenseTypes,
@@ -97,9 +99,15 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     },
     {
       id: 'sizes',
-      label: 'Size / Counts',
+      label: 'Physical Sizes',
       icon: Database,
-      desc: 'Import seafood count sizes (e.g. 10/20, 20/30)'
+      desc: 'Import fish/product sizes (e.g. Small, Medium, Large, Extra Large)'
+    },
+    {
+      id: 'counts',
+      label: 'Piece Counts / Pcs',
+      icon: Database,
+      desc: 'Import count gradings per Kg (e.g. 10/20, 20/30, 41/50, 100+)'
     },
     {
       id: 'locations',
@@ -164,9 +172,12 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         } else if (sName.includes('grade')) {
           setSelectedEntity('grades');
           showToast('Detected Grades sheet. Category switched to Quality Grades.', 'info');
+        } else if (sName.includes('count') || (colKeys.includes('countname') && !colKeys.includes('weightkg'))) {
+          setSelectedEntity('counts');
+          showToast('Detected Piece Counts sheet. Category switched to Piece Counts / Pcs.', 'info');
         } else if (sName.includes('size')) {
           setSelectedEntity('sizes');
-          showToast('Detected Size/Counts sheet. Category switched to Size / Counts.', 'info');
+          showToast('Detected Physical Sizes sheet. Category switched to Physical Sizes.', 'info');
         } else if (sName.includes('purchase') || colKeys.includes('weightkg') || colKeys.includes('weight')) {
           setSelectedEntity('purchases');
         }
@@ -228,6 +239,8 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('grade')) {
             bulkImportGrades(sheet.rows);
+          } else if (sheetNameNorm.includes('count')) {
+            bulkImportCounts(sheet.rows);
           } else if (sheetNameNorm.includes('size')) {
             bulkImportSizes(sheet.rows);
           } else if (sheetNameNorm.includes('purchase')) {
@@ -281,6 +294,13 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           updated: res.updated,
           errors: res.errors
         });
+      } else if (selectedEntity === 'counts') {
+        const res = bulkImportCounts(activeRows);
+        setImportSummary({
+          added: res.added,
+          updated: res.updated,
+          errors: res.errors
+        });
       } else if (selectedEntity === 'locations') {
         const res = bulkImportLocations(activeRows);
         setImportSummary({
@@ -324,6 +344,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       const loc = locations.find((l) => l.id === p.locationId);
       const grd = grades.find((g) => g.id === p.gradeId);
       const sz = sizes.find((s) => s.id === p.sizeId);
+      const cnt = counts.find((c) => c.id === p.countId);
 
       return {
         'Purchase ID': p.purchaseId,
@@ -333,7 +354,8 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         'Landing Location': loc?.name || '',
         'Species': sp?.name || '',
         'Grade': grd?.name || '',
-        'Size Count': sz?.name || '',
+        'Physical Size': sz?.name || '',
+        'Piece Count': cnt?.name || '',
         'Weight (Kg)': p.weightKg,
         'Rate/Kg': p.ratePerKg,
         'Purchase Value': p.purchaseValue,

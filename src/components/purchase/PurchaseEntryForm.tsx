@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { suppliers, species, grades, sizes, locations, bankAccounts, expenseTypes, addPurchase } = useData();
+  const { suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes, addPurchase } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
@@ -32,6 +32,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
   const [speciesId, setSpeciesId] = useState<string>('');
   const [gradeId, setGradeId] = useState<string>('');
   const [sizeId, setSizeId] = useState<string>('');
+  const [countId, setCountId] = useState<string>('');
   const [boxesCount, setBoxesCount] = useState<string>('');
   const [weightKg, setWeightKg] = useState<string>('');
   const [ratePerKg, setRatePerKg] = useState<string>('');
@@ -57,6 +58,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
   const activeSpecies = species.filter((s) => s.active);
   const activeGrades = grades.filter((g) => g.active);
   const activeSizes = sizes.filter((s) => s.active);
+  const activeCounts = counts.filter((c) => c.active);
   const activeLocations = locations.filter((l) => l.active);
   const activeAccounts = bankAccounts.filter((b) => b.active);
   const activeExpenseTypes = expenseTypes.filter((e) => e.active);
@@ -130,6 +132,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
     setSpeciesId('');
     setGradeId('');
     setSizeId('');
+    setCountId('');
     setBoxesCount('');
     setWeightKg('');
     setRatePerKg('');
@@ -185,6 +188,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       speciesId,
       gradeId,
       sizeId,
+      countId,
       boxesCount: parseInt(boxesCount, 10) || 0,
       weightKg: numericWeight,
       ratePerKg: numericRate,
@@ -370,16 +374,32 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink-700 mb-1">Size / Count</label>
+              <label className="block text-xs font-semibold text-ink-700 mb-1">Physical Size</label>
               <select
                 value={sizeId}
                 onChange={(e) => setSizeId(e.target.value)}
                 className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
               >
-                <option value="">-- Select Size --</option>
+                <option value="">-- Any Size --</option>
                 {activeSizes.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.description})
+                    {s.name} {s.description ? `(${s.description})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 mb-1">Piece Count / Pcs</label>
+              <select
+                value={countId}
+                onChange={(e) => setCountId(e.target.value)}
+                className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+              >
+                <option value="">-- Any Count --</option>
+                {activeCounts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.description ? `(${c.description})` : ''}
                   </option>
                 ))}
               </select>
