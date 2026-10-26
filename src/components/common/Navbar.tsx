@@ -4,11 +4,11 @@ import { useData } from '../../context/DataContext';
 import { RoleBadge } from './RoleBadge';
 import { RoleSwitcher } from './RoleSwitcher';
 import { Modal } from './Modal';
-import { Wifi, WifiOff, RefreshCw, Shield, Menu, ShoppingBag, Factory } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, Shield, Menu, ShoppingBag, Factory, TrendingUp } from 'lucide-react';
 
 interface NavbarProps {
-  activeModule: 'purchase' | 'production';
-  onModuleChange: (module: 'purchase' | 'production') => void;
+  activeModule: 'purchase' | 'production' | 'sales';
+  onModuleChange: (module: 'purchase' | 'production' | 'sales') => void;
   onOpenMobileMenu?: () => void;
 }
 
@@ -58,28 +58,39 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center bg-rose-50/80 p-1 rounded-xl border border-rose-200/90 shadow-xs">
             <button
               onClick={() => onModuleChange('purchase')}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeModule === 'purchase'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
               }`}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-3.5 h-3.5" />
               <span>Purchase</span>
             </button>
             <button
               onClick={() => onModuleChange('production')}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeModule === 'production'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
               }`}
             >
-              <Factory className="w-4 h-4" />
+              <Factory className="w-3.5 h-3.5" />
               <span>Production</span>
+            </button>
+            <button
+              onClick={() => onModuleChange('sales')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeModule === 'sales'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Sales</span>
               <span
-                className={`text-[9px] uppercase px-1.5 py-0.5 rounded-md font-extrabold tracking-wider ${
-                  activeModule === 'production'
+                className={`text-[9px] uppercase px-1.5 py-0.2 rounded-md font-extrabold tracking-wider ${
+                  activeModule === 'sales'
                     ? 'bg-white/20 text-white'
                     : 'bg-rose-200 text-rose-900'
                 }`}

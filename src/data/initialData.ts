@@ -13,7 +13,10 @@ import {
   AuditLog,
   BusinessSettings,
   SlabType,
-  DailyProcessingEntry
+  DailyProcessingEntry,
+  Customer,
+  PortMaster,
+  SalesInvoice
 } from '../types';
 
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
@@ -79,6 +82,9 @@ export const INITIAL_PAYMENTS: PaymentRecord[] = [];
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [];
 export const INITIAL_SLAB_TYPES: SlabType[] = [];
 export const INITIAL_PROCESSING_ENTRIES: DailyProcessingEntry[] = [];
+export const INITIAL_CUSTOMERS: Customer[] = [];
+export const INITIAL_PORTS: PortMaster[] = [];
+export const INITIAL_SALES_INVOICES: SalesInvoice[] = [];
 
 // Optional starter templates that the user can import with 1 click if they want standard presets
 export const SAMPLE_STARTER_PRESETS = {
@@ -129,10 +135,10 @@ export const SAMPLE_STARTER_PRESETS = {
     }
   ],
   species: [
-    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', productForm: 'Headless Shell-On (HLSO)', processingType: 'Block Frozen', active: true },
-    { id: 'spe-2', code: 'SPE-002', name: 'Penaeus Monodon (Black Tiger Shrimp)', scientificName: 'Penaeus monodon', category: 'Shrimp / Prawns', productForm: 'Peeled & Deveined (PD)', processingType: 'Individual Quick Frozen (IQF)', active: true },
-    { id: 'spe-3', code: 'SPE-003', name: 'Indian Squid (Kalamari)', scientificName: 'Loligo duvaucelii', category: 'Cephalopods', productForm: 'Cleaned Tubes & Rings', processingType: 'Blast Frozen', active: true },
-    { id: 'spe-4', code: 'SPE-004', name: 'Yellowfin Tuna', scientificName: 'Thunnus albacares', category: 'Pelagic Finfish', productForm: 'Loins & Steaks', processingType: 'Plate Frozen', active: true }
+    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', productForm: 'Headless Shell-On (HLSO)', processingType: 'Block Frozen', hsCode: '03061790', active: true },
+    { id: 'spe-2', code: 'SPE-002', name: 'Penaeus Monodon (Black Tiger Shrimp)', scientificName: 'Penaeus monodon', category: 'Shrimp / Prawns', productForm: 'Peeled & Deveined (PD)', processingType: 'Individual Quick Frozen (IQF)', hsCode: '03061790', active: true },
+    { id: 'spe-3', code: 'SPE-003', name: 'Indian Squid (Kalamari)', scientificName: 'Loligo duvaucelii', category: 'Cephalopods', productForm: 'Cleaned Tubes & Rings', processingType: 'Blast Frozen', hsCode: '03074310', active: true },
+    { id: 'spe-4', code: 'SPE-004', name: 'Yellowfin Tuna', scientificName: 'Thunnus albacares', category: 'Pelagic Finfish', productForm: 'Loins & Steaks', processingType: 'Plate Frozen', hsCode: '03038990', active: true }
   ],
   grades: [
     { id: 'grd-1', code: 'GRD-001', name: 'Grade A (Export Quality)', description: 'Prime intact shell, high luster', active: true },
@@ -177,5 +183,89 @@ export const SAMPLE_STARTER_PRESETS = {
     { id: 'slb-4', code: 'SLB-004', name: '10.0 Kg Industrial Carton', standardWeightKg: 10.0, unit: 'Kg', productApplicability: 'Pelagic Finfish', active: true },
     { id: 'slb-5', code: 'SLB-005', name: '1.0 Kg IQF Quick Pack', standardWeightKg: 1.0, unit: 'Kg', productApplicability: 'All Products', active: true },
     { id: 'slb-6', code: 'SLB-006', name: '0.5 Kg Retail Pouch', standardWeightKg: 0.5, unit: 'Kg', productApplicability: 'Cephalopods', active: true }
+  ],
+  customers: [
+    {
+      id: 'cust-1',
+      code: 'CUST-001',
+      name: 'Tokyo Marine Foods Co. Ltd',
+      address: 'Tsukiji Fish Market Center, Chuo-ku, Tokyo 104-0045',
+      country: 'Japan',
+      contactPerson: 'Kenji Takahashi',
+      phone: '+81 3 5555 0192',
+      email: 'purchasing@tokyomarine.jp',
+      taxId: 'JP-9010001023456',
+      bankDetails: 'Bank of Tokyo-Mitsubishi UFJ, Tokyo Main (SWIFT: BOTKJPJT)',
+      active: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'cust-2',
+      code: 'CUST-002',
+      name: 'Pacific Rim Seafood Imports LLC',
+      address: '1420 Harbor Blvd, Suite 400, Long Beach, CA 90802',
+      country: 'United States',
+      contactPerson: 'Sarah Jenkins',
+      phone: '+1 562 555 7890',
+      email: 'orders@pacificrimseafood.com',
+      taxId: 'US-95-4489210',
+      bankDetails: 'JPMorgan Chase Bank N.A., Los Angeles (SWIFT: CHASUS33)',
+      active: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'cust-3',
+      code: 'CUST-003',
+      name: 'Ocean King Distribution B.V.',
+      address: 'Waalhaven Oostzijde 88, 3087 BM Rotterdam',
+      country: 'Netherlands',
+      contactPerson: 'Maarten van Dijk',
+      phone: '+31 10 440 2200',
+      email: 'logistics@oceanking.nl',
+      taxId: 'NL-854790123B01',
+      bankDetails: 'ING Bank N.V., Rotterdam (SWIFT: INGBNL2A)',
+      active: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'cust-4',
+      code: 'CUST-004',
+      name: 'Iberia Mariscos S.L.',
+      address: 'Puerto Pesquero de Vigo, Dársena 4, 36202 Vigo, Pontevedra',
+      country: 'Spain',
+      contactPerson: 'Carlos Martinez',
+      phone: '+34 986 223 344',
+      email: 'compras@iberiamariscos.es',
+      taxId: 'ES-B36987123',
+      bankDetails: 'Banco Santander, Vigo (SWIFT: BSCHESMM)',
+      active: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'cust-5',
+      code: 'CUST-005',
+      name: 'Dragon Bay Fishery Pte Ltd',
+      address: '15 Jurong Port Road, #03-01 Jurong Cold Store, Singapore 619115',
+      country: 'Singapore',
+      contactPerson: 'Lim Wei Ming',
+      phone: '+65 6265 9988',
+      email: 'trading@dragonbay.sg',
+      taxId: 'SG-201509823M',
+      bankDetails: 'DBS Bank Ltd, Singapore (SWIFT: DBSSSGSG)',
+      active: true,
+      createdAt: new Date().toISOString()
+    }
+  ],
+  ports: [
+    { id: 'port-1', code: 'INCOK', name: 'Cochin Port (Willingdon Island)', country: 'India', active: true },
+    { id: 'port-2', code: 'INMUN', name: 'Mundra Port (APSEZ)', country: 'India', active: true },
+    { id: 'port-3', code: 'INMAA', name: 'Chennai Port', country: 'India', active: true },
+    { id: 'port-4', code: 'JPTYO', name: 'Port of Tokyo', country: 'Japan', active: true },
+    { id: 'port-5', code: 'JPOSA', name: 'Port of Osaka', country: 'Japan', active: true },
+    { id: 'port-6', code: 'USLAX', name: 'Port of Los Angeles (San Pedro)', country: 'United States', active: true },
+    { id: 'port-7', code: 'USNYC', name: 'Port of New York & New Jersey', country: 'United States', active: true },
+    { id: 'port-8', code: 'NLRTM', name: 'Port of Rotterdam', country: 'Netherlands', active: true },
+    { id: 'port-9', code: 'ESVGO', name: 'Port of Vigo', country: 'Spain', active: true },
+    { id: 'port-10', code: 'SGSIN', name: 'Port of Singapore (PSA)', country: 'Singapore', active: true }
   ]
 };

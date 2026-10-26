@@ -15,7 +15,12 @@ import {
   AuditAction,
   BusinessSettings,
   SlabType,
-  DailyProcessingEntry
+  DailyProcessingEntry,
+  Customer,
+  PortMaster,
+  SalesInvoice,
+  RealizationRecord,
+  RealizationStatus
 } from '../types';
 import {
   DEFAULT_BUSINESS_SETTINGS,
@@ -32,6 +37,9 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_SLAB_TYPES,
   INITIAL_PROCESSING_ENTRIES,
+  INITIAL_CUSTOMERS,
+  INITIAL_PORTS,
+  INITIAL_SALES_INVOICES,
   SAMPLE_STARTER_PRESETS
 } from '../data/initialData';
 import { useAuth } from './AuthContext';
@@ -52,9 +60,12 @@ interface DataContextType {
   bankAccounts: BankAccount[];
   expenseTypes: ExpenseType[];
   slabTypes: SlabType[];
+  customers: Customer[];
+  ports: PortMaster[];
   purchases: Purchase[];
   payments: PaymentRecord[];
   processingEntries: DailyProcessingEntry[];
+  salesInvoices: SalesInvoice[];
   auditLogs: AuditLog[];
   offlineQueue: Purchase[];
   isOnline: boolean;
@@ -108,6 +119,19 @@ interface DataContextType {
   toggleSlabTypeActive: (id: string) => void;
   bulkImportSlabTypes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
 
+  // Sales Master Data Actions (Full CRUD)
+  addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
+  updateCustomer: (id: string, updates: Partial<Customer>) => void;
+  deleteCustomer: (id: string) => { success: boolean; message?: string };
+  toggleCustomerActive: (id: string) => void;
+  bulkImportCustomers: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+
+  addPort: (port: Omit<PortMaster, 'id'>) => void;
+  updatePort: (id: string, updates: Partial<PortMaster>) => void;
+  deletePort: (id: string) => { success: boolean; message?: string };
+  togglePortActive: (id: string) => void;
+  bulkImportPorts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+
   // Transaction Actions
   addPurchase: (purchaseData: Partial<Purchase>) => { success: boolean; purchaseId?: string; warnings?: string[] };
   updatePurchase: (id: string, updates: Partial<Purchase>, editReason?: string) => { success: boolean; message?: string };
@@ -119,6 +143,14 @@ interface DataContextType {
   updateProcessingEntry: (id: string, updates: Partial<DailyProcessingEntry>, editReason?: string) => { success: boolean; message?: string };
   voidProcessingEntry: (id: string, voidReason: string) => { success: boolean; message?: string };
   deleteProcessingEntryPermanently: (id: string) => { success: boolean; message?: string };
+
+  // Sales Invoice & Commercial Export Actions
+  addSalesInvoice: (invoiceData: Partial<SalesInvoice>) => { success: boolean; invoiceNo?: string; warnings?: string[] };
+  updateSalesInvoice: (id: string, updates: Partial<SalesInvoice>, editReason?: string) => { success: boolean; message?: string };
+  addInvoiceRealization: (invoiceId: string, realization: Omit<RealizationRecord, 'id' | 'createdAt' | 'createdBy'>) => { success: boolean; message?: string };
+  deleteInvoiceRealization: (invoiceId: string, realizationId: string) => { success: boolean; message?: string };
+  voidSalesInvoice: (id: string, voidReason: string) => { success: boolean; message?: string };
+  deleteSalesInvoicePermanently: (id: string) => { success: boolean; message?: string };
 
   // Payment Actions
   addPayment: (payment: Omit<PaymentRecord, 'id' | 'paymentNo' | 'createdAt' | 'isVoided' | 'createdBy'>) => void;
@@ -226,9 +258,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SLAB_TYPES;
   });
 
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}customers`);
+    return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+  });
+
+  const [ports, setPorts] = useState<PortMaster[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}ports`);
+    return saved ? JSON.parse(saved) : INITIAL_PORTS;
+  });
+
   const [processingEntries, setProcessingEntries] = useState<DailyProcessingEntry[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}processing_entries`);
     return saved ? JSON.parse(saved) : INITIAL_PROCESSING_ENTRIES;
+  });
+
+  const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}sales_invoices`);
+    return saved ? JSON.parse(saved) : INITIAL_SALES_INVOICES;
   });
 
   const [slabTolerancePct, setSlabTolerancePct] = useState<number>(() => {
@@ -278,7 +325,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}bank_accounts`, JSON.stringify(bankAccounts)); }, [bankAccounts]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}expense_types`, JSON.stringify(expenseTypes)); }, [expenseTypes]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_types`, JSON.stringify(slabTypes)); }, [slabTypes]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(customers)); }, [customers]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}ports`, JSON.stringify(ports)); }, [ports]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}processing_entries`, JSON.stringify(processingEntries)); }, [processingEntries]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}sales_invoices`, JSON.stringify(salesInvoices)); }, [salesInvoices]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchases`, JSON.stringify(purchases)); }, [purchases]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}payments`, JSON.stringify(payments)); }, [payments]);
@@ -649,6 +699,224 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     setSlabTypes(currentList);
+    return { added, updated, errors };
+  };
+
+  // --------------------------------------------------------------------------
+  // SALES MASTER DATA ACTIONS (Customer / Consignee & Port Master)
+  // --------------------------------------------------------------------------
+
+  const addCustomer = (customerData: Omit<Customer, 'id' | 'createdAt'>) => {
+    if (!permissions.canManageSalesMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can manage Customers.', 'error');
+      return;
+    }
+    const newCustomer: Customer = {
+      ...customerData,
+      id: `cust-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    setCustomers((prev) => [...prev, newCustomer]);
+    logAudit('CREATE', 'Customer', newCustomer.name, { newValues: newCustomer });
+    showToast(`Customer "${newCustomer.name}" added successfully.`, 'success');
+  };
+
+  const updateCustomer = (id: string, updates: Partial<Customer>) => {
+    if (!permissions.canManageSalesMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can edit Customers.', 'error');
+      return;
+    }
+    const old = customers.find((c) => c.id === id);
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+    logAudit('EDIT', 'Customer', old?.name || id, { oldValues: old, newValues: updates });
+    showToast('Customer record updated.', 'success');
+  };
+
+  const deleteCustomer = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can delete Customers.' };
+    }
+    const isReferenced = salesInvoices.some((inv) => !inv.isVoided && (inv.consigneeId === id || inv.buyerId === id));
+    if (isReferenced) {
+      return {
+        success: false,
+        message: 'Cannot delete: Customer is referenced in active sales invoices. Please deactivate instead.'
+      };
+    }
+    const old = customers.find((c) => c.id === id);
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
+    logAudit('DELETE', 'Customer', old?.name || id);
+    showToast(`Customer "${old?.name}" deleted.`, 'info');
+    return { success: true };
+  };
+
+  const toggleCustomerActive = (id: string) => {
+    if (!permissions.canManageSalesMasterData) return;
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c)));
+  };
+
+  const bulkImportCustomers = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...customers];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const name = String(getFlexibleValue(row, ['customername', 'name', 'consignee', 'buyer', 'company']) || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 2}: Customer / Consignee name is required.`);
+        return;
+      }
+
+      const code = String(getFlexibleValue(row, ['customercode', 'code', 'id']) || `CUST-${String(currentList.length + 1).padStart(3, '0')}`).trim();
+      const country = String(getFlexibleValue(row, ['country', 'destinationcountry']) || 'Unknown').trim();
+      const address = String(getFlexibleValue(row, ['address', 'location']) || '').trim();
+      const contactPerson = String(getFlexibleValue(row, ['contactperson', 'contact', 'person']) || '').trim();
+      const phone = String(getFlexibleValue(row, ['phone', 'mobile', 'tel']) || '').trim();
+      const email = String(getFlexibleValue(row, ['email', 'mail']) || '').trim();
+      const taxId = String(getFlexibleValue(row, ['taxid', 'gstin', 'vat', 'fein']) || '').trim();
+      const bankDetails = String(getFlexibleValue(row, ['bankdetails', 'bank', 'swift']) || '').trim();
+
+      const existingIdx = currentList.findIndex(
+        (c) => c.code.toLowerCase() === code.toLowerCase() || c.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          country,
+          address,
+          contactPerson,
+          phone,
+          email,
+          taxId,
+          bankDetails,
+          active: true
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `cust-${Date.now()}-${idx}`,
+          code,
+          name,
+          country,
+          address,
+          contactPerson,
+          phone,
+          email,
+          taxId,
+          bankDetails,
+          active: true,
+          createdAt: new Date().toISOString()
+        });
+        added++;
+      }
+    });
+
+    setCustomers(currentList);
+    return { added, updated, errors };
+  };
+
+  const addPort = (portData: Omit<PortMaster, 'id'>) => {
+    if (!permissions.canManageSalesMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can manage Ports.', 'error');
+      return;
+    }
+    const newPort: PortMaster = {
+      ...portData,
+      id: `port-${Date.now()}`
+    };
+    setPorts((prev) => [...prev, newPort]);
+    logAudit('CREATE', 'PortMaster', newPort.name, { newValues: newPort });
+    showToast(`Port "${newPort.name}" added.`, 'success');
+  };
+
+  const updatePort = (id: string, updates: Partial<PortMaster>) => {
+    if (!permissions.canManageSalesMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can edit Ports.', 'error');
+      return;
+    }
+    const old = ports.find((p) => p.id === id);
+    setPorts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    logAudit('EDIT', 'PortMaster', old?.name || id, { oldValues: old, newValues: updates });
+    showToast('Port updated.', 'success');
+  };
+
+  const deletePort = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can delete Ports.' };
+    }
+    const isReferenced = salesInvoices.some(
+      (inv) =>
+        !inv.isVoided &&
+        (inv.portOfLoadingId === id || inv.portOfDischargeId === id || inv.finalDestinationId === id)
+    );
+    if (isReferenced) {
+      return {
+        success: false,
+        message: 'Cannot delete: Port is referenced in existing sales invoices. Deactivate instead.'
+      };
+    }
+    const old = ports.find((p) => p.id === id);
+    setPorts((prev) => prev.filter((p) => p.id !== id));
+    logAudit('DELETE', 'PortMaster', old?.name || id);
+    showToast(`Port "${old?.name}" deleted.`, 'info');
+    return { success: true };
+  };
+
+  const togglePortActive = (id: string) => {
+    if (!permissions.canManageSalesMasterData) return;
+    setPorts((prev) => prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p)));
+  };
+
+  const bulkImportPorts = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...ports];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const name = String(getFlexibleValue(row, ['portname', 'name', 'port']) || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 2}: Port name is required.`);
+        return;
+      }
+
+      const code = String(getFlexibleValue(row, ['portcode', 'code', 'id']) || `PORT-${String(currentList.length + 1).padStart(3, '0')}`).trim();
+      const country = String(getFlexibleValue(row, ['country']) || 'Unknown').trim();
+
+      const existingIdx = currentList.findIndex(
+        (p) => p.code.toLowerCase() === code.toLowerCase() || p.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          country,
+          active: true
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `port-${Date.now()}-${idx}`,
+          code,
+          name,
+          country,
+          active: true
+        });
+        added++;
+      }
+    });
+
+    setPorts(currentList);
     return { added, updated, errors };
   };
 
@@ -1180,6 +1448,391 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // --------------------------------------------------------------------------
+  // SALES INVOICE & REALIZATION ACTIONS
+  // --------------------------------------------------------------------------
+
+  const addSalesInvoice = (
+    invoiceData: Partial<SalesInvoice>
+  ): { success: boolean; invoiceNo?: string; warnings?: string[] } => {
+    if (!permissions.canCreateEditSales) {
+      showToast('Unauthorized: Viewer role cannot create sales invoices.', 'error');
+      return { success: false };
+    }
+
+    if (!invoiceData.consigneeId) {
+      showToast('Validation Error: Consignee / Customer is required.', 'error');
+      return { success: false };
+    }
+
+    if (!invoiceData.lineItems || invoiceData.lineItems.length === 0) {
+      showToast('Validation Error: At least one product line item is required.', 'error');
+      return { success: false };
+    }
+
+    for (let i = 0; i < invoiceData.lineItems.length; i++) {
+      const line = invoiceData.lineItems[i];
+      if (!line.speciesId) {
+        showToast(`Validation Error: Line ${i + 1} is missing a Product / Goods selection.`, 'error');
+        return { success: false };
+      }
+      if (!line.weightKg || line.weightKg <= 0) {
+        showToast(`Validation Error: Line ${i + 1} Net Weight must be greater than 0 Kg.`, 'error');
+        return { success: false };
+      }
+      if (line.ratePerKg === undefined || line.ratePerKg < 0) {
+        showToast(`Validation Error: Line ${i + 1} Rate must be >= 0.`, 'error');
+        return { success: false };
+      }
+    }
+
+    const warnings: string[] = [];
+    const invoiceNo =
+      invoiceData.invoiceNo?.trim() ||
+      `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + 1).padStart(4, '0')}`;
+
+    // Warn on duplicate invoice number (don't block)
+    const duplicate = salesInvoices.find(
+      (inv) => !inv.isVoided && inv.invoiceNo.toLowerCase() === invoiceNo.toLowerCase()
+    );
+    if (duplicate) {
+      const warnMsg = `Notice: Invoice No. "${invoiceNo}" already exists in the system (created on ${duplicate.invoiceDate}).`;
+      warnings.push(warnMsg);
+      showToast(warnMsg, 'warning');
+    }
+
+    const currency = invoiceData.currency || 'USD';
+    const exchangeRate = invoiceData.exchangeRate && invoiceData.exchangeRate > 0 ? Number(invoiceData.exchangeRate) : 84.5;
+
+    // Recalculate line items strictly server-side
+    const computedLines = invoiceData.lineItems.map((l, idx) => {
+      const weight = Number(l.weightKg);
+      const rate = Number(l.ratePerKg);
+      const amount = Number((weight * rate).toFixed(2));
+      const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
+      return {
+        id: l.id || `line-${Date.now()}-${idx}`,
+        speciesId: l.speciesId,
+        hsCode: l.hsCode || species.find((s) => s.id === l.speciesId)?.hsCode || '03061790',
+        sizeId: l.sizeId || (sizes[0]?.id || ''),
+        countId: l.countId,
+        cartonsCount: Number(l.cartonsCount || 0),
+        weightKg: weight,
+        ratePerKg: rate,
+        amountCurrency: amount,
+        fobValueCurrency: fobVal
+      };
+    });
+
+    const totalCartons = computedLines.reduce((s, l) => s + l.cartonsCount, 0);
+    const totalWeightKg = Number(computedLines.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
+    const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
+    const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+    const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
+
+    const newInvoice: SalesInvoice = {
+      id: `inv-${Date.now()}`,
+      invoiceNo,
+      invoiceDate: invoiceData.invoiceDate || new Date().toISOString().split('T')[0],
+      financialYear: businessSettings.financialYear,
+      consigneeId: invoiceData.consigneeId,
+      buyerId: invoiceData.buyerId || undefined,
+      orderNo: invoiceData.orderNo || '',
+      orderDate: invoiceData.orderDate || '',
+      portOfLoadingId: invoiceData.portOfLoadingId || (ports[0]?.id || ''),
+      portOfDischargeId: invoiceData.portOfDischargeId || (ports[1]?.id || ''),
+      finalDestinationId: invoiceData.finalDestinationId || invoiceData.portOfDischargeId || (ports[1]?.id || ''),
+      currency,
+      exchangeRate,
+      remarks: invoiceData.remarks || '',
+
+      lineItems: computedLines,
+      totalCartons,
+      totalWeightKg,
+      totalAmountCurrency,
+      totalFobValueCurrency,
+      estimatedAmountINR,
+
+      realizations: [],
+      totalRealizedCurrency: 0,
+      balanceRealizationCurrency: totalAmountCurrency,
+      totalRealizedINR: 0,
+      realizationStatus: 'Not Realized',
+
+      isVoided: false,
+      createdBy: currentUser.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => [newInvoice, ...prev]);
+    logAudit('CREATE', 'SALES_INVOICE', newInvoice.invoiceNo, { newValues: newInvoice });
+    showToast(`Commercial Invoice ${newInvoice.invoiceNo} saved (${currency} ${totalAmountCurrency.toLocaleString()}).`, 'success');
+
+    return { success: true, invoiceNo: newInvoice.invoiceNo, warnings };
+  };
+
+  const updateSalesInvoice = (
+    id: string,
+    updates: Partial<SalesInvoice>,
+    editReason?: string
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canCreateEditSales) {
+      return { success: false, message: 'Unauthorized: Viewer role cannot edit sales invoices.' };
+    }
+
+    const existing = salesInvoices.find((inv) => inv.id === id);
+    if (!existing) return { success: false, message: 'Sales invoice not found.' };
+
+    const lineItemsToCompute = updates.lineItems || existing.lineItems;
+    if (lineItemsToCompute.length === 0) {
+      return { success: false, message: 'At least one line item is required.' };
+    }
+
+    const exchangeRate =
+      updates.exchangeRate !== undefined ? Number(updates.exchangeRate) : existing.exchangeRate;
+
+    const computedLines = lineItemsToCompute.map((l, idx) => {
+      const weight = Number(l.weightKg);
+      const rate = Number(l.ratePerKg);
+      const amount = Number((weight * rate).toFixed(2));
+      const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
+      return {
+        id: l.id || `line-${Date.now()}-${idx}`,
+        speciesId: l.speciesId,
+        hsCode: l.hsCode || species.find((s) => s.id === l.speciesId)?.hsCode || '03061790',
+        sizeId: l.sizeId || (sizes[0]?.id || ''),
+        countId: l.countId,
+        cartonsCount: Number(l.cartonsCount || 0),
+        weightKg: weight,
+        ratePerKg: rate,
+        amountCurrency: amount,
+        fobValueCurrency: fobVal
+      };
+    });
+
+    const totalCartons = computedLines.reduce((s, l) => s + l.cartonsCount, 0);
+    const totalWeightKg = Number(computedLines.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
+    const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
+    const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+    const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
+
+    const realizations = updates.realizations !== undefined ? updates.realizations : existing.realizations;
+    const totalRealizedCurrency = Number(realizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2));
+    const balanceRealizationCurrency = Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
+    const totalRealizedINR = Number(realizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
+    const averageRealizedExchangeRate =
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : exchangeRate;
+
+    let realizationStatus: RealizationStatus = 'Not Realized';
+    if (totalRealizedCurrency > 0) {
+      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= totalAmountCurrency) {
+        realizationStatus = 'Fully Realized';
+      } else {
+        realizationStatus = 'Partially Realized';
+      }
+    }
+
+    const updated: SalesInvoice = {
+      ...existing,
+      ...updates,
+      exchangeRate,
+      lineItems: computedLines,
+      totalCartons,
+      totalWeightKg,
+      totalAmountCurrency,
+      totalFobValueCurrency,
+      estimatedAmountINR,
+      realizations,
+      totalRealizedCurrency,
+      balanceRealizationCurrency,
+      totalRealizedINR,
+      averageRealizedExchangeRate,
+      realizationStatus,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => prev.map((inv) => (inv.id === id ? updated : inv)));
+    logAudit('EDIT', 'SALES_INVOICE', existing.invoiceNo, {
+      oldValues: existing,
+      newValues: updated,
+      changeReason: editReason || 'Updated sales invoice record'
+    });
+    showToast(`Invoice ${existing.invoiceNo} updated.`, 'success');
+    return { success: true };
+  };
+
+  const addInvoiceRealization = (
+    invoiceId: string,
+    realizationData: Omit<RealizationRecord, 'id' | 'createdAt' | 'createdBy'>
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canManageSalesRealization) {
+      return { success: false, message: 'Unauthorized: Only Master Accountant and Owner/Admin can record realizations.' };
+    }
+
+    const invoice = salesInvoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return { success: false, message: 'Invoice not found.' };
+
+    const realizedUSD = Number(realizationData.realizedAmountCurrency);
+    if (!realizedUSD || realizedUSD <= 0) {
+      return { success: false, message: 'Realized foreign currency amount must be > 0.' };
+    }
+
+    const exRate = Number(realizationData.exchangeRateRealized);
+    if (!exRate || exRate <= 0) {
+      return { success: false, message: 'Realized exchange rate must be > 0.' };
+    }
+
+    const amountINR = Number((realizedUSD * exRate).toFixed(2));
+
+    const newRecord: RealizationRecord = {
+      ...realizationData,
+      id: `real-${Date.now()}`,
+      realizedAmountCurrency: realizedUSD,
+      exchangeRateRealized: exRate,
+      amountINR,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email
+    };
+
+    const updatedRealizations = [...invoice.realizations, newRecord];
+    const totalRealizedCurrency = Number(
+      updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
+    );
+    const balanceRealizationCurrency = Math.max(
+      0,
+      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
+    );
+    const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
+    const averageRealizedExchangeRate =
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : invoice.exchangeRate;
+
+    let realizationStatus: RealizationStatus = 'Not Realized';
+    if (totalRealizedCurrency > 0) {
+      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+        realizationStatus = 'Fully Realized';
+      } else {
+        realizationStatus = 'Partially Realized';
+      }
+    }
+
+    const updatedInvoice: SalesInvoice = {
+      ...invoice,
+      realizations: updatedRealizations,
+      totalRealizedCurrency,
+      balanceRealizationCurrency,
+      totalRealizedINR,
+      averageRealizedExchangeRate,
+      realizationStatus,
+      lastRealizationDate: realizationData.settlementDate,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv)));
+    logAudit('CREATE', 'REALIZATION_RECORD', `${invoice.invoiceNo} / ${newRecord.bankRefNo}`, {
+      newValues: newRecord
+    });
+    showToast(
+      `Realization of ${invoice.currency} ${realizedUSD.toLocaleString()} (₹${amountINR.toLocaleString()}) recorded for ${invoice.invoiceNo}.`,
+      'success'
+    );
+
+    return { success: true };
+  };
+
+  const deleteInvoiceRealization = (
+    invoiceId: string,
+    realizationId: string
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canManageSalesRealization) {
+      return { success: false, message: 'Unauthorized: Only Master Accountant and Owner/Admin can modify realizations.' };
+    }
+
+    const invoice = salesInvoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return { success: false, message: 'Invoice not found.' };
+
+    const targetRecord = invoice.realizations.find((r) => r.id === realizationId);
+    if (!targetRecord) return { success: false, message: 'Realization entry not found.' };
+
+    const updatedRealizations = invoice.realizations.filter((r) => r.id !== realizationId);
+    const totalRealizedCurrency = Number(
+      updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
+    );
+    const balanceRealizationCurrency = Math.max(
+      0,
+      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
+    );
+    const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
+    const averageRealizedExchangeRate =
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : invoice.exchangeRate;
+
+    let realizationStatus: RealizationStatus = 'Not Realized';
+    if (totalRealizedCurrency > 0) {
+      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+        realizationStatus = 'Fully Realized';
+      } else {
+        realizationStatus = 'Partially Realized';
+      }
+    }
+
+    const lastRealization = updatedRealizations[updatedRealizations.length - 1];
+
+    const updatedInvoice: SalesInvoice = {
+      ...invoice,
+      realizations: updatedRealizations,
+      totalRealizedCurrency,
+      balanceRealizationCurrency,
+      totalRealizedINR,
+      averageRealizedExchangeRate,
+      realizationStatus,
+      lastRealizationDate: lastRealization ? lastRealization.settlementDate : undefined,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv)));
+    logAudit('DELETE', 'REALIZATION_RECORD', `${invoice.invoiceNo} / ${targetRecord.bankRefNo}`, {
+      oldValues: targetRecord
+    });
+    showToast(`Realization record removed for ${invoice.invoiceNo}.`, 'info');
+
+    return { success: true };
+  };
+
+  const voidSalesInvoice = (id: string, voidReason: string): { success: boolean; message?: string } => {
+    if (!permissions.canVoid) return { success: false, message: 'Unauthorized to void invoices.' };
+    const existing = salesInvoices.find((inv) => inv.id === id);
+    if (!existing) return { success: false, message: 'Invoice not found.' };
+
+    const voided: SalesInvoice = {
+      ...existing,
+      isVoided: true,
+      voidReason,
+      voidedBy: currentUser.email,
+      voidedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => prev.map((inv) => (inv.id === id ? voided : inv)));
+    logAudit('VOID', 'SALES_INVOICE', existing.invoiceNo, { changeReason: voidReason });
+    showToast(`Sales invoice ${existing.invoiceNo} voided.`, 'info');
+    return { success: true };
+  };
+
+  const deleteSalesInvoicePermanently = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can permanently delete records.' };
+    }
+    const existing = salesInvoices.find((inv) => inv.id === id);
+    if (!existing) return { success: false, message: 'Invoice not found.' };
+
+    setSalesInvoices((prev) => prev.filter((inv) => inv.id !== id));
+    logAudit('DELETE', 'SALES_INVOICE', existing.invoiceNo, { changeReason: 'Permanently purged by Admin' });
+    showToast(`Invoice ${existing.invoiceNo} permanently deleted.`, 'warning');
+    return { success: true };
+  };
+
+  // --------------------------------------------------------------------------
   // DATABASE WIPE & STARTER PRESET CONTROLS
   // --------------------------------------------------------------------------
 
@@ -1191,9 +1844,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPurchases([]);
     setPayments([]);
     setProcessingEntries([]);
+    setSalesInvoices([]);
     setOfflineQueue([]);
-    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase and production transactions' });
-    showToast('All purchases, payments, and processing records cleared.', 'info');
+    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase, production, and sales transactions' });
+    showToast('All purchases, payments, processing lots, and sales invoices cleared.', 'info');
   };
 
   const wipeDatabaseCompletely = () => {
@@ -1204,6 +1858,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPurchases([]);
     setPayments([]);
     setProcessingEntries([]);
+    setSalesInvoices([]);
     setOfflineQueue([]);
     setSuppliers([]);
     setSpecies([]);
@@ -1214,6 +1869,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setBankAccounts([]);
     setExpenseTypes([]);
     setSlabTypes([]);
+    setCustomers([]);
+    setPorts([]);
     setAuditLogs([]);
     showToast('Database reset to 100% clean blank state.', 'success');
   };
@@ -1229,6 +1886,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setExpenseTypes(SAMPLE_STARTER_PRESETS.expenseTypes);
     if (SAMPLE_STARTER_PRESETS.slabTypes) {
       setSlabTypes(SAMPLE_STARTER_PRESETS.slabTypes);
+    }
+    if ((SAMPLE_STARTER_PRESETS as any).customers) {
+      setCustomers((SAMPLE_STARTER_PRESETS as any).customers);
+    }
+    if ((SAMPLE_STARTER_PRESETS as any).ports) {
+      setPorts((SAMPLE_STARTER_PRESETS as any).ports);
     }
     showToast('Common seafood master presets loaded. You can edit or delete them anytime.', 'success');
   };
@@ -2295,9 +2958,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bankAccounts,
         expenseTypes,
         slabTypes,
+        customers,
+        ports,
         purchases,
         payments,
         processingEntries,
+        salesInvoices,
         auditLogs,
         offlineQueue,
         isOnline,
@@ -2350,6 +3016,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         toggleSlabTypeActive,
         bulkImportSlabTypes,
 
+        addCustomer,
+        updateCustomer,
+        deleteCustomer,
+        toggleCustomerActive,
+        bulkImportCustomers,
+
+        addPort,
+        updatePort,
+        deletePort,
+        togglePortActive,
+        bulkImportPorts,
+
         addPurchase,
         updatePurchase,
         voidPurchase,
@@ -2359,6 +3037,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateProcessingEntry,
         voidProcessingEntry,
         deleteProcessingEntryPermanently,
+
+        addSalesInvoice,
+        updateSalesInvoice,
+        addInvoiceRealization,
+        deleteInvoiceRealization,
+        voidSalesInvoice,
+        deleteSalesInvoicePermanently,
 
         addPayment,
         voidPayment,

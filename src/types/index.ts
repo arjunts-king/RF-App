@@ -59,6 +59,7 @@ export interface Species {
   category: string;
   productForm?: string; // e.g. "Whole", "HLSO", "PUD", "PD", "Steaks", "Fillets"
   processingType?: string; // e.g. "Block Frozen", "IQF", "Blast Frozen", "Plate Frozen", "Fresh/Chilled"
+  hsCode?: string; // Harmonized System Code, e.g. "03061790" for Shrimps, "03038990" for Marine Fish
   active: boolean;
 }
 
@@ -259,6 +260,111 @@ export interface DailyProcessingEntry {
   dataEntryDate: string; // Auto timestamp (ISO string)
   monthYear: string; // Derived from processingDate (YYYY-MM)
   financialYear: string;
+
+  // Soft-delete / Void
+  isVoided: boolean;
+  voidReason?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+
+  createdBy: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Sales & Export Management Module Types
+// ---------------------------------------------------------------------------
+
+export type SalesCurrency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'INR' | 'AED' | 'SGD';
+
+export interface Customer {
+  id: string;
+  code: string; // e.g. "CUST-001"
+  name: string; // Consignee / Buyer trade name
+  address: string;
+  country: string; // Destination country, e.g. "USA", "Japan", "Netherlands"
+  contactPerson: string;
+  phone: string;
+  email: string;
+  taxId: string; // Buyer's GSTIN / Tax ID / US FEIN / VAT
+  bankDetails: string; // Bank details for inward remittance realization (SWIFT / IBAN / Account)
+  active: boolean;
+  createdAt: string;
+}
+
+export interface PortMaster {
+  id: string;
+  code: string; // e.g. "INCOK", "USNYC", "JPTYO"
+  name: string; // Port Name, e.g. "Cochin Port", "Port of New York", "Tokyo Port"
+  country: string; // Country of the port
+  active: boolean;
+}
+
+export interface SalesInvoiceLine {
+  id: string;
+  speciesId: string; // Product / Goods (foreign key to Species)
+  hsCode: string; // Auto-filled from Species, read-only
+  sizeId: string; // Physical Size (foreign key to Size)
+  countId?: string; // Optional Piece Count (foreign key to Count)
+  cartonsCount: number; // No. of Cartons
+  weightKg: number; // Net Weight (Kg) > 0
+  ratePerKg: number; // Rate per Kg (in invoice currency, e.g. USD/Kg)
+  amountCurrency: number; // weightKg * ratePerKg (server-calculated, read-only)
+  fobValueCurrency: number; // FOB Value in invoice currency
+}
+
+export interface RealizationRecord {
+  id: string;
+  settlementDate: string; // Realization / Settlement Date (YYYY-MM-DD)
+  realizedAmountCurrency: number; // Realized Amount in foreign currency (e.g. USD)
+  exchangeRateRealized: number; // Exchange Rate Realized (INR per unit foreign currency)
+  amountINR: number; // realizedAmountCurrency * exchangeRateRealized
+  bankRefNo: string; // FIRC / BRC / Wire Ref / Bank Advice No.
+  bankAccountId?: string; // Foreign key to BankAccount where funds were realized
+  bankChargesCurrency?: number; // Deductions / Foreign bank charges in foreign currency
+  notes?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export type RealizationStatus = 'Not Realized' | 'Partially Realized' | 'Fully Realized';
+
+export interface SalesInvoice {
+  id: string;
+  invoiceNo: string; // Commercial Invoice No (e.g. "EXP-2026-001")
+  invoiceDate: string; // YYYY-MM-DD
+  financialYear: string; // FY 2026-27
+  consigneeId: string; // Foreign key to Customer (Consignee)
+  buyerId?: string; // Foreign key to Customer (Buyer, if other than Consignee)
+  orderNo?: string;
+  orderDate?: string;
+  portOfLoadingId: string; // Foreign key to PortMaster
+  portOfDischargeId: string; // Foreign key to PortMaster
+  finalDestinationId: string; // Foreign key to PortMaster
+  currency: SalesCurrency; // Default: 'USD'
+  exchangeRate: number; // Estimated / Booking exchange rate (INR per currency unit)
+  remarks?: string;
+
+  // Repeatable Product Lines
+  lineItems: SalesInvoiceLine[];
+
+  // Server-calculated invoice totals (read-only)
+  totalCartons: number;
+  totalWeightKg: number;
+  totalAmountCurrency: number; // Total Amount in USD
+  totalFobValueCurrency: number; // Total FOB Value in USD
+  estimatedAmountINR: number; // totalAmountCurrency * exchangeRate
+
+  // Realization / Settlement Tracking
+  realizations: RealizationRecord[];
+  totalRealizedCurrency: number; // Total realized in USD
+  balanceRealizationCurrency: number; // totalAmountCurrency - totalRealizedCurrency
+  totalRealizedINR: number; // Total realized in INR
+  realizationStatus: RealizationStatus; // Derived: Not Realized / Partially Realized / Fully Realized
+  lastRealizationDate?: string;
+  averageRealizedExchangeRate?: number; // totalRealizedINR / totalRealizedCurrency
 
   // Soft-delete / Void
   isVoided: boolean;

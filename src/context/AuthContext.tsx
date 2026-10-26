@@ -23,6 +23,9 @@ interface AuthContextType {
     canInviteUsers: boolean;
     canDeleteUsers: boolean;
     canManageStaff: boolean;
+    canCreateEditSales: boolean;
+    canManageSalesRealization: boolean;
+    canManageSalesMasterData: boolean;
   };
 }
 
@@ -227,7 +230,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     canViewAuditLog: currentUser.role === 'admin', // EXCLUSIVE Owner/Admin surveillance view
     canInviteUsers: currentUser.role === 'admin',
     canDeleteUsers: currentUser.role === 'admin',
-    canManageStaff: currentUser.role === 'admin'
+    canManageStaff: currentUser.role === 'admin',
+    canCreateEditSales: currentUser.role !== 'viewer',
+    canManageSalesRealization: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canManageSalesMasterData: currentUser.role === 'admin' || currentUser.role === 'master_accountant'
   };
 
   return (

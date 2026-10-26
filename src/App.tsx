@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar, NavTab } from './components/common/Sidebar';
 import { ProductionSidebar, ProductionNavTab } from './components/production/ProductionSidebar';
+import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
 import { PurchaseList } from './components/purchase/PurchaseList';
@@ -23,6 +24,12 @@ import { DailyProcessingEntryForm } from './components/production/DailyProcessin
 import { ProcessingRecordList } from './components/production/ProcessingRecordList';
 import { SlabTypeManager } from './components/production/SlabTypeManager';
 import { ProductionReportsHub } from './components/production/ProductionReportsHub';
+import { SalesDashboard } from './components/sales/SalesDashboard';
+import { SalesInvoiceEntryForm } from './components/sales/SalesInvoiceEntryForm';
+import { SalesInvoiceList } from './components/sales/SalesInvoiceList';
+import { CustomerManager } from './components/sales/CustomerManager';
+import { PortManager } from './components/sales/PortManager';
+import { SalesReportsHub } from './components/sales/SalesReportsHub';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -32,13 +39,16 @@ import {
   X,
   Factory,
   Layers,
-  BarChart3
+  BarChart3,
+  TrendingUp,
+  FileText
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
-  const [activeModule, setActiveModule] = useState<'purchase' | 'production'>('purchase');
+  const [activeModule, setActiveModule] = useState<'purchase' | 'production' | 'sales'>('purchase');
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
+  const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { permissions } = useAuth();
 
@@ -58,8 +68,10 @@ const MainLayout: React.FC = () => {
         <div className="hidden md:block">
           {activeModule === 'purchase' ? (
             <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-          ) : (
+          ) : activeModule === 'production' ? (
             <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
+          ) : (
+            <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
           )}
         </div>
 
@@ -69,7 +81,11 @@ const MainLayout: React.FC = () => {
             <div className="w-72 bg-white h-full shadow-2xl flex flex-col">
               <div className="p-4 border-b flex justify-between items-center bg-rose-50/50">
                 <span className="font-bold text-ink-900 text-sm">
-                  {activeModule === 'purchase' ? 'Procurement Menu' : 'Production Menu'}
+                  {activeModule === 'purchase'
+                    ? 'Procurement Menu'
+                    : activeModule === 'production'
+                    ? 'Production Menu'
+                    : 'Commercial Export Menu'}
                 </span>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -87,11 +103,19 @@ const MainLayout: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     }}
                   />
-                ) : (
+                ) : activeModule === 'production' ? (
                   <ProductionSidebar
                     activeTab={productionTab}
                     onTabChange={(tab) => {
                       setProductionTab(tab);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  />
+                ) : (
+                  <SalesSidebar
+                    activeTab={salesTab}
+                    onTabChange={(tab) => {
+                      setSalesTab(tab);
                       setIsMobileMenuOpen(false);
                     }}
                   />
@@ -121,7 +145,7 @@ const MainLayout: React.FC = () => {
               {activeTab === 'excel-import' && <ExcelImportView onNavigate={setActiveTab} />}
               {activeTab === 'settings' && <BusinessSettingsView />}
             </>
-          ) : (
+          ) : activeModule === 'production' ? (
             <>
               {productionTab === 'prod-dashboard' && (
                 <ProductionDashboard onNavigate={(tab) => setProductionTab(tab as ProductionNavTab)} />
@@ -136,6 +160,26 @@ const MainLayout: React.FC = () => {
               {productionTab === 'prod-reports' && <ProductionReportsHub />}
               {productionTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {productionTab === 'audit-log' && <AuditLogView />}
+            </>
+          ) : (
+            <>
+              {salesTab === 'sales-dashboard' && (
+                <SalesDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+              )}
+              {salesTab === 'invoice-entry' && (
+                <SalesInvoiceEntryForm onSuccess={() => setSalesTab('invoices')} />
+              )}
+              {salesTab === 'invoices' && (
+                <SalesInvoiceList onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+              )}
+              {salesTab === 'realizations' && (
+                <SalesInvoiceList onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+              )}
+              {salesTab === 'customers' && <CustomerManager />}
+              {salesTab === 'ports' && <PortManager />}
+              {salesTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
+              {salesTab === 'sales-reports' && <SalesReportsHub />}
+              {salesTab === 'audit-log' && <AuditLogView />}
             </>
           )}
         </main>
@@ -187,7 +231,7 @@ const MainLayout: React.FC = () => {
               <span>Ledgers</span>
             </button>
           </>
-        ) : (
+        ) : activeModule === 'production' ? (
           <>
             <button
               onClick={() => setProductionTab('prod-dashboard')}
@@ -225,6 +269,50 @@ const MainLayout: React.FC = () => {
               onClick={() => setProductionTab('prod-reports')}
               className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
                 productionTab === 'prod-reports' ? 'text-rose-600' : 'text-ink-500'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Reports</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setSalesTab('sales-dashboard')}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+                salesTab === 'sales-dashboard' ? 'text-rose-600' : 'text-ink-500'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Dashboard</span>
+            </button>
+
+            {permissions.canCreateEditSales && (
+              <button
+                onClick={() => setSalesTab('invoice-entry')}
+                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+                  salesTab === 'invoice-entry' ? 'text-rose-600' : 'text-ink-500'
+                }`}
+              >
+                <PlusCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                <span>New Invoice</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setSalesTab('invoices')}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+                salesTab === 'invoices' ? 'text-rose-600' : 'text-ink-500'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Invoices</span>
+            </button>
+
+            <button
+              onClick={() => setSalesTab('sales-reports')}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+                salesTab === 'sales-reports' ? 'text-rose-600' : 'text-ink-500'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
