@@ -13,7 +13,9 @@ import {
   PaymentRecord,
   AuditLog,
   AuditAction,
-  BusinessSettings
+  BusinessSettings,
+  SlabType,
+  DailyProcessingEntry
 } from '../types';
 import {
   DEFAULT_BUSINESS_SETTINGS,
@@ -28,6 +30,8 @@ import {
   INITIAL_PURCHASES,
   INITIAL_PAYMENTS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_SLAB_TYPES,
+  INITIAL_PROCESSING_ENTRIES,
   SAMPLE_STARTER_PRESETS
 } from '../data/initialData';
 import { useAuth } from './AuthContext';
@@ -47,11 +51,15 @@ interface DataContextType {
   locations: PurchaseLocation[];
   bankAccounts: BankAccount[];
   expenseTypes: ExpenseType[];
+  slabTypes: SlabType[];
   purchases: Purchase[];
   payments: PaymentRecord[];
+  processingEntries: DailyProcessingEntry[];
   auditLogs: AuditLog[];
   offlineQueue: Purchase[];
   isOnline: boolean;
+  slabTolerancePct: number;
+  setSlabTolerancePct: (pct: number) => void;
 
   // Master Data Actions (Full CRUD)
   addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => void;
@@ -94,11 +102,23 @@ interface DataContextType {
   deleteExpenseType: (id: string) => { success: boolean; message?: string };
   toggleExpenseTypeActive: (id: string) => void;
 
+  addSlabType: (slabType: Omit<SlabType, 'id'>) => void;
+  updateSlabType: (id: string, updates: Partial<SlabType>) => void;
+  deleteSlabType: (id: string) => { success: boolean; message?: string };
+  toggleSlabTypeActive: (id: string) => void;
+  bulkImportSlabTypes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+
   // Transaction Actions
   addPurchase: (purchaseData: Partial<Purchase>) => { success: boolean; purchaseId?: string; warnings?: string[] };
   updatePurchase: (id: string, updates: Partial<Purchase>, editReason?: string) => { success: boolean; message?: string };
   voidPurchase: (id: string, voidReason: string) => { success: boolean; message?: string };
   deletePurchasePermanently: (id: string) => { success: boolean; message?: string };
+
+  // Production Entry Actions
+  addProcessingEntry: (entryData: Partial<DailyProcessingEntry>) => { success: boolean; entryNo?: string; warning?: string };
+  updateProcessingEntry: (id: string, updates: Partial<DailyProcessingEntry>, editReason?: string) => { success: boolean; message?: string };
+  voidProcessingEntry: (id: string, voidReason: string) => { success: boolean; message?: string };
+  deleteProcessingEntryPermanently: (id: string) => { success: boolean; message?: string };
 
   // Payment Actions
   addPayment: (payment: Omit<PaymentRecord, 'id' | 'paymentNo' | 'createdAt' | 'isVoided' | 'createdBy'>) => void;
@@ -201,6 +221,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_PAYMENTS;
   });
 
+  const [slabTypes, setSlabTypes] = useState<SlabType[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}slab_types`);
+    return saved ? JSON.parse(saved) : INITIAL_SLAB_TYPES;
+  });
+
+  const [processingEntries, setProcessingEntries] = useState<DailyProcessingEntry[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}processing_entries`);
+    return saved ? JSON.parse(saved) : INITIAL_PROCESSING_ENTRIES;
+  });
+
+  const [slabTolerancePct, setSlabTolerancePct] = useState<number>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}slab_tolerance`);
+    return saved ? Number(saved) : 5;
+  });
+
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}audit_logs`);
     return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
@@ -242,6 +277,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}locations`, JSON.stringify(locations)); }, [locations]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}bank_accounts`, JSON.stringify(bankAccounts)); }, [bankAccounts]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}expense_types`, JSON.stringify(expenseTypes)); }, [expenseTypes]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_types`, JSON.stringify(slabTypes)); }, [slabTypes]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}processing_entries`, JSON.stringify(processingEntries)); }, [processingEntries]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchases`, JSON.stringify(purchases)); }, [purchases]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}payments`, JSON.stringify(payments)); }, [payments]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}audit_logs`, JSON.stringify(auditLogs)); }, [auditLogs]);
@@ -513,6 +551,105 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const toggleExpenseTypeActive = (id: string) => {
     setExpenseTypes((prev) => prev.map((e) => (e.id === id ? { ...e, active: !e.active } : e)));
+  };
+
+  // --------------------------------------------------------------------------
+  // SLAB TYPES MASTER DATA (Production)
+  // --------------------------------------------------------------------------
+  const addSlabType = (stData: Omit<SlabType, 'id'>) => {
+    if (!permissions.canManageMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Owner/Admin can manage slab types.', 'error');
+      return;
+    }
+    const newST: SlabType = { ...stData, id: `slb-${Date.now()}` };
+    setSlabTypes((prev) => [...prev, newST]);
+    logAudit('CREATE', 'SlabType', newST.code, { newValues: newST });
+    showToast(`Slab Type "${newST.name}" created.`, 'success');
+  };
+
+  const updateSlabType = (id: string, updates: Partial<SlabType>) => {
+    if (!permissions.canManageMasterData) {
+      showToast('Unauthorized.', 'error');
+      return;
+    }
+    const existing = slabTypes.find((s) => s.id === id);
+    setSlabTypes((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    logAudit('EDIT', 'SlabType', existing?.code || id, { oldValues: existing, newValues: updates });
+    showToast('Slab Type updated.', 'success');
+  };
+
+  const deleteSlabType = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Unauthorized: Only Owner / Admin can permanently delete master records.', 'error');
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can delete.' };
+    }
+    const isUsed = processingEntries.some((p) => p.slabTypeId === id && !p.isVoided);
+    if (isUsed) {
+      showToast('Cannot delete slab type used in active processing entries. Deactivate instead.', 'error');
+      return { success: false, message: 'Cannot delete slab type used in active records.' };
+    }
+    setSlabTypes((prev) => prev.filter((s) => s.id !== id));
+    logAudit('DELETE', 'SlabType', id);
+    showToast('Slab Type removed.', 'info');
+    return { success: true };
+  };
+
+  const toggleSlabTypeActive = (id: string) => {
+    if (!permissions.canManageMasterData) return;
+    setSlabTypes((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
+  };
+
+  const bulkImportSlabTypes = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...slabTypes];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const name = String(getFlexibleValue(row, ['slabtypename', 'name', 'slabtype', 'type']) || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 2}: Slab Type name is missing.`);
+        return;
+      }
+
+      const code = String(getFlexibleValue(row, ['code', 'slabid', 'id']) || `SLB-${String(currentList.length + 1).padStart(3, '0')}`).trim();
+      const standardWeightKg = parseFloat(getFlexibleValue(row, ['standardweightkg', 'standardweight', 'weightkg', 'weight']) || '2.0') || 2.0;
+      const unit = String(getFlexibleValue(row, ['unit']) || 'Kg').trim();
+      const productApplicability = String(getFlexibleValue(row, ['productapplicability', 'applicability', 'product']) || 'All Products').trim();
+
+      const existingIdx = currentList.findIndex(
+        (s) => s.code.toLowerCase() === code.toLowerCase() || s.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          name,
+          standardWeightKg,
+          unit,
+          productApplicability,
+          active: true
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `slb-${Date.now()}-${idx}`,
+          code,
+          name,
+          standardWeightKg,
+          unit,
+          productApplicability,
+          active: true
+        });
+        added++;
+      }
+    });
+
+    setSlabTypes(currentList);
+    return { added, updated, errors };
   };
 
   // --------------------------------------------------------------------------
@@ -874,6 +1011,175 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // --------------------------------------------------------------------------
+  // DAILY PROCESSING TRANSACTIONS (Production Module)
+  // --------------------------------------------------------------------------
+
+  const addProcessingEntry = (
+    entryData: Partial<DailyProcessingEntry>
+  ): { success: boolean; entryNo?: string; warning?: string } => {
+    if (!permissions.canCreateEditPurchases && currentUser.role === 'viewer') {
+      showToast('Unauthorized: Viewer accounts have read-only access.', 'error');
+      return { success: false };
+    }
+
+    const count = processingEntries.length + 1;
+    const entryNo = `PROD-${String(count).padStart(5, '0')}`;
+    const slabType = slabTypes.find((st) => st.id === entryData.slabTypeId);
+    const standardSlabWeightKg = slabType?.standardWeightKg || entryData.standardSlabWeightKg || 0;
+    const slabsCount = Number(entryData.slabsCount) || 0;
+    const processedWeightKg = Number(entryData.processedWeightKg) || 0;
+    const rejectionWeightKg = Number(entryData.rejectionWeightKg) || 0;
+
+    // Derived server-calculated fields
+    const expectedWeightKg = Number((slabsCount * standardSlabWeightKg).toFixed(2));
+    const varianceWeightKg = Number((processedWeightKg - expectedWeightKg).toFixed(2));
+    const variancePct = expectedWeightKg > 0 ? Number(((varianceWeightKg / expectedWeightKg) * 100).toFixed(2)) : 0;
+    const hasSlabVariance = Math.abs(variancePct) > slabTolerancePct;
+
+    const processingDate = entryData.processingDate || new Date().toISOString().split('T')[0];
+    const monthYear = processingDate.slice(0, 7);
+    const dataEntryDate = new Date().toISOString();
+
+    let warningMsg: string | undefined;
+    if (hasSlabVariance && expectedWeightKg > 0) {
+      warningMsg = `Slab weight variance of ${variancePct > 0 ? '+' : ''}${variancePct}% exceeds configured tolerance (±${slabTolerancePct}%). Expected: ${expectedWeightKg} Kg, Actual: ${processedWeightKg} Kg. Flagged in Exception Report.`;
+    }
+
+    const newEntry: DailyProcessingEntry = {
+      id: `pe-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      entryNo,
+      processingDate,
+      shift: entryData.shift || 'General Day Shift (08:00 - 17:00)',
+      supplierId: entryData.supplierId || '',
+      speciesId: entryData.speciesId || '',
+      gradeId: entryData.gradeId || '',
+      sizeId: entryData.sizeId || '',
+      countId: entryData.countId || '',
+      supplierBoxId: entryData.supplierBoxId?.trim() || '',
+      slabTypeId: entryData.slabTypeId || '',
+      standardSlabWeightKg,
+      slabsCount,
+      processedWeightKg,
+      rejectionWeightKg,
+      expectedWeightKg,
+      varianceWeightKg,
+      variancePct,
+      hasSlabVariance,
+      remarks: entryData.remarks?.trim() || '',
+      operator: currentUser.name,
+      dataEntryDate,
+      monthYear,
+      financialYear: businessSettings.financialYear,
+      isVoided: false,
+      createdBy: currentUser.email,
+      createdAt: dataEntryDate,
+      updatedAt: dataEntryDate
+    };
+
+    setProcessingEntries((prev) => [newEntry, ...prev]);
+    logAudit('CREATE', 'PRODUCTION_ENTRY', newEntry.entryNo, { newValues: newEntry });
+
+    if (warningMsg) {
+      showToast(`${entryNo} saved. Slab weight divergence flagged for audit.`, 'warning');
+    } else {
+      showToast(`Daily processing entry ${entryNo} recorded successfully.`, 'success');
+    }
+
+    return { success: true, entryNo, warning: warningMsg };
+  };
+
+  const updateProcessingEntry = (
+    id: string,
+    updates: Partial<DailyProcessingEntry>,
+    editReason?: string
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canCreateEditPurchases && currentUser.role === 'viewer') {
+      return { success: false, message: 'Unauthorized: Read-only access.' };
+    }
+
+    const existing = processingEntries.find((p) => p.id === id);
+    if (!existing) return { success: false, message: 'Processing entry not found.' };
+
+    const slabType = updates.slabTypeId
+      ? slabTypes.find((st) => st.id === updates.slabTypeId)
+      : slabTypes.find((st) => st.id === existing.slabTypeId);
+
+    const standardSlabWeightKg =
+      updates.standardSlabWeightKg ?? (slabType?.standardWeightKg || existing.standardSlabWeightKg);
+    const slabsCount = updates.slabsCount !== undefined ? Number(updates.slabsCount) : existing.slabsCount;
+    const processedWeightKg =
+      updates.processedWeightKg !== undefined ? Number(updates.processedWeightKg) : existing.processedWeightKg;
+    const rejectionWeightKg =
+      updates.rejectionWeightKg !== undefined ? Number(updates.rejectionWeightKg) : existing.rejectionWeightKg;
+
+    const expectedWeightKg = Number((slabsCount * standardSlabWeightKg).toFixed(2));
+    const varianceWeightKg = Number((processedWeightKg - expectedWeightKg).toFixed(2));
+    const variancePct = expectedWeightKg > 0 ? Number(((varianceWeightKg / expectedWeightKg) * 100).toFixed(2)) : 0;
+    const hasSlabVariance = Math.abs(variancePct) > slabTolerancePct;
+
+    const processingDate = updates.processingDate || existing.processingDate;
+    const monthYear = processingDate.slice(0, 7);
+
+    const updated: DailyProcessingEntry = {
+      ...existing,
+      ...updates,
+      standardSlabWeightKg,
+      slabsCount,
+      processedWeightKg,
+      rejectionWeightKg,
+      expectedWeightKg,
+      varianceWeightKg,
+      variancePct,
+      hasSlabVariance,
+      monthYear,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setProcessingEntries((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    logAudit('EDIT', 'PRODUCTION_ENTRY', existing.entryNo, {
+      oldValues: existing,
+      newValues: updated,
+      changeReason: editReason || 'Updated processing record'
+    });
+
+    showToast(`Processing entry ${existing.entryNo} updated.`, 'success');
+    return { success: true };
+  };
+
+  const voidProcessingEntry = (id: string, voidReason: string): { success: boolean; message?: string } => {
+    if (!permissions.canVoid) return { success: false, message: 'Unauthorized.' };
+    const existing = processingEntries.find((p) => p.id === id);
+    if (!existing) return { success: false, message: 'Record not found.' };
+
+    const voided: DailyProcessingEntry = {
+      ...existing,
+      isVoided: true,
+      voidReason,
+      voidedBy: currentUser.email,
+      voidedAt: new Date().toISOString()
+    };
+
+    setProcessingEntries((prev) => prev.map((p) => (p.id === id ? voided : p)));
+    logAudit('VOID', 'PRODUCTION_ENTRY', existing.entryNo, { changeReason: voidReason });
+    showToast(`Processing entry ${existing.entryNo} voided.`, 'info');
+    return { success: true };
+  };
+
+  const deleteProcessingEntryPermanently = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      return { success: false, message: 'Unauthorized: Only Owner / Admin can permanently delete records.' };
+    }
+    const existing = processingEntries.find((p) => p.id === id);
+    if (!existing) return { success: false, message: 'Record not found.' };
+
+    setProcessingEntries((prev) => prev.filter((p) => p.id !== id));
+    logAudit('DELETE', 'PRODUCTION_ENTRY', existing.entryNo, { changeReason: 'Permanently purged by Admin' });
+    showToast(`Processing entry ${existing.entryNo} permanently purged.`, 'warning');
+    return { success: true };
+  };
+
+  // --------------------------------------------------------------------------
   // DATABASE WIPE & STARTER PRESET CONTROLS
   // --------------------------------------------------------------------------
 
@@ -884,9 +1190,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setPurchases([]);
     setPayments([]);
+    setProcessingEntries([]);
     setOfflineQueue([]);
-    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all transactions' });
-    showToast('All purchases and payments cleared.', 'info');
+    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase and production transactions' });
+    showToast('All purchases, payments, and processing records cleared.', 'info');
   };
 
   const wipeDatabaseCompletely = () => {
@@ -896,6 +1203,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setPurchases([]);
     setPayments([]);
+    setProcessingEntries([]);
     setOfflineQueue([]);
     setSuppliers([]);
     setSpecies([]);
@@ -905,6 +1213,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLocations([]);
     setBankAccounts([]);
     setExpenseTypes([]);
+    setSlabTypes([]);
     setAuditLogs([]);
     showToast('Database reset to 100% clean blank state.', 'success');
   };
@@ -918,6 +1227,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLocations(SAMPLE_STARTER_PRESETS.locations);
     setBankAccounts(SAMPLE_STARTER_PRESETS.bankAccounts);
     setExpenseTypes(SAMPLE_STARTER_PRESETS.expenseTypes);
+    if (SAMPLE_STARTER_PRESETS.slabTypes) {
+      setSlabTypes(SAMPLE_STARTER_PRESETS.slabTypes);
+    }
     showToast('Common seafood master presets loaded. You can edit or delete them anytime.', 'success');
   };
 
@@ -1982,11 +2294,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         locations,
         bankAccounts,
         expenseTypes,
+        slabTypes,
         purchases,
         payments,
+        processingEntries,
         auditLogs,
         offlineQueue,
         isOnline,
+        slabTolerancePct,
+        setSlabTolerancePct,
 
         addSupplier,
         updateSupplier,
@@ -2028,10 +2344,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         deleteExpenseType,
         toggleExpenseTypeActive,
 
+        addSlabType,
+        updateSlabType,
+        deleteSlabType,
+        toggleSlabTypeActive,
+        bulkImportSlabTypes,
+
         addPurchase,
         updatePurchase,
         voidPurchase,
         deletePurchasePermanently,
+
+        addProcessingEntry,
+        updateProcessingEntry,
+        voidProcessingEntry,
+        deleteProcessingEntryPermanently,
 
         addPayment,
         voidPayment,

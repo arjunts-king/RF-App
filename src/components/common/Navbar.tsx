@@ -4,20 +4,26 @@ import { useData } from '../../context/DataContext';
 import { RoleBadge } from './RoleBadge';
 import { RoleSwitcher } from './RoleSwitcher';
 import { Modal } from './Modal';
-import { Wifi, WifiOff, RefreshCw, Shield, Menu } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, Shield, Menu, ShoppingBag, Factory } from 'lucide-react';
 
 interface NavbarProps {
+  activeModule: 'purchase' | 'production';
+  onModuleChange: (module: 'purchase' | 'production') => void;
   onOpenMobileMenu?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeModule,
+  onModuleChange,
+  onOpenMobileMenu
+}) => {
   const { currentUser } = useAuth();
   const { isOnline, offlineQueue, syncOfflineQueue, businessSettings } = useData();
   const [showProfile, setShowProfile] = useState(false);
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs px-4 lg:px-6 py-3">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs px-4 lg:px-6 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
@@ -48,13 +54,48 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
             </div>
           </div>
 
-          {/* Role Switcher for instant evaluation */}
-          <div className="order-last md:order-none w-full md:w-auto flex justify-center">
+          {/* Top-Level Side-by-Side Module Switcher */}
+          <div className="flex items-center bg-rose-50/80 p-1 rounded-xl border border-rose-200/90 shadow-xs">
+            <button
+              onClick={() => onModuleChange('purchase')}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeModule === 'purchase'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Purchase</span>
+            </button>
+            <button
+              onClick={() => onModuleChange('production')}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeModule === 'production'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+              }`}
+            >
+              <Factory className="w-4 h-4" />
+              <span>Production</span>
+              <span
+                className={`text-[9px] uppercase px-1.5 py-0.5 rounded-md font-extrabold tracking-wider ${
+                  activeModule === 'production'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-rose-200 text-rose-900'
+                }`}
+              >
+                New
+              </span>
+            </button>
+          </div>
+
+          {/* Role Switcher */}
+          <div className="order-last xl:order-none w-full xl:w-auto flex justify-center">
             <RoleSwitcher />
           </div>
 
           {/* Status & Profile Strip */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* PWA Network Status Badge */}
             <div
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
@@ -146,11 +187,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenMobileMenu }) => {
               </li>
               <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role !== 'viewer' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                Purchase Data Entry: <strong>{currentUser.role !== 'viewer' ? 'Granted' : 'Read-Only'}</strong>
+                Transaction Entry (Purchase & Production): <strong>{currentUser.role !== 'viewer' ? 'Granted' : 'Read-Only'}</strong>
               </li>
               <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                Audit Trail Surveillance View: <strong>{currentUser.role === 'admin' ? 'Accessible' : 'Restricted to Owner/Admin'}</strong>
+                Surveillance Audit Trail Access: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive)' : 'Denied'}</strong>
               </li>
             </ul>
           </div>

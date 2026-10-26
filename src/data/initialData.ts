@@ -11,7 +11,9 @@ import {
   PaymentRecord,
   User,
   AuditLog,
-  BusinessSettings
+  BusinessSettings,
+  SlabType,
+  DailyProcessingEntry
 } from '../types';
 
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
@@ -75,6 +77,8 @@ export const INITIAL_EXPENSE_TYPES: ExpenseType[] = [];
 export const INITIAL_PURCHASES: Purchase[] = [];
 export const INITIAL_PAYMENTS: PaymentRecord[] = [];
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [];
+export const INITIAL_SLAB_TYPES: SlabType[] = [];
+export const INITIAL_PROCESSING_ENTRIES: DailyProcessingEntry[] = [];
 
 // Optional starter templates that the user can import with 1 click if they want standard presets
 export const SAMPLE_STARTER_PRESETS = {
@@ -125,10 +129,10 @@ export const SAMPLE_STARTER_PRESETS = {
     }
   ],
   species: [
-    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', active: true },
-    { id: 'spe-2', code: 'SPE-002', name: 'Penaeus Monodon (Black Tiger Shrimp)', scientificName: 'Penaeus monodon', category: 'Shrimp / Prawns', active: true },
-    { id: 'spe-3', code: 'SPE-003', name: 'Indian Squid (Kalamari)', scientificName: 'Loligo duvaucelii', category: 'Cephalopods', active: true },
-    { id: 'spe-4', code: 'SPE-004', name: 'Yellowfin Tuna', scientificName: 'Thunnus albacares', category: 'Pelagic Finfish', active: true }
+    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', productForm: 'Headless Shell-On (HLSO)', processingType: 'Block Frozen', active: true },
+    { id: 'spe-2', code: 'SPE-002', name: 'Penaeus Monodon (Black Tiger Shrimp)', scientificName: 'Penaeus monodon', category: 'Shrimp / Prawns', productForm: 'Peeled & Deveined (PD)', processingType: 'Individual Quick Frozen (IQF)', active: true },
+    { id: 'spe-3', code: 'SPE-003', name: 'Indian Squid (Kalamari)', scientificName: 'Loligo duvaucelii', category: 'Cephalopods', productForm: 'Cleaned Tubes & Rings', processingType: 'Blast Frozen', active: true },
+    { id: 'spe-4', code: 'SPE-004', name: 'Yellowfin Tuna', scientificName: 'Thunnus albacares', category: 'Pelagic Finfish', productForm: 'Loins & Steaks', processingType: 'Plate Frozen', active: true }
   ],
   grades: [
     { id: 'grd-1', code: 'GRD-001', name: 'Grade A (Export Quality)', description: 'Prime intact shell, high luster', active: true },
@@ -165,5 +169,13 @@ export const SAMPLE_STARTER_PRESETS = {
     { id: 'exp-2', code: 'EXP-002', name: 'Vehicle Rent / Transport', category: 'Logistics', active: true },
     { id: 'exp-3', code: 'EXP-003', name: 'Commission & Dalali', category: 'Brokerage', active: true },
     { id: 'exp-4', code: 'EXP-004', name: 'Loading / Unloading Labour', category: 'Handling', active: true }
+  ],
+  slabTypes: [
+    { id: 'slb-1', code: 'SLB-001', name: '2.0 Kg Standard Export Block', standardWeightKg: 2.0, unit: 'Kg', productApplicability: 'Shrimp / Prawns', active: true },
+    { id: 'slb-2', code: 'SLB-002', name: '1.8 Kg Glazed Slab', standardWeightKg: 1.8, unit: 'Kg', productApplicability: 'Shrimp / Prawns', active: true },
+    { id: 'slb-3', code: 'SLB-003', name: '5.0 Kg Master Bulk Block', standardWeightKg: 5.0, unit: 'Kg', productApplicability: 'All Products', active: true },
+    { id: 'slb-4', code: 'SLB-004', name: '10.0 Kg Industrial Carton', standardWeightKg: 10.0, unit: 'Kg', productApplicability: 'Pelagic Finfish', active: true },
+    { id: 'slb-5', code: 'SLB-005', name: '1.0 Kg IQF Quick Pack', standardWeightKg: 1.0, unit: 'Kg', productApplicability: 'All Products', active: true },
+    { id: 'slb-6', code: 'SLB-006', name: '0.5 Kg Retail Pouch', standardWeightKg: 0.5, unit: 'Kg', productApplicability: 'Cephalopods', active: true }
   ]
 };

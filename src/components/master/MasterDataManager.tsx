@@ -16,11 +16,12 @@ import {
   Trash2,
   Inbox,
   FileSpreadsheet,
-  Hash
+  Hash,
+  Boxes
 } from 'lucide-react';
-import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType } from '../../types';
+import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType, SlabType } from '../../types';
 
-type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses';
+type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses' | 'slabs';
 
 export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = ({ onNavigate }) => {
   const {
@@ -32,6 +33,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     locations,
     bankAccounts,
     expenseTypes,
+    slabTypes,
     addSupplier,
     updateSupplier,
     deleteSupplier,
@@ -60,7 +62,11 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     addExpenseType,
     updateExpenseType,
     deleteExpenseType,
-    toggleExpenseTypeActive
+    toggleExpenseTypeActive,
+    addSlabType,
+    updateSlabType,
+    deleteSlabType,
+    toggleSlabTypeActive
   } = useData();
 
   const [activeTab, setActiveTab] = useState<MasterTab>('suppliers');
@@ -78,6 +84,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     else if (deleteTarget.type === 'location') deleteLocation(deleteTarget.id);
     else if (deleteTarget.type === 'account') deleteBankAccount(deleteTarget.id);
     else if (deleteTarget.type === 'expense') deleteExpenseType(deleteTarget.id);
+    else if (deleteTarget.type === 'slab') deleteSlabType(deleteTarget.id);
     setDeleteTarget(null);
   };
 
@@ -105,6 +112,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   const [spName, setSpName] = useState('');
   const [spScientific, setSpScientific] = useState('');
   const [spCategory, setSpCategory] = useState('Shrimp / Prawns');
+  const [spProductForm, setSpProductForm] = useState('Headless Shell-On (HLSO)');
+  const [spProcessingType, setSpProcessingType] = useState('Block Frozen');
 
   // Grade form state
   const [grdCode, setGrdCode] = useState('');
@@ -140,12 +149,20 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   const [expName, setExpName] = useState('');
   const [expCat, setExpCat] = useState('Landing Expense');
 
+  // Slab Type form state (Production)
+  const [slbCode, setSlbCode] = useState('');
+  const [slbName, setSlbName] = useState('');
+  const [slbWeight, setSlbWeight] = useState('2.0');
+  const [slbUnit, setSlbUnit] = useState('Kg');
+  const [slbApp, setSlbApp] = useState('All Products');
+
   const tabs: { id: MasterTab; label: string; icon: any; count: number }[] = [
     { id: 'suppliers', label: 'Suppliers', icon: Truck, count: suppliers.length },
     { id: 'species', label: 'Species / Product', icon: Fish, count: species.length },
     { id: 'grades', label: 'Grades', icon: Grid, count: grades.length },
     { id: 'sizes', label: 'Sizes', icon: Scale, count: sizes.length },
     { id: 'counts', label: 'Counts / Pcs', icon: Hash, count: counts.length },
+    { id: 'slabs', label: 'Slab Types', icon: Boxes, count: slabTypes.length },
     { id: 'locations', label: 'Harbour Locations', icon: Building, count: locations.length },
     { id: 'accounts', label: 'Bank / Cash Accounts', icon: CreditCard, count: bankAccounts.length },
     { id: 'expenses', label: 'Dynamic Expense Heads', icon: Layers, count: expenseTypes.length }
@@ -203,6 +220,12 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setExpCode(`EXP-${String(expenseTypes.length + 1).padStart(3, '0')}`);
       setExpName('');
       setExpCat('Direct Purchase Expense');
+    } else if (activeTab === 'slabs') {
+      setSlbCode(`SLB-${String(slabTypes.length + 1).padStart(3, '0')}`);
+      setSlbName('');
+      setSlbWeight('2.0');
+      setSlbUnit('Kg');
+      setSlbApp('All Products');
     }
     setIsModalOpen(true);
   };
@@ -234,6 +257,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setSpName(sp.name);
       setSpScientific(sp.scientificName);
       setSpCategory(sp.category);
+      setSpProductForm(sp.productForm || 'Headless Shell-On (HLSO)');
+      setSpProcessingType(sp.processingType || 'Block Frozen');
     } else if (activeTab === 'grades') {
       const g = item as Grade;
       setGrdCode(g.code);
@@ -268,6 +293,13 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setExpCode(e.code);
       setExpName(e.name);
       setExpCat(e.category);
+    } else if (activeTab === 'slabs') {
+      const sl = item as SlabType;
+      setSlbCode(sl.code);
+      setSlbName(sl.name);
+      setSlbWeight(String(sl.standardWeightKg));
+      setSlbUnit(sl.unit);
+      setSlbApp(sl.productApplicability);
     }
     setIsModalOpen(true);
   };
@@ -299,7 +331,15 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       if (editingId) updateSupplier(editingId, payload);
       else addSupplier(payload);
     } else if (activeTab === 'species') {
-      const payload = { code: spCode, name: spName, scientificName: spScientific, category: spCategory, active: true };
+      const payload = {
+        code: spCode,
+        name: spName,
+        scientificName: spScientific,
+        category: spCategory,
+        productForm: spProductForm,
+        processingType: spProcessingType,
+        active: true
+      };
       if (editingId) updateSpecies(editingId, payload);
       else addSpecies(payload);
     } else if (activeTab === 'grades') {
@@ -326,6 +366,17 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       const payload = { code: expCode, name: expName, category: expCat, active: true };
       if (editingId) updateExpenseType(editingId, payload);
       else addExpenseType(payload);
+    } else if (activeTab === 'slabs') {
+      const payload = {
+        code: slbCode,
+        name: slbName,
+        standardWeightKg: parseFloat(slbWeight) || 2.0,
+        unit: slbUnit,
+        productApplicability: slbApp,
+        active: true
+      };
+      if (editingId) updateSlabType(editingId, payload);
+      else addSlabType(payload);
     }
 
     setIsModalOpen(false);
@@ -500,6 +551,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                     <th className="py-2.5 px-3">Commercial Name</th>
                     <th className="py-2.5 px-3">Scientific Name</th>
                     <th className="py-2.5 px-3">Category</th>
+                    <th className="py-2.5 px-3">Product Form</th>
+                    <th className="py-2.5 px-3">Processing Type</th>
                     <th className="py-2.5 px-3 text-center">Status</th>
                     <th className="py-2.5 px-3 text-center">Actions</th>
                   </tr>
@@ -511,6 +564,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                       <td className="py-3 px-3 font-bold text-ink-900">{sp.name}</td>
                       <td className="py-3 px-3 italic text-ink-500">{sp.scientificName}</td>
                       <td className="py-3 px-3">{sp.category}</td>
+                      <td className="py-3 px-3 text-ink-700 font-medium">{sp.productForm || 'Standard'}</td>
+                      <td className="py-3 px-3 text-ink-700 font-medium">{sp.processingType || 'Block Frozen'}</td>
                       <td className="py-3 px-3 text-center">
                         <button
                           onClick={() => toggleSpeciesActive(sp.id)}
@@ -603,8 +658,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
           </div>
         )}
 
-        {/* GRADES, SIZES, COUNTS, LOCATIONS, ACCOUNTS TABLES */}
-        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'locations' || activeTab === 'accounts') && (
+        {/* GRADES, SIZES, COUNTS, SLABS, LOCATIONS, ACCOUNTS TABLES */}
+        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'slabs' || activeTab === 'locations' || activeTab === 'accounts') && (
           <div className="p-4 text-xs">
             {activeTab === 'grades' && (
               grades.length === 0 ? (
@@ -670,6 +725,40 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleOpenEdit(cnt)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
                         <button onClick={() => setDeleteTarget({ type: 'count', id: cnt.id, name: cnt.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {activeTab === 'slabs' && (
+              slabTypes.length === 0 ? (
+                <div className="py-12 text-center text-ink-500">No production slab types configured yet. Add 2.0 Kg Standard Block, 1.8 Kg Export Slab, etc.</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {slabTypes.map((sl) => (
+                    <div key={sl.id} className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-ink-900 block">{sl.name}</span>
+                          <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">
+                            {sl.standardWeightKg} {sl.unit}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-ink-500 block mt-1">Applicable: {sl.productApplicability} · ({sl.code})</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => handleOpenEdit(sl)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setDeleteTarget({ type: 'slab', id: sl.id, name: sl.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button
+                          onClick={() => toggleSlabTypeActive(sl.id)}
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                            sl.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          {sl.active ? 'Active' : 'Inactive'}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -848,6 +937,28 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                 <label className="block font-semibold mb-1">Category</label>
                 <input type="text" value={spCategory} onChange={(e) => setSpCategory(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Product Form (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Headless Shell-On (HLSO), PD, Fillets"
+                    value={spProductForm}
+                    onChange={(e) => setSpProductForm(e.target.value)}
+                    className="w-full p-2 bg-gray-50 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Processing Type (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Block Frozen, IQF, Blast Frozen"
+                    value={spProcessingType}
+                    onChange={(e) => setSpProcessingType(e.target.value)}
+                    className="w-full p-2 bg-gray-50 border rounded-lg"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -898,6 +1009,50 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
               <div>
                 <label className="block font-semibold mb-1">Description</label>
                 <input type="text" placeholder="e.g. 20 to 30 pcs per Kg" value={cntDesc} onChange={(e) => setCntDesc(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'slabs' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block font-semibold mb-1">Slab ID / Code</label>
+                <input type="text" value={slbCode} onChange={(e) => setSlbCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Slab Type Name</label>
+                <input type="text" placeholder="e.g. 2.0 Kg Standard Export Block" value={slbName} onChange={(e) => setSlbName(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Standard Weight</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={slbWeight}
+                    onChange={(e) => setSlbWeight(e.target.value)}
+                    required
+                    className="w-full p-2 bg-gray-50 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Unit</label>
+                  <select value={slbUnit} onChange={(e) => setSlbUnit(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg">
+                    <option value="Kg">Kg</option>
+                    <option value="Lbs">Lbs</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Product Applicability</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Shrimp / Prawns, Tuna, All Products"
+                  value={slbApp}
+                  onChange={(e) => setSlbApp(e.target.value)}
+                  className="w-full p-2 bg-gray-50 border rounded-lg"
+                />
               </div>
             </div>
           )}
