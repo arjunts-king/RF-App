@@ -108,7 +108,7 @@ export const SupplierLedgerView: React.FC = () => {
 
   // Include purchase returns as credit notes / debit notes reducing supplier payable balance
   supplierReturns.forEach((ret) => {
-    const spec = speciesMap.get(ret.speciesId);
+    const spec = ret.speciesId ? speciesMap.get(ret.speciesId) : undefined;
     const specName = spec?.name || 'Seafood';
     const linkedInfo = ret.purchaseRefNo ? ` (Ref: ${ret.purchaseRefNo})` : '';
     rawEvents.push({

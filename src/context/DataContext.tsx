@@ -1316,43 +1316,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: 'Unauthorized.' };
     }
 
-    if (!returnData.supplierId) {
-      showToast('Supplier is required.', 'error');
-      return { success: false, message: 'Supplier is required.' };
-    }
-
-    if (!returnData.speciesId) {
-      showToast('Species / Product is required.', 'error');
-      return { success: false, message: 'Species is required.' };
-    }
-
-    if (!returnData.returnedWeightKg || returnData.returnedWeightKg <= 0) {
-      showToast('Returned weight must be greater than 0 kg.', 'error');
-      return { success: false, message: 'Invalid weight.' };
-    }
-
-    if (returnData.ratePerKg < 0) {
-      showToast('Rate cannot be negative.', 'error');
-      return { success: false, message: 'Invalid rate.' };
-    }
-
-    // If linked to a purchase, validate weight against remaining unreturned weight
-    let linkedPurchase: Purchase | undefined;
-    if (returnData.purchaseId) {
-      linkedPurchase = purchases.find((p) => p.id === returnData.purchaseId);
-      if (linkedPurchase) {
-        const priorReturnsKg = purchaseReturns
-          .filter((r) => !r.isVoided && r.purchaseId === linkedPurchase?.id)
-          .reduce((sum, r) => sum + r.returnedWeightKg, 0);
-        const maxReturnableKg = Number(Math.max(0, linkedPurchase.weightKg - priorReturnsKg).toFixed(2));
-        if (returnData.returnedWeightKg > maxReturnableKg) {
-          const msg = `Returned weight (${returnData.returnedWeightKg} Kg) exceeds remaining available purchase weight (${maxReturnableKg} Kg).`;
-          showToast(msg, 'error');
-          return { success: false, message: msg };
-        }
-      }
-    }
-
     // Sequence calculation
     const maxSeq = purchaseReturns.reduce((max, r) => {
       const match = r.returnNo?.match(/PR-(\d+)/);
@@ -1363,17 +1326,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return max;
     }, 0);
     const returnNo = `PR-${String(maxSeq + 1).padStart(5, '0')}`;
-    const fy = getIndianFinancialYear(returnData.returnDate || new Date().toISOString().split('T')[0]);
-    const returnedValue = Number((returnData.returnedWeightKg * returnData.ratePerKg).toFixed(2));
+    const returnDate = returnData.returnDate || new Date().toISOString().split('T')[0];
+    const fy = getIndianFinancialYear(returnDate);
+    const weight = typeof returnData.returnedWeightKg === 'number' ? returnData.returnedWeightKg : (Number(returnData.returnedWeightKg) || 0);
+    const rate = typeof returnData.ratePerKg === 'number' ? returnData.ratePerKg : (Number(returnData.ratePerKg) || 0);
+    const returnedValue = Number((weight * rate).toFixed(2));
+
+    let linkedPurchase: Purchase | undefined;
+    if (returnData.purchaseId) {
+      linkedPurchase = purchases.find((p) => p.id === returnData.purchaseId);
+    }
 
     const newReturn: PurchaseReturn = {
       ...returnData,
       id: `pret-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       returnNo,
+      returnDate,
       financialYear: fy,
-      purchaseRefNo: returnData.purchaseRefNo || linkedPurchase?.purchaseId,
-      invoiceNo: returnData.invoiceNo || linkedPurchase?.invoiceNo,
+      supplierId: returnData.supplierId || '',
+      speciesId: returnData.speciesId || '',
+      returnedWeightKg: weight,
+      ratePerKg: rate,
+      purchaseRefNo: returnData.purchaseRefNo || linkedPurchase?.purchaseId || '',
+      invoiceNo: returnData.invoiceNo || linkedPurchase?.invoiceNo || '',
       returnedValue,
+      reason: returnData.reason || 'General Return',
       adjustSupplierPayable: returnData.adjustSupplierPayable !== false,
       isVoided: false,
       createdBy: currentUser.email,
@@ -1411,15 +1388,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const existing = purchaseReturns.find((r) => r.id === id);
     if (!existing) return { success: false, message: 'Return record not found.' };
 
-    const weight = updates.returnedWeightKg ?? existing.returnedWeightKg;
-    const rate = updates.ratePerKg ?? existing.ratePerKg;
+    const weight = updates.returnedWeightKg !== undefined ? (Number(updates.returnedWeightKg) || 0) : existing.returnedWeightKg;
+    const rate = updates.ratePerKg !== undefined ? (Number(updates.ratePerKg) || 0) : existing.ratePerKg;
     const returnedValue = Number((weight * rate).toFixed(2));
-    const returnDate = updates.returnDate ?? existing.returnDate;
+    const returnDate = updates.returnDate || existing.returnDate || new Date().toISOString().split('T')[0];
     const fy = getIndianFinancialYear(returnDate);
 
     const updated: PurchaseReturn = {
       ...existing,
       ...updates,
+      returnDate,
       financialYear: fy,
       returnedWeightKg: weight,
       ratePerKg: rate,

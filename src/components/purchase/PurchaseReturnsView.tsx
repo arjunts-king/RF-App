@@ -148,11 +148,11 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
 
   const handleOpenNewReturn = () => {
     setEditingReturn(null);
-    setFormSupplierId(suppliers[0]?.id || '');
+    setFormSupplierId('');
     setFormPurchaseId('');
     setFormPurchaseRefNo('');
     setFormInvoiceNo('');
-    setFormSpeciesId(species[0]?.id || '');
+    setFormSpeciesId('');
     setFormGradeId('');
     setFormSizeId('');
     setFormSecondarySizeId('');
@@ -201,36 +201,19 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
   const handleSaveReturn = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const weight = Number(formWeightKg);
-    const rate = Number(formRatePerKg);
-
-    if (!formSupplierId) {
-      alert('Please select a supplier.');
-      return;
-    }
-    if (!formSpeciesId) {
-      alert('Please select a species / product.');
-      return;
-    }
-    if (isNaN(weight) || weight <= 0) {
-      alert('Please enter a valid returned weight in Kg (> 0).');
-      return;
-    }
-    if (isNaN(rate) || rate < 0) {
-      alert('Please enter a valid rate per Kg (>= 0).');
-      return;
-    }
+    const weight = typeof formWeightKg === 'number' ? formWeightKg : (Number(formWeightKg) || 0);
+    const rate = typeof formRatePerKg === 'number' ? formRatePerKg : (Number(formRatePerKg) || 0);
 
     if (editingReturn) {
       const res = updatePurchaseReturn(
         editingReturn.id,
         {
-          supplierId: formSupplierId,
+          supplierId: formSupplierId || undefined,
           purchaseId: formPurchaseId || undefined,
           purchaseRefNo: formPurchaseRefNo || undefined,
           invoiceNo: formInvoiceNo || undefined,
-          returnDate: formReturnDate,
-          speciesId: formSpeciesId,
+          returnDate: formReturnDate || new Date().toISOString().split('T')[0],
+          speciesId: formSpeciesId || undefined,
           gradeId: formGradeId || undefined,
           sizeId: formSizeId || undefined,
           secondarySizeId: formIsDualSize && formSecondarySizeId ? formSecondarySizeId : undefined,
@@ -239,11 +222,11 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           boxesCount: formBoxesCount ? Number(formBoxesCount) : undefined,
           returnedWeightKg: weight,
           ratePerKg: rate,
-          reason: formReason,
+          reason: formReason || 'General Return',
           detailedReason: formDetailedReason || undefined,
           adjustSupplierPayable: formAdjustPayable
         },
-        editReason || 'Updated return specifications'
+        editReason || 'Updated return particulars'
       );
       if (res.success) {
         setIsRecordModalOpen(false);
@@ -251,13 +234,13 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
       }
     } else {
       const res = addPurchaseReturn({
-        returnDate: formReturnDate,
+        returnDate: formReturnDate || new Date().toISOString().split('T')[0],
         financialYear: '',
-        supplierId: formSupplierId,
+        supplierId: formSupplierId || '',
         purchaseId: formPurchaseId || undefined,
         purchaseRefNo: formPurchaseRefNo || undefined,
         invoiceNo: formInvoiceNo || undefined,
-        speciesId: formSpeciesId,
+        speciesId: formSpeciesId || '',
         gradeId: formGradeId || undefined,
         sizeId: formSizeId || undefined,
         secondarySizeId: formIsDualSize && formSecondarySizeId ? formSecondarySizeId : undefined,
@@ -267,7 +250,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
         returnedWeightKg: weight,
         ratePerKg: rate,
         returnedValue: 0,
-        reason: formReason,
+        reason: formReason || 'General Return',
         detailedReason: formDetailedReason || undefined,
         adjustSupplierPayable: formAdjustPayable
       });
@@ -279,12 +262,12 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
 
   const handleStartEdit = (ret: PurchaseReturn) => {
     setEditingReturn(ret);
-    setFormSupplierId(ret.supplierId);
+    setFormSupplierId(ret.supplierId || '');
     setFormPurchaseId(ret.purchaseId || '');
     setFormPurchaseRefNo(ret.purchaseRefNo || '');
     setFormInvoiceNo(ret.invoiceNo || '');
     setFormReturnDate(ret.returnDate);
-    setFormSpeciesId(ret.speciesId);
+    setFormSpeciesId(ret.speciesId || '');
     setFormGradeId(ret.gradeId || '');
     setFormSizeId(ret.sizeId || '');
     setFormSecondarySizeId(ret.secondarySizeId || '');
@@ -293,7 +276,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     setFormBoxesCount(ret.boxesCount || '');
     setFormWeightKg(ret.returnedWeightKg);
     setFormRatePerKg(ret.ratePerKg);
-    setFormReason(ret.reason);
+    setFormReason(ret.reason || RETURN_REASONS[0]);
     setFormDetailedReason(ret.detailedReason || '');
     setFormAdjustPayable(ret.adjustSupplierPayable !== false);
     setEditReason('');
@@ -323,12 +306,12 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const sup = supplierMap.get(r.supplierId)?.name.toLowerCase() || '';
-      const sp = speciesMap.get(r.speciesId)?.name.toLowerCase() || '';
+      const sup = r.supplierId ? supplierMap.get(r.supplierId)?.name.toLowerCase() || '' : '';
+      const sp = r.speciesId ? speciesMap.get(r.speciesId)?.name.toLowerCase() || '' : '';
       const retNo = r.returnNo.toLowerCase();
       const ref = (r.purchaseRefNo || '').toLowerCase();
       const inv = (r.invoiceNo || '').toLowerCase();
-      const reason = r.reason.toLowerCase();
+      const reason = (r.reason || '').toLowerCase();
       return (
         retNo.includes(q) ||
         sup.includes(q) ||
@@ -371,11 +354,11 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
       returnNo: r.returnNo,
       returnDate: r.returnDate,
       financialYear: r.financialYear,
-      supplierCode: supplierMap.get(r.supplierId)?.code || '',
-      supplierName: supplierMap.get(r.supplierId)?.name || '',
+      supplierCode: r.supplierId ? supplierMap.get(r.supplierId)?.code || '' : '',
+      supplierName: r.supplierId ? supplierMap.get(r.supplierId)?.name || '' : '',
       purchaseRefNo: r.purchaseRefNo || 'Unlinked',
       invoiceNo: r.invoiceNo || 'N/A',
-      species: speciesMap.get(r.speciesId)?.name || '',
+      species: r.speciesId ? speciesMap.get(r.speciesId)?.name || '' : '',
       grade: gradeMap.get(r.gradeId || '')?.name || 'N/A',
       size: sizeMap.get(r.sizeId || '')?.name || 'N/A',
       dualSize: r.isDualSize && r.secondarySizeId ? sizeMap.get(r.secondarySizeId)?.name || '' : '',
@@ -384,7 +367,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
       ratePerKg: r.ratePerKg,
       returnedValue: r.returnedValue,
       boxesCount: r.boxesCount || 0,
-      reason: r.reason,
+      reason: r.reason || '',
       detailedReason: r.detailedReason || '',
       adjustSupplierPayable: r.adjustSupplierPayable ? 'YES' : 'NO',
       status: r.isVoided ? 'VOIDED' : 'ACTIVE',
@@ -617,8 +600,8 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 </tr>
               ) : (
                 filteredReturns.map((r) => {
-                  const supp = supplierMap.get(r.supplierId);
-                  const spec = speciesMap.get(r.speciesId);
+                  const supp = r.supplierId ? supplierMap.get(r.supplierId) : undefined;
+                  const spec = r.speciesId ? speciesMap.get(r.speciesId) : undefined;
                   const sz = sizeMap.get(r.sizeId || '');
                   const cnt = countMap.get(r.countId || '');
 
@@ -649,12 +632,12 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-bold text-ink-900">{supp?.name || 'Unknown Supplier'}</div>
-                        <div className="text-[10px] text-ink-500 font-mono">{supp?.code}</div>
+                        <div className="font-bold text-ink-900">{supp?.name || 'Open / General Party'}</div>
+                        <div className="text-[10px] text-ink-500 font-mono">{supp?.code || '—'}</div>
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-ink-900">{spec?.name || 'Seafood'}</div>
+                        <div className="font-semibold text-ink-900">{spec?.name || 'General Product'}</div>
                         <div className="text-[10px] text-ink-500 mt-0.5">
                           {r.isDualSize && r.secondarySizeId ? (
                             <span className="font-semibold text-rose-700">
@@ -770,16 +753,15 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
             {/* Supplier Select */}
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Supplier / Party <span className="text-rose-600">*</span>
+                Supplier / Party
               </label>
               <select
                 value={formSupplierId}
                 onChange={(e) => handleSupplierChange(e.target.value)}
                 disabled={!!editingReturn}
-                required
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               >
-                <option value="">Select Supplier...</option>
+                <option value="">None / Open Party (Optional)</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.code})
@@ -833,15 +815,14 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Species / Product <span className="text-rose-600">*</span>
+                Species / Product
               </label>
               <select
                 value={formSpeciesId}
                 onChange={(e) => setFormSpeciesId(e.target.value)}
-                required
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               >
-                <option value="">Select Species...</option>
+                <option value="">None / Unspecified (Optional)</option>
                 {species.map((sp) => (
                   <option key={sp.id} value={sp.id}>
                     {sp.name}
@@ -939,24 +920,22 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Returned Weight (Kg) <span className="text-rose-600">*</span>
+                Returned Weight (Kg)
               </label>
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
-                max={currentAvailableWeight !== undefined ? currentAvailableWeight : undefined}
+                min="0"
                 value={formWeightKg}
                 onChange={(e) => setFormWeightKg(e.target.value === '' ? '' : Number(e.target.value))}
-                required
-                placeholder="e.g. 150.00"
+                placeholder="0.00"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:border-rose-600 outline-none"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Rate / Kg (₹) <span className="text-rose-600">*</span>
+                Rate / Kg (₹)
               </label>
               <input
                 type="number"
@@ -964,21 +943,19 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 min="0"
                 value={formRatePerKg}
                 onChange={(e) => setFormRatePerKg(e.target.value === '' ? '' : Number(e.target.value))}
-                required
-                placeholder="e.g. 280.00"
+                placeholder="0.00"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:border-rose-600 outline-none"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Return Date <span className="text-rose-600">*</span>
+                Return Date
               </label>
               <input
                 type="date"
                 value={formReturnDate}
                 onChange={(e) => setFormReturnDate(e.target.value)}
-                required
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               />
             </div>
@@ -1000,14 +977,14 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Return Reason <span className="text-rose-600">*</span>
+                Return Reason
               </label>
               <select
                 value={formReason}
                 onChange={(e) => setFormReason(e.target.value)}
-                required
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               >
+                <option value="">None / Unspecified (Optional)</option>
                 {RETURN_REASONS.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -1068,14 +1045,13 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           {editingReturn && (
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Audit Reason for Edit <span className="text-rose-600">*</span>
+                Audit Reason for Edit (Optional)
               </label>
               <input
                 type="text"
                 value={editReason}
                 onChange={(e) => setEditReason(e.target.value)}
-                required
-                placeholder="State reason for editing this return record..."
+                placeholder="Optional reason for editing this return record..."
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               />
             </div>
@@ -1117,10 +1093,10 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
               <div>
                 <span className="text-ink-500 block uppercase font-bold text-[10px]">Supplier</span>
                 <span className="font-semibold text-ink-900 mt-0.5 block">
-                  {supplierMap.get(inspectReturn.supplierId)?.name}
+                  {supplierMap.get(inspectReturn.supplierId || '')?.name || 'General / Unspecified Party'}
                 </span>
                 <span className="text-[10px] text-ink-400">
-                  {supplierMap.get(inspectReturn.supplierId)?.code}
+                  {supplierMap.get(inspectReturn.supplierId || '')?.code || '—'}
                 </span>
               </div>
               <div>
@@ -1151,7 +1127,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <span className="text-ink-500 text-[10px] block">Product / Species</span>
-                  <span className="font-bold text-ink-900">{speciesMap.get(inspectReturn.speciesId)?.name}</span>
+                  <span className="font-bold text-ink-900">{speciesMap.get(inspectReturn.speciesId || '')?.name || 'General Product / Unspecified'}</span>
                 </div>
                 <div>
                   <span className="text-ink-500 text-[10px] block">Grade</span>

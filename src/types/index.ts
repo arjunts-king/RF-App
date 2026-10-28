@@ -225,11 +225,11 @@ export interface PurchaseReturn {
   returnNo: string; // Sequential: PR-00001
   returnDate: string; // YYYY-MM-DD
   financialYear: string;
-  supplierId: string;
+  supplierId?: string; // Optional
   purchaseId?: string; // Optional: linked to a specific purchase transaction
   purchaseRefNo?: string; // e.g. PUR-00001
   invoiceNo?: string;
-  speciesId: string;
+  speciesId?: string; // Optional
   gradeId?: string;
   sizeId?: string;
   secondarySizeId?: string;
@@ -239,7 +239,7 @@ export interface PurchaseReturn {
   ratePerKg: number;
   returnedValue: number; // returnedWeightKg * ratePerKg (Debit Note Amount)
   boxesCount?: number;
-  reason: PurchaseReturnReason | string;
+  reason?: PurchaseReturnReason | string;
   detailedReason?: string;
   adjustSupplierPayable: boolean; // default true: reduces supplier ledger payable
   isVoided: boolean;
