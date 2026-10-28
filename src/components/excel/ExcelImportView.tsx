@@ -348,7 +348,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
 
       return {
         'Purchase ID': p.purchaseId,
-        'Date': p.purchaseDate,
+        'Date (DD-MM-YYYY)': p.purchaseDate ? p.purchaseDate.split('-').reverse().join('-') : '',
         'Supplier Code': supp?.code || '',
         'Supplier Name': supp?.name || '',
         'Landing Location': loc?.name || '',
@@ -818,8 +818,8 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
               <code>"Quantity"</code> are all recognized automatically).
             </li>
             <li>
-              Date formats like <code>YYYY-MM-DD</code>, <code>DD/MM/YYYY</code>, and native Excel date
-              cells are parsed automatically.
+              Date format: <code>DD-MM-YYYY</code> (e.g. <code>18-10-2026</code>) is standard;{' '}
+              <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, and native Excel date cells are all recognized automatically.
             </li>
             <li>
               Need the exact layout? Click <strong>"Download Sample Excel Template"</strong> above to

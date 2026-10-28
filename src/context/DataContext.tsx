@@ -2518,7 +2518,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rowNum = idx + 1;
 
       // Extract values with flexible column key aliases
-      const rawDate = getFlexibleValue(row, ['purchasedate', 'date', 'billdate', 'txndate', 'entrydate']);
+      const rawDate = getFlexibleValue(row, ['purchasedateddmmyyyy', 'purchasedate', 'date', 'billdate', 'txndate', 'entrydate', 'invoicedate']);
       const purchaseDate = formatExcelDate(rawDate);
 
       const supplierVal = getFlexibleValue(row, [

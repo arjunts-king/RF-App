@@ -60,25 +60,35 @@ export function formatExcelDate(rawDate: any): string {
   if (!rawDate) return new Date().toISOString().split('T')[0];
 
   if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
-    return rawDate.toISOString().split('T')[0];
+    const y = rawDate.getFullYear();
+    const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+    const d = String(rawDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   const str = String(rawDate).trim();
-  // Check if standard YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    return str;
-  }
-  // Check DD/MM/YYYY or DD-MM-YYYY
-  const ddmmyyyy = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+
+  // Check DD-MM-YYYY, DD/MM/YYYY, or DD.MM.YYYY
+  const ddmmyyyy = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
   if (ddmmyyyy) {
     const [, day, month, year] = ddmmyyyy;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  // Check standard YYYY-MM-DD or YYYY/MM/DD
+  const yyyymmdd = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+  if (yyyymmdd) {
+    const [, year, month, day] = yyyymmdd;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
   // Fallback to Date parser
   const parsed = new Date(str);
   if (!isNaN(parsed.getTime())) {
-    return parsed.toISOString().split('T')[0];
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   return new Date().toISOString().split('T')[0];
@@ -280,7 +290,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const activeExpenses = baseExpenses;
 
     const row1: Record<string, any> = {
-      'Purchase Date (YYYY-MM-DD)': '2026-10-18',
+      'Purchase Date (DD-MM-YYYY)': '18-10-2026',
       'Supplier Code or Name': 'Kochi Sea Harvesters',
       'Location Code or Name': 'Munambam Harbour',
       'Species Code or Name': 'Vannamei Shrimp',
@@ -311,7 +321,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row1['Remarks'] = 'Prime morning landing';
 
     const row2: Record<string, any> = {
-      'Purchase Date (YYYY-MM-DD)': '2026-10-19',
+      'Purchase Date (DD-MM-YYYY)': '19-10-2026',
       'Supplier Code or Name': 'Malabar Coast Fisheries',
       'Location Code or Name': 'Beypore Port Jetty',
       'Species Code or Name': 'Yellowfin Tuna',
@@ -341,7 +351,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row2['Remarks'] = 'Export grade tuna';
 
     const row3: Record<string, any> = {
-      'Purchase Date (YYYY-MM-DD)': '2026-10-20',
+      'Purchase Date (DD-MM-YYYY)': '20-10-2026',
       'Supplier Code or Name': 'Kochi Sea Harvesters',
       'Location Code or Name': 'Munambam Harbour',
       'Species Code or Name': 'Semi Needle',
@@ -460,7 +470,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const activeExpenses = baseExpensesMulti;
 
     const purchasesRow: Record<string, any> = {
-      'Purchase Date': '2026-10-18',
+      'Purchase Date (DD-MM-YYYY)': '18-10-2026',
       'Supplier Name': 'Kochi Sea Harvesters',
       'Location Name': 'Munambam Harbour',
       'Species Name': 'Vannamei Shrimp',
