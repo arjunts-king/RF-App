@@ -32,6 +32,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
   const [speciesId, setSpeciesId] = useState<string>('');
   const [gradeId, setGradeId] = useState<string>('');
   const [sizeId, setSizeId] = useState<string>('');
+  const [secondarySizeId, setSecondarySizeId] = useState<string>('');
+  const [isDualSize, setIsDualSize] = useState<boolean>(false);
   const [countId, setCountId] = useState<string>('');
   const [boxesCount, setBoxesCount] = useState<string>('');
   const [weightKg, setWeightKg] = useState<string>('');
@@ -132,6 +134,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
     setSpeciesId('');
     setGradeId('');
     setSizeId('');
+    setSecondarySizeId('');
+    setIsDualSize(false);
     setCountId('');
     setBoxesCount('');
     setWeightKg('');
@@ -179,6 +183,21 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       return;
     }
 
+    if (isDualSize) {
+      if (!sizeId || !secondarySizeId) {
+        showToast('Please select both Primary and Secondary sizes for a dual-size entry.', 'error');
+        return;
+      }
+      if (sizeId === secondarySizeId) {
+        showToast('Primary and Secondary sizes must be different.', 'error');
+        return;
+      }
+      if (!remarks.trim()) {
+        showToast('Remarks are required for dual-size entries to document that the total weight encompasses both sizes without distinction.', 'error');
+        return;
+      }
+    }
+
     const res = addPurchase({
       purchaseDate,
       supplierId,
@@ -188,6 +207,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       speciesId,
       gradeId,
       sizeId,
+      secondarySizeId: isDualSize ? secondarySizeId : undefined,
+      isDualSize,
       countId,
       boxesCount: parseInt(boxesCount, 10) || 0,
       weightKg: numericWeight,
@@ -332,13 +353,40 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
         </div>
 
         {/* SECTION 2: PRODUCT SPECIFICATION & WEIGHMENT */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-3 flex items-center gap-2">
-            <Scale className="w-4 h-4" />
-            2. Seafood Product & Weighment
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="lg:col-span-2">
+        <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
+              <Scale className="w-4 h-4" />
+              2. Seafood Product & Weighment
+            </h3>
+            <label className="inline-flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-rose-200 hover:border-rose-400 transition select-none shadow-2xs">
+              <input
+                type="checkbox"
+                checked={isDualSize}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIsDualSize(checked);
+                  if (!checked) setSecondarySizeId('');
+                }}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 accent-rose-600 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-rose-900">
+                Two Sizes in Single Item (Combined Total Kg)
+              </span>
+            </label>
+          </div>
+
+          {isDualSize && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2.5">
+              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase shrink-0 mt-0.5">Constraint Active</span>
+              <div>
+                <strong>Combined Lot Mode:</strong> This entry is for a single purchase item containing <strong>two sizes</strong> (e.g. <em>Semi Needle 6/10 &amp; 10/20</em>) where only the <strong>total weight (Kg)</strong> is specified without distinction. <strong>Remarks are mandatory</strong> for this entry to document the combined catch.
+              </div>
+            </div>
+          )}
+
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${isDualSize ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-4`}>
+            <div className={isDualSize ? 'lg:col-span-2' : 'lg:col-span-2'}>
               <label className="block text-xs font-semibold text-ink-700 mb-1">
                 Species / Product <span className="text-rose-600">*</span>
               </label>
@@ -373,21 +421,65 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-ink-700 mb-1">Physical Size</label>
-              <select
-                value={sizeId}
-                onChange={(e) => setSizeId(e.target.value)}
-                className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
-              >
-                <option value="">-- Any Size --</option>
-                {activeSizes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} {s.description ? `(${s.description})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!isDualSize ? (
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 mb-1">Physical Size</label>
+                <select
+                  value={sizeId}
+                  onChange={(e) => setSizeId(e.target.value)}
+                  className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+                >
+                  <option value="">-- Any Size --</option>
+                  {activeSizes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.description ? `(${s.description})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-rose-900 mb-1">
+                    Primary Size <span className="text-rose-600">*</span>
+                  </label>
+                  <select
+                    value={sizeId}
+                    onChange={(e) => setSizeId(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold px-3 py-2 bg-rose-50/50 border border-rose-300 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+                  >
+                    <option value="">-- Size 1 (e.g. 6/10) --</option>
+                    {activeSizes.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.description ? `(${s.description})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-rose-900 mb-1">
+                    Secondary Size <span className="text-rose-600">*</span>
+                  </label>
+                  <select
+                    value={secondarySizeId}
+                    onChange={(e) => setSecondarySizeId(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold px-3 py-2 bg-rose-50/50 border border-rose-300 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+                  >
+                    <option value="">-- Size 2 (e.g. 10/20) --</option>
+                    {activeSizes
+                      .filter((s) => s.id !== sizeId)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.description ? `(${s.description})` : ''}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-ink-700 mb-1">Piece Count / Pcs</label>
@@ -419,17 +511,27 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
             <div>
               <label className="block text-xs font-semibold text-ink-700 mb-1">
-                Net Weight (Kg) <span className="text-rose-600">*</span>
+                {isDualSize ? (
+                  <span>
+                    Total Combined Weight (Kg) <span className="text-rose-600">*</span>
+                  </span>
+                ) : (
+                  <span>
+                    Net Weight (Kg) <span className="text-rose-600">*</span>
+                  </span>
+                )}
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
-                placeholder="0.00"
+                placeholder={isDualSize ? "e.g. 2000.00 total" : "0.00"}
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
                 required
-                className="w-full text-xs font-bold text-ink-900 px-3 py-2 bg-rose-50/50 border border-rose-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+                className={`w-full text-xs font-bold text-ink-900 px-3 py-2 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition ${
+                  isDualSize ? 'bg-rose-100/70 border-2 border-rose-400' : 'bg-rose-50/50 border border-rose-200'
+                }`}
               />
             </div>
           </div>
@@ -642,14 +744,30 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink-700 mb-1">Remarks / Quality Notes</label>
+            <label className={`block text-xs font-semibold mb-1 ${isDualSize ? 'text-rose-900 font-bold' : 'text-ink-700'}`}>
+              Remarks / Quality Notes {isDualSize ? <span className="text-rose-600 font-bold">* (Required for Dual-Size lot)</span> : null}
+            </label>
             <input
               type="text"
-              placeholder="e.g. Dawn catch, boat registration KL-07-291"
+              placeholder={
+                isDualSize
+                  ? "e.g. 2000 kg total of both 6/10 and 10/20 size without distinction"
+                  : "e.g. Dawn catch, boat registration KL-07-291"
+              }
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+              required={isDualSize}
+              className={`w-full text-xs font-medium px-3 py-2 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition ${
+                isDualSize && !remarks.trim()
+                  ? 'bg-rose-50/70 border-2 border-rose-400 text-rose-950 placeholder-rose-400'
+                  : 'bg-gray-50 border border-gray-200'
+              }`}
             />
+            {isDualSize && (
+              <p className="text-[10px] text-rose-700 mt-1 font-medium">
+                * Please state that the total weight encompasses both sizes without individual distinction.
+              </p>
+            )}
           </div>
 
           <div>

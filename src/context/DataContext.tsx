@@ -477,7 +477,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteSize = (id: string) => {
-    const hasTransactions = purchases.some((p) => p.sizeId === id);
+    const hasTransactions = purchases.some((p) => p.sizeId === id || (p.isDualSize && p.secondarySizeId === id));
     if (hasTransactions) {
       showToast('Cannot delete size referenced in purchases. Deactivate instead.', 'error');
       return { success: false };
@@ -945,6 +945,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false };
     }
 
+    if (purchaseData.isDualSize && purchaseData.secondarySizeId) {
+      if (!purchaseData.remarks || !purchaseData.remarks.trim()) {
+        showToast('Validation Error: Remarks are mandatory for dual-size lots to document the catch details.', 'error');
+        return { success: false };
+      }
+    }
+
     const warnings: string[] = [];
     if (purchaseData.invoiceNo && purchaseData.supplierId && purchaseData.purchaseDate) {
       const duplicate = purchases.find(
@@ -988,6 +995,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       speciesId: purchaseData.speciesId,
       gradeId: purchaseData.gradeId || '',
       sizeId: purchaseData.sizeId || '',
+      secondarySizeId: purchaseData.secondarySizeId || undefined,
+      isDualSize: Boolean(purchaseData.isDualSize && purchaseData.secondarySizeId),
       countId: purchaseData.countId || '',
       boxesCount: Number(purchaseData.boxesCount) || 0,
       weightKg: Number(purchaseData.weightKg),
@@ -1056,6 +1065,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const supplier = suppliers.find((s) => s.id === (updates.supplierId || existing.supplierId));
 
+    const isDualSize = updates.isDualSize !== undefined ? updates.isDualSize : existing.isDualSize;
+    const secondarySizeId = updates.secondarySizeId !== undefined ? updates.secondarySizeId : existing.secondarySizeId;
+    const remarks = updates.remarks !== undefined ? updates.remarks : existing.remarks;
+    if (isDualSize && secondarySizeId && (!remarks || !remarks.trim())) {
+      showToast('Validation Error: Remarks are mandatory for dual-size lots to document the catch details.', 'error');
+      return { success: false, message: 'Remarks are mandatory for dual-size lots.' };
+    }
+
     const derived = computePurchaseFields({
       weightKg: updates.weightKg ?? existing.weightKg,
       ratePerKg: updates.ratePerKg ?? existing.ratePerKg,
@@ -1070,6 +1087,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedPurchase: Purchase = {
       ...existing,
       ...updates,
+      secondarySizeId: isDualSize ? (updates.secondarySizeId !== undefined ? (updates.secondarySizeId || undefined) : existing.secondarySizeId) : undefined,
+      isDualSize: Boolean(isDualSize && (updates.secondarySizeId !== undefined ? updates.secondarySizeId : existing.secondarySizeId)),
       ...derived,
       updatedBy: currentUser.email,
       updatedAt: new Date().toISOString()
@@ -2684,8 +2703,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       let resolvedSizeId = '';
-      if (sizeVal) {
-        const szNorm = normalizeKey(String(sizeVal));
+      let resolvedSecondarySizeId: string | undefined;
+      let isDualSize = false;
+
+      const secondarySizeVal = getFlexibleValue(row, [
+        'secondarysizecodeorname',
+        'secondarysize',
+        'size2',
+        'secondsize',
+        'dualize',
+        'secondary'
+      ]);
+
+      let primarySizeStr = sizeVal ? String(sizeVal).trim() : '';
+      let secondarySizeStr = secondarySizeVal ? String(secondarySizeVal).trim() : '';
+
+      // Check if sizeVal has combined sizes like "6/10 & 10/20" or "6/10 and 10/20" or "6/10, 10/20"
+      if (!secondarySizeStr && primarySizeStr) {
+        if (primarySizeStr.includes(' & ')) {
+          const parts = primarySizeStr.split(' & ');
+          primarySizeStr = parts[0].trim();
+          secondarySizeStr = parts.slice(1).join(' & ').trim();
+        } else if (primarySizeStr.includes(' and ')) {
+          const parts = primarySizeStr.split(' and ');
+          primarySizeStr = parts[0].trim();
+          secondarySizeStr = parts.slice(1).join(' and ').trim();
+        } else if (primarySizeStr.includes(', ')) {
+          const parts = primarySizeStr.split(', ');
+          primarySizeStr = parts[0].trim();
+          secondarySizeStr = parts.slice(1).join(', ').trim();
+        }
+      }
+
+      if (primarySizeStr) {
+        const szNorm = normalizeKey(primarySizeStr);
         const matched = mutableSizes.find(
           (s) => normalizeKey(s.code) === szNorm || normalizeKey(s.name) === szNorm
         );
@@ -2693,14 +2744,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           resolvedSizeId = matched.id;
         } else if (autoCreateMaster) {
           const newSz: Size = {
-            id: `sz-auto-${Date.now()}-${idx}`,
+            id: `sz-auto-${Date.now()}-${idx}-1`,
             code: `SZ-${String(mutableSizes.length + 1).padStart(2, '0')}`,
-            name: String(sizeVal).trim(),
+            name: primarySizeStr,
             description: '',
             active: true
           };
           mutableSizes.push(newSz);
           resolvedSizeId = newSz.id;
+        }
+      }
+
+      if (secondarySizeStr) {
+        const sz2Norm = normalizeKey(secondarySizeStr);
+        const matched2 = mutableSizes.find(
+          (s) => normalizeKey(s.code) === sz2Norm || normalizeKey(s.name) === sz2Norm
+        );
+        if (matched2) {
+          resolvedSecondarySizeId = matched2.id;
+          isDualSize = true;
+        } else if (autoCreateMaster) {
+          const newSz2: Size = {
+            id: `sz-auto-${Date.now()}-${idx}-2`,
+            code: `SZ-${String(mutableSizes.length + 1).padStart(2, '0')}`,
+            name: secondarySizeStr,
+            description: '',
+            active: true
+          };
+          mutableSizes.push(newSz2);
+          resolvedSecondarySizeId = newSz2.id;
+          isDualSize = true;
         }
       }
 
@@ -2884,6 +2957,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         speciesId: resolvedSpecies.id,
         gradeId: resolvedGradeId,
         sizeId: resolvedSizeId,
+        secondarySizeId: resolvedSecondarySizeId,
+        isDualSize,
         countId: resolvedCountId,
         boxesCount,
         weightKg: weightVal,
@@ -2904,7 +2979,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dueDate: derived.dueDate,
         paymentStatus: derived.paymentStatus,
         rejectionWeightKg: 0,
-        remarks: remarks || 'Imported from Excel',
+        remarks: remarks || (isDualSize ? `Combined lot of sizes ${primarySizeStr} & ${secondarySizeStr} (${weightVal} Kg total)` : 'Imported from Excel'),
         isVoided: false,
         createdBy: currentUser.email,
         createdAt: new Date().toISOString(),

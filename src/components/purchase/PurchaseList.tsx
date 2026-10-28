@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { Purchase } from '../../types';
 import { formatINR, formatKg, computePurchaseFields } from '../../utils/calculations';
 import { Modal } from '../common/Modal';
@@ -35,6 +36,7 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
     businessSettings
   } = useData();
   const { permissions } = useAuth();
+  const { showToast } = useToast();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +60,8 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
     speciesId: '',
     gradeId: '',
     sizeId: '',
+    secondarySizeId: '',
+    isDualSize: false,
     countId: '',
     boxesCount: 0,
     weightKg: 0,
@@ -94,7 +98,10 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       const matchBatch = p.batchNo?.toLowerCase().includes(q);
       const matchSupplier = supplierMap.get(p.supplierId)?.name.toLowerCase().includes(q);
       const matchSpecies = speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
-      return matchId || matchInvoice || matchBatch || matchSupplier || matchSpecies;
+      const secSzName = p.secondarySizeId ? sizeMap.get(p.secondarySizeId)?.name.toLowerCase() : '';
+      const matchSize = sizeMap.get(p.sizeId)?.name.toLowerCase().includes(q) || secSzName?.includes(q);
+      const matchRemarks = p.remarks?.toLowerCase().includes(q);
+      return matchId || matchInvoice || matchBatch || matchSupplier || matchSpecies || matchSize || matchRemarks;
     }
 
     return true;
@@ -128,6 +135,8 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       speciesId: p.speciesId,
       gradeId: p.gradeId || '',
       sizeId: p.sizeId || '',
+      secondarySizeId: p.secondarySizeId || '',
+      isDualSize: Boolean(p.isDualSize && p.secondarySizeId),
       countId: p.countId || '',
       boxesCount: p.boxesCount || 0,
       weightKg: p.weightKg || 0,
@@ -145,6 +154,21 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
     if (!editingPurchase) return;
     if (!editForm.editReason.trim()) return;
 
+    if (editForm.isDualSize) {
+      if (!editForm.sizeId || !editForm.secondarySizeId) {
+        showToast('Please select both Primary and Secondary sizes for dual-size lots.', 'error');
+        return;
+      }
+      if (editForm.sizeId === editForm.secondarySizeId) {
+        showToast('Primary and Secondary sizes must be different.', 'error');
+        return;
+      }
+      if (!editForm.remarks.trim()) {
+        showToast('Remarks are required for dual-size entries to document that the total weight encompasses both sizes.', 'error');
+        return;
+      }
+    }
+
     const res = updatePurchase(
       editingPurchase.id,
       {
@@ -156,6 +180,8 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
         speciesId: editForm.speciesId,
         gradeId: editForm.gradeId,
         sizeId: editForm.sizeId,
+        secondarySizeId: editForm.isDualSize ? editForm.secondarySizeId : undefined,
+        isDualSize: editForm.isDualSize,
         countId: editForm.countId,
         boxesCount: Number(editForm.boxesCount) || 0,
         weightKg: Number(editForm.weightKg) || 0,
@@ -197,7 +223,9 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
       BatchNo: p.batchNo || 'None',
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
-      Size: sizeMap.get(p.sizeId)?.name || 'N/A',
+      Size: p.isDualSize && p.secondarySizeId
+        ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
+        : (sizeMap.get(p.sizeId)?.name || 'N/A'),
       Count: countMap.get(p.countId)?.name || 'N/A',
       WeightKg: p.weightKg,
       RatePerKg: p.ratePerKg,
@@ -409,7 +437,19 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                       <td className="py-3 px-4">
                         <div className="font-semibold text-ink-900 line-clamp-1">{spec?.name || 'Species'}</div>
                         <div className="text-[10px] text-ink-500">
-                          {[sz?.name ? `Size: ${sz.name}` : '', cnt?.name ? `Count: ${cnt.name}` : ''].filter(Boolean).join(' · ') || 'Standard'}
+                          {p.isDualSize && p.secondarySizeId ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-rose-800">
+                                Sizes: {sz?.name || 'N/A'} &amp; {sizeMap.get(p.secondarySizeId)?.name || 'N/A'}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                Dual Size
+                              </span>
+                              {cnt?.name && <span>· Count: {cnt.name}</span>}
+                            </div>
+                          ) : (
+                            [sz?.name ? `Size: ${sz.name}` : '', cnt?.name ? `Count: ${cnt.name}` : ''].filter(Boolean).join(' · ') || 'Standard'
+                          )}
                         </div>
                       </td>
 
@@ -563,7 +603,19 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                   <strong>Grade:</strong> {gradeMap.get(selectedPurchase.gradeId)?.name || 'Standard'}
                 </div>
                 <div>
-                  <strong>Physical Size:</strong> {sizeMap.get(selectedPurchase.sizeId)?.name || 'N/A'}
+                  <strong>Physical Size:</strong>{' '}
+                  {selectedPurchase.isDualSize && selectedPurchase.secondarySizeId ? (
+                    <span className="inline-flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-rose-900">
+                        {sizeMap.get(selectedPurchase.sizeId)?.name || 'N/A'} &amp; {sizeMap.get(selectedPurchase.secondarySizeId)?.name || 'N/A'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                        Combined Dual-Size Lot ({formatKg(selectedPurchase.weightKg)} Total)
+                      </span>
+                    </span>
+                  ) : (
+                    sizeMap.get(selectedPurchase.sizeId)?.name || 'N/A'
+                  )}
                 </div>
                 <div>
                   <strong>Piece Count:</strong> {countMap.get(selectedPurchase.countId)?.name || 'N/A'}
@@ -630,6 +682,21 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                     alt={`Weighment Slip for ${selectedPurchase.purchaseId}`}
                     className="w-full max-h-72 object-contain rounded-lg"
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Dual-Size Combined Lot Banner */}
+            {selectedPurchase.isDualSize && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase shrink-0 mt-0.5">Dual-Size Combined Entry</span>
+                <div>
+                  <strong>Combined Catch Lot:</strong> Recorded with single total weight of <strong>{formatKg(selectedPurchase.weightKg)}</strong> covering both sizes without individual weight distinction.
+                  {selectedPurchase.remarks && (
+                    <div className="mt-1 font-normal text-rose-950">
+                      <strong>Required Remarks:</strong> &ldquo;{selectedPurchase.remarks}&rdquo;
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -793,6 +860,33 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
             </div>
           </div>
 
+          {/* Dual Size Option */}
+          <div className="flex items-center justify-between p-2.5 bg-rose-50/60 border border-rose-200 rounded-xl">
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={editForm.isDualSize}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setEditForm({
+                    ...editForm,
+                    isDualSize: checked,
+                    secondarySizeId: checked ? editForm.secondarySizeId : ''
+                  });
+                }}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 accent-rose-600 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-rose-900">
+                Two Sizes in Single Item (Combined Total Kg)
+              </span>
+            </label>
+            {editForm.isDualSize && (
+              <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+                Combined Weight Mode
+              </span>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block font-semibold text-ink-700 mb-1">Species</label>
@@ -820,19 +914,54 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block font-semibold text-ink-700 mb-1">Physical Size</label>
-              <select
-                value={editForm.sizeId}
-                onChange={(e) => setEditForm({ ...editForm, sizeId: e.target.value })}
-                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
-              >
-                <option value="">None / Standard</option>
-                {sizes.map((sz) => (
-                  <option key={sz.id} value={sz.id}>{sz.name}</option>
-                ))}
-              </select>
-            </div>
+            {!editForm.isDualSize ? (
+              <div>
+                <label className="block font-semibold text-ink-700 mb-1">Physical Size</label>
+                <select
+                  value={editForm.sizeId}
+                  onChange={(e) => setEditForm({ ...editForm, sizeId: e.target.value })}
+                  className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                >
+                  <option value="">None / Standard</option>
+                  {sizes.map((sz) => (
+                    <option key={sz.id} value={sz.id}>{sz.name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block font-bold text-rose-900 mb-1">Primary Size *</label>
+                  <select
+                    value={editForm.sizeId}
+                    onChange={(e) => setEditForm({ ...editForm, sizeId: e.target.value })}
+                    required
+                    className="w-full p-2 bg-rose-50/50 border border-rose-300 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                  >
+                    <option value="">-- Size 1 (e.g. 6/10) --</option>
+                    {sizes.map((sz) => (
+                      <option key={sz.id} value={sz.id}>{sz.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-rose-900 mb-1">Secondary Size *</label>
+                  <select
+                    value={editForm.secondarySizeId}
+                    onChange={(e) => setEditForm({ ...editForm, secondarySizeId: e.target.value })}
+                    required
+                    className="w-full p-2 bg-rose-50/50 border border-rose-300 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                  >
+                    <option value="">-- Size 2 (e.g. 10/20) --</option>
+                    {sizes
+                      .filter((sz) => sz.id !== editForm.sizeId)
+                      .map((sz) => (
+                        <option key={sz.id} value={sz.id}>{sz.name}</option>
+                      ))}
+                  </select>
+                </div>
+              </>
+            )}
             <div>
               <label className="block font-semibold text-ink-700 mb-1">Piece Count</label>
               <select
@@ -963,13 +1092,20 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
           </div>
 
           <div>
-            <label className="block font-semibold text-ink-700 mb-1">Remarks</label>
+            <label className={`block font-semibold mb-1 ${editForm.isDualSize ? 'text-rose-900 font-bold' : 'text-ink-700'}`}>
+              Remarks {editForm.isDualSize ? <span className="text-rose-600 font-bold">* (Required for Dual-Size entries)</span> : null}
+            </label>
             <input
               type="text"
               value={editForm.remarks}
               onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
-              placeholder="e.g. Weighment calibrated at boat discharge"
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+              required={editForm.isDualSize}
+              placeholder={editForm.isDualSize ? "e.g. 2000 kg total of both 6/10 and 10/20 size" : "e.g. Weighment calibrated at boat discharge"}
+              className={`w-full p-2 rounded-xl focus:bg-white focus:border-rose-600 outline-none ${
+                editForm.isDualSize && !editForm.remarks.trim()
+                  ? 'bg-rose-50/60 border-2 border-rose-400 text-rose-950 placeholder-rose-400'
+                  : 'bg-gray-50 border border-gray-200'
+              }`}
             />
           </div>
 

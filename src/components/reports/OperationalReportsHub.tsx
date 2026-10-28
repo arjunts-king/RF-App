@@ -221,7 +221,7 @@ export const OperationalReportsHub: React.FC = () => {
   const paFiltered = activePurchases.filter((p) => {
     if (paSpeciesId && p.speciesId !== paSpeciesId) return false;
     if (paGradeId && p.gradeId !== paGradeId) return false;
-    if (paSizeId && p.sizeId !== paSizeId) return false;
+    if (paSizeId && p.sizeId !== paSizeId && (!p.isDualSize || p.secondarySizeId !== paSizeId)) return false;
     if (paCountId && p.countId !== paCountId) return false;
     if (paLocationId && p.locationId !== paLocationId) return false;
     return true;

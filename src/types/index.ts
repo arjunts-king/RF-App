@@ -142,6 +142,8 @@ export interface Purchase {
   speciesId: string;
   gradeId: string;
   sizeId: string;
+  secondarySizeId?: string; // Optional second size for combined/dual size lot (single total weight)
+  isDualSize?: boolean; // Flag indicating combined lot with two sizes without weight distinction
   countId: string;
   boxesCount: number;
   weightKg: number;

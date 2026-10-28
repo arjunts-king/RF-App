@@ -333,7 +333,36 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row2['Batch No'] = '';
     row2['Remarks'] = 'Export grade tuna';
 
-    const ws = XLSX.utils.json_to_sheet([row1, row2]);
+    const row3: Record<string, any> = {
+      'Purchase Date (YYYY-MM-DD)': '2026-10-20',
+      'Supplier Code or Name': 'Kochi Sea Harvesters',
+      'Location Code or Name': 'Munambam Harbour',
+      'Species Code or Name': 'Semi Needle',
+      'Grade Code or Name': 'Grade A',
+      'Size Code or Name': '6/10 & 10/20',
+      'Count Code or Name': '',
+      'Weight (Kg)': 2000,
+      'Rate per Kg (INR)': 310,
+      'No of Boxes': 40,
+      'Damage Weight (Kg)': 0,
+      'Damage Rate per Kg': 0,
+      'Fish Purchase Total (INR)': 620000
+    };
+
+    let totalExp3 = 0;
+    activeExpenses.forEach((exp, idx) => {
+      const amt = sampleAmounts1[idx % sampleAmounts1.length];
+      row3[`${exp.name} (INR)`] = amt;
+      totalExp3 += amt;
+    });
+
+    row3['Total Purchase Value (including landing costs)'] = 620000 + totalExp3;
+    row3['Amount Paid Now (INR)'] = 200000;
+    row3['Invoice / Bill No'] = 'INV-MIX-2026';
+    row3['Batch No'] = '';
+    row3['Remarks'] = '2000 kg total of both 6/10 and 10/20 size (dual size combined catch without distinction)';
+
+    const ws = XLSX.utils.json_to_sheet([row1, row2, row3]);
     XLSX.utils.book_append_sheet(wb, ws, 'Purchases');
     XLSX.writeFile(wb, 'Purchase_Transactions_Template.xlsx');
     return;

@@ -354,7 +354,9 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         'Landing Location': loc?.name || '',
         'Species': sp?.name || '',
         'Grade': grd?.name || '',
-        'Physical Size': sz?.name || '',
+        'Physical Size': p.isDualSize && p.secondarySizeId
+          ? `${sz?.name || ''} & ${sizes.find((s) => s.id === p.secondarySizeId)?.name || ''}`
+          : (sz?.name || ''),
         'Piece Count': cnt?.name || '',
         'Weight (Kg)': p.weightKg,
         'Rate/Kg': p.ratePerKg,
