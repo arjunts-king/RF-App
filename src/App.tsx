@@ -9,6 +9,7 @@ import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
 import { PurchaseList } from './components/purchase/PurchaseList';
+import { PurchaseReturnsView } from './components/purchase/PurchaseReturnsView';
 import { BatchExpenseView } from './components/purchase/BatchExpenseView';
 import { SupplierLedgerView } from './components/payments/SupplierLedgerView';
 import { OutstandingReport } from './components/payments/OutstandingReport';
@@ -47,6 +48,7 @@ import {
 const MainLayout: React.FC = () => {
   const [activeModule, setActiveModule] = useState<'purchase' | 'production' | 'sales'>('purchase');
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [returnPurchaseId, setReturnPurchaseId] = useState<string | undefined>();
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -133,7 +135,22 @@ const MainLayout: React.FC = () => {
               {activeTab === 'purchase-entry' && (
                 <PurchaseEntryForm onSuccess={() => setActiveTab('purchases')} />
               )}
-              {activeTab === 'purchases' && <PurchaseList onNavigate={setActiveTab} />}
+              {activeTab === 'purchases' && (
+                <PurchaseList
+                  onNavigate={setActiveTab}
+                  onSelectForReturn={(pId) => {
+                    setReturnPurchaseId(pId);
+                    setActiveTab('purchase-returns');
+                  }}
+                />
+              )}
+              {activeTab === 'purchase-returns' && (
+                <PurchaseReturnsView
+                  onNavigate={setActiveTab}
+                  preselectedPurchaseId={returnPurchaseId}
+                  onClearPreselectedPurchase={() => setReturnPurchaseId(undefined)}
+                />
+              )}
               {activeTab === 'batch-expenses' && <BatchExpenseView />}
               {activeTab === 'payments' && <SupplierLedgerView />}
               {activeTab === 'outstanding' && <OutstandingReport />}

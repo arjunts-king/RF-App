@@ -209,6 +209,49 @@ export interface PaymentRecord {
   createdAt: string;
 }
 
+export type PurchaseReturnReason =
+  | 'Quality / Spoilage Rejection'
+  | 'Excessive Soft / Black Shell'
+  | 'Size / Count Mismatch'
+  | 'Foreign Contamination / Odor'
+  | 'Temperature Abuse During Transit'
+  | 'Weighment / Scale Discrepancy'
+  | 'Damaged Packaging / Crates'
+  | 'Pricing Discrepancy'
+  | 'Other';
+
+export interface PurchaseReturn {
+  id: string;
+  returnNo: string; // Sequential: PR-00001
+  returnDate: string; // YYYY-MM-DD
+  financialYear: string;
+  supplierId: string;
+  purchaseId?: string; // Optional: linked to a specific purchase transaction
+  purchaseRefNo?: string; // e.g. PUR-00001
+  invoiceNo?: string;
+  speciesId: string;
+  gradeId?: string;
+  sizeId?: string;
+  secondarySizeId?: string;
+  isDualSize?: boolean;
+  countId?: string;
+  returnedWeightKg: number;
+  ratePerKg: number;
+  returnedValue: number; // returnedWeightKg * ratePerKg (Debit Note Amount)
+  boxesCount?: number;
+  reason: PurchaseReturnReason | string;
+  detailedReason?: string;
+  adjustSupplierPayable: boolean; // default true: reduces supplier ledger payable
+  isVoided: boolean;
+  voidReason?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export type AuditAction = 'LOGIN' | 'CREATE' | 'EDIT' | 'VOID' | 'DELETE';
 
 export interface AuditLog {

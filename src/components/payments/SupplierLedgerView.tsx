@@ -7,7 +7,7 @@ import { PaymentModal } from './PaymentModal';
 import { BookOpen, Printer, PlusCircle } from 'lucide-react';
 
 export const SupplierLedgerView: React.FC = () => {
-  const { suppliers, purchases, payments, bankAccounts, businessSettings } = useData();
+  const { suppliers, purchases, payments, purchaseReturns, species, bankAccounts, businessSettings } = useData();
   const { permissions } = useAuth();
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>(suppliers[0]?.id || '');
@@ -24,11 +24,11 @@ export const SupplierLedgerView: React.FC = () => {
   interface LedgerEntry {
     id: string;
     date: string;
-    type: 'PURCHASE' | 'PAYMENT';
+    type: 'PURCHASE' | 'PAYMENT' | 'RETURN';
     refNo: string;
     description: string;
     debitAmount: number; // Increases payable (Purchase cost)
-    creditAmount: number; // Reduces payable (Payment amount)
+    creditAmount: number; // Reduces payable (Payment amount or Return credit)
     runningBalance: number;
   }
 
@@ -39,6 +39,12 @@ export const SupplierLedgerView: React.FC = () => {
   const supplierPayments = payments.filter(
     (pay) => pay.supplierId === selectedSupplierId && !pay.isVoided
   );
+
+  const supplierReturns = (purchaseReturns || []).filter(
+    (ret) => ret.supplierId === selectedSupplierId && !ret.isVoided && ret.adjustSupplierPayable !== false
+  );
+
+  const speciesMap = new Map((species || []).map((s) => [s.id, s]));
 
   // Direct payments recorded on purchase rows
   const directPurchasePayments = purchases
@@ -57,7 +63,7 @@ export const SupplierLedgerView: React.FC = () => {
   // Combine and sort chronologically
   const rawEvents: {
     date: string;
-    type: 'PURCHASE' | 'PAYMENT';
+    type: 'PURCHASE' | 'PAYMENT' | 'RETURN';
     refNo: string;
     description: string;
     debit: number;
@@ -97,6 +103,21 @@ export const SupplierLedgerView: React.FC = () => {
       description: `Direct Payment on ${dirPay.notes} via ${bank}`,
       debit: 0,
       credit: dirPay.amount
+    });
+  });
+
+  // Include purchase returns as credit notes / debit notes reducing supplier payable balance
+  supplierReturns.forEach((ret) => {
+    const spec = speciesMap.get(ret.speciesId);
+    const specName = spec?.name || 'Seafood';
+    const linkedInfo = ret.purchaseRefNo ? ` (Ref: ${ret.purchaseRefNo})` : '';
+    rawEvents.push({
+      date: ret.returnDate,
+      type: 'RETURN',
+      refNo: ret.returnNo,
+      description: `Purchase Return [Debit Note] (${ret.reason}): ${ret.returnedWeightKg}Kg ${specName} @ ₹${ret.ratePerKg}/Kg${linkedInfo}`,
+      debit: 0,
+      credit: ret.returnedValue
     });
   });
 
@@ -291,9 +312,18 @@ export const SupplierLedgerView: React.FC = () => {
               </tr>
 
               {ledgerEntries.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50/50">
+                <tr key={row.id} className={`hover:bg-gray-50/50 ${row.type === 'RETURN' ? 'bg-amber-50/30' : ''}`}>
                   <td className="py-2.5 px-3 whitespace-nowrap font-medium">{row.date}</td>
-                  <td className="py-2.5 px-3 font-bold text-rose-700 whitespace-nowrap">{row.refNo}</td>
+                  <td className="py-2.5 px-3 font-bold whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className={row.type === 'RETURN' ? 'text-amber-700' : 'text-rose-700'}>{row.refNo}</span>
+                      {row.type === 'RETURN' && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-200 uppercase">
+                          Debit Note
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-2.5 px-3">{row.description}</td>
                   <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-rose-900">
                     {row.debitAmount > 0 ? formatINR(row.debitAmount) : '—'}

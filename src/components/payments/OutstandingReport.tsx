@@ -5,7 +5,7 @@ import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { Clock, Download, Info } from 'lucide-react';
 
 export const OutstandingReport: React.FC = () => {
-  const { suppliers, purchases, payments } = useData();
+  const { suppliers, purchases, payments, purchaseReturns } = useData();
 
   interface SupplierAgeing {
     supplierId: string;
@@ -15,6 +15,7 @@ export const OutstandingReport: React.FC = () => {
     openingBalance: number;
     purchasesTotal: number;
     paymentsTotal: number;
+    returnsTotal: number;
     closingBalance: number;
     notDue: number;
     d0_30: number;
@@ -29,14 +30,18 @@ export const OutstandingReport: React.FC = () => {
   const reportData: SupplierAgeing[] = suppliers.map((supp) => {
     const suppPurchases = purchases.filter((p) => p.supplierId === supp.id && !p.isVoided);
     const suppPayments = payments.filter((pay) => pay.supplierId === supp.id && !pay.isVoided);
+    const suppReturns = (purchaseReturns || []).filter(
+      (r) => r.supplierId === supp.id && !r.isVoided && r.adjustSupplierPayable !== false
+    );
 
     const purchasesTotal = suppPurchases.reduce((s, p) => s + p.totalCost, 0);
     const directPaid = suppPurchases.reduce((s, p) => s + (p.directAmountPaid !== undefined ? p.directAmountPaid : (suppPayments.length === 0 ? p.amountPaid : 0)), 0);
     const standalonePaid = suppPayments.reduce((s, pay) => s + pay.amount, 0);
     const paymentsTotal = directPaid + standalonePaid;
+    const returnsTotal = suppReturns.reduce((s, r) => s + r.returnedValue, 0);
 
     const openingBalance = supp.openingBalance || 0;
-    const closingBalance = openingBalance + purchasesTotal - paymentsTotal;
+    const closingBalance = openingBalance + purchasesTotal - paymentsTotal - returnsTotal;
 
     // Ageing bucket calculations across unpaid balances on purchases
     let notDue = 0;
@@ -72,6 +77,7 @@ export const OutstandingReport: React.FC = () => {
       openingBalance,
       purchasesTotal,
       paymentsTotal,
+      returnsTotal,
       closingBalance,
       notDue,
       d0_30,
@@ -86,6 +92,7 @@ export const OutstandingReport: React.FC = () => {
   const totalOpening = reportData.reduce((s, r) => s + r.openingBalance, 0);
   const totalPurchases = reportData.reduce((s, r) => s + r.purchasesTotal, 0);
   const totalPayments = reportData.reduce((s, r) => s + r.paymentsTotal, 0);
+  const totalReturns = reportData.reduce((s, r) => s + r.returnsTotal, 0);
   const totalClosing = reportData.reduce((s, r) => s + r.closingBalance, 0);
   const totalNotDue = reportData.reduce((s, r) => s + r.notDue, 0);
   const total0_30 = reportData.reduce((s, r) => s + r.d0_30, 0);
@@ -102,6 +109,7 @@ export const OutstandingReport: React.FC = () => {
       { key: 'openingBalance', label: 'Opening Balance (INR)' },
       { key: 'purchasesTotal', label: 'Current Purchases (INR)' },
       { key: 'paymentsTotal', label: 'Payments Settled (INR)' },
+      { key: 'returnsTotal', label: 'Purchase Returns / Debit Notes (INR)' },
       { key: 'closingBalance', label: 'Net Outstanding Balance (INR)' },
       { key: 'notDue', label: 'Not Due (INR)' },
       { key: 'd0_30', label: '0-30 Days Overdue' },
@@ -175,6 +183,7 @@ export const OutstandingReport: React.FC = () => {
                 <th className="py-3 px-3 text-right">Opening</th>
                 <th className="py-3 px-3 text-right">Purchases</th>
                 <th className="py-3 px-3 text-right">Payments</th>
+                <th className="py-3 px-3 text-right">Returns</th>
                 <th className="py-3 px-3 text-right font-extrabold text-ink-900">Closing Balance</th>
                 <th className="py-3 px-3 text-right text-emerald-700">Not Due</th>
                 <th className="py-3 px-3 text-right text-amber-800">0-30 Days</th>
@@ -187,7 +196,7 @@ export const OutstandingReport: React.FC = () => {
             <tbody className="divide-y divide-gray-100 text-ink-900 font-medium">
               {reportData.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-ink-500">
+                  <td colSpan={13} className="py-12 text-center text-ink-500">
                     No suppliers registered yet. Add your suppliers under <strong>Master Reference Data</strong> to view portfolio ageing.
                   </td>
                 </tr>
@@ -202,6 +211,7 @@ export const OutstandingReport: React.FC = () => {
                   <td className="py-3 px-3 text-right">{formatINR(row.openingBalance)}</td>
                   <td className="py-3 px-3 text-right font-semibold text-rose-900">{formatINR(row.purchasesTotal)}</td>
                   <td className="py-3 px-3 text-right font-semibold text-emerald-700">{formatINR(row.paymentsTotal)}</td>
+                  <td className="py-3 px-3 text-right font-semibold text-amber-700">{row.returnsTotal > 0 ? formatINR(row.returnsTotal) : '—'}</td>
                   <td className="py-3 px-3 text-right font-bold text-rose-700">{formatINR(row.closingBalance)}</td>
 
                   {/* Ageing Columns with conditional alerts */}
@@ -238,6 +248,7 @@ export const OutstandingReport: React.FC = () => {
                 <td className="py-3 px-3 text-right">{formatINR(totalOpening)}</td>
                 <td className="py-3 px-3 text-right text-rose-900">{formatINR(totalPurchases)}</td>
                 <td className="py-3 px-3 text-right text-emerald-700">{formatINR(totalPayments)}</td>
+                <td className="py-3 px-3 text-right text-amber-700">{formatINR(totalReturns)}</td>
                 <td className="py-3 px-3 text-right text-rose-700 font-black">{formatINR(totalClosing)}</td>
                 <td className="py-3 px-3 text-right text-emerald-700">{formatINR(totalNotDue)}</td>
                 <td className="py-3 px-3 text-right text-amber-900">{formatINR(total0_30)}</td>

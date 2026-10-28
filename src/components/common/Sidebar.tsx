@@ -13,13 +13,15 @@ import {
   ShieldAlert,
   UserPlus,
   Settings,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RotateCcw
 } from 'lucide-react';
 
 export type NavTab =
   | 'dashboard'
   | 'purchase-entry'
   | 'purchases'
+  | 'purchase-returns'
   | 'batch-expenses'
   | 'payments'
   | 'outstanding'
@@ -61,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           badge: 'Field Form'
         },
         { id: 'purchases', label: 'Purchase Transactions', icon: Receipt, show: true },
+        { id: 'purchase-returns', label: 'Purchase Returns (Debit Notes)', icon: RotateCcw, show: true },
         { id: 'batch-expenses', label: 'Shared Batch Expense Pools', icon: Layers, show: true }
       ]
     },

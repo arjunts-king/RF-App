@@ -9,6 +9,7 @@ import {
   ExpenseType,
   Purchase,
   PaymentRecord,
+  PurchaseReturn,
   User,
   AuditLog,
   BusinessSettings,
@@ -79,6 +80,7 @@ export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [];
 export const INITIAL_EXPENSE_TYPES: ExpenseType[] = [];
 export const INITIAL_PURCHASES: Purchase[] = [];
 export const INITIAL_PAYMENTS: PaymentRecord[] = [];
+export const INITIAL_PURCHASE_RETURNS: PurchaseReturn[] = [];
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [];
 export const INITIAL_SLAB_TYPES: SlabType[] = [];
 export const INITIAL_PROCESSING_ENTRIES: DailyProcessingEntry[] = [];

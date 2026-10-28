@@ -17,12 +17,19 @@ import {
   Ban,
   AlertTriangle,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RotateCcw
 } from 'lucide-react';
 
-export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ onNavigate }) => {
+interface PurchaseListProps {
+  onNavigate?: (tab: any) => void;
+  onSelectForReturn?: (purchaseId: string) => void;
+}
+
+export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelectForReturn }) => {
   const {
     purchases,
+    purchaseReturns,
     suppliers,
     species,
     grades,
@@ -406,6 +413,8 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                   const spec = speciesMap.get(p.speciesId);
                   const sz = sizeMap.get(p.sizeId);
                   const cnt = countMap.get(p.countId);
+                  const lotReturns = (purchaseReturns || []).filter((r) => !r.isVoided && r.purchaseId === p.id);
+                  const totalReturnedKg = lotReturns.reduce((s, r) => s + r.returnedWeightKg, 0);
 
                   return (
                     <tr
@@ -454,7 +463,12 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                       </td>
 
                       <td className="py-3 px-4 text-right font-bold whitespace-nowrap">
-                        {formatKg(p.weightKg)}
+                        <div>{formatKg(p.weightKg)}</div>
+                        {totalReturnedKg > 0 && (
+                          <div className="text-[10px] text-amber-700 font-bold" title={`Returned: ${formatKg(totalReturnedKg)}`}>
+                            Ret: {formatKg(totalReturnedKg)}
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -507,6 +521,23 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                               title="Edit purchase record (Junior/Master Accountant, Admin)"
                             >
                               <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Record Return Action */}
+                          {!p.isVoided && permissions.canCreateEditPurchases && (
+                            <button
+                              onClick={() => {
+                                if (onSelectForReturn) {
+                                  onSelectForReturn(p.id);
+                                } else if (onNavigate) {
+                                  onNavigate('purchase-returns');
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-ink-500 hover:text-amber-700 hover:bg-amber-50 transition"
+                              title="Record purchase return / debit note against this purchase"
+                            >
+                              <RotateCcw className="w-4 h-4" />
                             </button>
                           )}
 
@@ -700,6 +731,73 @@ export const PurchaseList: React.FC<{ onNavigate?: (tab: any) => void }> = ({ on
                 </div>
               </div>
             )}
+
+            {/* Returns & Debit Notes Section */}
+            {(() => {
+              const lotReturns = (purchaseReturns || []).filter(
+                (r) => !r.isVoided && r.purchaseId === selectedPurchase.id
+              );
+              const totalReturnedKg = lotReturns.reduce((s, r) => s + r.returnedWeightKg, 0);
+              const totalReturnedVal = lotReturns.reduce((s, r) => s + r.returnedValue, 0);
+
+              return (
+                <div className="p-4 border border-amber-200 bg-amber-50/40 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                    <span className="flex items-center gap-1.5">
+                      <RotateCcw className="w-4 h-4 text-amber-700" />
+                      <span>Purchase Returns &amp; Debit Notes Issued ({lotReturns.length})</span>
+                    </span>
+                    <span>
+                      {formatKg(totalReturnedKg)} Returned · {formatINR(totalReturnedVal)} Credited
+                    </span>
+                  </div>
+
+                  {lotReturns.length > 0 ? (
+                    <div className="space-y-1.5 pt-1">
+                      {lotReturns.map((r) => (
+                        <div
+                          key={r.id}
+                          className="p-2.5 bg-white rounded-lg border border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-rose-700">{r.returnNo}</span> ·{' '}
+                            <span className="text-ink-500">{r.returnDate}</span> ·{' '}
+                            <span className="text-ink-800 font-medium">{r.reason}</span>
+                          </div>
+                          <div className="font-bold text-amber-900">
+                            {formatKg(r.returnedWeightKg)} @ ₹{r.ratePerKg} = {formatINR(r.returnedValue)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-ink-500 italic">
+                      No purchase returns have been recorded for this transaction yet.
+                    </p>
+                  )}
+
+                  {!selectedPurchase.isVoided && permissions.canCreateEditPurchases && (
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        onClick={() => {
+                          const pId = selectedPurchase.id;
+                          setSelectedPurchase(null);
+                          if (onSelectForReturn) {
+                            onSelectForReturn(pId);
+                          } else if (onNavigate) {
+                            onNavigate('purchase-returns');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-2xs"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Record Return / Debit Note for This Lot</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Audit & Staff Metadata */}
             <div className="p-3 bg-gray-50 rounded-xl text-[11px] text-ink-500 space-y-1">

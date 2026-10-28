@@ -11,6 +11,7 @@ import {
   ExpenseType,
   Purchase,
   PaymentRecord,
+  PurchaseReturn,
   AuditLog,
   AuditAction,
   BusinessSettings,
@@ -34,6 +35,7 @@ import {
   INITIAL_EXPENSE_TYPES,
   INITIAL_PURCHASES,
   INITIAL_PAYMENTS,
+  INITIAL_PURCHASE_RETURNS,
   INITIAL_AUDIT_LOGS,
   INITIAL_SLAB_TYPES,
   INITIAL_PROCESSING_ENTRIES,
@@ -44,7 +46,7 @@ import {
 } from '../data/initialData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { computePurchaseFields, allocateBatchExpenses } from '../utils/calculations';
+import { computePurchaseFields, allocateBatchExpenses, getIndianFinancialYear } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelImport';
 
 interface DataContextType {
@@ -64,6 +66,7 @@ interface DataContextType {
   ports: PortMaster[];
   purchases: Purchase[];
   payments: PaymentRecord[];
+  purchaseReturns: PurchaseReturn[];
   processingEntries: DailyProcessingEntry[];
   salesInvoices: SalesInvoice[];
   auditLogs: AuditLog[];
@@ -155,6 +158,12 @@ interface DataContextType {
   // Payment Actions
   addPayment: (payment: Omit<PaymentRecord, 'id' | 'paymentNo' | 'createdAt' | 'isVoided' | 'createdBy'>) => void;
   voidPayment: (id: string, voidReason: string) => void;
+
+  // Purchase Return (Debit Note) Actions
+  addPurchaseReturn: (returnData: Omit<PurchaseReturn, 'id' | 'returnNo' | 'createdAt' | 'isVoided' | 'createdBy'>) => { success: boolean; returnNo?: string; message?: string };
+  updatePurchaseReturn: (id: string, updates: Partial<PurchaseReturn>, editReason?: string) => { success: boolean; message?: string };
+  voidPurchaseReturn: (id: string, voidReason: string) => { success: boolean; message?: string };
+  deletePurchaseReturnPermanently: (id: string) => { success: boolean; message?: string };
 
   // Batch Operations
   recalculateBatch: (batchNo: string) => void;
@@ -271,6 +280,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_PAYMENTS;
   });
 
+  const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}purchase_returns`);
+    return saved ? JSON.parse(saved) : INITIAL_PURCHASE_RETURNS;
+  });
+
   const [slabTypes, setSlabTypes] = useState<SlabType[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}slab_types`);
     return saved ? JSON.parse(saved) : INITIAL_SLAB_TYPES;
@@ -350,6 +364,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchases`, JSON.stringify(purchases)); }, [purchases]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}payments`, JSON.stringify(payments)); }, [payments]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchase_returns`, JSON.stringify(purchaseReturns)); }, [purchaseReturns]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}audit_logs`, JSON.stringify(auditLogs)); }, [auditLogs]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}offline_queue`, JSON.stringify(offlineQueue)); }, [offlineQueue]);
 
@@ -1289,6 +1304,184 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showToast(`Payment ${targetPay.paymentNo} voided and reversed from purchases.`, 'info');
   };
 
+  // --------------------------------------------------------------------------
+  // PURCHASE RETURNS & DEBIT NOTES
+  // --------------------------------------------------------------------------
+
+  const addPurchaseReturn = (
+    returnData: Omit<PurchaseReturn, 'id' | 'returnNo' | 'createdAt' | 'isVoided' | 'createdBy'>
+  ): { success: boolean; returnNo?: string; message?: string } => {
+    if (!permissions.canCreateEditPurchases) {
+      showToast('Unauthorized: You do not have permission to record purchase returns.', 'error');
+      return { success: false, message: 'Unauthorized.' };
+    }
+
+    if (!returnData.supplierId) {
+      showToast('Supplier is required.', 'error');
+      return { success: false, message: 'Supplier is required.' };
+    }
+
+    if (!returnData.speciesId) {
+      showToast('Species / Product is required.', 'error');
+      return { success: false, message: 'Species is required.' };
+    }
+
+    if (!returnData.returnedWeightKg || returnData.returnedWeightKg <= 0) {
+      showToast('Returned weight must be greater than 0 kg.', 'error');
+      return { success: false, message: 'Invalid weight.' };
+    }
+
+    if (returnData.ratePerKg < 0) {
+      showToast('Rate cannot be negative.', 'error');
+      return { success: false, message: 'Invalid rate.' };
+    }
+
+    // If linked to a purchase, validate weight against remaining unreturned weight
+    let linkedPurchase: Purchase | undefined;
+    if (returnData.purchaseId) {
+      linkedPurchase = purchases.find((p) => p.id === returnData.purchaseId);
+      if (linkedPurchase) {
+        const priorReturnsKg = purchaseReturns
+          .filter((r) => !r.isVoided && r.purchaseId === linkedPurchase?.id)
+          .reduce((sum, r) => sum + r.returnedWeightKg, 0);
+        const maxReturnableKg = Number(Math.max(0, linkedPurchase.weightKg - priorReturnsKg).toFixed(2));
+        if (returnData.returnedWeightKg > maxReturnableKg) {
+          const msg = `Returned weight (${returnData.returnedWeightKg} Kg) exceeds remaining available purchase weight (${maxReturnableKg} Kg).`;
+          showToast(msg, 'error');
+          return { success: false, message: msg };
+        }
+      }
+    }
+
+    // Sequence calculation
+    const maxSeq = purchaseReturns.reduce((max, r) => {
+      const match = r.returnNo?.match(/PR-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        return num > max ? num : max;
+      }
+      return max;
+    }, 0);
+    const returnNo = `PR-${String(maxSeq + 1).padStart(5, '0')}`;
+    const fy = getIndianFinancialYear(returnData.returnDate || new Date().toISOString().split('T')[0]);
+    const returnedValue = Number((returnData.returnedWeightKg * returnData.ratePerKg).toFixed(2));
+
+    const newReturn: PurchaseReturn = {
+      ...returnData,
+      id: `pret-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      returnNo,
+      financialYear: fy,
+      purchaseRefNo: returnData.purchaseRefNo || linkedPurchase?.purchaseId,
+      invoiceNo: returnData.invoiceNo || linkedPurchase?.invoiceNo,
+      returnedValue,
+      adjustSupplierPayable: returnData.adjustSupplierPayable !== false,
+      isVoided: false,
+      createdBy: currentUser.email,
+      createdAt: new Date().toISOString()
+    };
+
+    setPurchaseReturns((prev) => [newReturn, ...prev]);
+
+    logAudit('CREATE', 'PurchaseReturn', newReturn.returnNo, {
+      newValues: {
+        returnNo,
+        supplierId: newReturn.supplierId,
+        weightKg: newReturn.returnedWeightKg,
+        returnedValue: newReturn.returnedValue,
+        reason: newReturn.reason,
+        purchaseRefNo: newReturn.purchaseRefNo
+      },
+      changeReason: `Recorded purchase return / debit note for ${newReturn.returnedWeightKg} Kg (${newReturn.reason})`
+    });
+
+    showToast(`Purchase Return ${newReturn.returnNo} for ₹${newReturn.returnedValue.toLocaleString('en-IN')} recorded successfully.`, 'success');
+    return { success: true, returnNo: newReturn.returnNo };
+  };
+
+  const updatePurchaseReturn = (
+    id: string,
+    updates: Partial<PurchaseReturn>,
+    editReason?: string
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canCreateEditPurchases) {
+      showToast('Unauthorized: You do not have permission to edit purchase returns.', 'error');
+      return { success: false, message: 'Unauthorized.' };
+    }
+
+    const existing = purchaseReturns.find((r) => r.id === id);
+    if (!existing) return { success: false, message: 'Return record not found.' };
+
+    const weight = updates.returnedWeightKg ?? existing.returnedWeightKg;
+    const rate = updates.ratePerKg ?? existing.ratePerKg;
+    const returnedValue = Number((weight * rate).toFixed(2));
+    const returnDate = updates.returnDate ?? existing.returnDate;
+    const fy = getIndianFinancialYear(returnDate);
+
+    const updated: PurchaseReturn = {
+      ...existing,
+      ...updates,
+      financialYear: fy,
+      returnedWeightKg: weight,
+      ratePerKg: rate,
+      returnedValue,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setPurchaseReturns((prev) => prev.map((r) => (r.id === id ? updated : r)));
+    logAudit('EDIT', 'PurchaseReturn', existing.returnNo, {
+      oldValues: existing,
+      newValues: updated,
+      changeReason: editReason || 'Updated purchase return particulars'
+    });
+
+    showToast(`Purchase Return ${existing.returnNo} updated.`, 'success');
+    return { success: true };
+  };
+
+  const voidPurchaseReturn = (id: string, voidReason: string): { success: boolean; message?: string } => {
+    if (!permissions.canVoid) {
+      showToast('Unauthorized: Only Master Accountant and Owner/Admin can void returns.', 'error');
+      return { success: false, message: 'Unauthorized.' };
+    }
+
+    const existing = purchaseReturns.find((r) => r.id === id);
+    if (!existing || existing.isVoided) return { success: false, message: 'Return not found or already voided.' };
+
+    setPurchaseReturns((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              isVoided: true,
+              voidReason,
+              voidedBy: currentUser.email,
+              voidedAt: new Date().toISOString()
+            }
+          : r
+      )
+    );
+
+    logAudit('VOID', 'PurchaseReturn', existing.returnNo, { changeReason: voidReason });
+    showToast(`Purchase Return ${existing.returnNo} voided and reversed from ledger.`, 'info');
+    return { success: true };
+  };
+
+  const deletePurchaseReturnPermanently = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Unauthorized: Only Owner / Admin can permanently delete records.', 'error');
+      return { success: false, message: 'Unauthorized.' };
+    }
+
+    const existing = purchaseReturns.find((r) => r.id === id);
+    if (!existing) return { success: false, message: 'Return record not found.' };
+
+    setPurchaseReturns((prev) => prev.filter((r) => r.id !== id));
+    logAudit('DELETE', 'PurchaseReturn', existing.returnNo, { changeReason: 'Permanently deleted by Owner/Admin' });
+    showToast(`Purchase Return ${existing.returnNo} permanently purged.`, 'warning');
+    return { success: true };
+  };
+
   const recalculateBatch = (batchNo: string) => {
     const batchRows = purchases.filter((p) => p.batchNo === batchNo);
     if (batchRows.length === 0) return;
@@ -1880,11 +2073,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setPurchases([]);
     setPayments([]);
+    setPurchaseReturns([]);
     setProcessingEntries([]);
     setSalesInvoices([]);
     setOfflineQueue([]);
-    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase, production, and sales transactions' });
-    showToast('All purchases, payments, processing lots, and sales invoices cleared.', 'info');
+    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase, return, production, and sales transactions' });
+    showToast('All purchases, payments, returns, processing lots, and sales invoices cleared.', 'info');
   };
 
   const wipeDatabaseCompletely = () => {
@@ -1894,6 +2088,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setPurchases([]);
     setPayments([]);
+    setPurchaseReturns([]);
     setProcessingEntries([]);
     setSalesInvoices([]);
     setOfflineQueue([]);
@@ -3086,6 +3281,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ports,
         purchases,
         payments,
+        purchaseReturns,
         processingEntries,
         salesInvoices,
         auditLogs,
@@ -3171,6 +3367,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         addPayment,
         voidPayment,
+
+        addPurchaseReturn,
+        updatePurchaseReturn,
+        voidPurchaseReturn,
+        deletePurchaseReturnPermanently,
 
         recalculateBatch,
         syncOfflineQueue,
