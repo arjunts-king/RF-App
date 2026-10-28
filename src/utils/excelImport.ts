@@ -252,7 +252,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       { 'Code': 'EXP-ICE', 'Expense Name': 'Crushed Ice Block', 'Category': 'Landing' },
       { 'Code': 'EXP-TRN', 'Expense Name': 'Vehicle Transport & Rent', 'Category': 'Logistics' },
       { 'Code': 'EXP-LBR', 'Expense Name': 'Wharf Unloading Labour', 'Category': 'Labour' },
-      { 'Code': 'EXP-COM', 'Expense Name': 'Auctioneer Commission', 'Category': 'Statutory' }
+      { 'Code': 'EXP-COM', 'Expense Name': 'Auctioneer Commission', 'Category': 'Statutory' },
+      { 'Code': 'EXP-OTH', 'Expense Name': 'Other Expenses', 'Category': 'Landing' }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'ExpenseTypes');
@@ -261,16 +262,22 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
   }
 
   if (type === 'purchases') {
-    // Collect all direct landing expenses from registered master data or standard presets
-    const activeExpenses: { name: string; category?: string }[] =
+    // Collect all direct landing expenses from registered master data or standard presets, ensuring Other Expenses is present
+    const baseExpenses: { name: string; category?: string }[] =
       expenseTypes && expenseTypes.filter((e) => e.active).length > 0
-        ? expenseTypes.filter((e) => e.active)
+        ? [...expenseTypes.filter((e) => e.active)]
         : [
             { name: 'Ice & Crushed Flake', category: 'Preservation' },
             { name: 'Vehicle Rent / Transport', category: 'Logistics' },
             { name: 'Commission & Dalali', category: 'Brokerage' },
-            { name: 'Loading / Unloading Labour', category: 'Handling' }
+            { name: 'Loading / Unloading Labour', category: 'Handling' },
+            { name: 'Other Expenses', category: 'Landing' }
           ];
+
+    if (!baseExpenses.some((e) => e.name.toLowerCase().includes('other'))) {
+      baseExpenses.push({ name: 'Other Expenses', category: 'Landing' });
+    }
+    const activeExpenses = baseExpenses;
 
     const row1: Record<string, any> = {
       'Purchase Date (YYYY-MM-DD)': '2026-10-18',
@@ -290,7 +297,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
 
     // Integrate all direct landing expenses displayed in the harbour purchase entry form
     let totalExp1 = 0;
-    const sampleAmounts1 = [1200, 2500, 1500, 800, 500, 350, 200];
+    const sampleAmounts1 = [1200, 2500, 1500, 800, 350, 500, 200];
     activeExpenses.forEach((exp, idx) => {
       const amt = sampleAmounts1[idx % sampleAmounts1.length];
       row1[`${exp.name} (INR)`] = amt;
@@ -320,7 +327,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     };
 
     let totalExp2 = 0;
-    const sampleAmounts2 = [2000, 3000, 2000, 1000, 750, 400, 300];
+    const sampleAmounts2 = [2000, 3000, 2000, 1000, 450, 750, 300];
     activeExpenses.forEach((exp, idx) => {
       const amt = sampleAmounts2[idx % sampleAmounts2.length];
       row2[`${exp.name} (INR)`] = amt;
@@ -424,16 +431,33 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const wsCnt = XLSX.utils.json_to_sheet(countsData);
     XLSX.utils.book_append_sheet(wb, wsCnt, 'Counts');
 
-    // 7. Purchases Sheet with all direct landing expenses
-    const activeExpenses: { name: string; category?: string }[] =
+    // 7. Expense Types Sheet
+    const expenseTypesData = [
+      { 'Code': 'EXP-ICE', 'Expense Name': 'Ice & Crushed Flake', 'Category': 'Preservation' },
+      { 'Code': 'EXP-TRN', 'Expense Name': 'Vehicle Transport & Rent', 'Category': 'Logistics' },
+      { 'Code': 'EXP-COM', 'Expense Name': 'Commission & Dalali', 'Category': 'Brokerage' },
+      { 'Code': 'EXP-LBR', 'Expense Name': 'Loading / Unloading Labour', 'Category': 'Handling' },
+      { 'Code': 'EXP-OTH', 'Expense Name': 'Other Expenses', 'Category': 'Landing' }
+    ];
+    const wsExp = XLSX.utils.json_to_sheet(expenseTypesData);
+    XLSX.utils.book_append_sheet(wb, wsExp, 'ExpenseTypes');
+
+    // 8. Purchases Sheet with all direct landing expenses including Other Expenses
+    const baseExpensesMulti: { name: string; category?: string }[] =
       expenseTypes && expenseTypes.filter((e) => e.active).length > 0
-        ? expenseTypes.filter((e) => e.active)
+        ? [...expenseTypes.filter((e) => e.active)]
         : [
             { name: 'Ice & Crushed Flake', category: 'Preservation' },
             { name: 'Vehicle Rent / Transport', category: 'Logistics' },
             { name: 'Commission & Dalali', category: 'Brokerage' },
-            { name: 'Loading / Unloading Labour', category: 'Handling' }
+            { name: 'Loading / Unloading Labour', category: 'Handling' },
+            { name: 'Other Expenses', category: 'Landing' }
           ];
+
+    if (!baseExpensesMulti.some((e) => e.name.toLowerCase().includes('other'))) {
+      baseExpensesMulti.push({ name: 'Other Expenses', category: 'Landing' });
+    }
+    const activeExpenses = baseExpensesMulti;
 
     const purchasesRow: Record<string, any> = {
       'Purchase Date': '2026-10-18',

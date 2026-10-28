@@ -174,7 +174,8 @@ export const SAMPLE_STARTER_PRESETS = {
     { id: 'exp-1', code: 'EXP-001', name: 'Ice & Crushed Flake', category: 'Preservation', active: true },
     { id: 'exp-2', code: 'EXP-002', name: 'Vehicle Rent / Transport', category: 'Logistics', active: true },
     { id: 'exp-3', code: 'EXP-003', name: 'Commission & Dalali', category: 'Brokerage', active: true },
-    { id: 'exp-4', code: 'EXP-004', name: 'Loading / Unloading Labour', category: 'Handling', active: true }
+    { id: 'exp-4', code: 'EXP-004', name: 'Loading / Unloading Labour', category: 'Handling', active: true },
+    { id: 'exp-5', code: 'EXP-005', name: 'Other Expenses', category: 'Landing', active: true }
   ],
   slabTypes: [
     { id: 'slb-1', code: 'SLB-001', name: '2.0 Kg Standard Export Block', standardWeightKg: 2.0, unit: 'Kg', productApplicability: 'Shrimp / Prawns', active: true },

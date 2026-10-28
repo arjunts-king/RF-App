@@ -240,7 +240,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}expense_types`);
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSE_TYPES;
+    let list: ExpenseType[] = saved ? JSON.parse(saved) : INITIAL_EXPENSE_TYPES;
+    if (list && list.length > 0) {
+      const hasOther = list.some((e) => e.name.toLowerCase().includes('other'));
+      if (!hasOther) {
+        list = [
+          ...list,
+          {
+            id: 'exp-other-landing',
+            code: `EXP-${String(list.length + 1).padStart(3, '0')}`,
+            name: 'Other Expenses',
+            category: 'Landing',
+            active: true
+          }
+        ];
+      }
+    } else {
+      list = SAMPLE_STARTER_PRESETS.expenseTypes;
+    }
+    return list;
   });
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
@@ -2873,7 +2891,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const lbrId = lbrExp > 0 ? getExpenseTypeId(['labour', 'labor', 'loading', 'unloading', 'handling', 'coolie'], 'Loading / Unloading Labour', 'Handling') : '';
       if (lbrExp > 0 && lbrId) expenseBreakdown[lbrId] = lbrExp;
 
-      // 5. Dynamic Check for all other registered active Expense Heads
+      // 5. Other Direct Landing Expenses (Other Expenses / Other Charges / Misc Expenses)
+      const othExp = Number(getFlexibleValue(row, [
+        'otherexpensesinr',
+        'otherexpenseinr',
+        'otherexpenses',
+        'otherexpense',
+        'otherexp',
+        'otherexpns',
+        'otherchargesinr',
+        'othercharges',
+        'othercostsinr',
+        'othercosts',
+        'otherlandingexpensesinr',
+        'otherlandingexpenses',
+        'otherlandingchargesinr',
+        'otherlandingcharges',
+        'otherdirectexpensesinr',
+        'otherdirectexpenses',
+        'miscexpensesinr',
+        'miscexpenses',
+        'miscexpenseinr',
+        'miscexpense',
+        'miscellaneousinr',
+        'miscellaneous',
+        'misccharges',
+        'miscellaneouscharges',
+        'other'
+      ])) || 0;
+      const othId = othExp > 0 ? getExpenseTypeId(['otherexpenses', 'otherexpense', 'other', 'misc', 'miscellaneous'], 'Other Expenses', 'Landing') : '';
+      if (othExp > 0 && othId) expenseBreakdown[othId] = othExp;
+
+      // 6. Dynamic Check for all other registered active Expense Heads
       mutableExpenseTypes.forEach((et) => {
         if (!et.active) return;
         if (expenseBreakdown[et.id]) return; // Already resolved above

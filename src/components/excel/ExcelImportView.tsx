@@ -77,7 +77,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       id: 'purchases',
       label: 'Purchase Transactions',
       icon: Receipt,
-      desc: 'Import daily purchase sheets, landing bills, rates & direct landing expenses (Ice, Transport, Dalali, Labour)'
+      desc: 'Import daily purchase sheets, landing bills, rates & direct landing expenses (Ice, Transport, Dalali, Labour, Other Expenses)'
     },
     {
       id: 'suppliers',
@@ -125,7 +125,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       id: 'expense-types',
       label: 'Recurring Expense Types',
       icon: DollarSign,
-      desc: 'Import expense categories (Ice, Transport, Labour)'
+      desc: 'Import expense categories (Ice, Transport, Dalali, Labour, Other Expenses)'
     },
     {
       id: 'multi-sheet',
