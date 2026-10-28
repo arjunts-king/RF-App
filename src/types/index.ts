@@ -149,6 +149,10 @@ export interface Purchase {
   weightKg: number;
   ratePerKg: number;
 
+  // Yield & Processing Outcome
+  yieldWeightKg?: number; // Finished/processed output weight in Kg (e.g. 2400 kg from 5000 kg raw purchase)
+  yieldPct?: number; // Yield percentage: (yieldWeightKg / weightKg) * 100 (e.g. 48.00%)
+
   // Server-computed pricing & damage
   purchaseValue: number; // weightKg * ratePerKg
   damageWeightKg: number;

@@ -359,6 +359,8 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           : (sz?.name || ''),
         'Piece Count': cnt?.name || '',
         'Weight (Kg)': p.weightKg,
+        'Yield Weight (Kg)': p.yieldWeightKg ?? '',
+        'Yield %': p.yieldPct ? `${p.yieldPct}%` : (p.yieldWeightKg && p.weightKg ? `${((p.yieldWeightKg / p.weightKg) * 100).toFixed(1)}%` : ''),
         'Rate/Kg': p.ratePerKg,
         'Purchase Value': p.purchaseValue,
         'Damage Weight (Kg)': p.damageWeightKg,

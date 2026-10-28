@@ -10,7 +10,11 @@ import {
   TrendingUp,
   Download,
   Printer,
-  Users
+  Users,
+  Sparkles,
+  Percent,
+  Award,
+  AlertCircle
 } from 'lucide-react';
 
 type ReportTab =
@@ -20,7 +24,8 @@ type ReportTab =
   | 'grade-size'
   | 'location'
   | 'supplier'
-  | 'price-analysis';
+  | 'price-analysis'
+  | 'yield-analysis';
 
 export const OperationalReportsHub: React.FC = () => {
   const { purchases, suppliers, species, grades, sizes, counts, locations, businessSettings } = useData();
@@ -39,10 +44,17 @@ export const OperationalReportsHub: React.FC = () => {
   const [paCountId, setPaCountId] = useState<string>('');
   const [paLocationId, setPaLocationId] = useState<string>('');
 
+  // Yield analysis filter states
+  const [yieldSpeciesId, setYieldSpeciesId] = useState<string>('');
+  const [yieldSupplierId, setYieldSupplierId] = useState<string>('');
+
   // Lookup maps
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
   const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
   const locationMap = new Map(locations.map((l) => [l.id, l]));
+  const gradeMap = new Map(grades.map((g) => [g.id, g]));
+  const sizeMap = new Map(sizes.map((s) => [s.id, s]));
+  const countMap = new Map(counts.map((c) => [c.id, c]));
 
   const activePurchases = purchases.filter((p) => !p.isVoided);
 
@@ -254,6 +266,76 @@ export const OperationalReportsHub: React.FC = () => {
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // --------------------------------------------------------------------------
+  // 8. YIELD & RECOVERY ANALYSIS
+  // --------------------------------------------------------------------------
+  const yieldPurchases = activePurchases.filter((p) => {
+    if (yieldSpeciesId && p.speciesId !== yieldSpeciesId) return false;
+    if (yieldSupplierId && p.supplierId !== yieldSupplierId) return false;
+    return true;
+  });
+
+  const yieldRecordedPurchases = yieldPurchases.filter((p) => p.yieldWeightKg && p.yieldWeightKg > 0);
+  const totalYieldRawWeight = yieldRecordedPurchases.reduce((s, p) => s + p.weightKg, 0);
+  const totalFinishedYieldWeight = yieldRecordedPurchases.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
+  const totalYieldCost = yieldRecordedPurchases.reduce((s, p) => s + p.totalCost, 0);
+  const overallYieldPct = totalYieldRawWeight > 0 ? (totalFinishedYieldWeight / totalYieldRawWeight) * 100 : 0;
+  const totalProcessingLossKg = Math.max(0, totalYieldRawWeight - totalFinishedYieldWeight);
+  const overallLossPct = totalYieldRawWeight > 0 ? (totalProcessingLossKg / totalYieldRawWeight) * 100 : 0;
+  const overallFinishedYieldCostPerKg = totalFinishedYieldWeight > 0 ? totalYieldCost / totalFinishedYieldWeight : 0;
+  const overallRawRatePerKg = totalYieldRawWeight > 0 ? totalYieldCost / totalYieldRawWeight : 0;
+
+  // Species-wise yield breakdown
+  const speciesYieldAnalysis = species.map((sp) => {
+    const list = yieldRecordedPurchases.filter((p) => p.speciesId === sp.id);
+    const rawWeight = list.reduce((s, p) => s + p.weightKg, 0);
+    const yieldWeight = list.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
+    const cost = list.reduce((s, p) => s + p.totalCost, 0);
+    const yieldPct = rawWeight > 0 ? (yieldWeight / rawWeight) * 100 : 0;
+    const lossKg = Math.max(0, rawWeight - yieldWeight);
+    const rawRate = rawWeight > 0 ? cost / rawWeight : 0;
+    const finishedCost = yieldWeight > 0 ? cost / yieldWeight : 0;
+
+    return {
+      id: sp.id,
+      name: sp.name,
+      category: sp.category,
+      lotsCount: list.length,
+      rawWeight,
+      yieldWeight,
+      yieldPct,
+      lossKg,
+      cost,
+      rawRate,
+      finishedCost
+    };
+  }).filter((s) => s.lotsCount > 0).sort((a, b) => b.yieldWeight - a.yieldWeight);
+
+  // Supplier-wise yield performance
+  const supplierYieldAnalysis = suppliers.map((sup) => {
+    const list = yieldRecordedPurchases.filter((p) => p.supplierId === sup.id);
+    const rawWeight = list.reduce((s, p) => s + p.weightKg, 0);
+    const yieldWeight = list.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
+    const cost = list.reduce((s, p) => s + p.totalCost, 0);
+    const yieldPct = rawWeight > 0 ? (yieldWeight / rawWeight) * 100 : 0;
+    const lossKg = Math.max(0, rawWeight - yieldWeight);
+    const finishedCost = yieldWeight > 0 ? cost / yieldWeight : 0;
+
+    return {
+      id: sup.id,
+      name: sup.name,
+      code: sup.code,
+      type: sup.type,
+      lotsCount: list.length,
+      rawWeight,
+      yieldWeight,
+      yieldPct,
+      lossKg,
+      cost,
+      finishedCost
+    };
+  }).filter((s) => s.lotsCount > 0).sort((a, b) => b.yieldPct - a.yieldPct);
+
   // Report Tabs Definition
   const tabs: { id: ReportTab; label: string; icon: any }[] = [
     { id: 'daily', label: '1. Daily Purchase', icon: Calendar },
@@ -262,7 +344,8 @@ export const OperationalReportsHub: React.FC = () => {
     { id: 'grade-size', label: '4. Grade × Size Matrix', icon: Grid },
     { id: 'location', label: '5. Location Analysis', icon: MapPin },
     { id: 'supplier', label: '6. Supplier Numeric Ranking', icon: Users },
-    { id: 'price-analysis', label: '7. Price & Trend Analysis', icon: TrendingUp }
+    { id: 'price-analysis', label: '7. Price & Trend Analysis', icon: TrendingUp },
+    { id: 'yield-analysis', label: '8. Yield & Recovery Analysis', icon: Sparkles }
   ];
 
   return (
@@ -382,6 +465,33 @@ export const OperationalReportsHub: React.FC = () => {
                     { key: 'date', label: 'Date' },
                     { key: 'weight', label: 'Volume (Kg)' },
                     { key: 'avgRate', label: 'Daily Avg Rate/Kg' }
+                  ];
+                } else if (activeReport === 'yield-analysis') {
+                  exportData = yieldRecordedPurchases.map((p) => ({
+                    ID: p.purchaseId,
+                    Date: p.purchaseDate,
+                    Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
+                    Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+                    RawWeightKg: p.weightKg,
+                    YieldWeightKg: p.yieldWeightKg || 0,
+                    YieldPct: p.yieldPct ? `${p.yieldPct}%` : `${(((p.yieldWeightKg || 0) / p.weightKg) * 100).toFixed(2)}%`,
+                    LossKg: Math.max(0, p.weightKg - (p.yieldWeightKg || 0)),
+                    TotalCost: p.totalCost,
+                    RawRateKg: p.effectiveRatePerKg,
+                    FinishedYieldCostKg: p.yieldWeightKg ? Number((p.totalCost / p.yieldWeightKg).toFixed(2)) : 0
+                  }));
+                  cols = [
+                    { key: 'ID', label: 'Purchase ID' },
+                    { key: 'Date', label: 'Date' },
+                    { key: 'Supplier', label: 'Supplier' },
+                    { key: 'Species', label: 'Species' },
+                    { key: 'RawWeightKg', label: 'Raw Landed Kg' },
+                    { key: 'YieldWeightKg', label: 'Finished Yield Kg' },
+                    { key: 'YieldPct', label: 'Yield %' },
+                    { key: 'LossKg', label: 'Processing Loss (Kg)' },
+                    { key: 'TotalCost', label: 'Total Landed Cost (₹)' },
+                    { key: 'RawRateKg', label: 'Raw Landed Rate/Kg' },
+                    { key: 'FinishedYieldCostKg', label: 'Finished Yield Cost/Kg' }
                   ];
                 } else {
                   exportData = activePurchases.map((p) => ({
@@ -905,6 +1015,369 @@ export const OperationalReportsHub: React.FC = () => {
                         <td className="py-2.5 px-3 text-right font-extrabold text-rose-700">₹{t.avgRate.toFixed(2)} / Kg</td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. YIELD & RECOVERY ANALYSIS REPORT */}
+      {activeReport === 'yield-analysis' && (
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-6">
+          {/* Header & Filter Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800">
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <h3 className="text-sm font-bold text-ink-900">Processing Yield &amp; Output Recovery Analysis</h3>
+              </div>
+              <p className="text-xs text-ink-500 mt-0.5">
+                Monitor finished meat output, peeling/processing loss, and real finished cost per Kg across lots, species, and suppliers.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div>
+                <select
+                  value={yieldSpeciesId}
+                  onChange={(e) => setYieldSpeciesId(e.target.value)}
+                  className="text-xs font-medium px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                >
+                  <option value="">All Species</option>
+                  {species.map((sp) => (
+                    <option key={sp.id} value={sp.id}>
+                      {sp.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <select
+                  value={yieldSupplierId}
+                  onChange={(e) => setYieldSupplierId(e.target.value)}
+                  className="text-xs font-medium px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                >
+                  <option value="">All Suppliers</option>
+                  {suppliers.map((sup) => (
+                    <option key={sup.id} value={sup.id}>
+                      {sup.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(yieldSpeciesId || yieldSupplierId) && (
+                <button
+                  onClick={() => {
+                    setYieldSpeciesId('');
+                    setYieldSupplierId('');
+                  }}
+                  className="text-[11px] font-semibold text-rose-700 hover:text-rose-900 px-2 py-1 rounded-lg hover:bg-rose-50"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Educational Formula & Process Note */}
+          <div className="p-4 bg-gradient-to-r from-emerald-50/70 via-rose-50/40 to-white rounded-xl border border-emerald-200/80 text-xs text-ink-800 flex items-start gap-3">
+            <span className="p-1.5 rounded-lg bg-emerald-600 text-white shrink-0 mt-0.5">
+              <Percent className="w-4 h-4" />
+            </span>
+            <div className="space-y-1">
+              <div className="font-bold text-ink-900">
+                Understanding Seafood Yield &amp; Finished Meat Valuation:
+              </div>
+              <p className="text-ink-600 leading-relaxed">
+                When raw whole seafood (e.g. 5,000 Kg raw Vannamei shrimp or whole Tuna) is received at the harbour, peeling, heading, and gutting reduce weight to usable finished yield (e.g. 2,400 Kg finished meat = <strong>48.00% Yield Recovery</strong>). The <strong>Finished Yield Cost per Kg</strong> (₹{overallFinishedYieldCostPerKg.toFixed(2)}) reflects the true procurement price of the marketable product, which directly determines factory export pricing and profitability.
+              </p>
+            </div>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Raw Material Procured</span>
+              <span className="text-base font-extrabold text-ink-900 mt-1 block">
+                {formatKg(totalYieldRawWeight)}
+              </span>
+              <span className="text-[10px] text-gray-500 block mt-0.5 font-medium">
+                {yieldRecordedPurchases.length} Lots Tracked
+              </span>
+            </div>
+
+            <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase block">Finished Yield Recovered</span>
+              <span className="text-base font-extrabold text-emerald-900 mt-1 block">
+                {formatKg(totalFinishedYieldWeight)}
+              </span>
+              <span className="text-[10px] text-emerald-700 block mt-0.5 font-medium">
+                Peeled / Processed Output
+              </span>
+            </div>
+
+            <div className="p-3 bg-rose-50/70 rounded-xl border border-rose-200">
+              <span className="text-[10px] font-bold text-rose-800 uppercase block">Weighted Portfolio Yield</span>
+              <span className="text-base font-black text-rose-700 mt-1 block">
+                {overallYieldPct > 0 ? `${overallYieldPct.toFixed(2)}%` : '—'}
+              </span>
+              <span className="text-[10px] text-rose-700 block mt-0.5 font-medium">
+                {overallYieldPct >= 50 ? 'High Recovery' : overallYieldPct >= 40 ? 'Normal Recovery' : 'Low Recovery'}
+              </span>
+            </div>
+
+            <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200">
+              <span className="text-[10px] font-bold text-amber-800 uppercase block">Processing / Peeling Loss</span>
+              <span className="text-base font-extrabold text-amber-900 mt-1 block">
+                {formatKg(totalProcessingLossKg)}
+              </span>
+              <span className="text-[10px] text-amber-700 block mt-0.5 font-medium">
+                {overallLossPct.toFixed(1)}% Weight Reduction
+              </span>
+            </div>
+
+            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-300">
+              <span className="text-[10px] font-bold text-emerald-900 uppercase block">Finished Yield Cost / Kg</span>
+              <span className="text-base font-black text-emerald-800 mt-1 block">
+                ₹{overallFinishedYieldCostPerKg.toFixed(2)}
+              </span>
+              <span className="text-[10px] text-gray-500 block mt-0.5 font-medium">
+                Raw Rate: ₹{overallRawRatePerKg.toFixed(2)}/Kg
+              </span>
+            </div>
+          </div>
+
+          {/* SECTION 1: SPECIES-WISE YIELD BREAKDOWN */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-rose-600" />
+                Species Yield &amp; Recovery Performance
+              </h4>
+              <span className="text-[11px] text-gray-500">
+                {speciesYieldAnalysis.length} species with yield data
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3">Species / Product</th>
+                    <th className="py-2.5 px-3">Category</th>
+                    <th className="py-2.5 px-3 text-center">Lots</th>
+                    <th className="py-2.5 px-3 text-right">Raw Landed (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Finished Yield (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Yield %</th>
+                    <th className="py-2.5 px-3 text-right">Processing Loss</th>
+                    <th className="py-2.5 px-3 text-right">Raw Rate / Kg</th>
+                    <th className="py-2.5 px-3 text-right">Finished Cost / Kg</th>
+                    <th className="py-2.5 px-3 text-right">Cost Escalation</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-medium">
+                  {speciesYieldAnalysis.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-8 text-center text-ink-500">
+                        No species yield records available for current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    speciesYieldAnalysis.map((sp) => {
+                      const escalation = sp.rawRate > 0 && sp.finishedCost > 0 ? (sp.finishedCost / sp.rawRate).toFixed(2) : '1.00';
+                      return (
+                        <tr key={sp.id} className="hover:bg-rose-50/30">
+                          <td className="py-2.5 px-3 font-bold text-ink-900">{sp.name}</td>
+                          <td className="py-2.5 px-3 capitalize text-gray-600">{sp.category}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-[10px] font-bold">
+                              {sp.lotsCount}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-semibold">{formatKg(sp.rawWeight)}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-emerald-800">{formatKg(sp.yieldWeight)}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              sp.yieldPct >= 50
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : sp.yieldPct >= 40
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                              {sp.yieldPct.toFixed(2)}%
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-rose-700">
+                            {formatKg(sp.lossKg)} ({sp.rawWeight > 0 ? ((sp.lossKg / sp.rawWeight) * 100).toFixed(1) : '0'}%)
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-gray-700">₹{sp.rawRate.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-emerald-900">₹{sp.finishedCost.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-rose-800">+{escalation}x</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* SECTION 2: SUPPLIER YIELD & QUALITY RANKING */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-rose-600" />
+                Supplier Meat-Recovery Quality Ranking
+              </h4>
+              <span className="text-[11px] text-gray-500">
+                Sorted by highest realized yield percentage
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3">Supplier Name</th>
+                    <th className="py-2.5 px-3">Type</th>
+                    <th className="py-2.5 px-3 text-center">Lots</th>
+                    <th className="py-2.5 px-3 text-right">Raw Landed (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Finished Yield (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Yield %</th>
+                    <th className="py-2.5 px-3 text-right">Finished Yield Cost / Kg</th>
+                    <th className="py-2.5 px-3 text-center">Recovery Grade</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-medium">
+                  {supplierYieldAnalysis.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-ink-500">
+                        No supplier yield records available for current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    supplierYieldAnalysis.map((sup, idx) => (
+                      <tr key={sup.id} className="hover:bg-rose-50/30">
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-ink-900 flex items-center gap-1.5">
+                            {idx === 0 && <span className="text-amber-500" title="Top Performer">👑</span>}
+                            {sup.name}
+                          </div>
+                          <div className="text-[10px] text-gray-500">{sup.code}</div>
+                        </td>
+                        <td className="py-2.5 px-3 capitalize text-gray-600">{sup.type?.replace('_', ' ')}</td>
+                        <td className="py-2.5 px-3 text-center font-semibold">{sup.lotsCount}</td>
+                        <td className="py-2.5 px-3 text-right font-medium">{formatKg(sup.rawWeight)}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-emerald-800">{formatKg(sup.yieldWeight)}</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-ink-900">
+                          {sup.yieldPct.toFixed(2)}%
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-bold text-emerald-900">₹{sup.finishedCost.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            sup.yieldPct >= 50
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : sup.yieldPct >= 40
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-rose-100 text-rose-800 border border-rose-300'
+                          }`}>
+                            {sup.yieldPct >= 50 ? 'High Grade' : sup.yieldPct >= 40 ? 'Standard Grade' : 'High Waste'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* SECTION 3: INDIVIDUAL LOT YIELD AUDIT REGISTER */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">
+                Individual Lot Yield Audit Register
+              </h4>
+              <span className="text-[11px] text-gray-500">
+                {yieldRecordedPurchases.length} total processed purchase transactions
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3">Purchase ID</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Supplier</th>
+                    <th className="py-2.5 px-3">Species &amp; Grade</th>
+                    <th className="py-2.5 px-3 text-right">Raw Landed (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Finished Yield (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Yield %</th>
+                    <th className="py-2.5 px-3 text-right">Loss (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Landed Cost</th>
+                    <th className="py-2.5 px-3 text-right">Finished Cost / Kg</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-medium">
+                  {yieldRecordedPurchases.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-10 text-center text-ink-500">
+                        <div className="max-w-md mx-auto space-y-2">
+                          <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
+                          <div className="font-bold text-ink-800">No Yield Data Recorded Yet</div>
+                          <p className="text-xs text-ink-500">
+                            Yield tracking is optional during procurement. You can enter the Finished Yield Weight (Kg) when recording a harbour purchase, via Excel batch import using the Yield columns, or by editing existing purchase lots.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    yieldRecordedPurchases.map((p) => {
+                      const yieldPct = p.yieldPct ? p.yieldPct : (p.yieldWeightKg ? (p.yieldWeightKg / p.weightKg) * 100 : 0);
+                      const lossKg = Math.max(0, p.weightKg - (p.yieldWeightKg || 0));
+                      const finishedCost = p.yieldWeightKg ? p.totalCost / p.yieldWeightKg : 0;
+
+                      return (
+                        <tr key={p.id} className="hover:bg-rose-50/30">
+                          <td className="py-2.5 px-3 font-bold text-rose-700 whitespace-nowrap">{p.purchaseId}</td>
+                          <td className="py-2.5 px-3 whitespace-nowrap text-gray-700">{p.purchaseDate}</td>
+                          <td className="py-2.5 px-3 font-semibold text-ink-900">{supplierMap.get(p.supplierId)?.name || 'Unknown'}</td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-semibold text-ink-900">{speciesMap.get(p.speciesId)?.name}</span>
+                            <div className="text-[10px] text-gray-500">
+                              {p.isDualSize && p.secondarySizeId ? (
+                                `Dual Size: ${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'}`
+                              ) : (
+                                [gradeMap.get(p.gradeId)?.name, sizeMap.get(p.sizeId)?.name, countMap.get(p.countId)?.name].filter(Boolean).join(' · ') || 'Standard'
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-medium">{formatKg(p.weightKg)}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-emerald-800">{formatKg(p.yieldWeightKg || 0)}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              yieldPct >= 50
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : yieldPct >= 40
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                              {yieldPct.toFixed(2)}%
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-rose-700">{formatKg(lossKg)}</td>
+                          <td className="py-2.5 px-3 text-right text-gray-700">{formatINR(p.totalCost)}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-emerald-900">₹{finishedCost.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

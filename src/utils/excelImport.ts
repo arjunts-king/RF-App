@@ -297,12 +297,14 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Grade Code or Name': 'Grade A',
       'Size Code or Name': 'Medium',
       'Count Code or Name': '20/30',
-      'Weight (Kg)': 450.5,
+      'Weight (Kg)': 5000,
+      'Yield Weight (Kg)': 2400,
+      'Yield %': 48,
       'Rate per Kg (INR)': 380,
-      'No of Boxes': 15,
+      'No of Boxes': 150,
       'Damage Weight (Kg)': 10,
       'Damage Rate per Kg': 120,
-      'Fish Purchase Total (INR)': 172390
+      'Fish Purchase Total (INR)': 1900000
     };
 
     // Integrate all direct landing expenses displayed in the harbour purchase entry form
@@ -329,6 +331,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Large',
       'Count Code or Name': '',
       'Weight (Kg)': 820,
+      'Yield Weight (Kg)': 533,
+      'Yield %': 65,
       'Rate per Kg (INR)': 260,
       'No of Boxes': 20,
       'Damage Weight (Kg)': 0,
@@ -359,6 +363,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': '6/10 & 10/20',
       'Count Code or Name': '',
       'Weight (Kg)': 2000,
+      'Yield Weight (Kg)': 1020,
+      'Yield %': 51,
       'Rate per Kg (INR)': 310,
       'No of Boxes': 40,
       'Damage Weight (Kg)': 0,
@@ -477,7 +483,9 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Grade Name': 'Grade A',
       'Size Name': 'Medium',
       'Count Name': '21/25',
-      'Weight (Kg)': 450.5,
+      'Weight (Kg)': 5000,
+      'Yield Weight (Kg)': 2400,
+      'Yield %': 48,
       'Rate per Kg': 380,
       'No of Boxes': 15,
       'Damage Weight': 10,

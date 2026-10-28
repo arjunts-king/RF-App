@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Layers,
   FileSpreadsheet,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from 'lucide-react';
 
 interface PurchaseListProps {
@@ -73,6 +74,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     boxesCount: 0,
     weightKg: 0,
     ratePerKg: 0,
+    yieldWeightKg: 0,
     damageWeightKg: 0,
     damageRatePerKg: 0,
     expenseBreakdown: {} as Record<string, number>,
@@ -148,6 +150,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       boxesCount: p.boxesCount || 0,
       weightKg: p.weightKg || 0,
       ratePerKg: p.ratePerKg || 0,
+      yieldWeightKg: p.yieldWeightKg || 0,
       damageWeightKg: p.damageWeightKg || 0,
       damageRatePerKg: p.damageRatePerKg || 0,
       expenseBreakdown: { ...(p.expenseBreakdown || {}) },
@@ -193,6 +196,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         boxesCount: Number(editForm.boxesCount) || 0,
         weightKg: Number(editForm.weightKg) || 0,
         ratePerKg: Number(editForm.ratePerKg) || 0,
+        yieldWeightKg: editForm.yieldWeightKg > 0 ? Number(editForm.yieldWeightKg) : undefined,
         damageWeightKg: Number(editForm.damageWeightKg) || 0,
         damageRatePerKg: Number(editForm.damageRatePerKg) || 0,
         expenseBreakdown: editForm.expenseBreakdown,
@@ -216,7 +220,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     expenseBreakdown: editForm.expenseBreakdown,
     amountPaid: editingPurchase?.amountPaid || 0,
     purchaseDate: editForm.purchaseDate,
-    supplier: editSupplier
+    supplier: editSupplier,
+    yieldWeightKg: editForm.yieldWeightKg > 0 ? Number(editForm.yieldWeightKg) : undefined
   });
 
   const handleExportCSV = () => {
@@ -235,6 +240,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         : (sizeMap.get(p.sizeId)?.name || 'N/A'),
       Count: countMap.get(p.countId)?.name || 'N/A',
       WeightKg: p.weightKg,
+      YieldWeightKg: p.yieldWeightKg !== undefined ? p.yieldWeightKg : '',
+      YieldPct: p.yieldPct !== undefined ? `${p.yieldPct}%` : '',
       RatePerKg: p.ratePerKg,
       PurchaseValue: p.purchaseValue,
       DamageAmount: p.damageAmount,
@@ -262,6 +269,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       { key: 'Size', label: 'Physical Size' },
       { key: 'Count', label: 'Piece Count' },
       { key: 'WeightKg', label: 'Weight (Kg)' },
+      { key: 'YieldWeightKg', label: 'Yield Weight (Kg)' },
+      { key: 'YieldPct', label: 'Yield %' },
       { key: 'RatePerKg', label: 'Rate (INR/Kg)' },
       { key: 'PurchaseValue', label: 'Purchase Value' },
       { key: 'DamageAmount', label: 'Damage Deductions' },
@@ -393,6 +402,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                 <th className="py-3 px-4">Supplier</th>
                 <th className="py-3 px-4">Species, Size &amp; Count</th>
                 <th className="py-3 px-4 text-right">Weight</th>
+                <th className="py-3 px-4 text-right">Yield</th>
                 <th className="py-3 px-4 text-right">Rate / Kg</th>
                 <th className="py-3 px-4 text-right">Landed Cost</th>
                 <th className="py-3 px-4 text-right">Eff. Rate</th>
@@ -403,7 +413,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
             <tbody className="divide-y divide-gray-100 text-xs font-medium text-ink-900">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-ink-500">
+                  <td colSpan={11} className="py-12 text-center text-ink-500">
                     No transactions match the selected filters.
                   </td>
                 </tr>
@@ -468,6 +478,19 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                           <div className="text-[10px] text-amber-700 font-bold" title={`Returned: ${formatKg(totalReturnedKg)}`}>
                             Ret: {formatKg(totalReturnedKg)}
                           </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {p.yieldWeightKg ? (
+                          <div>
+                            <span className="font-bold text-emerald-800">{formatKg(p.yieldWeightKg)}</span>
+                            <div className="text-[10px] text-emerald-600 font-bold">
+                              {p.yieldPct ? `${p.yieldPct.toFixed(1)}%` : `${((p.yieldWeightKg / p.weightKg) * 100).toFixed(1)}%`}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 font-light">—</span>
                         )}
                       </td>
 
@@ -700,6 +723,52 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                 <span>Balance Payable: <span className="text-rose-800">{formatINR(selectedPurchase.balancePayable)}</span></span>
               </div>
             </div>
+
+            {/* Yield & Processing Recovery Card */}
+            {selectedPurchase.yieldWeightKg ? (
+              <div className="p-4 border border-emerald-200 rounded-xl bg-emerald-50/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-emerald-900 uppercase text-[11px] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    Processing Yield &amp; Recovery Analysis
+                  </h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {selectedPurchase.yieldPct
+                      ? `${selectedPurchase.yieldPct.toFixed(2)}% Recovery`
+                      : `${((selectedPurchase.yieldWeightKg / selectedPurchase.weightKg) * 100).toFixed(2)}% Recovery`}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-gray-500 block text-[11px]">Raw Landed Weight</span>
+                    <span className="font-bold text-ink-900 text-sm">{formatKg(selectedPurchase.weightKg)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[11px]">Finished Yield Weight</span>
+                    <span className="font-bold text-emerald-800 text-sm">{formatKg(selectedPurchase.yieldWeightKg)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[11px]">Processing / Peeling Loss</span>
+                    <span className="font-bold text-rose-700 text-sm">
+                      {formatKg(Math.max(0, selectedPurchase.weightKg - selectedPurchase.yieldWeightKg))}
+                      <span className="text-[10px] font-normal text-rose-600 ml-1">
+                        ({(
+                          (Math.max(0, selectedPurchase.weightKg - selectedPurchase.yieldWeightKg) /
+                            selectedPurchase.weightKg) *
+                          100
+                        ).toFixed(1)}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[11px]">Finished Yield Cost / Kg</span>
+                    <span className="font-bold text-emerald-900 text-sm">
+                      ₹{(selectedPurchase.totalCost / selectedPurchase.yieldWeightKg).toFixed(2)} / Kg
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Attached Photo of Weighment Slip / Boat ID */}
             {selectedPurchase.photoUrl && (
@@ -1109,6 +1178,38 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                 className="w-full p-2 bg-white border border-gray-200 rounded-xl focus:border-rose-600 outline-none font-bold"
                 required
               />
+            </div>
+          </div>
+
+          {/* Processing Yield Tracking */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-200/80 items-center">
+            <div>
+              <label className="block font-semibold text-emerald-950 mb-1">Finished Yield Weight (Kg)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 2400.00"
+                value={editForm.yieldWeightKg || ''}
+                onChange={(e) => setEditForm({ ...editForm, yieldWeightKg: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 bg-white border border-emerald-300 rounded-xl focus:border-emerald-600 outline-none font-bold text-emerald-950"
+              />
+            </div>
+            <div>
+              <span className="block text-[11px] text-gray-500 uppercase font-semibold">Yield Recovery %</span>
+              <span className="font-bold text-emerald-800 text-sm">
+                {editForm.weightKg > 0 && editForm.yieldWeightKg > 0
+                  ? `${((editForm.yieldWeightKg / editForm.weightKg) * 100).toFixed(2)}%`
+                  : '—'}
+              </span>
+            </div>
+            <div>
+              <span className="block text-[11px] text-gray-500 uppercase font-semibold">Finished Yield Cost / Kg</span>
+              <span className="font-bold text-ink-900 text-sm">
+                {editForm.yieldWeightKg > 0 && editDerived.totalCost > 0
+                  ? `₹${(editDerived.totalCost / editForm.yieldWeightKg).toFixed(2)} / Kg`
+                  : '—'}
+              </span>
             </div>
           </div>
 

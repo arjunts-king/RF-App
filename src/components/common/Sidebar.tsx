@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     {
       title: 'ANALYTICS & CONTROL',
       items: [
-        { id: 'reports', label: 'Operational Reports (7 Views)', icon: BarChart3, show: true },
+        { id: 'reports', label: 'Operational Reports (8 Views)', icon: BarChart3, show: true },
         { id: 'data-quality', label: 'Data Quality & Reconciliation', icon: CheckCircle2, show: true }
       ]
     },

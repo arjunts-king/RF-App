@@ -1013,7 +1013,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       expenseBreakdown: purchaseData.expenseBreakdown,
       amountPaid: purchaseData.amountPaid,
       purchaseDate: purchaseData.purchaseDate || new Date().toISOString().split('T')[0],
-      supplier
+      supplier,
+      yieldWeightKg: purchaseData.yieldWeightKg ? Number(purchaseData.yieldWeightKg) : undefined
     });
 
     const newPurchase: Purchase = {
@@ -1034,6 +1035,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       boxesCount: Number(purchaseData.boxesCount) || 0,
       weightKg: Number(purchaseData.weightKg),
       ratePerKg: Number(purchaseData.ratePerKg),
+      yieldWeightKg: derived.yieldWeightKg,
+      yieldPct: derived.yieldPct,
       purchaseValue: derived.purchaseValue,
       damageWeightKg: Number(purchaseData.damageWeightKg) || 0,
       damageRatePerKg: Number(purchaseData.damageRatePerKg) || 0,
@@ -1114,7 +1117,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       expenseBreakdown: updates.expenseBreakdown ?? existing.expenseBreakdown,
       amountPaid: updates.amountPaid ?? existing.amountPaid,
       purchaseDate: updates.purchaseDate ?? existing.purchaseDate,
-      supplier
+      supplier,
+      yieldWeightKg: updates.yieldWeightKg !== undefined
+        ? (updates.yieldWeightKg !== null && !isNaN(Number(updates.yieldWeightKg)) && Number(updates.yieldWeightKg) > 0 ? Number(updates.yieldWeightKg) : undefined)
+        : existing.yieldWeightKg
     });
 
     const updatedPurchase: Purchase = {
@@ -1123,6 +1129,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       secondarySizeId: isDualSize ? (updates.secondarySizeId !== undefined ? (updates.secondarySizeId || undefined) : existing.secondarySizeId) : undefined,
       isDualSize: Boolean(isDualSize && (updates.secondarySizeId !== undefined ? updates.secondarySizeId : existing.secondarySizeId)),
       ...derived,
+      yieldWeightKg: derived.yieldWeightKg,
+      yieldPct: derived.yieldPct,
       updatedBy: currentUser.email,
       updatedAt: new Date().toISOString()
     };
@@ -3152,6 +3160,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
+      // Parse Yield / Processed output
+      const rawYieldWeight = getFlexibleValue(row, [
+        'yieldweightkg',
+        'yieldweight',
+        'yieldkg',
+        'yield',
+        'processedweightkg',
+        'processedweight',
+        'outputweight',
+        'finishedweight'
+      ]);
+      const rawYieldPct = getFlexibleValue(row, [
+        'yieldpct',
+        'yieldpercentage',
+        'yieldpercent',
+        'yieldratio',
+        'recovery',
+        'recoverypct'
+      ]);
+
+      let resolvedYieldWeight: number | undefined =
+        rawYieldWeight !== undefined && !isNaN(Number(rawYieldWeight)) && Number(rawYieldWeight) > 0
+          ? Number(rawYieldWeight)
+          : undefined;
+
+      if (!resolvedYieldWeight && rawYieldPct !== undefined && !isNaN(Number(rawYieldPct)) && Number(rawYieldPct) > 0 && weightVal > 0) {
+        resolvedYieldWeight = Number(((weightVal * Number(rawYieldPct)) / 100).toFixed(2));
+      }
+
       // Compute calculations
       const derived = computePurchaseFields({
         weightKg: weightVal,
@@ -3161,7 +3198,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         expenseBreakdown,
         amountPaid,
         purchaseDate,
-        supplier: resolvedSupplier
+        supplier: resolvedSupplier,
+        yieldWeightKg: resolvedYieldWeight
       });
 
       maxPurNum++;
@@ -3185,6 +3223,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         boxesCount,
         weightKg: weightVal,
         ratePerKg: rateVal,
+        yieldWeightKg: derived.yieldWeightKg,
+        yieldPct: derived.yieldPct,
         purchaseValue: derived.purchaseValue,
         damageWeightKg,
         damageRatePerKg,

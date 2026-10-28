@@ -53,6 +53,7 @@ export function computePurchaseFields(
     amountPaid?: number;
     purchaseDate: string;
     supplier?: Supplier;
+    yieldWeightKg?: number;
   }
 ) {
   const weightKg = Number(params.weightKg) || 0;
@@ -89,6 +90,14 @@ export function computePurchaseFields(
   const dueDate = calculateDueDate(params.purchaseDate, creditDays);
   const financialYear = getIndianFinancialYear(params.purchaseDate);
 
+  // 8. Processing Yield derivation
+  const yieldWeightKg = params.yieldWeightKg !== undefined && params.yieldWeightKg !== null && !isNaN(Number(params.yieldWeightKg)) && Number(params.yieldWeightKg) > 0
+    ? Number(params.yieldWeightKg)
+    : undefined;
+  const yieldPct = yieldWeightKg !== undefined && weightKg > 0
+    ? Number(((yieldWeightKg / weightKg) * 100).toFixed(2))
+    : undefined;
+
   return {
     purchaseValue,
     damageAmount,
@@ -99,7 +108,9 @@ export function computePurchaseFields(
     balancePayable,
     paymentStatus,
     dueDate,
-    financialYear
+    financialYear,
+    yieldWeightKg,
+    yieldPct
   };
 }
 
