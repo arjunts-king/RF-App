@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import {
   Search,
   PlusCircle,
@@ -13,6 +14,9 @@ import {
   Database,
   UserPlus,
   ShieldAlert,
+  ShieldCheck,
+  UserCheck,
+  Eye,
   FileSpreadsheet,
   Settings,
   Factory,
@@ -41,6 +45,7 @@ interface PaletteItem {
   icon: any;
   category: string;
   permission?: boolean;
+  onExecute?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -48,7 +53,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onClose,
   onNavigate
 }) => {
-  const { permissions } = useAuth();
+  const { permissions, switchUserRole } = useAuth();
+  const { showToast } = useToast();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +68,60 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }, [isOpen]);
 
   const allItems: PaletteItem[] = [
+    // Role Switching Quick Commands
+    {
+      id: 'role-admin',
+      title: 'Switch Role: Owner / Admin',
+      subtitle: 'Activate full administrative access, deletion rights, staff management and surveillance audit logs',
+      module: 'home',
+      tab: '',
+      icon: ShieldAlert,
+      category: 'Choose Your Role',
+      onExecute: () => {
+        switchUserRole('admin');
+        showToast('Role switched to Owner / Admin', 'success');
+      }
+    },
+    {
+      id: 'role-master',
+      title: 'Switch Role: Master Accountant',
+      subtitle: 'Activate financial authority, supplier ledger settlements, payment reconciliations and master data',
+      module: 'home',
+      tab: '',
+      icon: ShieldCheck,
+      category: 'Choose Your Role',
+      onExecute: () => {
+        switchUserRole('master_accountant');
+        showToast('Role switched to Master Accountant', 'success');
+      }
+    },
+    {
+      id: 'role-junior',
+      title: 'Switch Role: Junior Accountant',
+      subtitle: 'Activate field entry mode for fast harbour purchase weighment and daily plant processing lots',
+      module: 'home',
+      tab: '',
+      icon: UserCheck,
+      category: 'Choose Your Role',
+      onExecute: () => {
+        switchUserRole('junior_accountant');
+        showToast('Role switched to Junior Accountant', 'success');
+      }
+    },
+    {
+      id: 'role-viewer',
+      title: 'Switch Role: Management / Viewer',
+      subtitle: 'Activate executive read-only mode for business dashboards, reports and yield analytics',
+      module: 'home',
+      tab: '',
+      icon: Eye,
+      category: 'Choose Your Role',
+      onExecute: () => {
+        switchUserRole('viewer');
+        showToast('Role switched to Management / Viewer', 'success');
+      }
+    },
+
     // Core Quick Actions
     {
       id: 'quick-harbour-entry',
@@ -340,7 +400,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       e.preventDefault();
       if (filtered[selectedIndex]) {
         const item = filtered[selectedIndex];
-        onNavigate(item.module, item.tab);
+        if (item.onExecute) {
+          item.onExecute();
+        } else {
+          onNavigate(item.module, item.tab);
+        }
         onClose();
       }
     } else if (e.key === 'Escape') {
@@ -392,7 +456,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 <div
                   key={item.id}
                   onClick={() => {
-                    onNavigate(item.module, item.tab);
+                    if (item.onExecute) {
+                      item.onExecute();
+                    } else {
+                      onNavigate(item.module, item.tab);
+                    }
                     onClose();
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}

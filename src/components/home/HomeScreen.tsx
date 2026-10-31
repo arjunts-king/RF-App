@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { RoleSwitcher } from '../common/RoleSwitcher';
 import { formatINR, formatKg } from '../../utils/calculations';
 import {
   ShoppingBag,
@@ -79,7 +80,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
                 {businessSettings.financialYear} Active Session
               </span>
-              <span className="text-xs text-ink-500 font-medium">
+              <RoleSwitcher />
+              <span className="text-xs text-ink-500 font-medium hidden sm:inline">
                 {businessSettings.businessName} · {businessSettings.tagline}
               </span>
             </div>

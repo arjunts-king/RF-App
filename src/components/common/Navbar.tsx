@@ -403,17 +403,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
 
-            {/* Role Simulator Component: Visible only to Admin; non-admin users see a fixed read-only label */}
-            {currentUser.role === 'admin' ? (
-              <div className="hidden lg:block">
-                <RoleSwitcher />
-              </div>
-            ) : (
-              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-semibold text-ink-700">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="capitalize">{currentUser.role.replace('_', ' ')}</span>
-              </div>
-            )}
+            {/* Interactive Role Switcher Pill: Always available to choose role */}
+            <div className="hidden md:block">
+              <RoleSwitcher />
+            </div>
 
             {/* Offline sync button if pending records */}
             {offlineQueue.length > 0 && (
@@ -461,14 +454,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* User Profile & Security Credentials Modal */}
+      {/* User Profile & Role Selector Modal */}
       <Modal
         isOpen={showProfile}
         onClose={() => setShowProfile(false)}
-        title="User Profile & Security Credentials"
-        subtitle="Individual authenticated staff session"
+        title="User Profile & Role Selection"
+        subtitle="Manage your session, credentials, and choose active role"
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Active Session Info */}
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-rose-50/70 border border-rose-200">
             <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
               {currentUser.name.charAt(0)}
@@ -478,32 +472,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               <p className="text-xs text-ink-500">{currentUser.email}</p>
               <div className="mt-1.5 flex items-center gap-2">
                 <RoleBadge role={currentUser.role} size="sm" />
+                <span className="text-[11px] text-ink-500">• {currentUser.designation}</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-              <span className="text-ink-500 block font-medium">Designation (Fixed Read-Only)</span>
-              <span className="text-ink-900 font-semibold text-sm mt-0.5 block">{currentUser.designation}</span>
-              <span className="text-[11px] text-ink-500 mt-1 block">Role change restricted to Owner/Admin</span>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-              <span className="text-ink-500 block font-medium">Account ID</span>
-              <span className="text-ink-900 font-semibold text-sm mt-0.5 block">{currentUser.id}</span>
-              <span className="text-[11px] text-ink-500 mt-1 block">Created: {new Date(currentUser.createdAt).toLocaleDateString()}</span>
-            </div>
-          </div>
+          {/* Interactive Role Chooser */}
+          <RoleSwitcher variant="cards" onRoleChanged={() => setShowProfile(false)} />
 
+          {/* Active Permissions Breakdown */}
           <div className="p-4 bg-white border border-gray-200 rounded-xl text-xs space-y-2.5">
             <h5 className="font-bold text-ink-900 flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-rose-600" />
-              Active System Permissions (RBAC Enforcement):
+              Active System Permissions (RBAC Enforcement for {currentUser.role.replace('_', ' ')}):
             </h5>
             <ul className="space-y-1.5 text-ink-700">
               <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                Permanent Deletion Authority: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive)' : 'Denied'}</strong>
+                Permanent Deletion Authority: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive to Admin)' : 'Denied'}</strong>
               </li>
               <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' || currentUser.role === 'master_accountant' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
@@ -515,7 +501,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                Surveillance Audit Trail Access: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive)' : 'Denied'}</strong>
+                Surveillance Audit Trail Access: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive to Admin)' : 'Denied'}</strong>
               </li>
             </ul>
           </div>

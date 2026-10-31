@@ -8,6 +8,7 @@ import { ProductionSidebar, ProductionNavTab } from './components/production/Pro
 import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
 import { HomeScreen } from './components/home/HomeScreen';
 import { CommandPalette } from './components/common/CommandPalette';
+import { RoleSwitcher } from './components/common/RoleSwitcher';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
 import { PurchaseList } from './components/purchase/PurchaseList';
@@ -249,6 +250,14 @@ const MainLayout: React.FC = () => {
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Mobile Drawer Role Switcher */}
+              <div className="p-3.5 bg-rose-50/40 border-t border-gray-200">
+                <RoleSwitcher
+                  variant="inline"
+                  onRoleChanged={() => setIsMobileMenuOpen(false)}
+                />
               </div>
             </div>
           </div>
