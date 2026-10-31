@@ -33,7 +33,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-ink-900/40 backdrop-blur-md flex items-center justify-center p-4 transition-all"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -41,10 +41,10 @@ export const Modal: React.FC<ModalProps> = ({
       aria-modal="true"
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl border border-gray-100 w-full ${maxWidth} transform transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden`}
+        className={`glass-surface-thick rounded-2xl w-full ${maxWidth} transform transition-all animate-liquid-pop overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-rose-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-rose-100/60 bg-rose-50/40">
           <div>
             <h3 className="text-lg font-bold text-ink-900">{title}</h3>
             {subtitle && <p className="text-xs text-ink-500 mt-0.5">{subtitle}</p>}

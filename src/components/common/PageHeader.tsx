@@ -105,7 +105,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   onClick={act.onClick}
                   disabled={act.disabled}
                   title={act.title}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                  className="btn-secondary-liquid inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/80 glass-surface-thin text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                 >
                   {Icon && <Icon className="w-3.5 h-3.5 text-ink-500" />}
                   <span>{act.label}</span>
@@ -119,7 +119,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
                 title={primaryAction.title}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30"
+                className="btn-liquid inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30"
               >
                 {primaryAction.icon && <primaryAction.icon className="w-4 h-4" />}
                 <span>{primaryAction.label}</span>

@@ -250,8 +250,8 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
         ]}
       />
 
-      {/* Search & Action Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
+      {/* Search & Action Bar (Liquid Glass Surface) */}
+      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />

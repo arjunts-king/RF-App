@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
+import { LiquidGlassProvider, useLiquidGlass } from './context/LiquidGlassContext';
 import { Navbar, ActiveModuleType } from './components/common/Navbar';
 import { Sidebar, NavTab } from './components/common/Sidebar';
 import { ProductionSidebar, ProductionNavTab } from './components/production/ProductionSidebar';
@@ -59,6 +60,7 @@ const MainLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { permissions } = useAuth();
+  const { ambientGlow } = useLiquidGlass();
 
   // Global Command Palette Shortcut (Ctrl+K / Cmd+K)
   useEffect(() => {
@@ -89,8 +91,16 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FBFBFB] text-[#1E1E24]">
-      {/* Figma-Inspired Global Shell Sticky Top Bar */}
+    <div className="min-h-screen flex flex-col bg-[#FBFBFB] text-[#1E1E24] relative overflow-x-hidden">
+      {/* Ambient Fluid Glow Orbs (Soft Blush Light Refraction) */}
+      {ambientGlow && (
+        <div className="liquid-ambient-backdrop" aria-hidden="true">
+          <div className="liquid-orb-1" />
+          <div className="liquid-orb-2" />
+        </div>
+      )}
+
+      {/* Figma-Inspired Global Shell Sticky Top Bar with Liquid Glass */}
       <Navbar
         activeModule={activeModule}
         onModuleChange={(mod) => {
@@ -109,7 +119,7 @@ const MainLayout: React.FC = () => {
         onNavigate={handleNavigateDirect}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative z-10">
         {/* Desktop Sidebar (Rendered when in Purchase, Production or Sales modules) */}
         {activeModule !== 'home' && (
           <div className="hidden md:block">
@@ -123,10 +133,10 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Mobile Slide-in Drawer Menu */}
+        {/* Mobile Slide-in Drawer Menu with Thick Liquid Glass */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden bg-black/40 backdrop-blur-xs flex">
-            <div className="w-80 max-w-[85%] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="fixed inset-0 z-50 md:hidden bg-ink-900/40 backdrop-blur-md flex">
+            <div className="w-80 max-w-[85%] glass-surface-thick h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
               <div className="p-4 border-b flex justify-between items-center bg-rose-50/50">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs">
@@ -343,8 +353,8 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Context aware with Home) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-30 flex items-center justify-around py-2 px-1 shadow-lg print:hidden">
+      {/* Mobile Bottom Navigation Bar (Liquid Glass Surface) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-surface-thin border-t border-white/80 z-30 flex items-center justify-around py-2 px-1 shadow-[0_-4px_20px_rgba(178,58,72,0.06)] print:hidden">
         <button
           onClick={() => setActiveModule('home')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
@@ -511,12 +521,14 @@ const MainLayout: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <DataProvider>
-          <MainLayout />
-        </DataProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <LiquidGlassProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <DataProvider>
+            <MainLayout />
+          </DataProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </LiquidGlassProvider>
   );
 }

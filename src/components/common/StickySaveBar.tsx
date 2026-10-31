@@ -39,7 +39,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
 }) => {
   const effectiveSecondaryClick = onSecondaryClick || onSecondary;
   return (
-    <div className="sticky bottom-4 z-30 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-xl border border-gray-200 flex flex-wrap items-center justify-between gap-4 mt-8 animate-in fade-in slide-in-from-bottom-2 duration-150">
+    <div className="sticky bottom-4 z-30 glass-surface-thick p-4 sm:p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 mt-8 animate-liquid-up">
       {/* Live Calculated Metrics */}
       <div className="flex items-center gap-4 sm:gap-6 text-xs flex-wrap">
         {metrics.map((m, idx) => (
@@ -74,7 +74,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
             type="button"
             onClick={effectiveSecondaryClick}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50"
+            className="btn-secondary-liquid inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/80 glass-surface-thin text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50"
           >
             <SecondaryIcon className="w-3.5 h-3.5 text-ink-500" />
             <span>{secondaryLabel}</span>
@@ -86,7 +86,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
           form={formId}
           onClick={onPrimaryClick}
           disabled={isPrimaryDisabled || isSubmitting}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30"
+          className="btn-liquid inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30"
         >
           <PrimaryIcon className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
           <span>{isSubmitting ? 'Saving...' : primaryLabel}</span>

@@ -143,10 +143,10 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
                 key={r.role}
                 type="button"
                 onClick={() => handleSelectRole(r.role)}
-                className={`p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-2.5 ${
+                className={`p-3.5 rounded-2xl border text-left card-liquid-hover relative flex flex-col justify-between gap-2.5 ${
                   isSelected
-                    ? 'border-rose-600 bg-rose-50/60 shadow-xs ring-2 ring-rose-500/20'
-                    : 'border-gray-200 hover:border-rose-300 hover:bg-gray-50/80 bg-white'
+                    ? 'border-rose-600 bg-rose-50/70 shadow-xs ring-2 ring-rose-500/20'
+                    : 'glass-surface-regular border-white/80 hover:border-rose-300'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -233,7 +233,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-rose-50/60 border border-rose-200 hover:border-rose-300 text-ink-800 transition shadow-2xs group cursor-pointer"
+        className="btn-secondary-liquid flex items-center gap-2 px-3 py-1.5 rounded-full glass-surface-thin hover:border-rose-300 text-ink-800 transition group cursor-pointer"
         title="Click to choose / switch your active role"
         aria-expanded={isOpen}
       >
@@ -252,7 +252,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-80 glass-surface-thick rounded-2xl border border-white/90 p-3 z-50 animate-liquid-pop shadow-2xl">
           <div className="px-2 py-1.5 border-b border-gray-100 mb-2 flex items-center justify-between">
             <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">
               Choose Active Role

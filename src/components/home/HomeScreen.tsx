@@ -140,7 +140,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* PURCHASE MODULE TILE */}
-          <div className="group relative bg-white hover:bg-rose-50/20 rounded-3xl p-6 sm:p-7 border border-gray-200/80 hover:border-rose-300 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-rose-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-2xs group-hover:bg-rose-600 group-hover:text-white transition-colors duration-200">
@@ -202,7 +202,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="pt-6">
               <button
                 onClick={() => onNavigate('purchase', 'dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-2xs group-hover:shadow-xs transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Purchase Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -211,7 +211,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* PRODUCTION MODULE TILE */}
-          <div className="group relative bg-white hover:bg-amber-50/20 rounded-3xl p-6 sm:p-7 border border-gray-200/80 hover:border-amber-300 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-amber-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-2xs group-hover:bg-amber-700 group-hover:text-white transition-colors duration-200">
@@ -273,7 +273,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="pt-6">
               <button
                 onClick={() => onNavigate('production', 'prod-dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-ink-900 hover:bg-black text-white text-xs font-bold shadow-2xs group-hover:shadow-xs transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-ink-900 hover:bg-black text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Production Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -282,7 +282,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* SALES MODULE TILE */}
-          <div className="group relative bg-white hover:bg-rose-50/20 rounded-3xl p-6 sm:p-7 border border-gray-200/80 hover:border-rose-300 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-rose-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-2xs group-hover:bg-rose-600 group-hover:text-white transition-colors duration-200">
@@ -344,7 +344,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="pt-6">
               <button
                 onClick={() => onNavigate('sales', 'sales-dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-2xs group-hover:shadow-xs transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Commercial Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -355,7 +355,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </section>
 
       {/* 3. ALTERNATING SECTION: HIGH-FREQUENCY SHORTCUT TILES */}
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-4">
+      <section className="glass-surface-regular rounded-3xl p-6 sm:p-8 border border-white/80 shadow-xs space-y-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-ink-900">
             High-Frequency Actions
@@ -369,7 +369,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {permissions.canCreateEditPurchases && (
             <button
               onClick={() => onNavigate('purchase', 'purchase-entry')}
-              className="p-4 rounded-2xl bg-rose-50/60 hover:bg-rose-100/70 border border-rose-200 text-left transition flex flex-col justify-between group"
+              className="p-4 rounded-2xl glass-surface-blush border border-rose-200 text-left card-liquid-hover flex flex-col justify-between group"
             >
               <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <PlusCircle className="w-4 h-4" />
@@ -386,7 +386,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {permissions.canCreateEditPurchases && (
             <button
               onClick={() => onNavigate('production', 'daily-entry')}
-              className="p-4 rounded-2xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200 text-left transition flex flex-col justify-between group"
+              className="p-4 rounded-2xl bg-amber-50/50 backdrop-blur-md hover:bg-amber-100/70 border border-amber-200/80 text-left card-liquid-hover flex flex-col justify-between group"
             >
               <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Factory className="w-4 h-4" />
@@ -403,7 +403,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {permissions.canCreateEditSales && (
             <button
               onClick={() => onNavigate('sales', 'invoice-entry')}
-              className="p-4 rounded-2xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200 text-left transition flex flex-col justify-between group"
+              className="p-4 rounded-2xl bg-emerald-50/50 backdrop-blur-md hover:bg-emerald-100/70 border border-emerald-200/80 text-left card-liquid-hover flex flex-col justify-between group"
             >
               <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Receipt className="w-4 h-4" />
@@ -419,7 +419,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
           <button
             onClick={() => onNavigate('purchase', 'payments')}
-            className="p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 border border-gray-200 text-left transition flex flex-col justify-between group"
+            className="p-4 rounded-2xl glass-surface-thin hover:border-gray-300 text-left card-liquid-hover flex flex-col justify-between group"
           >
             <div className="w-9 h-9 rounded-xl bg-ink-900 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <BookOpen className="w-4 h-4" />
@@ -434,7 +434,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
           <button
             onClick={() => onNavigate('purchase', 'outstanding')}
-            className="p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 border border-gray-200 text-left transition flex flex-col justify-between group"
+            className="p-4 rounded-2xl glass-surface-thin hover:border-gray-300 text-left card-liquid-hover flex flex-col justify-between group"
           >
             <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <Clock className="w-4 h-4" />

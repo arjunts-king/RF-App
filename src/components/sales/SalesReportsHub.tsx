@@ -470,8 +470,8 @@ export const SalesReportsHub: React.FC = () => {
         ]}
       />
 
-      {/* Pill Tab Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+      {/* Pill Tab Bar (Liquid Glass Surface) */}
+      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {reportTabs.map((tab) => {
             const Icon = tab.icon;
@@ -480,10 +480,10 @@ export const SalesReportsHub: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveReport(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold btn-secondary-liquid transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-rose-700 text-white shadow-xs'
-                    : 'bg-gray-50 text-ink-700 hover:bg-rose-50 border border-gray-200'
+                    : 'glass-surface-thin text-ink-700 hover:bg-rose-50 border border-white/80'
                 }`}
               >
                 <Icon className="w-4 h-4" />

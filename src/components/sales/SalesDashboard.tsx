@@ -203,8 +203,8 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         }
       />
 
-      {/* Combinable Multi-Filter Bar with Removable Filter Chips */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">
+      {/* Combinable Multi-Filter Bar with Removable Filter Chips (Liquid Glass Surface) */}
+      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-ink-900 flex items-center gap-1.5 uppercase tracking-wider">
             <Filter className="w-3.5 h-3.5 text-rose-700" />

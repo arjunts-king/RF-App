@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLiquidGlass } from '../../context/LiquidGlassContext';
 import { PageHeader } from '../common/PageHeader';
 import {
   Building,
   Save,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 
@@ -19,6 +21,14 @@ export const BusinessSettingsView: React.FC = () => {
     wipeDatabaseCompletely,
     loadStarterPresets
   } = useData();
+  const {
+    reduceTransparency,
+    setReduceTransparency,
+    reduceMotion,
+    setReduceMotion,
+    ambientGlow,
+    setAmbientGlow
+  } = useLiquidGlass();
 
   const [formData, setFormData] = useState({ ...businessSettings });
   const [confirmAction, setConfirmAction] = useState<'wipe' | 'clear-transactions' | 'starter-presets' | null>(null);
@@ -186,13 +196,88 @@ export const BusinessSettingsView: React.FC = () => {
         <div className="flex justify-end pt-4 border-t border-gray-100">
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full shadow-xs transition"
+            className="btn-liquid flex items-center gap-2 px-6 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full shadow-xs transition"
           >
             <Save className="w-4 h-4" />
             <span>Save Company Branding</span>
           </button>
         </div>
       </form>
+
+      {/* 3. Liquid Glass & Motion System Preferences (iOS Polish Layer) */}
+      <div className="glass-surface-regular p-6 rounded-2xl shadow-xs border border-white/80 space-y-4 text-xs">
+        <div className="border-b border-gray-100 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-rose-600" />
+            3. Liquid Glass Surfaces &amp; Motion Polish Preferences
+          </h3>
+          <p className="text-[11px] text-ink-500 mt-0.5">
+            Configure iOS-style liquid frosted glass translucency, spring entrance transitions, and ambient refraction orbs
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <label className="p-4 rounded-xl border border-gray-200 bg-white/70 hover:bg-white cursor-pointer transition flex flex-col justify-between card-liquid-hover">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-ink-900 text-sm">Reduce Transparency</span>
+                <input
+                  type="checkbox"
+                  checked={reduceTransparency}
+                  onChange={(e) => setReduceTransparency(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </div>
+              <p className="text-[11px] text-ink-500 leading-relaxed">
+                Replaces semi-transparent frosted glass with crisp solid white backgrounds. Ideal for high-contrast accessibility or low-power displays.
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-rose-700 mt-3 pt-2 border-t border-gray-100">
+              {reduceTransparency ? 'Active: Solid White Mode' : 'Default: Liquid Glass Mode'}
+            </span>
+          </label>
+
+          <label className="p-4 rounded-xl border border-gray-200 bg-white/70 hover:bg-white cursor-pointer transition flex flex-col justify-between card-liquid-hover">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-ink-900 text-sm">Reduce Motion</span>
+                <input
+                  type="checkbox"
+                  checked={reduceMotion}
+                  onChange={(e) => setReduceMotion(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </div>
+              <p className="text-[11px] text-ink-500 leading-relaxed">
+                Disables spring lifts, page translations, and slow floating animations. Replaces transitions with instantaneous state changes.
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-rose-700 mt-3 pt-2 border-t border-gray-100">
+              {reduceMotion ? 'Active: Instant Transitions' : 'Default: Spring Fluid Motion'}
+            </span>
+          </label>
+
+          <label className="p-4 rounded-xl border border-gray-200 bg-white/70 hover:bg-white cursor-pointer transition flex flex-col justify-between card-liquid-hover">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-ink-900 text-sm">Ambient Fluid Glow</span>
+                <input
+                  type="checkbox"
+                  checked={ambientGlow}
+                  onChange={(e) => setAmbientGlow(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </div>
+              <p className="text-[11px] text-ink-500 leading-relaxed">
+                Places subtle blush ambient light shapes behind hero headers, giving frosted glass surfaces gentle color refraction.
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-rose-700 mt-3 pt-2 border-t border-gray-100">
+              {ambientGlow ? 'Active: Ambient Refraction' : 'Disabled: Plain Neutral Light'}
+            </span>
+          </label>
+        </div>
+      </div>
 
       {/* Database State Controls & Clean Slate */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4 text-xs">

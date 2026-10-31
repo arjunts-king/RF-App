@@ -117,8 +117,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         ]}
       />
 
-      {/* 2. CLEAN STICKY FILTER BAR WITH REMOVABLE FILTER CHIPS */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">
+      {/* 2. CLEAN STICKY FILTER BAR WITH REMOVABLE FILTER CHIPS (Liquid Glass Surface) */}
+      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-ink-900 font-bold">
             <Filter className="w-4 h-4 text-rose-600" />
@@ -218,10 +218,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         )}
       </div>
 
-      {/* 3. BENTO-STYLE GRID OF ROUNDED KPI CARDS WITH CAPTIONS & REPORT LINKS */}
+      {/* 3. BENTO-STYLE GRID OF ROUNDED KPI CARDS WITH CAPTIONS & REPORT LINKS (Liquid Glass Polish) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Total Volume */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Total Volume</span>
@@ -244,7 +244,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 2: Raw Purchase Value */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Raw Purchase Value</span>
@@ -267,7 +267,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 3: Final Landed Cost */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-rose-200/80 bg-gradient-to-br from-white via-rose-50/20 to-rose-50/50 flex flex-col justify-between">
+        <div className="glass-surface-blush card-liquid-hover p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800 block">Final Landed Cost</span>
@@ -290,7 +290,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 4: Direct Expenses */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Direct Expenses</span>
@@ -313,7 +313,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 5: Average Buy Rate */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Average Buy Rate</span>
@@ -336,7 +336,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 6: Effective Landed Rate */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Effective Landed Rate</span>
@@ -359,7 +359,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 7: Outstanding Payables */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Outstanding Payables</span>
@@ -382,7 +382,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </div>
 
         {/* KPI 8: Active Suppliers */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between hover:border-gray-200 transition">
+        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Active Suppliers</span>

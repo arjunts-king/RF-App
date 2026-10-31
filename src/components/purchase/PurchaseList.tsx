@@ -347,8 +347,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         ]}
       />
 
-      {/* STICKY FILTER BAR WITH REMOVABLE FILTER CHIPS */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">
+      {/* STICKY FILTER BAR WITH REMOVABLE FILTER CHIPS (Liquid Glass Surface) */}
+      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
             <div className="relative flex-1 min-w-[220px]">

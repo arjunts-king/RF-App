@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { useLiquidGlass } from '../../context/LiquidGlassContext';
 import { RoleBadge } from './RoleBadge';
 import { RoleSwitcher } from './RoleSwitcher';
 import { Modal } from './Modal';
@@ -35,7 +36,8 @@ import {
   FileText,
   BadgeDollarSign,
   Users,
-  Anchor
+  Anchor,
+  Sparkles
 } from 'lucide-react';
 
 export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales';
@@ -57,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { currentUser, permissions } = useAuth();
   const { isOnline, offlineQueue, syncOfflineQueue, businessSettings, purchases, processingEntries, salesInvoices } = useData();
+  const { reduceTransparency, setReduceTransparency, reduceMotion, setReduceMotion, ambientGlow, setAmbientGlow } = useLiquidGlass();
   const [showProfile, setShowProfile] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<'purchase' | 'production' | 'sales' | null>(null);
@@ -181,7 +184,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs px-4 lg:px-6 py-2.5 transition-all">
+      <header className="sticky top-0 z-40 glass-surface-thin border-b border-white/75 px-4 lg:px-6 py-2.5 transition-all">
         <div className="flex items-center justify-between gap-3">
           {/* Brand Logo & Title with Home Link */}
           <div className="flex items-center gap-3">
@@ -200,7 +203,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-2.5 text-left group focus:outline-none"
               title="Return to Home Dashboard"
             >
-              <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-xs group-hover:bg-rose-700 transition-colors shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-xs group-hover:bg-rose-700 transition-colors shrink-0 btn-liquid">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                   <path d="M18.5 8C17 6.5 14.5 6 12 7C9.5 8 7 9 4.5 8C3.5 10 3.5 14 4.5 16C7 15 9.5 16 12 17C14.5 18 17 17.5 18.5 16C20.5 14 20.5 10 18.5 8ZM15.5 11C14.95 11 14.5 10.55 14.5 10C14.5 9.45 14.95 9 15.5 9C16.05 9 16.5 9.45 16.5 10C16.5 10.55 16.05 11 15.5 11Z" />
                 </svg>
@@ -222,7 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Module Switcher with Grouped Mega-Menu Dropdown Buttons */}
-          <div ref={megaMenuRef} className="relative hidden md:flex items-center bg-gray-100/80 p-1 rounded-full border border-gray-200/80 text-xs font-semibold">
+          <div ref={megaMenuRef} className="relative hidden md:flex items-center glass-surface-thin p-1 rounded-full border border-white/80 text-xs font-semibold">
             {/* Home Pill */}
             <button
               onClick={() => {
@@ -301,7 +304,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* GROUPED MEGA-MENU POPOVER FOR ACTIVE MODULE */}
             {activeMegaMenu && (
-              <div className="absolute left-0 top-full mt-2 w-[720px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
+              <div className="absolute left-0 top-full mt-2 w-[720px] glass-surface-thick rounded-2xl border border-white/90 p-6 z-50 animate-liquid-pop text-left">
                 <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-ink-900 capitalize">
@@ -370,7 +373,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Global Search / Command Palette Shortcut */}
             <button
               onClick={onOpenCommandPalette}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-rose-50/50 border border-gray-200 text-ink-600 hover:text-ink-900 text-xs font-medium transition shadow-2xs group"
+              className="btn-secondary-liquid flex items-center gap-2 px-3 py-1.5 rounded-full glass-surface-thin hover:border-rose-300 text-ink-600 hover:text-ink-900 text-xs font-medium transition group"
               title="Open Global Command Palette (Ctrl+K)"
             >
               <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-rose-600 transition-colors" />
@@ -384,7 +387,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative p-2 rounded-full bg-gray-50 hover:bg-rose-50 border border-gray-200 text-ink-700 hover:text-rose-600 transition"
+                className="btn-secondary-liquid relative p-2 rounded-full glass-surface-thin hover:border-rose-300 text-ink-700 hover:text-rose-600 transition"
                 title="System Notifications & Alerts"
                 aria-label="View notifications"
               >
@@ -412,7 +415,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {offlineQueue.length > 0 && (
               <button
                 onClick={syncOfflineQueue}
-                className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-full shadow-2xs transition"
+                className="btn-liquid flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-full shadow-2xs transition"
                 title="Sync locally cached offline records"
               >
                 <RefreshCw className="w-3 h-3 animate-spin" />
@@ -424,8 +427,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div
               className={`hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
                 isOnline
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
+                  ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50/80 text-amber-800 border-amber-200 animate-pulse'
               }`}
             >
               {isOnline ? <Wifi className="w-3 h-3 text-emerald-600" /> : <WifiOff className="w-3 h-3 text-amber-700" />}
@@ -435,7 +438,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}
             <button
               onClick={() => setShowProfile(true)}
-              className="flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-gray-50 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 transition text-left shrink-0"
+              className="btn-secondary-liquid flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full glass-surface-thin hover:border-rose-300 transition text-left shrink-0"
               title="Click to view authenticated user credentials"
             >
               <div className="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
@@ -474,6 +477,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <RoleBadge role={currentUser.role} size="sm" />
                 <span className="text-[11px] text-ink-500">• {currentUser.designation}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Display & Glass Polish Preferences (iOS Liquid Glass System) */}
+          <div className="p-4 bg-white border border-gray-200 rounded-xl text-xs space-y-3">
+            <h5 className="font-bold text-ink-900 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-rose-600" />
+              Liquid Glass &amp; Motion Polish Preferences:
+            </h5>
+            <div className="space-y-2">
+              <label className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-rose-50/40 cursor-pointer transition">
+                <div>
+                  <span className="font-bold text-ink-900 block">Reduce Transparency</span>
+                  <span className="text-[11px] text-ink-500">Replaces translucent frosted-glass with solid white surfaces</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={reduceTransparency}
+                  onChange={(e) => setReduceTransparency(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-rose-50/40 cursor-pointer transition">
+                <div>
+                  <span className="font-bold text-ink-900 block">Reduce Motion</span>
+                  <span className="text-[11px] text-ink-500">Disables spring entrance animations and floating ambient refraction</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={reduceMotion}
+                  onChange={(e) => setReduceMotion(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-rose-50/40 cursor-pointer transition">
+                <div>
+                  <span className="font-bold text-ink-900 block">Ambient Fluid Glow</span>
+                  <span className="text-[11px] text-ink-500">Soft blush ambient refraction behind hero &amp; dashboard headers</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={ambientGlow}
+                  onChange={(e) => setAmbientGlow(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+                />
+              </label>
             </div>
           </div>
 

@@ -118,8 +118,8 @@ export const UserManagementView: React.FC = () => {
         breadcrumbs={['Admin', 'User Management']}
       />
 
-      {/* Invite Form Card */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
+      {/* Invite Form Card (Liquid Glass Surface) */}
+      <div className="glass-surface-regular p-6 rounded-2xl border border-white/80 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
           <UserPlus className="w-4 h-4" />
           Invite / Provision New Staff Member
@@ -170,7 +170,7 @@ export const UserManagementView: React.FC = () => {
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full shadow-xs transition"
+              className="w-full btn-liquid py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full shadow-xs transition"
             >
               Send Invite
             </button>

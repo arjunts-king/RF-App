@@ -36,14 +36,14 @@ export const BentoCard: React.FC<BentoCardProps> = ({
 
   return (
     <div
-      className={`p-5 rounded-2xl border shadow-xs flex flex-col justify-between transition-all duration-150 ${
+      className={`p-5 rounded-2xl border flex flex-col justify-between card-liquid-hover ${
         isHighlight
-          ? 'bg-gradient-to-br from-white via-rose-50/20 to-rose-50/60 border-rose-200 hover:border-rose-300 hover:shadow-md'
+          ? 'glass-surface-blush border-rose-200/80 hover:border-rose-300'
           : isWarning
-          ? 'bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md'
+          ? 'bg-amber-50/40 backdrop-blur-md border-amber-200/80 hover:border-amber-300 shadow-xs'
           : isSuccess
-          ? 'bg-emerald-50/30 border-emerald-200 hover:border-emerald-300 hover:shadow-md'
-          : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
+          ? 'bg-emerald-50/40 backdrop-blur-md border-emerald-200/80 hover:border-emerald-300 shadow-xs'
+          : 'glass-surface-regular border-white/80 hover:border-rose-200/70 shadow-xs'
       }`}
     >
       <div>

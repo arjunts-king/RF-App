@@ -407,8 +407,8 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
         }
       />
 
-      {/* Pill Tab Switcher */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+      {/* Pill Tab Switcher (Liquid Glass Surface) */}
+      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -417,10 +417,10 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold btn-secondary-liquid transition-all ${
                   isActive
                     ? 'bg-rose-700 text-white shadow-xs'
-                    : 'bg-gray-50 text-ink-700 hover:bg-rose-50 border border-gray-200'
+                    : 'glass-surface-thin text-ink-700 hover:bg-rose-50 border border-white/80'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

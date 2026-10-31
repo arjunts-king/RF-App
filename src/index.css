@@ -3,9 +3,233 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-micro: 180ms;
+    --duration-panel: 280ms;
+    --duration-page: 340ms;
+  }
+
   body {
     @apply bg-[#FBFBFB] text-[#1E1E24] antialiased selection:bg-rose-200 selection:text-rose-900;
   }
+}
+
+/* =========================================================================
+   LIQUID GLASS SYSTEM (iOS "Liquid Glass" Inspired Surfaces)
+   ========================================================================= */
+
+/* Thin Glass: Sticky Top Bar, Save Bars, Filter Bars, Pill Elements */
+.glass-surface-thin {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9), 0 4px 16px -2px rgba(178, 58, 72, 0.04);
+}
+
+/* Regular Glass: KPI Cards, Bento Tiles, Popovers, Dropdown Mega-Menus */
+.glass-surface-regular {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 30px -4px rgba(178, 58, 72, 0.06);
+}
+
+/* Blush Tinted Glass: Highlighted KPI Cards, Active Filters, Hero Surfaces */
+.glass-surface-blush {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 218, 218, 0.42) 100%);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(246, 218, 218, 0.7);
+  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 30px -4px rgba(178, 58, 72, 0.08);
+}
+
+/* Thick Glass: Dialog Modals, Drawers, Global Command Palette */
+.glass-surface-thick {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 1), 0 20px 50px -8px rgba(178, 58, 72, 0.12);
+}
+
+/* =========================================================================
+   BUTTON & INTERACTION POLISH (Spring Lifts & Haptic Presses)
+   ========================================================================= */
+
+.btn-liquid {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease;
+}
+.btn-liquid:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px -2px rgba(178, 58, 72, 0.28);
+}
+.btn-liquid:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow: 0 2px 6px rgba(178, 58, 72, 0.2);
+}
+
+.btn-secondary-liquid {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease, border-color 150ms ease;
+}
+.btn-secondary-liquid:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.btn-secondary-liquid:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+.card-liquid-hover {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+.card-liquid-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 14px 34px -4px rgba(178, 58, 72, 0.09);
+}
+
+/* =========================================================================
+   ANIMATIONS & TRANSITIONS (GPU-Accelerated)
+   ========================================================================= */
+
+@keyframes liquid-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-liquid-up {
+  animation: liquid-slide-up 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes liquid-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-liquid-pop {
+  animation: liquid-pop 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes float-slow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(25px, 35px) scale(1.06); }
+}
+@keyframes float-slow-reverse {
+  0% { transform: translate(0, 0) scale(1.05); }
+  100% { transform: translate(-30px, 20px) scale(0.95); }
+}
+
+.liquid-ambient-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.liquid-orb-1 {
+  position: absolute;
+  top: -120px;
+  left: -80px;
+  width: 480px;
+  height: 480px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(246, 218, 218, 0.55) 0%, rgba(253, 247, 247, 0) 70%);
+  filter: blur(64px);
+  animation: float-slow 18s ease-in-out infinite alternate;
+}
+.liquid-orb-2 {
+  position: absolute;
+  top: -60px;
+  right: -100px;
+  width: 520px;
+  height: 520px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(234, 187, 191, 0.38) 0%, rgba(251, 239, 237, 0) 70%);
+  filter: blur(72px);
+  animation: float-slow-reverse 22s ease-in-out infinite alternate;
+}
+
+/* =========================================================================
+   ACCESSIBILITY & REDUCED MOTION / TRANSPARENCY
+   ========================================================================= */
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass-surface-thin,
+  .glass-surface-regular,
+  .glass-surface-blush,
+  .glass-surface-thick {
+    background: #ffffff !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface-thin,
+  .glass-surface-regular,
+  .glass-surface-blush,
+  .glass-surface-thick {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .liquid-ambient-backdrop {
+    display: none !important;
+  }
+}
+
+body.reduce-transparency .glass-surface-thin,
+body.reduce-transparency .glass-surface-regular,
+body.reduce-transparency .glass-surface-blush,
+body.reduce-transparency .glass-surface-thick {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+body.reduce-transparency .liquid-ambient-backdrop {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-liquid:hover,
+  .btn-liquid:active,
+  .btn-secondary-liquid:hover,
+  .btn-secondary-liquid:active,
+  .card-liquid-hover:hover {
+    transform: none !important;
+  }
+}
+
+body.reduce-motion *,
+body.reduce-motion ::before,
+body.reduce-motion ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+body.reduce-motion .btn-liquid:hover,
+body.reduce-motion .btn-liquid:active,
+body.reduce-motion .btn-secondary-liquid:hover,
+body.reduce-motion .btn-secondary-liquid:active,
+body.reduce-motion .card-liquid-hover:hover {
+  transform: none !important;
 }
 
 /* Print styling for clean A4 Supplier Statements */
@@ -31,16 +255,13 @@
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #d8b4b8;
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #B23A48;
 }

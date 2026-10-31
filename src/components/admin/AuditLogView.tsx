@@ -50,8 +50,8 @@ export const AuditLogView: React.FC = () => {
         breadcrumbs={['Admin', 'Audit Trail']}
       />
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Filter and Search Bar (Liquid Glass Surface) */}
+      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input

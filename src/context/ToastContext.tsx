@@ -38,14 +38,14 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border transition-all transform translate-y-0 ${
+            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl glass-surface-thick border shadow-xl transition-all animate-liquid-up ${
               toast.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                ? 'border-emerald-300 text-emerald-950 shadow-emerald-900/10'
                 : toast.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-950'
+                ? 'border-rose-300 text-rose-950 shadow-rose-900/10'
                 : toast.type === 'warning'
-                ? 'bg-amber-50 border-amber-200 text-amber-900'
-                : 'bg-slate-50 border-slate-200 text-slate-900'
+                ? 'border-amber-300 text-amber-950 shadow-amber-900/10'
+                : 'border-slate-300 text-slate-900 shadow-slate-900/10'
             }`}
           >
             {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />}

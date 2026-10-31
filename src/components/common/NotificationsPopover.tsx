@@ -59,7 +59,7 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
   return (
     <div
       ref={popoverRef}
-      className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+      className="absolute right-0 top-full mt-2 w-80 sm:w-96 glass-surface-thick rounded-2xl border border-white/90 z-50 overflow-hidden animate-liquid-pop shadow-2xl"
     >
       <div className="p-3.5 bg-rose-50/70 border-b border-rose-100 flex items-center justify-between">
         <div className="flex items-center gap-2">

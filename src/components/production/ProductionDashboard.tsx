@@ -142,8 +142,8 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         }
       />
 
-      {/* STICKY MONTH SELECTOR & SUMMARY BAR */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* STICKY MONTH SELECTOR & SUMMARY BAR (Liquid Glass Surface) */}
+      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 font-bold text-ink-900">
           <Factory className="w-4 h-4 text-rose-600" />
           <span>Plant Floor Calendar:</span>
