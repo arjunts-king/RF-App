@@ -2,7 +2,9 @@ import React from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, getAgeingBucket } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
-import { Clock, Download, Info } from 'lucide-react';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
+import { Download, Info } from 'lucide-react';
 
 export const OutstandingReport: React.FC = () => {
   const { suppliers, purchases, payments, purchaseReturns } = useData();
@@ -122,54 +124,57 @@ export const OutstandingReport: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-rose-600" />
-            Supplier Payment &amp; Ageing Outstanding Report
-          </h2>
-          <p className="text-xs text-ink-500">
-            Real-time ageing buckets derived from credit due dates. Overdue buckets are conditionally highlighted for risk mitigation.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Supplier payment and ageing report"
+        subtitle="Real-time ageing buckets derived from credit due dates. Overdue buckets are conditionally highlighted for risk mitigation."
+        breadcrumbs={['Purchase', 'Ageing Schedule']}
+        primaryAction={{
+          label: 'Export Ageing CSV',
+          onClick: handleExportCSV,
+          icon: Download
+        }}
+      />
 
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition"
-        >
-          <Download className="w-4 h-4" />
-          <span>Export Ageing CSV</span>
-        </button>
-      </div>
-
-      {/* Ageing Summary Tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
-        <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block">Not Due</span>
-          <span className="text-xs font-bold text-emerald-700 mt-1 block">{formatINR(totalNotDue)}</span>
-        </div>
-        <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 shadow-xs">
-          <span className="text-[10px] font-bold text-amber-800 uppercase block">0-30d Overdue</span>
-          <span className="text-xs font-bold text-amber-900 mt-1 block">{formatINR(total0_30)}</span>
-        </div>
-        <div className="p-3 bg-orange-50/60 rounded-xl border border-orange-200 shadow-xs">
-          <span className="text-[10px] font-bold text-orange-800 uppercase block">31-60d Overdue</span>
-          <span className="text-xs font-bold text-orange-900 mt-1 block">{formatINR(total31_60)}</span>
-        </div>
-        <div className="p-3 bg-rose-50/60 rounded-xl border border-rose-200 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-800 uppercase block">61-90d Overdue</span>
-          <span className="text-xs font-bold text-rose-900 mt-1 block">{formatINR(total61_90)}</span>
-        </div>
-        <div className="p-3 bg-rose-100/70 rounded-xl border border-rose-300 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-900 uppercase block">91-180d Overdue</span>
-          <span className="text-xs font-extrabold text-rose-950 mt-1 block">{formatINR(total91_180)}</span>
-        </div>
-        <div className="p-3 bg-rose-900 text-white rounded-xl shadow-xs">
-          <span className="text-[10px] font-bold text-rose-200 uppercase block">180+d Critical</span>
-          <span className="text-xs font-black mt-1 block">{formatINR(total180Plus)}</span>
-        </div>
+      {/* Bento Ageing Summary Tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <BentoCard
+          label="Not Due"
+          value={formatINR(totalNotDue)}
+          caption="Within credit period"
+          variant="success"
+        />
+        <BentoCard
+          label="0–30d Overdue"
+          value={formatINR(total0_30)}
+          caption="Initial grace period"
+          variant="default"
+        />
+        <BentoCard
+          label="31–60d Overdue"
+          value={formatINR(total31_60)}
+          caption="Attention required"
+          variant="warning"
+        />
+        <BentoCard
+          label="61–90d Overdue"
+          value={formatINR(total61_90)}
+          caption="Substantial delay"
+          variant="warning"
+        />
+        <BentoCard
+          label="91–180d Overdue"
+          value={formatINR(total91_180)}
+          caption="High priority risk"
+          variant="highlight"
+        />
+        <BentoCard
+          label="180+d Critical"
+          value={formatINR(total180Plus)}
+          caption="Audit reconciliation"
+          variant="highlight"
+        />
       </div>
 
       {/* Ageing Table */}
@@ -202,75 +207,72 @@ export const OutstandingReport: React.FC = () => {
                 </tr>
               ) : (
                 reportData.map((row) => (
-                  <tr key={row.supplierId} className="hover:bg-rose-50/30 transition">
-                    <td className="py-3 px-3 font-bold text-ink-900 whitespace-nowrap">
-                    {row.name}
-                    <div className="text-[10px] text-ink-500 font-normal">{row.code}</div>
-                  </td>
-                  <td className="py-3 px-2 text-center text-ink-500">{row.creditDays ? `${row.creditDays}d` : '—'}</td>
-                  <td className="py-3 px-3 text-right">{formatINR(row.openingBalance)}</td>
-                  <td className="py-3 px-3 text-right font-semibold text-rose-900">{formatINR(row.purchasesTotal)}</td>
-                  <td className="py-3 px-3 text-right font-semibold text-emerald-700">{formatINR(row.paymentsTotal)}</td>
-                  <td className="py-3 px-3 text-right font-semibold text-amber-700">{row.returnsTotal > 0 ? formatINR(row.returnsTotal) : '—'}</td>
-                  <td className="py-3 px-3 text-right font-bold text-rose-700">{formatINR(row.closingBalance)}</td>
-
-                  {/* Ageing Columns with conditional alerts */}
-                  <td className="py-3 px-3 text-right text-emerald-700 font-medium">
-                    {row.notDue > 0 ? formatINR(row.notDue) : '—'}
-                  </td>
-
-                  <td className={`py-3 px-3 text-right font-medium ${row.d0_30 > 0 ? 'bg-amber-50/70 text-amber-900 font-semibold' : 'text-gray-400'}`}>
-                    {row.d0_30 > 0 ? formatINR(row.d0_30) : '—'}
-                  </td>
-
-                  <td className={`py-3 px-3 text-right font-medium ${row.d31_60 > 0 ? 'bg-orange-50/70 text-orange-900 font-semibold' : 'text-gray-400'}`}>
-                    {row.d31_60 > 0 ? formatINR(row.d31_60) : '—'}
-                  </td>
-
-                  <td className={`py-3 px-3 text-right font-medium ${row.d61_90 > 0 ? 'bg-rose-50/70 text-rose-900 font-bold' : 'text-gray-400'}`}>
-                    {row.d61_90 > 0 ? formatINR(row.d61_90) : '—'}
-                  </td>
-
-                  <td className={`py-3 px-3 text-right font-medium ${row.d91_180 > 0 ? 'bg-rose-100 text-rose-950 font-bold' : 'text-gray-400'}`}>
-                    {row.d91_180 > 0 ? formatINR(row.d91_180) : '—'}
-                  </td>
-
-                  <td className={`py-3 px-3 text-right font-medium ${row.d180Plus > 0 ? 'bg-rose-200 text-rose-950 font-extrabold' : 'text-gray-400'}`}>
-                    {row.d180Plus > 0 ? formatINR(row.d180Plus) : '—'}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
+                  <tr key={row.supplierId} className="hover:bg-rose-50/20 transition">
+                    <td className="py-3 px-3 font-bold text-ink-900">
+                      <div>{row.name}</div>
+                      <div className="text-[10px] text-ink-500 font-normal">{row.code}</div>
+                    </td>
+                    <td className="py-3 px-2 text-center">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-ink-700">
+                        {row.creditDays ? `${row.creditDays}d` : '0d'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right tabular-nums">{formatINR(row.openingBalance)}</td>
+                    <td className="py-3 px-3 text-right tabular-nums text-rose-900">{formatINR(row.purchasesTotal)}</td>
+                    <td className="py-3 px-3 text-right tabular-nums text-emerald-700">{formatINR(row.paymentsTotal)}</td>
+                    <td className="py-3 px-3 text-right tabular-nums text-amber-800">
+                      {row.returnsTotal > 0 ? formatINR(row.returnsTotal) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right font-extrabold text-ink-900 tabular-nums">
+                      {formatINR(row.closingBalance)}
+                    </td>
+                    <td className="py-3 px-3 text-right text-emerald-700 font-semibold tabular-nums">
+                      {row.notDue > 0 ? formatINR(row.notDue) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right text-amber-800 font-medium tabular-nums">
+                      {row.d0_30 > 0 ? formatINR(row.d0_30) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right text-orange-800 font-semibold tabular-nums">
+                      {row.d31_60 > 0 ? formatINR(row.d31_60) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right text-rose-800 font-bold tabular-nums">
+                      {row.d61_90 > 0 ? formatINR(row.d61_90) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right text-rose-900 font-extrabold tabular-nums">
+                      {row.d91_180 > 0 ? formatINR(row.d91_180) : '—'}
+                    </td>
+                    <td className="py-3 px-3 text-right text-rose-950 font-black tabular-nums">
+                      {row.d180Plus > 0 ? formatINR(row.d180Plus) : '—'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
             <tfoot>
-              <tr className="bg-gray-100/90 border-t-2 border-gray-300 font-bold text-xs text-ink-900">
-                <td colSpan={2} className="py-3 px-3 uppercase">Total Portfolio Outstanding</td>
-                <td className="py-3 px-3 text-right">{formatINR(totalOpening)}</td>
-                <td className="py-3 px-3 text-right text-rose-900">{formatINR(totalPurchases)}</td>
-                <td className="py-3 px-3 text-right text-emerald-700">{formatINR(totalPayments)}</td>
-                <td className="py-3 px-3 text-right text-amber-700">{formatINR(totalReturns)}</td>
-                <td className="py-3 px-3 text-right text-rose-700 font-black">{formatINR(totalClosing)}</td>
-                <td className="py-3 px-3 text-right text-emerald-700">{formatINR(totalNotDue)}</td>
-                <td className="py-3 px-3 text-right text-amber-900">{formatINR(total0_30)}</td>
-                <td className="py-3 px-3 text-right text-orange-900">{formatINR(total31_60)}</td>
-                <td className="py-3 px-3 text-right text-rose-900">{formatINR(total61_90)}</td>
-                <td className="py-3 px-3 text-right text-rose-950">{formatINR(total91_180)}</td>
-                <td className="py-3 px-3 text-right text-rose-950">{formatINR(total180Plus)}</td>
+              <tr className="bg-gray-50 border-t-2 border-gray-200 font-bold text-ink-900 text-xs">
+                <td colSpan={2} className="py-3 px-3 uppercase text-[11px]">
+                  Total Portfolio Outstanding
+                </td>
+                <td className="py-3 px-3 text-right tabular-nums">{formatINR(totalOpening)}</td>
+                <td className="py-3 px-3 text-right tabular-nums text-rose-900">{formatINR(totalPurchases)}</td>
+                <td className="py-3 px-3 text-right tabular-nums text-emerald-700">{formatINR(totalPayments)}</td>
+                <td className="py-3 px-3 text-right tabular-nums text-amber-800">{formatINR(totalReturns)}</td>
+                <td className="py-3 px-3 text-right font-black text-rose-700 tabular-nums">{formatINR(totalClosing)}</td>
+                <td className="py-3 px-3 text-right text-emerald-700 tabular-nums">{formatINR(totalNotDue)}</td>
+                <td className="py-3 px-3 text-right text-amber-800 tabular-nums">{formatINR(total0_30)}</td>
+                <td className="py-3 px-3 text-right text-orange-800 tabular-nums">{formatINR(total31_60)}</td>
+                <td className="py-3 px-3 text-right text-rose-800 tabular-nums">{formatINR(total61_90)}</td>
+                <td className="py-3 px-3 text-right text-rose-900 tabular-nums">{formatINR(total91_180)}</td>
+                <td className="py-3 px-3 text-right text-rose-950 tabular-nums">{formatINR(total180Plus)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
 
-        {/* Audit Reconciliation Footnote */}
-        <div className="p-3.5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-ink-500">
-          <div className="flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-            <span>
-              <strong>Accounting Reconciliation:</strong> Positive prior financial year opening balances are classified under the <strong>180+ Days</strong> ageing bucket so that total portfolio ageing reconciles with Net Closing Balance.
-            </span>
-          </div>
-          <span className="font-semibold text-ink-700 whitespace-nowrap">
-            As on {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+        <div className="p-4 bg-gray-50/40 border-t border-gray-100 text-[11px] text-ink-500 flex items-center gap-2">
+          <Info className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>
+            <strong>Ageing Calculation Formula:</strong> Due Date = Purchase Date + Supplier Credit Days. Unpaid balances past due are stratified into dynamic risk aging intervals.
           </span>
         </div>
       </div>

@@ -3,11 +3,12 @@ import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
+import { StickySaveBar } from '../common/StickySaveBar';
 import {
   FileText,
   PlusCircle,
   Trash2,
-  Save,
   RotateCcw,
   Calendar,
   Globe,
@@ -233,38 +234,20 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-7xl mx-auto">
-      {/* Top Banner & Title */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-rose-600" />
-            Commercial Export Invoice Entry
-          </h2>
-          <p className="text-xs text-ink-500">
-            One form = one export commercial invoice. Auto-fills HS Codes, recalculates product lines, and tracks bank realizations.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSubmitting ? 'Saving Invoice...' : 'Generate Commercial Invoice'}</span>
-          </button>
-        </div>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-7xl mx-auto pb-28 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Commercial sales invoice entry"
+        subtitle="One form = one export commercial invoice. Auto-fills HS Codes, recalculates product lines, and tracks bank realizations."
+        breadcrumbs={['Sales', 'New Commercial Invoice']}
+        secondaryActions={[
+          {
+            label: 'Reset Form',
+            onClick: handleReset,
+            icon: RotateCcw
+          }
+        ]}
+      />
 
       {/* Duplicate Invoice Warning (non-blocking) */}
       {isDuplicateInvoiceNo && (
@@ -276,14 +259,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         </div>
       )}
 
-      {/* Header Section */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
-          <Building className="w-4 h-4 text-rose-600" />
-          Invoice &amp; Parties Identification
-        </h3>
+      {/* Section 1: Parties & Invoice Identification */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
+        <div className="border-b border-gray-100 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
+            <Building className="w-4 h-4 text-rose-700" />
+            1. Invoice &amp; Parties Identification
+          </h3>
+          <p className="text-[11px] text-ink-500 mt-0.5">Primary legal parties and document reference codes</p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">
               Commercial Invoice No. <span className="text-rose-600">*</span>
@@ -296,7 +282,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 onChange={(e) => setInvoiceNo(e.target.value.toUpperCase())}
                 placeholder="e.g. EXP-2026-0001"
                 required
-                className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-bold font-mono text-xs outline-none focus:bg-white focus:border-rose-600"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold font-mono text-xs outline-none focus:bg-white focus:border-rose-400 transition"
               />
             </div>
           </div>
@@ -312,7 +298,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 value={invoiceDate}
                 onChange={(e) => setInvoiceDate(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-600"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
               />
             </div>
           </div>
@@ -325,7 +311,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               value={consigneeId}
               onChange={(e) => setConsigneeId(e.target.value)}
               required
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">Select Consignee...</option>
               {customers
@@ -343,7 +329,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             <select
               value={buyerId}
               onChange={(e) => setBuyerId(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">Same as Consignee</option>
               {customers
@@ -356,9 +342,19 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             </select>
           </div>
         </div>
+      </div>
 
-        {/* Shipping & Logistics Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs pt-2">
+      {/* Section 2: Shipping, Ports & Currency */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
+        <div className="border-b border-gray-100 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
+            <Anchor className="w-4 h-4 text-rose-700" />
+            2. Shipping, Ports &amp; Valuation
+          </h3>
+          <p className="text-[11px] text-ink-500 mt-0.5">Maritime logistics routing, currency and forex conversion rates</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Order / PO Reference</label>
             <input
@@ -366,7 +362,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               value={orderNo}
               onChange={(e) => setOrderNo(e.target.value)}
               placeholder="e.g. PO-88231-USA"
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
 
@@ -376,7 +372,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               type="date"
               value={orderDate}
               onChange={(e) => setOrderDate(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
 
@@ -390,7 +386,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 value={portOfLoadingId}
                 onChange={(e) => setPortOfLoadingId(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-600"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
               >
                 <option value="">Select Port of Loading...</option>
                 {ports.map((p) => (
@@ -415,7 +411,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                   if (!finalDestinationId) setFinalDestinationId(e.target.value);
                 }}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-600"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
               >
                 <option value="">Select Port of Discharge...</option>
                 {ports.map((p) => (
@@ -435,7 +431,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               value={finalDestinationId}
               onChange={(e) => setFinalDestinationId(e.target.value)}
               required
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">Select Final Destination...</option>
               {ports.map((p) => (
@@ -448,7 +444,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         </div>
 
         {/* Currency & Booking Rate */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-2">
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Invoice Currency</label>
             <div className="relative">
@@ -456,7 +452,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as SalesCurrency)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-600"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
               >
                 <option value="USD">USD - US Dollar ($)</option>
                 <option value="EUR">EUR - Euro (€)</option>
@@ -482,7 +478,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               onChange={(e) => setExchangeRate(e.target.value)}
               placeholder="e.g. 84.50"
               required
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
 
@@ -493,23 +489,26 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               placeholder="e.g. Container MSKU-8829103 / Temp -18C"
-              className="w-full px-3 py-2 bg-gray-50/70 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-600"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
         </div>
       </div>
 
-      {/* Repeatable Line Items Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-rose-600" />
-            Product Lines &amp; Cargo Specifications ({lines.length})
-          </h3>
+      {/* Section 3: Repeatable Line Items Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-rose-700" />
+              3. Product Lines &amp; Cargo Specifications ({lines.length})
+            </h3>
+            <p className="text-[11px] text-ink-500 mt-0.5">Seafood products, HS classification, cartons count, and net billing</p>
+          </div>
           <button
             type="button"
             onClick={handleAddLine}
-            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
+            className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Add Product Line</span>
@@ -544,7 +543,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       value={l.speciesId}
                       onChange={(e) => handleSpeciesChange(l.id, e.target.value)}
                       required
-                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold outline-none focus:border-rose-600"
+                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold outline-none focus:border-rose-400"
                     >
                       {species.map((sp) => (
                         <option key={sp.id} value={sp.id}>
@@ -570,7 +569,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                     <select
                       value={l.sizeId}
                       onChange={(e) => updateLine(l.id, 'sizeId', e.target.value)}
-                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-rose-600"
+                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-rose-400"
                     >
                       {sizes.map((sz) => (
                         <option key={sz.id} value={sz.id}>
@@ -585,7 +584,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                     <select
                       value={l.countId}
                       onChange={(e) => updateLine(l.id, 'countId', e.target.value)}
-                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-rose-600"
+                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-rose-400"
                     >
                       <option value="">N/A</option>
                       {counts.map((cnt) => (
@@ -604,7 +603,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       value={l.cartonsCount}
                       onChange={(e) => updateLine(l.id, 'cartonsCount', e.target.value)}
                       placeholder="0"
-                      className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-medium text-xs outline-none focus:border-rose-600"
+                      className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-medium text-xs outline-none focus:border-rose-400"
                     />
                   </td>
 
@@ -618,7 +617,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       onChange={(e) => updateLine(l.id, 'weightKg', e.target.value)}
                       placeholder="0.00"
                       required
-                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-600"
+                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-400"
                     />
                   </td>
 
@@ -632,12 +631,12 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       onChange={(e) => updateLine(l.id, 'ratePerKg', e.target.value)}
                       placeholder="0.00"
                       required
-                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-600"
+                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-400"
                     />
                   </td>
 
                   {/* Calculated Amount in USD (Read-Only) */}
-                  <td className="py-2 px-3 text-right font-extrabold text-ink-900">
+                  <td className="py-2 px-3 text-right font-extrabold text-ink-900 tabular-nums">
                     {currency} {l.computedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
 
@@ -649,7 +648,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       value={l.fobValueCurrency !== '' ? l.fobValueCurrency : ''}
                       onChange={(e) => updateLine(l.id, 'fobValueCurrency', e.target.value)}
                       placeholder={String(l.computedAmount)}
-                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right text-xs outline-none focus:border-rose-600 font-semibold"
+                      className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right text-xs outline-none focus:border-rose-400 font-semibold"
                     />
                   </td>
 
@@ -672,60 +671,36 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         </div>
       </div>
 
-      {/* Invoice Grand Totals Strip (Read-Only) */}
-      <div className="bg-rose-950 text-white rounded-2xl p-5 shadow-sm grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div>
-          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">Total Cartons</span>
-          <span className="text-xl font-black mt-1 block">{totalCartons} ctn</span>
-        </div>
-
-        <div>
-          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">Total Weight</span>
-          <span className="text-xl font-black mt-1 block">{formatKg(totalWeightKg)}</span>
-        </div>
-
-        <div>
-          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">
-            Total Value ({currency})
-          </span>
-          <span className="text-xl font-black text-rose-200 mt-1 block">
-            {currency} {totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-
-        <div>
-          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">
-            Total FOB Value ({currency})
-          </span>
-          <span className="text-xl font-black text-white mt-1 block">
-            {currency} {totalFobValueCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-
-        <div>
-          <span className="text-[10px] uppercase font-bold text-rose-300 tracking-wider block">
-            Estimated INR Realization
-          </span>
-          <span className="text-xl font-black text-emerald-300 mt-1 block">
-            {formatINR(estimatedAmountINR)}
-          </span>
-        </div>
-      </div>
-
-      {/* Bottom Action Footer */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200">
-        <span className="text-xs text-ink-500 font-medium">
-          Ready to save commercial export invoice <strong>{invoiceNo}</strong> ({lines.length} product lines).
-        </span>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition"
-        >
-          <Save className="w-4 h-4" />
-          <span>{isSubmitting ? 'Saving Invoice...' : 'Generate Commercial Invoice'}</span>
-        </button>
-      </div>
+      {/* Floating Sticky Save Bar with live calculated metrics */}
+      <StickySaveBar
+        primaryLabel={isSubmitting ? 'Saving Invoice...' : 'Generate Commercial Invoice'}
+        secondaryLabel="Reset Form"
+        onSecondary={handleReset}
+        isSubmitting={isSubmitting}
+        metrics={[
+          {
+            label: 'Total Cartons',
+            value: `${totalCartons} ctn`
+          },
+          {
+            label: 'Total Weight',
+            value: formatKg(totalWeightKg)
+          },
+          {
+            label: `Total FOB (${currency})`,
+            value: `${currency} ${totalFobValueCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          },
+          {
+            label: `Total (${currency})`,
+            value: `${currency} ${totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          },
+          {
+            label: 'Est. INR Realization',
+            value: formatINR(estimatedAmountINR),
+            highlight: true
+          }
+        ]}
+      />
     </form>
   );
 };

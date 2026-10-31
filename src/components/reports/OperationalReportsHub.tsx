@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
+import { PageHeader } from '../common/PageHeader';
 import {
   Calendar,
   BarChart,
@@ -348,189 +349,182 @@ export const OperationalReportsHub: React.FC = () => {
     { id: 'yield-analysis', label: '8. Yield & Recovery Analysis', icon: Sparkles }
   ];
 
+  const handleExportCSV = () => {
+    let exportData: any[] = [];
+    let cols: { key: any; label: string }[] = [];
+    let name = `Report_${activeReport}_${today}.csv`;
+
+    if (activeReport === 'daily') {
+      exportData = dailyPurchases.map((p) => ({
+        ID: p.purchaseId,
+        Date: p.purchaseDate,
+        Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
+        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        Weight: p.weightKg,
+        Rate: p.ratePerKg,
+        Expenses: p.totalExpenses,
+        TotalCost: p.totalCost,
+        Status: p.paymentStatus
+      }));
+      cols = [
+        { key: 'ID', label: 'Purchase ID' },
+        { key: 'Date', label: 'Date' },
+        { key: 'Supplier', label: 'Supplier' },
+        { key: 'Species', label: 'Species' },
+        { key: 'Weight', label: 'Weight (Kg)' },
+        { key: 'Rate', label: 'Rate/Kg' },
+        { key: 'Expenses', label: 'Expenses' },
+        { key: 'TotalCost', label: 'Total Cost' },
+        { key: 'Status', label: 'Status' }
+      ];
+    } else if (activeReport === 'monthly') {
+      exportData = currentMonthPurchases.map((p) => ({
+        ID: p.purchaseId,
+        Date: p.purchaseDate,
+        Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
+        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        Weight: p.weightKg,
+        Rate: p.ratePerKg,
+        Expenses: p.totalExpenses,
+        TotalCost: p.totalCost,
+        Status: p.paymentStatus
+      }));
+      cols = [
+        { key: 'ID', label: 'Purchase ID' },
+        { key: 'Date', label: 'Date' },
+        { key: 'Supplier', label: 'Supplier' },
+        { key: 'Species', label: 'Species' },
+        { key: 'Weight', label: 'Weight (Kg)' },
+        { key: 'Rate', label: 'Rate/Kg' },
+        { key: 'Expenses', label: 'Expenses' },
+        { key: 'TotalCost', label: 'Total Cost' },
+        { key: 'Status', label: 'Status' }
+      ];
+    } else if (activeReport === 'species') {
+      exportData = speciesAnalysis;
+      cols = [
+        { key: 'name', label: 'Species' },
+        { key: 'category', label: 'Category' },
+        { key: 'lotsCount', label: 'Lots' },
+        { key: 'weight', label: 'Total Weight' },
+        { key: 'avgRate', label: 'Avg Rate' },
+        { key: 'effRate', label: 'Effective Rate' },
+        { key: 'cost', label: 'Total Cost' }
+      ];
+    } else if (activeReport === 'grade-size') {
+      exportData = matrixCells;
+      cols = [
+        { key: 'gradeName', label: 'Grade' },
+        { key: 'type', label: 'Type' },
+        { key: 'specName', label: 'Size / Count Specification' },
+        { key: 'lotsCount', label: 'Lots' },
+        { key: 'weight', label: 'Total Weight (Kg)' },
+        { key: 'minRate', label: 'Min Rate' },
+        { key: 'maxRate', label: 'Max Rate' },
+        { key: 'weightedAvgRate', label: 'Weighted Avg Rate' },
+        { key: 'value', label: 'Total Value' }
+      ];
+    } else if (activeReport === 'location') {
+      exportData = locationAnalysis;
+      cols = [
+        { key: 'name', label: 'Landing Centre' },
+        { key: 'district', label: 'District' },
+        { key: 'state', label: 'State' },
+        { key: 'lotsCount', label: 'Batches' },
+        { key: 'weight', label: 'Volume (Kg)' },
+        { key: 'avgRate', label: 'Avg Rate/Kg' },
+        { key: 'cost', label: 'Total Expenditure' }
+      ];
+    } else if (activeReport === 'supplier') {
+      exportData = supplierRanking;
+      cols = [
+        { key: 'name', label: 'Supplier' },
+        { key: 'code', label: 'Code' },
+        { key: 'type', label: 'Type' },
+        { key: 'lotsCount', label: 'Lots' },
+        { key: 'weight', label: 'Weight (Kg)' },
+        { key: 'cost', label: 'Total Cost' },
+        { key: 'outstanding', label: 'Outstanding Payable' }
+      ];
+    } else if (activeReport === 'price-analysis') {
+      exportData = dailyTrend;
+      cols = [
+        { key: 'date', label: 'Date' },
+        { key: 'weight', label: 'Volume (Kg)' },
+        { key: 'avgRate', label: 'Daily Avg Rate/Kg' }
+      ];
+    } else if (activeReport === 'yield-analysis') {
+      exportData = yieldRecordedPurchases.map((p) => ({
+        ID: p.purchaseId,
+        Date: p.purchaseDate,
+        Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
+        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        RawWeightKg: p.weightKg,
+        YieldWeightKg: p.yieldWeightKg || 0,
+        YieldPct: p.yieldPct ? `${p.yieldPct}%` : `${(((p.yieldWeightKg || 0) / p.weightKg) * 100).toFixed(2)}%`,
+        LossKg: Math.max(0, p.weightKg - (p.yieldWeightKg || 0)),
+        TotalCost: p.totalCost,
+        RawRateKg: p.effectiveRatePerKg,
+        FinishedYieldCostKg: p.yieldWeightKg ? Number((p.totalCost / p.yieldWeightKg).toFixed(2)) : 0
+      }));
+      cols = [
+        { key: 'ID', label: 'Purchase ID' },
+        { key: 'Date', label: 'Date' },
+        { key: 'Supplier', label: 'Supplier' },
+        { key: 'Species', label: 'Species' },
+        { key: 'RawWeightKg', label: 'Raw Landed Kg' },
+        { key: 'YieldWeightKg', label: 'Finished Yield Kg' },
+        { key: 'YieldPct', label: 'Yield %' },
+        { key: 'LossKg', label: 'Processing Loss (Kg)' },
+        { key: 'TotalCost', label: 'Total Landed Cost (₹)' },
+        { key: 'RawRateKg', label: 'Raw Landed Rate/Kg' },
+        { key: 'FinishedYieldCostKg', label: 'Finished Yield Cost/Kg' }
+      ];
+    } else {
+      exportData = activePurchases.map((p) => ({
+        ID: p.purchaseId,
+        Date: p.purchaseDate,
+        Species: speciesMap.get(p.speciesId)?.name,
+        Weight: p.weightKg,
+        TotalCost: p.totalCost
+      }));
+      cols = [
+        { key: 'ID', label: 'Purchase ID' },
+        { key: 'Date', label: 'Date' },
+        { key: 'Species', label: 'Species' },
+        { key: 'Weight', label: 'Weight' },
+        { key: 'TotalCost', label: 'Total Cost' }
+      ];
+    }
+
+    const csv = convertToCSV(exportData, cols);
+    downloadFile(csv, name);
+  };
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header and Report Selector Tabs */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold text-ink-900">Procurement Operational Reports</h2>
-            <p className="text-xs text-ink-500">
-              Live queries directly derived from source transactions — guaranteed zero formula-drift.
-            </p>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Procurement operational reports"
+        subtitle="Live queries directly derived from source transactions — guaranteed zero formula-drift."
+        breadcrumbs={['Purchase', 'Procurement Reports']}
+        primaryAction={{
+          label: 'Export CSV',
+          onClick: handleExportCSV,
+          icon: Download
+        }}
+        secondaryActions={[
+          {
+            label: 'Print Report',
+            onClick: triggerPrint,
+            icon: Printer
+          }
+        ]}
+      />
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                let exportData: any[] = [];
-                let cols: { key: any; label: string }[] = [];
-                let name = `Report_${activeReport}_${today}.csv`;
-
-                if (activeReport === 'daily') {
-                  exportData = dailyPurchases.map((p) => ({
-                    ID: p.purchaseId,
-                    Date: p.purchaseDate,
-                    Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-                    Species: speciesMap.get(p.speciesId)?.name || 'N/A',
-                    Weight: p.weightKg,
-                    Rate: p.ratePerKg,
-                    Expenses: p.totalExpenses,
-                    TotalCost: p.totalCost,
-                    Status: p.paymentStatus
-                  }));
-                  cols = [
-                    { key: 'ID', label: 'Purchase ID' },
-                    { key: 'Date', label: 'Date' },
-                    { key: 'Supplier', label: 'Supplier' },
-                    { key: 'Species', label: 'Species' },
-                    { key: 'Weight', label: 'Weight (Kg)' },
-                    { key: 'Rate', label: 'Rate/Kg' },
-                    { key: 'Expenses', label: 'Expenses' },
-                    { key: 'TotalCost', label: 'Total Cost' },
-                    { key: 'Status', label: 'Status' }
-                  ];
-                } else if (activeReport === 'monthly') {
-                  exportData = currentMonthPurchases.map((p) => ({
-                    ID: p.purchaseId,
-                    Date: p.purchaseDate,
-                    Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-                    Species: speciesMap.get(p.speciesId)?.name || 'N/A',
-                    Weight: p.weightKg,
-                    Rate: p.ratePerKg,
-                    Expenses: p.totalExpenses,
-                    TotalCost: p.totalCost,
-                    Status: p.paymentStatus
-                  }));
-                  cols = [
-                    { key: 'ID', label: 'Purchase ID' },
-                    { key: 'Date', label: 'Date' },
-                    { key: 'Supplier', label: 'Supplier' },
-                    { key: 'Species', label: 'Species' },
-                    { key: 'Weight', label: 'Weight (Kg)' },
-                    { key: 'Rate', label: 'Rate/Kg' },
-                    { key: 'Expenses', label: 'Expenses' },
-                    { key: 'TotalCost', label: 'Total Cost' },
-                    { key: 'Status', label: 'Status' }
-                  ];
-                } else if (activeReport === 'species') {
-                  exportData = speciesAnalysis;
-                  cols = [
-                    { key: 'name', label: 'Species' },
-                    { key: 'category', label: 'Category' },
-                    { key: 'lotsCount', label: 'Lots' },
-                    { key: 'weight', label: 'Total Weight' },
-                    { key: 'avgRate', label: 'Avg Rate' },
-                    { key: 'effRate', label: 'Effective Rate' },
-                    { key: 'cost', label: 'Total Cost' }
-                  ];
-                } else if (activeReport === 'grade-size') {
-                  exportData = matrixCells;
-                  cols = [
-                    { key: 'gradeName', label: 'Grade' },
-                    { key: 'type', label: 'Type' },
-                    { key: 'specName', label: 'Size / Count Specification' },
-                    { key: 'lotsCount', label: 'Lots' },
-                    { key: 'weight', label: 'Total Weight (Kg)' },
-                    { key: 'minRate', label: 'Min Rate' },
-                    { key: 'maxRate', label: 'Max Rate' },
-                    { key: 'weightedAvgRate', label: 'Weighted Avg Rate' },
-                    { key: 'value', label: 'Total Value' }
-                  ];
-                } else if (activeReport === 'location') {
-                  exportData = locationAnalysis;
-                  cols = [
-                    { key: 'name', label: 'Landing Centre' },
-                    { key: 'district', label: 'District' },
-                    { key: 'state', label: 'State' },
-                    { key: 'lotsCount', label: 'Batches' },
-                    { key: 'weight', label: 'Volume (Kg)' },
-                    { key: 'avgRate', label: 'Avg Rate/Kg' },
-                    { key: 'cost', label: 'Total Expenditure' }
-                  ];
-                } else if (activeReport === 'supplier') {
-                  exportData = supplierRanking;
-                  cols = [
-                    { key: 'name', label: 'Supplier' },
-                    { key: 'code', label: 'Code' },
-                    { key: 'type', label: 'Type' },
-                    { key: 'lotsCount', label: 'Lots' },
-                    { key: 'weight', label: 'Weight (Kg)' },
-                    { key: 'cost', label: 'Total Cost' },
-                    { key: 'outstanding', label: 'Outstanding Payable' }
-                  ];
-                } else if (activeReport === 'price-analysis') {
-                  exportData = dailyTrend;
-                  cols = [
-                    { key: 'date', label: 'Date' },
-                    { key: 'weight', label: 'Volume (Kg)' },
-                    { key: 'avgRate', label: 'Daily Avg Rate/Kg' }
-                  ];
-                } else if (activeReport === 'yield-analysis') {
-                  exportData = yieldRecordedPurchases.map((p) => ({
-                    ID: p.purchaseId,
-                    Date: p.purchaseDate,
-                    Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-                    Species: speciesMap.get(p.speciesId)?.name || 'N/A',
-                    RawWeightKg: p.weightKg,
-                    YieldWeightKg: p.yieldWeightKg || 0,
-                    YieldPct: p.yieldPct ? `${p.yieldPct}%` : `${(((p.yieldWeightKg || 0) / p.weightKg) * 100).toFixed(2)}%`,
-                    LossKg: Math.max(0, p.weightKg - (p.yieldWeightKg || 0)),
-                    TotalCost: p.totalCost,
-                    RawRateKg: p.effectiveRatePerKg,
-                    FinishedYieldCostKg: p.yieldWeightKg ? Number((p.totalCost / p.yieldWeightKg).toFixed(2)) : 0
-                  }));
-                  cols = [
-                    { key: 'ID', label: 'Purchase ID' },
-                    { key: 'Date', label: 'Date' },
-                    { key: 'Supplier', label: 'Supplier' },
-                    { key: 'Species', label: 'Species' },
-                    { key: 'RawWeightKg', label: 'Raw Landed Kg' },
-                    { key: 'YieldWeightKg', label: 'Finished Yield Kg' },
-                    { key: 'YieldPct', label: 'Yield %' },
-                    { key: 'LossKg', label: 'Processing Loss (Kg)' },
-                    { key: 'TotalCost', label: 'Total Landed Cost (₹)' },
-                    { key: 'RawRateKg', label: 'Raw Landed Rate/Kg' },
-                    { key: 'FinishedYieldCostKg', label: 'Finished Yield Cost/Kg' }
-                  ];
-                } else {
-                  exportData = activePurchases.map((p) => ({
-                    ID: p.purchaseId,
-                    Date: p.purchaseDate,
-                    Species: speciesMap.get(p.speciesId)?.name,
-                    Weight: p.weightKg,
-                    TotalCost: p.totalCost
-                  }));
-                  cols = [
-                    { key: 'ID', label: 'Purchase ID' },
-                    { key: 'Date', label: 'Date' },
-                    { key: 'Species', label: 'Species' },
-                    { key: 'Weight', label: 'Weight' },
-                    { key: 'TotalCost', label: 'Total Cost' }
-                  ];
-                }
-
-                const csv = convertToCSV(exportData, cols);
-                downloadFile(csv, name);
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-
-            <button
-              onClick={triggerPrint}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Report</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Switcher Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+      {/* Pill Tab Switcher */}
+      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex flex-wrap items-center gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeReport === tab.id;
@@ -538,9 +532,9 @@ export const OperationalReportsHub: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveReport(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-rose-600 text-white shadow-xs'
+                    ? 'bg-rose-700 text-white shadow-xs'
                     : 'bg-gray-50 text-ink-700 hover:bg-rose-50 hover:text-rose-700 border border-gray-200'
                 }`}
               >

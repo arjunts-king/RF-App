@@ -1,11 +1,11 @@
 import React from 'react';
 
-interface BreadcrumbItem {
+export type BreadcrumbItem = string | {
   label: string;
   onClick?: () => void;
-}
+};
 
-interface ActionItem {
+export interface ActionItem {
   label: string;
   icon?: any;
   onClick: () => void;
@@ -14,12 +14,14 @@ interface ActionItem {
   title?: string;
 }
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   title: string;
   description?: string;
+  subtitle?: string;
   badge?: string;
   breadcrumbs?: BreadcrumbItem[];
   primaryAction?: ActionItem;
+  secondaryAction?: ActionItem;
   secondaryActions?: ActionItem[];
   children?: React.ReactNode;
 }
@@ -27,12 +29,20 @@ interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
+  subtitle,
   badge,
   breadcrumbs,
   primaryAction,
-  secondaryActions,
+  secondaryAction,
+  secondaryActions = [],
   children
 }) => {
+  const effectiveDescription = description || subtitle;
+  const allSecondaryActions = [
+    ...(secondaryAction ? [secondaryAction] : []),
+    ...secondaryActions
+  ];
+
   return (
     <div className="mb-6 space-y-3">
       {/* Breadcrumbs if provided */}
@@ -40,19 +50,21 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-ink-500 font-medium">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
+            const label = typeof crumb === 'string' ? crumb : crumb.label;
+            const onClick = typeof crumb === 'string' ? undefined : crumb.onClick;
             return (
-              <React.Fragment key={crumb.label}>
+              <React.Fragment key={label + idx}>
                 {idx > 0 && <span className="text-ink-300">/</span>}
-                {crumb.onClick && !isLast ? (
+                {onClick && !isLast ? (
                   <button
-                    onClick={crumb.onClick}
+                    onClick={onClick}
                     className="hover:text-rose-700 transition hover:underline"
                   >
-                    {crumb.label}
+                    {label}
                   </button>
                 ) : (
                   <span className={isLast ? 'text-ink-900 font-semibold' : ''}>
-                    {crumb.label}
+                    {label}
                   </span>
                 )}
               </React.Fragment>
@@ -74,17 +86,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               </span>
             )}
           </div>
-          {description && (
+          {effectiveDescription && (
             <p className="text-sm text-ink-500 font-normal leading-relaxed max-w-3xl">
-              {description}
+              {effectiveDescription}
             </p>
           )}
         </div>
 
         {/* Action Group: One Confident Primary Button with Quieter Secondary Actions */}
-        {(primaryAction || (secondaryActions && secondaryActions.length > 0)) && (
+        {(primaryAction || allSecondaryActions.length > 0) && (
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            {secondaryActions?.map((act, index) => {
+            {allSecondaryActions.map((act, index) => {
               const Icon = act.icon;
               return (
                 <button

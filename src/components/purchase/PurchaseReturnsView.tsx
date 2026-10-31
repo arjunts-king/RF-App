@@ -5,8 +5,10 @@ import { PurchaseReturn, PurchaseReturnReason, Purchase } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { Modal } from '../common/Modal';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
+import { StatusBadge } from '../common/StatusBadge';
 import {
-  RotateCcw,
   Plus,
   Search,
   Eye,
@@ -15,10 +17,7 @@ import {
   Ban,
   Download,
   AlertTriangle,
-  Info,
-  Layers,
-  Scale,
-  FileText
+  Info
 } from 'lucide-react';
 
 const RETURN_REASONS: PurchaseReturnReason[] = [
@@ -40,7 +39,7 @@ interface PurchaseReturnsViewProps {
 }
 
 export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
-  onNavigate,
+  onNavigate: _onNavigate,
   preselectedPurchaseId,
   onClearPreselectedPurchase
 }) => {
@@ -404,102 +403,54 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Top Header & Actions */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-rose-50 text-rose-600">
-              <RotateCcw className="w-5 h-5" />
-            </span>
-            <div>
-              <h1 className="text-xl font-bold text-ink-900 tracking-tight">
-                Purchase Returns &amp; Debit Notes
-              </h1>
-              <p className="text-xs text-ink-500 mt-0.5">
-                Record goods returned to suppliers, issue supplier debit notes, and automatically reduce payable ledger balances.
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Purchase returns and debit notes"
+        subtitle="Record goods returned to suppliers, issue supplier debit notes, and automatically reduce payable ledger balances."
+        breadcrumbs={['Purchase', 'Returns & Debit Notes']}
+        primaryAction={
+          permissions.canCreateEditPurchases
+            ? {
+                label: 'Record Purchase Return',
+                onClick: handleOpenNewReturn,
+                icon: Plus
+              }
+            : undefined
+        }
+        secondaryActions={[
+          {
+            label: 'Export CSV',
+            onClick: handleExportCSV,
+            icon: Download
+          }
+        ]}
+      />
 
-        <div className="flex items-center gap-2.5">
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('purchases')}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition shadow-2xs"
-              title="Return to Purchase Transactions"
-            >
-              <span>Purchases List</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition shadow-2xs"
-            title="Export filtered purchase returns to CSV"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-
-          {permissions.canCreateEditPurchases && (
-            <button
-              onClick={handleOpenNewReturn}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-xs hover:shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Record Purchase Return</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* KPI Summary Cards */}
+      {/* Bento KPI Summary Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Debit Notes</span>
-            <span className="p-1.5 bg-rose-50 text-rose-600 rounded-lg">
-              <FileText className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-black text-ink-900">{totalReturnNotes}</div>
-          <div className="text-[11px] text-ink-500 mt-0.5">Active return vouchers</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Returned Weight</span>
-            <span className="p-1.5 bg-amber-50 text-amber-700 rounded-lg">
-              <Scale className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-black text-amber-800">{formatKg(totalReturnedWeightKg)}</div>
-          <div className="text-[11px] text-ink-500 mt-0.5">Total seafood returned</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Total Debit Value</span>
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-              <RotateCcw className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-black text-emerald-700">{formatINR(totalDebitValue)}</div>
-          <div className="text-[11px] text-ink-500 mt-0.5">Supplier payables credited</div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Parties Returned</span>
-            <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-              <Layers className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-black text-ink-900">{uniqueSuppliersCount}</div>
-          <div className="text-[11px] text-ink-500 mt-0.5">Suppliers with active debit notes</div>
-        </div>
+        <BentoCard
+          label="Total Debit Notes"
+          value={totalReturnNotes}
+          caption="Active return vouchers"
+        />
+        <BentoCard
+          label="Returned Weight"
+          value={formatKg(totalReturnedWeightKg)}
+          caption="Total seafood returned"
+          variant="warning"
+        />
+        <BentoCard
+          label="Total Debit Value"
+          value={formatINR(totalDebitValue)}
+          caption="Supplier payables credited"
+          variant="success"
+        />
+        <BentoCard
+          label="Suppliers Returned"
+          value={uniqueSuppliersCount}
+          caption="Parties with debit notes"
+        />
       </div>
 
       {/* Filter and Search Bar */}
@@ -676,15 +627,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        {r.isVoided ? (
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">
-                            Voided
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Active
-                          </span>
-                        )}
+                        <StatusBadge status={r.isVoided ? 'Voided' : 'Active'} />
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap text-center">

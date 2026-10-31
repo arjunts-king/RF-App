@@ -3,8 +3,10 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatINR } from '../../utils/calculations';
 import { triggerPrint } from '../../utils/exportUtils';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
 import { PaymentModal } from './PaymentModal';
-import { BookOpen, Printer, PlusCircle } from 'lucide-react';
+import { Printer, PlusCircle } from 'lucide-react';
 
 export const SupplierLedgerView: React.FC = () => {
   const { suppliers, purchases, payments, purchaseReturns, species, bankAccounts, businessSettings } = useData();
@@ -154,50 +156,69 @@ export const SupplierLedgerView: React.FC = () => {
   const closingBalance = openingBalance + totalDebits - totalCredits;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header & Controls */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div>
-          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-rose-600" />
-            Supplier Account Ledger
-          </h2>
-          <p className="text-xs text-ink-500">
-            Debits increase payables (purchases); Credits reduce payables (payments). Reconciles running balance.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <div className="print:hidden">
+        <PageHeader
+          title="Supplier account ledger"
+          subtitle="Debits increase payables (purchases); Credits reduce payables (payments). Reconciles running balance."
+          breadcrumbs={['Purchase', 'Supplier Ledger']}
+          primaryAction={
+            permissions.canManagePayments
+              ? {
+                  label: 'Record Payment',
+                  onClick: () => setIsPaymentModalOpen(true),
+                  icon: PlusCircle
+                }
+              : undefined
+          }
+          secondaryActions={[
+            {
+              label: 'Print A4 Statement',
+              onClick: triggerPrint,
+              icon: Printer
+            }
+          ]}
+        />
+      </div>
 
-        <div className="flex items-center gap-2.5">
-          {permissions.canManagePayments && (
-            <button
-              onClick={() => setIsPaymentModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Record Payment</span>
-            </button>
-          )}
-
-          <button
-            onClick={triggerPrint}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print A4 Statement</span>
-          </button>
-        </div>
+      {/* Bento Summary Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
+        <BentoCard
+          label="Opening Balance"
+          value={formatINR(openingBalance)}
+          caption="Carried forward balance"
+        />
+        <BentoCard
+          label="Total Purchases (Debit)"
+          value={formatINR(totalDebits)}
+          caption="Raw material landed cost"
+          variant="highlight"
+        />
+        <BentoCard
+          label="Settled & Returns (Credit)"
+          value={formatINR(totalCredits)}
+          caption="Disbursed & debit notes"
+          variant="success"
+        />
+        <BentoCard
+          label="Closing Net Payable"
+          value={formatINR(closingBalance)}
+          caption="Pending supplier remittance"
+          variant={closingBalance > 0 ? 'warning' : 'default'}
+        />
       </div>
 
       {/* Supplier Selector & Filters */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
         <div className="flex-1 min-w-[260px]">
-          <label className="block text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1">
+          <label className="block text-[11px] font-bold text-ink-700 uppercase tracking-wider mb-1">
             Select Supplier
           </label>
           <select
             value={selectedSupplierId}
             onChange={(e) => setSelectedSupplierId(e.target.value)}
-            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:border-rose-600 outline-none transition"
+            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:bg-white focus:border-rose-400 outline-none transition"
           >
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
@@ -209,26 +230,26 @@ export const SupplierLedgerView: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <div>
-            <label className="block text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-ink-700 uppercase tracking-wider mb-1">
               From Date
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:border-rose-600 outline-none"
+              className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:bg-white focus:border-rose-400 outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-ink-700 uppercase tracking-wider mb-1">
               To Date
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:border-rose-600 outline-none"
+              className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:bg-white focus:border-rose-400 outline-none"
             />
           </div>
         </div>
@@ -306,7 +327,7 @@ export const SupplierLedgerView: React.FC = () => {
                 <td className="py-2.5 px-3 italic font-bold">Opening Balance Brought Forward</td>
                 <td className="py-2.5 px-3 text-right">—</td>
                 <td className="py-2.5 px-3 text-right">—</td>
-                <td className="py-2.5 px-3 text-right font-bold text-rose-900">
+                <td className="py-2.5 px-3 text-right font-bold text-rose-900 tabular-nums">
                   {formatINR(openingBalance)}
                 </td>
               </tr>
@@ -325,13 +346,13 @@ export const SupplierLedgerView: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-2.5 px-3">{row.description}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-rose-900">
+                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-rose-900 tabular-nums">
                     {row.debitAmount > 0 ? formatINR(row.debitAmount) : '—'}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-emerald-700">
+                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-emerald-700 tabular-nums">
                     {row.creditAmount > 0 ? formatINR(row.creditAmount) : '—'}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap text-ink-900">
+                  <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap text-ink-900 tabular-nums">
                     {formatINR(row.runningBalance)}
                   </td>
                 </tr>
@@ -342,9 +363,9 @@ export const SupplierLedgerView: React.FC = () => {
                 <td colSpan={3} className="py-3 px-3 uppercase text-ink-700">
                   Totals &amp; Net Closing Outstanding Balance
                 </td>
-                <td className="py-3 px-3 text-right text-rose-900">{formatINR(totalDebits)}</td>
-                <td className="py-3 px-3 text-right text-emerald-700">{formatINR(totalCredits)}</td>
-                <td className="py-3 px-3 text-right text-base text-rose-700 font-extrabold">
+                <td className="py-3 px-3 text-right text-rose-900 tabular-nums">{formatINR(totalDebits)}</td>
+                <td className="py-3 px-3 text-right text-emerald-700 tabular-nums">{formatINR(totalCredits)}</td>
+                <td className="py-3 px-3 text-right text-base text-rose-700 font-extrabold tabular-nums">
                   {formatINR(closingBalance)}
                 </td>
               </tr>

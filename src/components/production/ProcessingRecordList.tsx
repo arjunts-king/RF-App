@@ -3,6 +3,8 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { DailyProcessingEntry } from '../../types';
 import { formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
+import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -224,7 +226,30 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Daily processing log register"
+        subtitle="Immutable trace of factory shift production logs, slab count tolerances, and rejection records."
+        breadcrumbs={['Production', 'Processing Log']}
+        primaryAction={
+          onNavigate
+            ? {
+                label: 'New processing entry',
+                onClick: () => onNavigate('daily-entry'),
+                icon: Plus
+              }
+            : undefined
+        }
+        secondaryActions={[
+          {
+            label: 'Export CSV',
+            onClick: handleExportCSV,
+            icon: Download
+          }
+        ]}
+      />
+
       {/* Search & Action Bar */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
@@ -235,14 +260,14 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
               placeholder="Search entry #, box ID, supplier, species..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
             />
           </div>
 
           <select
             value={supplierFilter}
             onChange={(e) => setSupplierFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Suppliers</option>
             {suppliers.map((s) => (
@@ -255,7 +280,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           <select
             value={speciesFilter}
             onChange={(e) => setSpeciesFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Products</option>
             {species.map((sp) => (
@@ -268,7 +293,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           <select
             value={shiftFilter}
             onChange={(e) => setShiftFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Shifts</option>
             <option value="General Day Shift (08:00 - 17:00)">General Day</option>
@@ -306,7 +331,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           {onNavigate && (
             <button
               onClick={() => onNavigate('daily-entry')}
-              className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-full shadow-xs transition"
             >
               <Plus className="w-4 h-4" />
               <span>New Entry</span>
@@ -315,7 +340,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-rose-50 text-ink-700 hover:text-rose-700 text-xs font-semibold border border-gray-200 rounded-xl transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 text-ink-700 text-xs font-semibold border border-gray-200 rounded-xl transition shadow-xs"
             title="Export filtered records to CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -367,6 +392,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-4 font-bold text-rose-700 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           {p.entryNo}
+                          {p.isVoided && <StatusBadge status="Voided" />}
                         </div>
                         <div className="text-[10px] text-ink-500 font-normal">
                           {p.shift.split(' ')[0]} Shift
@@ -402,25 +428,25 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 text-right font-extrabold text-ink-900 whitespace-nowrap">
+                      <td className="py-3 px-4 text-right font-extrabold text-ink-900 whitespace-nowrap tabular-nums">
                         {formatKg(p.processedWeightKg)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-medium text-rose-700 whitespace-nowrap">
+                      <td className="py-3 px-4 text-right font-medium text-rose-700 whitespace-nowrap tabular-nums">
                         {p.rejectionWeightKg > 0 ? formatKg(p.rejectionWeightKg) : '-'}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         {p.hasSlabVariance ? (
                           <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"
                             title={`Expected ${p.expectedWeightKg} Kg vs Actual ${p.processedWeightKg} Kg (Diff: ${p.varianceWeightKg} Kg)`}
                           >
                             <AlertTriangle className="w-3 h-3 text-amber-600" />
                             <span>{p.variancePct > 0 ? `+${p.variancePct}%` : `${p.variancePct}%`}</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                             <span>Balanced</span>
                           </span>
@@ -432,7 +458,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                           {/* View Detail Modal */}
                           <button
                             onClick={() => setSelectedEntry(p)}
-                            className="p-1.5 rounded-lg text-ink-500 hover:text-rose-600 hover:bg-rose-50 transition"
+                            className="p-1.5 rounded-lg text-ink-500 hover:text-rose-700 hover:bg-rose-50 transition"
                             title="Inspect complete details & audit metadata"
                           >
                             <Eye className="w-4 h-4" />
@@ -442,7 +468,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                           {!p.isVoided && permissions.canCreateEditPurchases && (
                             <button
                               onClick={() => handleStartEdit(p)}
-                              className="p-1.5 rounded-lg text-ink-500 hover:text-rose-600 hover:bg-rose-50 transition"
+                              className="p-1.5 rounded-lg text-ink-500 hover:text-blue-600 hover:bg-blue-50 transition"
                               title="Edit record details"
                             >
                               <Pencil className="w-4 h-4" />
@@ -467,7 +493,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                           {permissions.canPermanentlyDelete && (
                             <button
                               onClick={() => setDeleteModalTarget(p)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition"
+                              className="p-1.5 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-50 transition"
                               title="Owner/Admin: Permanent hard delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -501,13 +527,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
               </div>
               <div>
                 <span className="text-[10px] text-ink-500 font-bold uppercase block">Status</span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                    selectedEntry.isVoided ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                  }`}
-                >
-                  {selectedEntry.isVoided ? 'Voided / Cancelled' : 'Active / Validated'}
-                </span>
+                <StatusBadge status={selectedEntry.isVoided ? 'Voided' : 'Active'} />
               </div>
             </div>
 
@@ -545,7 +565,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
 
             {/* Weighment & Variance Details */}
             <div className="p-4 border border-gray-200 rounded-xl bg-white space-y-3">
-              <h4 className="font-bold text-ink-900 uppercase text-[11px] text-rose-700">Packaging &amp; Weight Analysis</h4>
+              <h4 className="font-bold uppercase text-[11px] text-rose-700">Packaging &amp; Weight Analysis</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-2 bg-gray-50 rounded-lg">
                   <span className="text-ink-500 block text-[10px]">Slab Type</span>
@@ -749,16 +769,16 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           </div>
 
           <div>
-            <label className="block font-semibold text-ink-900 mb-1">
-              Audit Edit Reason <span className="text-rose-600">*</span>
+            <label className="block font-semibold text-ink-700 mb-1">
+              Audit Reason for Modification <span className="text-rose-600">*</span>
             </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Corrected scale weighment discrepancy after re-check"
+            <input
+              type="text"
               value={editForm.editReason}
               onChange={(e) => setEditForm({ ...editForm, editReason: e.target.value })}
+              placeholder="e.g. Corrected scale tare weight after recalibration"
               required
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+              className="w-full p-2 bg-gray-50 border rounded-xl outline-none font-medium"
             />
           </div>
 
@@ -766,14 +786,13 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
             <button
               type="button"
               onClick={() => setEditingEntry(null)}
-              className="px-4 py-2 border rounded-xl text-ink-700 font-semibold"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!editForm.editReason.trim()}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50"
+              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-full font-bold transition"
             >
               Save Changes
             </button>
@@ -786,37 +805,35 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
         isOpen={!!voidModalTarget}
         onClose={() => setVoidModalTarget(null)}
         title={`Void Processing Record: ${voidModalTarget?.entryNo}`}
-        subtitle="Soft delete. Record remains recoverable with an explicit audit note."
+        subtitle="Audit-compliant cancellation of factory weighment entry"
       >
         <div className="space-y-4 text-xs">
           <p className="text-ink-700">
-            You are about to void record <strong>{voidModalTarget?.entryNo}</strong>. It will be excluded from monthly production summaries but will remain in audit logs.
+            Voiding record <strong>{voidModalTarget?.entryNo}</strong> will deactivate its yield calculations from production dashboards while retaining an immutable surveillance trail.
           </p>
-
           <div>
-            <label className="block font-semibold text-ink-900 mb-1">
+            <label className="block font-bold text-ink-700 mb-1">
               Reason for Voiding <span className="text-rose-600">*</span>
             </label>
             <textarea
-              rows={3}
-              placeholder="e.g. Duplicate factory line entry, lots misidentified"
+              rows={2}
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+              placeholder="e.g. Shift operator keyed duplicate batch weighment..."
+              className="w-full p-2.5 bg-gray-50 border rounded-xl outline-none text-xs"
             />
           </div>
-
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2">
             <button
               onClick={() => setVoidModalTarget(null)}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition"
             >
               Cancel
             </button>
             <button
               onClick={handleVoidConfirm}
               disabled={!voidReason.trim()}
-              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-50 transition"
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-full font-bold transition"
             >
               Confirm Void
             </button>
@@ -824,32 +841,27 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
         </div>
       </Modal>
 
-      {/* PERMANENT PURGE CONFIRMATION MODAL (OWNER/ADMIN EXCLUSIVE) */}
+      {/* DELETE MODAL (OWNER / ADMIN ONLY) */}
       <Modal
         isOpen={!!deleteModalTarget}
         onClose={() => setDeleteModalTarget(null)}
-        title="CRITICAL: Permanent Purge Record"
-        subtitle="Owner / Admin Exclusive Authority"
+        title={`Permanent Purge: ${deleteModalTarget?.entryNo}`}
+        subtitle="Exclusive Owner / Admin permanent deletion authority"
       >
         <div className="space-y-4 text-xs">
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-950 flex items-start gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
-            <div>
-              <strong>Irreversible Action:</strong> This will completely remove production entry{' '}
-              <strong>{deleteModalTarget?.entryNo}</strong> from the database. This action is permanently logged to the surveillance audit trail.
-            </div>
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently purge production record <strong>{deleteModalTarget?.entryNo}</strong>. This cannot be undone.
           </div>
-
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2">
             <button
               onClick={() => setDeleteModalTarget(null)}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition"
             >
-              Abort
+              Cancel
             </button>
             <button
               onClick={handleDeleteConfirm}
-              className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold transition"
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-full font-bold transition"
             >
               Permanently Purge Record
             </button>

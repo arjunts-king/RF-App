@@ -3,17 +3,16 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
-  Save,
   RotateCcw,
   Scale,
   Calendar,
-  Clock,
-  UserCheck,
   AlertTriangle,
   CheckCircle2,
   Box
 } from 'lucide-react';
 import { ProductionShift } from '../../types';
+import { PageHeader } from '../common/PageHeader';
+import { StickySaveBar } from '../common/StickySaveBar';
 
 export const DailyProcessingEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const {
@@ -155,35 +154,22 @@ export const DailyProcessingEntryForm: React.FC<{ onSuccess?: () => void }> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden max-w-5xl mx-auto">
-      {/* Header Banner */}
-      <div className="px-6 py-4 bg-gradient-to-r from-rose-50 via-white to-rose-50 border-b border-rose-100 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-ink-900">Daily Processing Entry</h2>
-            <span className="text-[11px] font-semibold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full border border-rose-200">
-              Factory Line Entry
-            </span>
-          </div>
-          <p className="text-xs text-ink-500">
-            One form = One transaction. Server computes expected slab weights, variance tolerance &amp; audit timestamps.
-          </p>
-        </div>
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      <PageHeader
+        title="Daily processing entry"
+        description="Record factory shift processing lot, species, standard slab packaging, and live tolerance variance detection."
+        badge={`Shift: ${shift.split(' ')[0]}`}
+        secondaryActions={[
+          {
+            label: 'Reset form',
+            icon: RotateCcw,
+            onClick: resetForm
+          }
+        ]}
+      />
 
-        {/* Live System Metadata Badges */}
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-ink-700">
-            <UserCheck className="w-3.5 h-3.5 text-rose-600" />
-            <span>Operator: <strong>{currentUser.name}</strong></span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-ink-700">
-            <Clock className="w-3.5 h-3.5 text-ink-500" />
-            <span>Shift: <strong>{shift.split(' ')[0]}</strong></span>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <div className="bg-white rounded-3xl shadow-xs border border-gray-100 overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
         {/* SECTION 1: SHIFT & LOT IDENTIFICATION */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-3 flex items-center gap-2">
@@ -509,26 +495,23 @@ export const DailyProcessingEntryForm: React.FC<{ onSuccess?: () => void }> = ({
           )}
         </div>
 
-        {/* Form Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
-          <button
-            type="button"
-            onClick={resetForm}
-            className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-ink-700 text-xs font-semibold rounded-xl transition"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Form</span>
-          </button>
-
-          <button
-            type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Processing Transaction</span>
-          </button>
-        </div>
+        {/* FIGMA-STYLE STICKY SAVE BAR */}
+        <StickySaveBar
+          metrics={[
+            { label: 'Processed Output', value: `${numericProcessed.toFixed(2)} Kg`, isPrimary: true },
+            { label: 'Slabs Count', value: `${numericSlabs} Slabs` },
+            {
+              label: 'Variance',
+              value: `${varianceWeightKg > 0 ? `+${varianceWeightKg}` : varianceWeightKg} Kg (${variancePct > 0 ? `+${variancePct}` : variancePct}%)`
+            }
+          ]}
+          primaryLabel="Save Processing Transaction"
+          onSecondaryClick={resetForm}
+          secondaryLabel="Reset"
+          statusMessage={`Operator: ${currentUser.name}`}
+        />
       </form>
+      </div>
     </div>
   );
 };

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
+import { PageHeader } from '../common/PageHeader';
+import { StatusBadge } from '../common/StatusBadge';
 import { SlabType } from '../../types';
 import {
   Boxes,
@@ -71,93 +73,93 @@ export const SlabTypeManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2">
-            <Boxes className="w-5 h-5 text-rose-600" />
-            Production Slab Types Master
-          </h2>
-          <p className="text-xs text-ink-500">
-            Define standard frozen slab sizes, master carton units, and target weights (Kg) used during packing.
-          </p>
-        </div>
-
-        {permissions.canManageMasterData && (
-          <button
-            onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Add New Slab Type</span>
-          </button>
-        )}
-      </div>
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Production slab types master"
+        subtitle="Define standard frozen slab sizes, master carton units, and target weights (Kg) used during packing."
+        breadcrumbs={['Production', 'Slab Types Master']}
+        primaryAction={
+          permissions.canManageMasterData
+            ? {
+                label: 'Add New Slab Type',
+                onClick: handleOpenAdd,
+                icon: PlusCircle
+              }
+            : undefined
+        }
+      />
 
       {/* Grid of Slab Types */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
         {slabTypes.length === 0 ? (
-          <div className="py-12 text-center text-ink-500 text-xs">
-            No slab types configured yet. Click "Add New Slab Type" to register your packing configurations.
+          <div className="py-12 text-center text-ink-500">
+            <Boxes className="w-8 h-8 mx-auto mb-2 text-ink-400" />
+            No slab types configured.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {slabTypes.map((st) => (
               <div
                 key={st.id}
-                className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200 hover:border-rose-200 transition space-y-3 flex flex-col justify-between"
+                className={`p-5 rounded-2xl border transition-all ${
+                  st.active
+                    ? 'bg-white border-gray-100 shadow-xs hover:border-rose-300'
+                    : 'bg-gray-50/70 border-gray-200 opacity-60'
+                }`}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div>
+                    <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
                       {st.code}
                     </span>
-                    <button
-                      onClick={() => toggleSlabTypeActive(st.id)}
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition ${
-                        st.active
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-gray-200 text-gray-600 border-gray-300'
-                      }`}
-                    >
-                      {st.active ? 'Active' : 'Inactive'}
-                    </button>
+                    <h3 className="text-sm font-bold text-ink-900 mt-2">{st.name}</h3>
                   </div>
 
-                  <h3 className="text-sm font-bold text-ink-900 mt-2">{st.name}</h3>
+                  {permissions.canManageMasterData && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(st)}
+                        title="Edit Slab Type"
+                        className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {permissions.canPermanentlyDelete && (
+                        <button
+                          onClick={() => setDeleteTarget(st)}
+                          title="Delete Slab Type"
+                          className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                  <div className="mt-2.5 p-2.5 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
-                    <span className="text-xs text-ink-500 font-medium">Standard Slab Weight:</span>
-                    <span className="text-sm font-extrabold text-ink-900">
-                      {st.standardWeightKg} {st.unit}
-                    </span>
+                <div className="space-y-1.5 text-xs text-ink-700 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between">
+                    <span className="text-ink-500">Standard Net Weight:</span>
+                    <span className="font-extrabold text-ink-900 tabular-nums">{st.standardWeightKg} {st.unit}</span>
                   </div>
-
-                  <div className="mt-2 text-[11px] text-ink-500">
-                    Applicable Products: <strong className="text-ink-800">{st.productApplicability}</strong>
+                  <div className="flex justify-between">
+                    <span className="text-ink-500">Product Scope:</span>
+                    <span className="font-semibold text-ink-800">{st.productApplicability}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-gray-200/80">
-                  {permissions.canManageMasterData && (
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-[11px] text-ink-400">Unit: {st.unit}</span>
+                  {permissions.canManageMasterData ? (
                     <button
-                      onClick={() => handleOpenEdit(st)}
-                      className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
-                      title="Edit Slab Type"
+                      onClick={() => toggleSlabTypeActive(st.id)}
+                      className="transition"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <StatusBadge status={st.active ? 'Active' : 'Inactive'} />
                     </button>
-                  )}
-
-                  {permissions.canPermanentlyDelete && (
-                    <button
-                      onClick={() => setDeleteTarget(st)}
-                      className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50 transition"
-                      title="Delete Slab Type"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  ) : (
+                    <StatusBadge status={st.active ? 'Active' : 'Inactive'} />
                   )}
                 </div>
               </div>
@@ -166,116 +168,123 @@ export const SlabTypeManager: React.FC = () => {
         )}
       </div>
 
-      {/* ADD / EDIT MODAL */}
+      {/* Add / Edit Slab Type Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingId ? 'Edit Slab Type' : 'Add New Slab Type'}
-        subtitle="Configure packaging block specifications and target weight"
+        title={editingId ? 'Edit Production Slab Type' : 'Create New Slab Type'}
+        subtitle="Standardize factory frozen packaging dimensions and weights"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold mb-1">Slab ID / Code</label>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">
+              Slab Code <span className="text-rose-600">*</span>
+            </label>
             <input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              placeholder="e.g. SLB-001"
               required
-              className="w-full p-2 bg-gray-50 border rounded-xl outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
             />
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Slab Type Name</label>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">
+              Slab Type Name <span className="text-rose-600">*</span>
+            </label>
             <input
               type="text"
-              placeholder="e.g. 2.0 Kg Standard Export Block"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. 2.0 Kg Standard Block"
               required
-              className="w-full p-2 bg-gray-50 border rounded-xl outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold mb-1">Standard Weight</label>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                Target Weight <span className="text-rose-600">*</span>
+              </label>
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
+                min="0.1"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                placeholder="2.0"
                 required
-                className="w-full p-2 bg-gray-50 border rounded-xl outline-none"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
               />
             </div>
             <div>
-              <label className="block font-semibold mb-1">Unit</label>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Unit</label>
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="w-full p-2 bg-gray-50 border rounded-xl outline-none"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-400"
               >
-                <option value="Kg">Kg</option>
-                <option value="Lbs">Lbs</option>
+                <option value="Kg">Kg (Kilograms)</option>
+                <option value="Lbs">Lbs (Pounds)</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Product Applicability</label>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Product Applicability</label>
             <input
               type="text"
-              placeholder="e.g. All Products, Shrimp / Prawns, Pelagic Finfish"
               value={productApp}
               onChange={(e) => setProductApp(e.target.value)}
-              className="w-full p-2 bg-gray-50 border rounded-xl outline-none"
+              placeholder="e.g. White Shrimp or All Products"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t">
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 border rounded-xl text-ink-700 font-semibold"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-xs transition"
+              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
-              {editingId ? 'Update Slab Type' : 'Save Slab Type'}
+              {editingId ? 'Save Changes' : 'Create Slab Type'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* DELETE CONFIRMATION MODAL */}
+      {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!deleteTarget}
+        isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
-        title="Confirm Slab Type Deletion"
-        subtitle="This action cannot be undone if removed"
-        maxWidth="max-w-md"
+        title={`Delete Slab Type — ${deleteTarget?.name}`}
+        subtitle="Permanent purge from production packaging masters"
       >
         <div className="space-y-4 text-xs">
-          <p className="text-ink-700">
-            Are you sure you want to permanently delete slab type <strong>{deleteTarget?.name}</strong>?
-          </p>
-          <div className="flex justify-end gap-2 pt-2 border-t">
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently delete <strong>{deleteTarget?.name}</strong>. Existing entries using this type will retain snapshot records, but new entries cannot select it.
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setDeleteTarget(null)}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
             >
               Cancel
             </button>
             <button
               onClick={confirmDelete}
-              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-xs"
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
-              Confirm Delete
+              Permanently Delete
             </button>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
 import {
   TrendingUp,
   Anchor,
@@ -9,7 +11,9 @@ import {
   PlusCircle,
   Filter,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  X,
+  FileText
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -171,43 +175,45 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     Boolean(startDate || endDate || selectedCustomerId || selectedSpeciesId || selectedPolId || selectedPodId || selectedDestId || selectedCurrency || selectedStatus);
 
   return (
-    <div className="space-y-6">
-      {/* Executive Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black text-ink-900 tracking-tight flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-rose-600" />
-            Commercial Export &amp; Sales Dashboard
-          </h2>
-          <p className="text-xs text-ink-500 font-medium">
-            Global seafood export turnover, overseas receivables, realization tracking, and shipment volumes.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Executive Figma PageHeader */}
+      <PageHeader
+        title="Commercial export and sales dashboard"
+        subtitle="Global seafood export turnover, overseas receivables, realization tracking, and shipment volumes."
+        breadcrumbs={['Sales', 'Export Intelligence']}
+        primaryAction={
+          onNavigate
+            ? {
+                label: 'New commercial invoice',
+                onClick: () => onNavigate('invoice-entry'),
+                icon: PlusCircle
+              }
+            : undefined
+        }
+        secondaryActions={
+          onNavigate
+            ? [
+                {
+                  label: 'Invoices register',
+                  onClick: () => onNavigate('invoice-list'),
+                  icon: FileText
+                }
+              ]
+            : undefined
+        }
+      />
 
-        <div className="flex items-center gap-2">
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('invoice-entry')}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>New Commercial Invoice</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Combinable Multi-Filter Bar */}
+      {/* Combinable Multi-Filter Bar with Removable Filter Chips */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-ink-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <Filter className="w-3.5 h-3.5 text-rose-600" />
+            <Filter className="w-3.5 h-3.5 text-rose-700" />
             Combinable Filter Matrix
           </span>
           {hasActiveFilter && (
             <button
               onClick={clearAllFilters}
-              className="text-xs text-rose-600 hover:text-rose-800 font-bold underline"
+              className="text-xs text-rose-700 hover:text-rose-900 font-bold underline"
             >
               Clear All Filters
             </button>
@@ -222,7 +228,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
 
@@ -233,7 +239,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             />
           </div>
 
@@ -243,7 +249,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedCustomerId}
               onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All Clients</option>
               {customers.map((c) => (
@@ -260,7 +266,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedSpeciesId}
               onChange={(e) => setSelectedSpeciesId(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All Products</option>
               {species.map((sp) => (
@@ -277,7 +283,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedPolId}
               onChange={(e) => setSelectedPolId(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All POLs</option>
               {ports.map((p) => (
@@ -294,7 +300,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedPodId}
               onChange={(e) => setSelectedPodId(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All PODs</option>
               {ports.map((p) => (
@@ -311,7 +317,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedCurrency}
               onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All Currencies</option>
               <option value="USD">USD</option>
@@ -327,7 +333,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
             >
               <option value="">All</option>
               <option value="Not Realized">Not Realized</option>
@@ -336,90 +342,172 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             </select>
           </div>
         </div>
+
+        {/* Removable Filter Chips */}
+        {hasActiveFilter && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
+            <span className="text-[10px] uppercase font-bold text-ink-400">Active filters:</span>
+            {startDate && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                From: {startDate}
+                <button onClick={() => setStartDate('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {endDate && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                To: {endDate}
+                <button onClick={() => setEndDate('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedCustomerId && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                Client: {customerMap.get(selectedCustomerId)?.name || selectedCustomerId}
+                <button onClick={() => setSelectedCustomerId('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedSpeciesId && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                Product: {speciesMap.get(selectedSpeciesId)?.name || selectedSpeciesId}
+                <button onClick={() => setSelectedSpeciesId('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedPolId && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                POL: {portMap.get(selectedPolId)?.code || selectedPolId}
+                <button onClick={() => setSelectedPolId('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedPodId && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                POD: {portMap.get(selectedPodId)?.code || selectedPodId}
+                <button onClick={() => setSelectedPodId('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedCurrency && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                Currency: {selectedCurrency}
+                <button onClick={() => setSelectedCurrency('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedStatus && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+                Status: {selectedStatus}
+                <button onClick={() => setSelectedStatus('')} className="hover:text-rose-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 8 Primary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {/* 1. Total Invoices */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">Invoices</span>
-          <span className="text-xl font-black text-ink-900 mt-1 block">{totalInvoices}</span>
-          <span className="text-[10px] text-ink-500 block">Commercial</span>
-        </div>
-
-        {/* 2. Total Weight */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">Total Weight</span>
-          <span className="text-xl font-black text-ink-900 mt-1 block">{formatKg(totalWeightKg)}</span>
-          <span className="text-[10px] text-ink-500 block">Net Cargo</span>
-        </div>
-
-        {/* 3. Total Amount in USD */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">Invoiced (USD)</span>
-          <span className="text-xl font-black text-rose-950 mt-1 block">${totalUSD.toLocaleString()}</span>
-          <span className="text-[10px] text-rose-700 block">Turnover</span>
-        </div>
-
-        {/* 4. Total FOB Value */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">FOB Value</span>
-          <span className="text-xl font-black text-rose-950 mt-1 block">${totalFOB.toLocaleString()}</span>
-          <span className="text-[10px] text-rose-700 block">Port Departure</span>
-        </div>
-
-        {/* 5. Average USD/Kg */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-emerald-800 uppercase block tracking-wider">Average USD/Kg</span>
-          <span className="text-xl font-black text-emerald-950 mt-1 block">${avgUSDPerKg.toFixed(2)}</span>
-          <span className="text-[10px] text-emerald-700 block">Realization/Kg</span>
-        </div>
-
-        {/* 6. Total Realized (INR) */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-emerald-800 uppercase block tracking-wider">Realized (INR)</span>
-          <span className="text-xl font-black text-emerald-950 mt-1 block">{formatINR(totalRealizedINR)}</span>
-          <span className="text-[10px] text-emerald-700 block">Bank Settled</span>
-        </div>
-
-        {/* 7. Outstanding Realization */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-amber-800 uppercase block tracking-wider">Pending USD</span>
-          <span className="text-xl font-black text-amber-950 mt-1 block">${totalOutstandingUSD.toLocaleString()}</span>
-          <span className="text-[10px] text-amber-700 block">Remittance Bal</span>
-        </div>
-
-        {/* 8. Active Customers */}
-        <div className="p-3.5 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">Active Buyers</span>
-          <span className="text-xl font-black text-ink-900 mt-1 block">{uniqueCustomerCount}</span>
-          <span className="text-[10px] text-ink-500 block">Overseas Clients</span>
-        </div>
+      {/* 8 Primary Bento KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
+        <BentoCard
+          label="Total Invoices"
+          value={totalInvoices}
+          caption="Commercial export bills"
+          linkText="Browse invoices"
+          onLinkClick={() => onNavigate && onNavigate('invoice-list')}
+        />
+        <BentoCard
+          label="Total Export Weight"
+          value={formatKg(totalWeightKg)}
+          caption="Net seafood cargo"
+          linkText="Weight analysis"
+          onLinkClick={() => onNavigate && onNavigate('reports')}
+        />
+        <BentoCard
+          label="Gross Invoiced (USD)"
+          value={`$${totalUSD.toLocaleString()}`}
+          caption="Overseas gross value"
+          variant="highlight"
+          linkText="Turnover ledger"
+          onLinkClick={() => onNavigate && onNavigate('reports')}
+        />
+        <BentoCard
+          label="Total FOB Value"
+          value={`$${totalFOB.toLocaleString()}`}
+          caption="Port departure valuation"
+          variant="highlight"
+          linkText="FOB breakdown"
+          onLinkClick={() => onNavigate && onNavigate('reports')}
+        />
+        <BentoCard
+          label="Average USD / Kg"
+          value={`$${avgUSDPerKg.toFixed(2)}`}
+          caption="Realization rate per kg"
+          variant="success"
+          linkText="Yield analysis"
+          onLinkClick={() => onNavigate && onNavigate('reports')}
+        />
+        <BentoCard
+          label="Realized (INR)"
+          value={formatINR(totalRealizedINR)}
+          caption="Bank settlements settled"
+          variant="success"
+          linkText="Realization log"
+          onLinkClick={() => onNavigate && onNavigate('invoice-list')}
+        />
+        <BentoCard
+          label="Pending Outstanding"
+          value={`$${totalOutstandingUSD.toLocaleString()}`}
+          caption="Unrealized remittance"
+          variant={totalOutstandingUSD > 0 ? 'warning' : 'default'}
+          linkText="Ageing tracker"
+          onLinkClick={() => onNavigate && onNavigate('reports')}
+        />
+        <BentoCard
+          label="Active Overseas Buyers"
+          value={uniqueCustomerCount}
+          caption="Verified client importers"
+          linkText="Manage clients"
+          onLinkClick={() => onNavigate && onNavigate('customers')}
+        />
       </div>
 
       {/* Row 1: Monthly Sales Trend & Realization vs Outstanding Split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Sales Value Trend SVG Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
+        {/* Monthly Sales Value Trend Chart */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-rose-600" />
-              Monthly Sales Value Trend (USD)
-            </h3>
-            <span className="text-[11px] font-bold text-ink-500">Trailing 6 Months</span>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-rose-700" />
+                Monthly Sales Value Trend (USD)
+              </h3>
+              <p className="text-[11px] text-ink-500">Trailing 6-month export invoiced volumes</p>
+            </div>
+            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+              Peak: ${(maxTrendUSD / 1000).toFixed(0)}k
+            </span>
           </div>
 
-          <div className="h-56 flex items-end gap-4 pt-4 px-2">
+          <div className="h-56 flex items-end gap-4 pt-6 px-2">
             {trendData.map((d) => {
               const heightPct = maxTrendUSD > 0 ? (d.val / maxTrendUSD) * 85 : 0;
               return (
                 <div key={d.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                  <div className="text-[10px] font-bold text-rose-800 opacity-0 group-hover:opacity-100 transition">
+                  <div className="text-[10px] font-bold text-rose-800 opacity-0 group-hover:opacity-100 transition tabular-nums">
                     ${(d.val / 1000).toFixed(0)}k
                   </div>
                   <div
-                    className="w-full bg-rose-500 hover:bg-rose-600 rounded-t-xl transition-all duration-300 relative group-hover:shadow-md"
-                    style={{ height: `${Math.max(heightPct, 4)}%` }}
+                    className="w-full bg-rose-600 hover:bg-rose-700 rounded-t-xl transition-all duration-300 relative group-hover:shadow-md"
+                    style={{ height: `${Math.max(heightPct, 6)}%` }}
                   />
                   <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">
                     {d.month.slice(5)}/{d.month.slice(2, 4)}
@@ -431,7 +519,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         </div>
 
         {/* Realized vs Outstanding Remittance Value */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4 flex flex-col justify-between">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
               <BadgeDollarSign className="w-4 h-4 text-emerald-600" />
@@ -454,7 +542,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 title="Realized Remittances"
               />
               <div
-                className="bg-rose-500 transition-all duration-500"
+                className="bg-rose-600 transition-all duration-500"
                 style={{ width: `${totalUSD > 0 ? (totalOutstandingUSD / totalUSD) * 100 : 100}%` }}
                 title="Pending Outstanding"
               />
@@ -467,23 +555,23 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           </div>
 
           {/* Ageing Breakdown */}
-          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5">
-            <div className="font-bold text-[10px] text-ink-500 uppercase">Receivables Ageing:</div>
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
+            <div className="font-bold text-[10px] text-ink-500 uppercase tracking-wider">Receivables Ageing Breakdown:</div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-emerald-800">0–30 days:</span>
-              <span className="font-bold">${ageingStats['0-30'].toLocaleString()}</span>
+              <span className="text-emerald-800 font-medium">0–30 days:</span>
+              <span className="font-bold tabular-nums">${ageingStats['0-30'].toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-blue-800">31–60 days:</span>
-              <span className="font-bold">${ageingStats['31-60'].toLocaleString()}</span>
+              <span className="text-blue-800 font-medium">31–60 days:</span>
+              <span className="font-bold tabular-nums">${ageingStats['31-60'].toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-amber-800">61–90 days:</span>
-              <span className="font-bold">${ageingStats['61-90'].toLocaleString()}</span>
+              <span className="text-amber-800 font-medium">61–90 days:</span>
+              <span className="font-bold tabular-nums">${ageingStats['61-90'].toLocaleString()}</span>
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-200">
               <span className="text-rose-800 font-bold">90+ days overdue:</span>
-              <span className="font-extrabold text-rose-800">${ageingStats['90+'].toLocaleString()}</span>
+              <span className="font-extrabold text-rose-800 tabular-nums">${ageingStats['90+'].toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -492,16 +580,16 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       {/* Row 2: Customer Split, Product Split & Destination Ports */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Customer Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-rose-600" />
+              <Users className="w-4 h-4 text-rose-700" />
               Customer Value Split (Top 5)
             </h3>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('customers')}
-                className="text-[11px] text-rose-600 font-bold hover:underline flex items-center gap-0.5"
+                className="text-[11px] text-rose-700 font-bold hover:underline flex items-center gap-0.5"
               >
                 <span>View All</span>
                 <ArrowUpRight className="w-3 h-3" />
@@ -517,10 +605,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 <div key={c.name} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="truncate max-w-[170px] text-ink-900">{c.name}</span>
-                    <span className="text-ink-700">${c.val.toLocaleString()} ({c.pct.toFixed(1)}%)</span>
+                    <span className="text-ink-700 tabular-nums">${c.val.toLocaleString()} ({c.pct.toFixed(1)}%)</span>
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-rose-500 rounded-full" style={{ width: `${c.pct}%` }} />
+                    <div className="h-full bg-rose-600 rounded-full" style={{ width: `${c.pct}%` }} />
                   </div>
                 </div>
               ))
@@ -529,9 +617,9 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         </div>
 
         {/* Product / Species Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-rose-600" />
+            <Layers className="w-4 h-4 text-rose-700" />
             Product Export Share
           </h3>
 
@@ -543,7 +631,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 <div key={p.name} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="truncate max-w-[170px] text-ink-900">{p.name}</span>
-                    <span className="text-ink-700">${p.val.toLocaleString()} ({p.pct.toFixed(1)}%)</span>
+                    <span className="text-ink-700 tabular-nums">${p.val.toLocaleString()} ({p.pct.toFixed(1)}%)</span>
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.pct}%` }} />
@@ -555,16 +643,16 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         </div>
 
         {/* Destination Port Volume */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
-              <Anchor className="w-4 h-4 text-rose-600" />
+              <Anchor className="w-4 h-4 text-rose-700" />
               Discharge Port Cargo Volume
             </h3>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('ports')}
-                className="text-[11px] text-rose-600 font-bold hover:underline flex items-center gap-0.5"
+                className="text-[11px] text-rose-700 font-bold hover:underline flex items-center gap-0.5"
               >
                 <span>Ports</span>
                 <ArrowUpRight className="w-3 h-3" />
@@ -582,7 +670,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                     <span className="truncate max-w-[170px] text-ink-900">
                       {pt.name} ({pt.code})
                     </span>
-                    <span className="text-ink-700">{formatKg(pt.wt)} ({pt.pct.toFixed(1)}%)</span>
+                    <span className="text-ink-700 tabular-nums">{formatKg(pt.wt)} ({pt.pct.toFixed(1)}%)</span>
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pt.pct}%` }} />

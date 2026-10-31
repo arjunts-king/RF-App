@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
-import { Layers, RefreshCw, AlertTriangle, Info } from 'lucide-react';
+import { PageHeader } from '../common/PageHeader';
+import { RefreshCw, AlertTriangle, Info } from 'lucide-react';
 
 export const BatchExpenseView: React.FC = () => {
   const { purchases, species, expenseTypes, recalculateBatch } = useData();
@@ -40,36 +41,27 @@ export const BatchExpenseView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header & Concept Explanation */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-ink-900">Shared Batch Expense Allocation Engine</h2>
-              <p className="text-xs text-ink-500">
-                Proportionally divides shared landing expenses (ice, vehicle rent, porters) across batched species by weight.
-              </p>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Shared batch expense allocation engine"
+        subtitle="Proportionally divides shared landing expenses (ice, vehicle rent, porters) across batched species by weight."
+        breadcrumbs={['Purchase', 'Batch Expenses Engine']}
+        primaryAction={
+          selectedBatch
+            ? {
+                label: 'Recalculate Batch Split',
+                onClick: () => recalculateBatch(selectedBatch),
+                icon: RefreshCw
+              }
+            : undefined
+        }
+      />
 
-          {selectedBatch && (
-            <button
-              onClick={() => recalculateBatch(selectedBatch)}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Recalculate Batch Split</span>
-            </button>
-          )}
-        </div>
-
-        {/* Batch Selector Pills */}
-        <div className="mt-5 flex flex-wrap items-center gap-2 pt-4 border-t border-gray-100">
-          <span className="text-xs font-semibold text-ink-500 mr-2">Active Batches:</span>
+      {/* Batch Selector Card */}
+      <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-ink-900 mr-2 uppercase tracking-wider">Active Batches:</span>
           {batches.length === 0 ? (
             <span className="text-xs text-ink-500 italic">No batches created yet. Add a Batch No. on the purchase entry form.</span>
           ) : (
@@ -77,13 +69,13 @@ export const BatchExpenseView: React.FC = () => {
               <button
                 key={b}
                 onClick={() => setSelectedBatch(b)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${
                   selectedBatch === b
-                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                    ? 'bg-rose-700 text-white border-rose-700 shadow-xs'
                     : 'bg-gray-50 text-ink-700 border-gray-200 hover:bg-rose-50'
                 }`}
               >
-                {b}
+                Batch {b}
               </button>
             ))
           )}
@@ -96,14 +88,14 @@ export const BatchExpenseView: React.FC = () => {
           <div className="p-4 bg-gray-50/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
               <span className="font-bold text-ink-900">Batch Identifier: {selectedBatch}</span>
-              <span className="text-ink-500">({batchPurchases.length} seafood items pooled)</span>
+              <span className="text-ink-500 font-medium">({batchPurchases.length} seafood items pooled)</span>
               {isAlreadyAllocated && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                   Allocated Proportional to Weight
                 </span>
               )}
             </div>
-            <div className="font-bold text-rose-700">
+            <div className="font-bold text-rose-700 tabular-nums">
               Total Weight Pool: {formatKg(totalBatchWeight)}
             </div>
           </div>
@@ -151,21 +143,21 @@ export const BatchExpenseView: React.FC = () => {
                       <td className="py-3 px-4 font-semibold text-ink-900">
                         {spec?.name || 'Seafood'}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold">
+                      <td className="py-3 px-4 text-right font-bold tabular-nums">
                         {p.weightKg.toLocaleString('en-IN')} Kg
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-amber-800">
+                      <td className="py-3 px-4 text-right font-bold text-amber-800 tabular-nums">
                         {sharePct.toFixed(1)}%
                       </td>
                       {expenseKeys.map((k) => (
-                        <td key={k} className="py-3 px-4 text-right text-ink-700">
+                        <td key={k} className="py-3 px-4 text-right text-ink-700 tabular-nums">
                           {formatINR(p.expenseBreakdown?.[k] || 0)}
                         </td>
                       ))}
-                      <td className="py-3 px-4 text-right font-bold text-rose-900">
+                      <td className="py-3 px-4 text-right font-bold text-rose-900 tabular-nums">
                         {formatINR(p.totalCost)}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-ink-900">
+                      <td className="py-3 px-4 text-right font-bold text-ink-900 tabular-nums">
                         ₹{p.effectiveRatePerKg.toFixed(2)} / Kg
                       </td>
                     </tr>
@@ -174,22 +166,22 @@ export const BatchExpenseView: React.FC = () => {
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 border-t-2 border-gray-200 font-bold text-xs text-ink-900">
-                  <td colSpan={2} className="py-3 px-4">
+                  <td colSpan={2} className="py-3 px-4 uppercase text-[11px]">
                     Batch Total Pool
                   </td>
-                  <td className="py-3 px-4 text-right text-rose-700">
+                  <td className="py-3 px-4 text-right text-rose-700 tabular-nums">
                     {formatKg(totalBatchWeight)}
                   </td>
-                  <td className="py-3 px-4 text-right text-amber-800">100.0%</td>
+                  <td className="py-3 px-4 text-right text-amber-800 tabular-nums">100.0%</td>
                   {expenseKeys.map((k) => {
                     const sum = batchPurchases.reduce((s, p) => s + (p.expenseBreakdown?.[k] || 0), 0);
                     return (
-                      <td key={k} className="py-3 px-4 text-right text-ink-900">
+                      <td key={k} className="py-3 px-4 text-right text-ink-900 tabular-nums">
                         {formatINR(sum)}
                       </td>
                     );
                   })}
-                  <td className="py-3 px-4 text-right text-rose-900">
+                  <td className="py-3 px-4 text-right text-rose-900 tabular-nums">
                     {formatINR(batchPurchases.reduce((s, p) => s + p.totalCost, 0))}
                   </td>
                   <td className="py-3 px-4 text-right text-ink-500">—</td>

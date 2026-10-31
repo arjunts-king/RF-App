@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { SalesInvoice, RealizationStatus } from '../../types';
+import { SalesInvoice } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
+import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
@@ -194,48 +197,64 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     downloadFile(csvStr, `Sales_Invoices_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
-  const getStatusBadge = (status: RealizationStatus) => {
-    switch (status) {
-      case 'Fully Realized':
-        return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-      case 'Partially Realized':
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-      default:
-        return 'bg-amber-50 text-amber-800 border-amber-200';
-    }
-  };
-
   return (
-    <div className="space-y-5">
-      {/* Metrics Cards Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-ink-500 tracking-wider block">Active Invoices</span>
-          <span className="text-xl font-extrabold text-ink-900 mt-1 block">{activeInvoices.length}</span>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Commercial sales invoices register"
+        subtitle="Official commercial invoices, freight dispatches, and overseas bank remittance realization tracking."
+        breadcrumbs={['Sales', 'Invoices Register']}
+        primaryAction={
+          permissions.canCreateEditSales && onNavigate
+            ? {
+                label: 'New commercial invoice',
+                onClick: () => onNavigate('invoice-entry'),
+                icon: Plus
+              }
+            : undefined
+        }
+        secondaryActions={[
+          {
+            label: 'Export CSV',
+            onClick: handleExportCSV,
+            icon: Download
+          }
+        ]}
+      />
 
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-ink-500 tracking-wider block">Total Export Weight</span>
-          <span className="text-xl font-extrabold text-ink-900 mt-1 block">{formatKg(totalWeightAll)}</span>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-rose-800 tracking-wider block">Total Invoiced (USD)</span>
-          <span className="text-xl font-extrabold text-rose-950 mt-1 block">${totalValueUSDAll.toLocaleString()}</span>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block">Realized Remittances</span>
-          <span className="text-xl font-extrabold text-emerald-950 mt-1 block">{formatINR(totalRealizedINRAll)}</span>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider block">Unrealized Balance</span>
-          <span className="text-xl font-extrabold text-amber-950 mt-1 block">${totalBalanceUSDAll.toLocaleString()}</span>
-        </div>
+      {/* Bento KPI Summary Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <BentoCard
+          label="Active Invoices"
+          value={activeInvoices.length}
+          caption="Commercial export bills"
+        />
+        <BentoCard
+          label="Total Export Weight"
+          value={formatKg(totalWeightAll)}
+          caption="Net shipping weight"
+        />
+        <BentoCard
+          label="Total Invoiced (USD)"
+          value={`$${totalValueUSDAll.toLocaleString()}`}
+          caption="Foreign receivables"
+          variant="highlight"
+        />
+        <BentoCard
+          label="Realized Remittances"
+          value={formatINR(totalRealizedINRAll)}
+          caption="Bank settlements credited"
+          variant="success"
+        />
+        <BentoCard
+          label="Unrealized Balance"
+          value={`$${totalBalanceUSDAll.toLocaleString()}`}
+          caption="Pending overseas wire"
+          variant={totalBalanceUSDAll > 0 ? 'warning' : 'default'}
+        />
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Sticky Search & Multi-Filter Bar */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <div className="relative flex-1 min-w-[200px]">
@@ -245,14 +264,14 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               placeholder="Search invoice #, customer, order #, port, container..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
             />
           </div>
 
           <select
             value={customerFilter}
             onChange={(e) => setCustomerFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Customers</option>
             {customers.map((c) => (
@@ -265,7 +284,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
           <select
             value={podFilter}
             onChange={(e) => setPodFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Discharge Ports</option>
             {ports.map((p) => (
@@ -278,7 +297,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Statuses</option>
             <option value="Not Realized">Not Realized</option>
@@ -301,7 +320,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+            className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -310,7 +329,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
           {permissions.canCreateEditSales && onNavigate && (
             <button
               onClick={() => onNavigate('invoice-entry')}
-              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-xs transition"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Invoice</span>
@@ -320,7 +339,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       </div>
 
       {/* Invoices Data Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -360,11 +379,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-bold text-rose-700">{inv.invoiceNo}</span>
-                          {inv.isVoided && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-rose-200 text-rose-900">
-                              VOID
-                            </span>
-                          )}
+                          {inv.isVoided && <StatusBadge status="Voided" />}
                         </div>
                         {inv.orderNo && (
                           <div className="text-[10px] text-ink-500 font-mono">PO: {inv.orderNo}</div>
@@ -392,37 +407,39 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                       </td>
 
                       {/* Total Weight */}
-                      <td className="py-3 px-3 text-right font-extrabold text-ink-900">
+                      <td className="py-3 px-3 text-right font-extrabold text-ink-900 tabular-nums">
                         {formatKg(inv.totalWeightKg)}
                       </td>
 
                       {/* Total Value */}
                       <td className="py-3 px-3 text-right">
-                        <div className="font-black text-rose-950">
+                        <div className="font-black text-rose-950 tabular-nums">
                           {inv.currency} {inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="text-[10px] text-ink-500">
+                        <div className="text-[10px] text-ink-500 tabular-nums">
                           Est: ₹{inv.estimatedAmountINR.toLocaleString()}
                         </div>
                       </td>
 
                       {/* Realization Status */}
                       <td className="py-3 px-3 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(
-                            inv.realizationStatus
-                          )}`}
-                        >
-                          {inv.realizationStatus}
-                        </span>
+                        <StatusBadge
+                          status={
+                            inv.realizationStatus === 'Fully Realized'
+                              ? 'Realized'
+                              : inv.realizationStatus === 'Partially Realized'
+                              ? 'Partially realized'
+                              : 'Not realized'
+                          }
+                        />
                       </td>
 
                       {/* Realized / Balance */}
                       <td className="py-3 px-3 text-right">
-                        <div className="text-emerald-700 font-bold">
+                        <div className="text-emerald-700 font-bold tabular-nums">
                           {inv.currency} {inv.totalRealizedCurrency.toLocaleString()}
                         </div>
-                        <div className="text-[10px] text-ink-500">
+                        <div className="text-[10px] text-ink-500 tabular-nums">
                           Bal: {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}
                         </div>
                       </td>
@@ -433,7 +450,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                           <button
                             onClick={() => setSelectedInvoice(inv)}
                             title="View Commercial Invoice"
-                            className="p-1.5 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -510,7 +527,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               <span className="font-mono text-xs text-ink-500">Document Date: {selectedInvoice.invoiceDate}</span>
               <button
                 onClick={triggerPrint}
-                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print Commercial Invoice</span>
@@ -636,8 +653,17 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div>
                 <span className="text-ink-500 block">Bank Realization Status:</span>
-                <span className={`inline-block font-bold mt-0.5 px-2 py-0.5 rounded-md border text-xs ${getStatusBadge(selectedInvoice.realizationStatus)}`}>
-                  {selectedInvoice.realizationStatus} · Realized: ${selectedInvoice.totalRealizedCurrency.toLocaleString()} (₹{selectedInvoice.totalRealizedINR.toLocaleString()})
+                <span className="inline-flex items-center gap-1.5 font-bold mt-0.5">
+                  <StatusBadge
+                    status={
+                      selectedInvoice.realizationStatus === 'Fully Realized'
+                        ? 'Realized'
+                        : selectedInvoice.realizationStatus === 'Partially Realized'
+                        ? 'Partially realized'
+                        : 'Not realized'
+                    }
+                  />
+                  <span>· Realized: ${selectedInvoice.totalRealizedCurrency.toLocaleString()} (₹{selectedInvoice.totalRealizedINR.toLocaleString()})</span>
                 </span>
               </div>
               <div className="text-right">
@@ -666,7 +692,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               value={editForm.invoiceDate}
               onChange={(e) => setEditForm({ ...editForm, invoiceDate: e.target.value })}
               required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-400"
             />
           </div>
 
@@ -677,7 +703,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               value={editForm.orderNo}
               onChange={(e) => setEditForm({ ...editForm, orderNo: e.target.value })}
               placeholder="e.g. PO-88231"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400"
             />
           </div>
 
@@ -688,7 +714,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               step="0.0001"
               value={editForm.exchangeRate}
               onChange={(e) => setEditForm({ ...editForm, exchangeRate: parseFloat(e.target.value) || 84.5 })}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
             />
           </div>
 
@@ -698,7 +724,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               type="text"
               value={editForm.remarks}
               onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400"
             />
           </div>
 
@@ -712,7 +738,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               onChange={(e) => setEditForm({ ...editForm, editReason: e.target.value })}
               placeholder="e.g. Corrected buyer order reference number"
               required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-400"
             />
           </div>
 
@@ -726,7 +752,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition"
+              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Save Changes
             </button>
@@ -754,7 +780,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
               placeholder="e.g. Shipment cancelled by overseas buyer due to vessel rescheduling..."
-              className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs outline-none focus:border-rose-600"
+              className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs outline-none focus:border-rose-400"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -795,7 +821,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             </button>
             <button
               onClick={handleConfirmDelete}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition"
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Permanently Purge Record
             </button>

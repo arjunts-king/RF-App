@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
+import { PageHeader } from '../common/PageHeader';
 import {
   FileText,
   Users,
@@ -449,66 +450,57 @@ export const SalesReportsHub: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
-        <div>
-          <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-rose-600" />
-            Commercial Export Reports Hub
-          </h2>
-          <p className="text-xs text-ink-500">
-            Computed live from commercial sales invoices, customer masters, and bank realization remittances.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Commercial export reports hub"
+        subtitle="Computed live from commercial sales invoices, customer masters, and bank realization remittances."
+        breadcrumbs={['Sales', 'Export Reports']}
+        primaryAction={{
+          label: 'Export CSV',
+          onClick: handleExportCSV,
+          icon: Download
+        }}
+        secondaryActions={[
+          {
+            label: 'Print Report',
+            onClick: triggerPrint,
+            icon: Printer
+          }
+        ]}
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-          <button
-            onClick={triggerPrint}
-            className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print Report</span>
-          </button>
+      {/* Pill Tab Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {reportTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeReport === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveReport(tab.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-rose-700 text-white shadow-xs'
+                    : 'bg-gray-50 text-ink-700 hover:bg-rose-50 border border-gray-200'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-ink-700'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      </div>
-
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-gray-200">
-        {reportTabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeReport === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveReport(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                isActive
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-white hover:bg-rose-50 text-ink-700 hover:text-rose-700 border border-gray-200'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-              {tab.count !== undefined && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-ink-600'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
       </div>
 
       {/* ==================================================================== */}

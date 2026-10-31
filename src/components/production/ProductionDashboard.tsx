@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
+import { BentoCard } from '../common/BentoCard';
 import {
   Factory,
   Calendar,
   AlertTriangle,
-  PlusCircle,
-  ArrowUpRight,
-  ArrowDownRight
+  PlusCircle
 } from 'lucide-react';
 
 export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -111,25 +111,51 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
     .sort((a, b) => b.weight - a.weight);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header Banner & Month Selector */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
-              <Factory className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-ink-900">Seafood Production &amp; Processing Dashboard</h2>
-              <p className="text-xs text-ink-500">Live operational oversight of daily packing, slab weights &amp; line yields</p>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* FIGMA-STYLE HEADLINE-FIRST HEADER */}
+      <PageHeader
+        title="Production plant dashboard"
+        description="Daily throughput, shift performance, slab packaging counts, and freezing weight variance monitoring."
+        badge={`${formatKg(totalProcessedKg)} Produced`}
+        primaryAction={
+          onNavigate
+            ? {
+                label: 'Record daily processing',
+                icon: PlusCircle,
+                onClick: () => onNavigate('daily-entry')
+              }
+            : undefined
+        }
+        secondaryActions={
+          onNavigate
+            ? [
+                {
+                  label: 'Processing log',
+                  onClick: () => onNavigate('processing-log')
+                },
+                {
+                  label: 'Slab master',
+                  onClick: () => onNavigate('slab-types')
+                }
+              ]
+            : undefined
+        }
+      />
+
+      {/* STICKY MONTH SELECTOR & SUMMARY BAR */}
+      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 font-bold text-ink-900">
+          <Factory className="w-4 h-4 text-rose-600" />
+          <span>Plant Floor Calendar:</span>
+          <span className="font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+            {selectedMonth}
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-semibold">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-semibold">
             <Calendar className="w-3.5 h-3.5 text-rose-600" />
-            <span>Month:</span>
+            <span>Select Month:</span>
             <input
               type="month"
               value={selectedMonth}
@@ -138,105 +164,67 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
             />
           </div>
 
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('daily-entry')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Record Processing</span>
-            </button>
-          )}
+          <div className="text-[11px] font-semibold text-ink-500 hidden sm:block">
+            Prior month: <strong className="font-mono">{priorMonthStr}</strong> ({formatKg(priorMonthTotalKg)})
+          </div>
         </div>
       </div>
 
-      {/* KPI METRICS GRID */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
-        {/* KPI 1: Total Processed Weight */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs relative overflow-hidden">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Total Production
-          </span>
-          <span className="text-lg sm:text-xl font-black text-rose-700 mt-1 block">
-            {formatKg(totalProcessedKg)}
-          </span>
-          <div className="flex items-center gap-1 mt-1 text-[10px] font-semibold">
-            {momChangePct >= 0 ? (
-              <span className="text-emerald-700 flex items-center">
-                <ArrowUpRight className="w-3 h-3" /> +{momChangePct.toFixed(1)}% MoM
-              </span>
-            ) : (
-              <span className="text-rose-700 flex items-center">
-                <ArrowDownRight className="w-3 h-3" /> {momChangePct.toFixed(1)}% MoM
-              </span>
-            )}
-          </div>
-        </div>
+      {/* BENTO-STYLE KPI CARDS WITH CAPTIONS & LINKS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+        <BentoCard
+          label="Total Production"
+          value={formatKg(totalProcessedKg)}
+          caption="Finished packed output"
+          linkText="View lot details"
+          onLinkClick={() => onNavigate && onNavigate('processing-log')}
+          variant="highlight"
+          trend={{
+            value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
+            isPositive: momChangePct >= 0
+          }}
+        />
 
-        {/* KPI 2: Total Slabs Packed */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Total Slabs Packed
-          </span>
-          <span className="text-lg sm:text-xl font-black text-ink-900 mt-1 block">
-            {totalSlabs.toLocaleString('en-IN')}
-          </span>
-          <span className="text-[10px] text-ink-500 mt-1 block">
-            {activeEntries.length} lots processed
-          </span>
-        </div>
+        <BentoCard
+          label="Slabs Packed"
+          value={totalSlabs.toLocaleString('en-IN')}
+          caption={`${activeEntries.length} lots processed`}
+          linkText="View slab standards"
+          onLinkClick={() => onNavigate && onNavigate('slab-types')}
+        />
 
-        {/* KPI 3: Active Suppliers */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Raw Suppliers
-          </span>
-          <span className="text-lg sm:text-xl font-black text-ink-900 mt-1 block">
-            {uniqueSuppliers}
-          </span>
-          <span className="text-[10px] text-ink-500 mt-1 block">
-            Active in {selectedMonth}
-          </span>
-        </div>
+        <BentoCard
+          label="Raw Suppliers"
+          value={uniqueSuppliers}
+          caption={`Active in ${selectedMonth}`}
+          linkText="View supplier lots"
+          onLinkClick={() => onNavigate && onNavigate('processing-log')}
+        />
 
-        {/* KPI 4: Operating Days */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Processing Days
-          </span>
-          <span className="text-lg sm:text-xl font-black text-ink-900 mt-1 block">
-            {uniqueDays} Days
-          </span>
-          <span className="text-[10px] text-ink-500 mt-1 block">
-            Factory active days
-          </span>
-        </div>
+        <BentoCard
+          label="Active Days"
+          value={`${uniqueDays} Days`}
+          caption="Factory operating days"
+          linkText="View daily trend"
+          onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+        />
 
-        {/* KPI 5: Average Daily Production */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Avg Daily Output
-          </span>
-          <span className="text-lg sm:text-xl font-black text-ink-900 mt-1 block">
-            {formatKg(avgDailyProductionKg)}
-          </span>
-          <span className="text-[10px] text-ink-500 mt-1 block">
-            Per working day
-          </span>
-        </div>
+        <BentoCard
+          label="Avg Daily Output"
+          value={formatKg(avgDailyProductionKg)}
+          caption="Per operating day"
+          linkText="View shift performance"
+          onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+        />
 
-        {/* KPI 6: Rejection Quantity & Rate */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-          <span className="text-[10px] font-bold text-ink-500 uppercase block tracking-wider">
-            Total Rejection
-          </span>
-          <span className="text-lg sm:text-xl font-black text-rose-800 mt-1 block">
-            {formatKg(totalRejectionKg)}
-          </span>
-          <span className="text-[10px] text-rose-700 font-bold mt-1 block">
-            {rejectionRatePct.toFixed(1)}% of volume
-          </span>
-        </div>
+        <BentoCard
+          label="Total Rejection"
+          value={formatKg(totalRejectionKg)}
+          caption={`${rejectionRatePct.toFixed(1)}% rejection rate`}
+          linkText="Audit exceptions"
+          onLinkClick={() => onNavigate && onNavigate('processing-log')}
+          variant={rejectionRatePct > 5 ? 'warning' : 'default'}
+        />
       </div>
 
       {/* Variance Alert Banner if any */}

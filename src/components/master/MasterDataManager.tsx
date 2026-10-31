@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { Modal } from '../common/Modal';
+import { PageHeader } from '../common/PageHeader';
 import { formatINR } from '../../utils/calculations';
 import {
-  Database,
   PlusCircle,
   Truck,
   Fish,
@@ -383,68 +383,59 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2">
-            <Database className="w-5 h-5 text-rose-600" />
-            Master Reference Data Repository
-          </h2>
-          <p className="text-xs text-ink-500">
-            Fully customizable master lists with referential integrity. Add, edit, or archive your actual suppliers, species, sizes, and harbours.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Master reference data repository"
+        subtitle="Fully customizable master lists with referential integrity. Add, edit, or archive your actual suppliers, species, sizes, and harbours."
+        breadcrumbs={['Settings', 'Master Reference Data']}
+        primaryAction={{
+          label: `Add ${tabs.find((t) => t.id === activeTab)?.label.replace(/s$/, '')}`,
+          onClick: handleOpenAdd,
+          icon: PlusCircle
+        }}
+        secondaryActions={
+          onNavigate
+            ? [
+                {
+                  label: 'Import from Excel',
+                  onClick: () => onNavigate('excel-import'),
+                  icon: FileSpreadsheet
+                }
+              ]
+            : undefined
+        }
+      />
 
-        <div className="flex items-center gap-2">
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('excel-import')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition shadow-2xs"
-              title="Import master reference data from Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-              <span>Import from Excel</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Add New {tabs.find((t) => t.id === activeTab)?.label.replace(/s$/, '')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                isActive
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-white text-ink-700 hover:bg-rose-50 border border-gray-200'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-ink-500'
+      {/* Pill Tab Switcher */}
+      <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-rose-700 text-white shadow-xs'
+                    : 'bg-gray-50 text-ink-700 hover:bg-rose-50 border border-gray-200'
                 }`}
               >
-                {tab.count}
-              </span>
-            </button>
-          );
-        })}
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-ink-700'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* MASTER DATA TABLES */}

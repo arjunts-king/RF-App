@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
+import { PageHeader } from '../common/PageHeader';
+import { StatusBadge } from '../common/StatusBadge';
 import { PortMaster } from '../../types';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -135,47 +137,29 @@ export const PortManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
-            <Anchor className="w-5 h-5 text-rose-600" />
-            Port Master Directory
-          </h2>
-          <p className="text-xs text-ink-500">
-            Dropdown reference master for Port of Loading (POL), Port of Discharge (POD), and Final Destination terminals.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-
-          {permissions.canManageSalesMasterData && (
-            <label className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-xs">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Import CSV</span>
-              <input type="file" accept=".csv" onChange={handleImportSample} className="hidden" />
-            </label>
-          )}
-
-          {permissions.canManageSalesMasterData && (
-            <button
-              onClick={handleOpenAdd}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Add Port</span>
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      {/* Figma Header Block */}
+      <PageHeader
+        title="Port master directory"
+        subtitle="Dropdown reference master for Port of Loading (POL), Port of Discharge (POD), and Final Destination terminals."
+        breadcrumbs={['Sales', 'Ports Directory']}
+        primaryAction={
+          permissions.canManageSalesMasterData
+            ? {
+                label: 'Add Port',
+                onClick: handleOpenAdd,
+                icon: PlusCircle
+              }
+            : undefined
+        }
+        secondaryActions={[
+          {
+            label: 'Export CSV',
+            onClick: handleExportCSV,
+            icon: Download
+          }
+        ]}
+      />
 
       {/* Search & Filter Strip */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
@@ -187,14 +171,14 @@ export const PortManager: React.FC = () => {
               placeholder="Search port code (UN/LOCODE), port name, country..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
             />
           </div>
 
           <select
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
+            className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Countries ({countries.length})</option>
             {countries.map((c) => (
@@ -205,13 +189,23 @@ export const PortManager: React.FC = () => {
           </select>
         </div>
 
-        <div className="text-xs text-ink-500 font-medium">
-          Showing <strong>{filteredPorts.length}</strong> of {ports.length} registered ports
+        <div className="flex items-center gap-2">
+          {permissions.canManageSalesMasterData && (
+            <label className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-xs">
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Import CSV</span>
+              <input type="file" accept=".csv" onChange={handleImportSample} className="hidden" />
+            </label>
+          )}
+
+          <span className="text-xs text-ink-500 font-medium">
+            Showing <strong>{filteredPorts.length}</strong> of {ports.length} registered ports
+          </span>
         </div>
       </div>
 
       {/* Ports Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -242,28 +236,22 @@ export const PortManager: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4 font-bold text-ink-900">{p.name}</td>
-                    <td className="py-3 px-4 text-ink-700 flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-ink-400" />
-                      <span>{p.country}</span>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5 text-ink-700">
+                        <Globe className="w-3.5 h-3.5 text-ink-400" />
+                        <span>{p.country}</span>
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       {permissions.canManageSalesMasterData ? (
                         <button
                           onClick={() => togglePortActive(p.id)}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${
-                            p.active
-                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                              : 'bg-gray-100 text-ink-500 hover:bg-gray-200'
-                          }`}
+                          className="transition"
                         >
-                          {p.active ? 'Active' : 'Inactive'}
+                          <StatusBadge status={p.active ? 'Active' : 'Inactive'} />
                         </button>
                       ) : (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          p.active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-ink-500'
-                        }`}>
-                          {p.active ? 'Active' : 'Inactive'}
-                        </span>
+                        <StatusBadge status={p.active ? 'Active' : 'Inactive'} />
                       )}
                     </td>
                     {permissions.canManageSalesMasterData && (
@@ -272,7 +260,7 @@ export const PortManager: React.FC = () => {
                           <button
                             onClick={() => handleOpenEdit(p)}
                             title="Edit Port"
-                            className="p-1.5 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -300,22 +288,21 @@ export const PortManager: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingId ? 'Edit Port Master' : 'Add New Port'}
-        subtitle="Specify official UN/LOCODE, port designation, and country"
+        title={editingId ? 'Edit Port Terminal Record' : 'Register New Port Terminal'}
+        subtitle="Maintain official maritime port locations and UN/LOCODE identifiers"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">
-              Port Code (UN/LOCODE) <span className="text-rose-600">*</span>
+              Port Code / UN LOCODE <span className="text-rose-600">*</span>
             </label>
             <input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="e.g. INCOK, USLAX, NLRTM"
+              placeholder="e.g. INCOK or USLAX"
               required
-              maxLength={10}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-mono font-bold outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold font-mono outline-none focus:border-rose-400"
             />
           </div>
 
@@ -327,9 +314,9 @@ export const PortManager: React.FC = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Cochin Port (Willingdon Island)"
+              placeholder="e.g. Cochin Port Terminal"
               required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
             />
           </div>
 
@@ -341,13 +328,13 @@ export const PortManager: React.FC = () => {
               type="text"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              placeholder="e.g. India, United States, Japan, Netherlands"
+              placeholder="e.g. India or United States"
               required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-400"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
@@ -357,28 +344,24 @@ export const PortManager: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition"
+              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
-              {editingId ? 'Save Changes' : 'Add Port'}
+              {editingId ? 'Save Changes' : 'Create Port'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Port Modal */}
+      {/* Delete Port Confirmation Modal */}
       <Modal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
-        title="Confirm Port Deletion"
-        subtitle="Permanent purge from master port registry"
+        title={`Delete Port — ${deleteTarget?.name}`}
+        subtitle="Permanent purge from maritime port directory"
       >
         <div className="space-y-4 text-xs">
-          <p className="text-ink-700 leading-relaxed">
-            Are you sure you want to permanently delete port <strong>{deleteTarget?.name}</strong> (
-            {deleteTarget?.code})?
-          </p>
-          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px]">
-            Notice: If this port is designated as Port of Loading, Port of Discharge, or Final Destination on any existing export invoice, deletion will be blocked to safeguard transaction records.
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently delete <strong>{deleteTarget?.name}</strong> ({deleteTarget?.code}). This will remove the port from subsequent sales invoice selections.
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -389,9 +372,9 @@ export const PortManager: React.FC = () => {
             </button>
             <button
               onClick={handleConfirmDelete}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition"
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
-              Confirm Permanent Delete
+              Permanently Delete
             </button>
           </div>
         </div>

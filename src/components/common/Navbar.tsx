@@ -403,10 +403,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
 
-            {/* Role Simulator Component */}
-            <div className="hidden lg:block">
-              <RoleSwitcher />
-            </div>
+            {/* Role Simulator Component: Visible only to Admin; non-admin users see a fixed read-only label */}
+            {currentUser.role === 'admin' ? (
+              <div className="hidden lg:block">
+                <RoleSwitcher />
+              </div>
+            ) : (
+              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-semibold text-ink-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="capitalize">{currentUser.role.replace('_', ' ')}</span>
+              </div>
+            )}
 
             {/* Offline sync button if pending records */}
             {offlineQueue.length > 0 && (

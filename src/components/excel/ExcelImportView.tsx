@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { PageHeader } from '../common/PageHeader';
 import {
   ImportEntityType,
   parseExcelWorkbook,
@@ -415,31 +416,22 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
-              <FileSpreadsheet className="w-5 h-5" />
-            </div>
-            <h2 className="text-base font-bold text-ink-900">Excel Data Import &amp; Migration</h2>
-          </div>
-          <p className="text-xs text-ink-500 mt-1">
-            Import existing seafood purchasing sheets, boat registers, or master lists directly from{' '}
-            <strong className="text-ink-700 font-semibold">.xlsx, .xls, or .csv</strong> files.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-stretch sm:self-auto">
-          <button
-            onClick={handleExportCurrent}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-ink-700 text-xs font-semibold rounded-xl border border-gray-200 transition"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export Current Data
-          </button>
-        </div>
-      </div>
+      {/* Figma Make Standard Page Header */}
+      <PageHeader
+        title="Excel bulk import & migration engine"
+        subtitle="Zero-dependency spreadsheet import for historical procurement entries, vendor ledgers, and master reference catalogs with intelligent column auto-mapping."
+        breadcrumbs={['Settings', 'Excel Migration']}
+        primaryAction={{
+          label: 'Backup data to Excel',
+          icon: Download,
+          onClick: handleExportCurrent
+        }}
+        secondaryAction={{
+          label: 'Sample template',
+          icon: FileSpreadsheet,
+          onClick: () => downloadExcelTemplate(selectedEntity, expenseTypes)
+        }}
+      />
 
       {/* Step 1: Select Category */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
