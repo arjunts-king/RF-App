@@ -299,10 +299,10 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Count Code or Name': '20/30',
       'Weight (Kg)': 5000,
       'Batch No': 'BATCH-OCT-01',
+      'Yield Weight (Kg)': 3640,
+      'Yield %': 52,
       'Batch Yield Weight (Kg)': 3640,
       'Batch Yield %': 52,
-      'Yield Weight (Kg)': '',
-      'Yield %': '',
       'Rate per Kg (INR)': 380,
       'No of Boxes': 150,
       'Damage Weight (Kg)': 10,
@@ -322,7 +322,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row1['Total Purchase Value (including landing costs)'] = 1900000 + totalExp1;
     row1['Amount Paid Now (INR)'] = 50000;
     row1['Invoice / Bill No'] = 'INV-2026-88';
-    row1['Remarks'] = 'Batch item 1 of 2: 5000 Kg shrimp (pooled batch yield 3640 Kg / 52% across 7000 Kg)';
+    row1['Remarks'] = 'Batch OCT-01 (5,000 Kg of 7,000 Kg total). When same Batch No is given, both expenses and yield are automatically apportioned by Kg.';
 
     const row2: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',
@@ -334,10 +334,10 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Count Code or Name': '31/40',
       'Weight (Kg)': 2000,
       'Batch No': 'BATCH-OCT-01',
-      'Batch Yield Weight (Kg)': 3640,
-      'Batch Yield %': 52,
       'Yield Weight (Kg)': '',
       'Yield %': '',
+      'Batch Yield Weight (Kg)': '',
+      'Batch Yield %': '',
       'Rate per Kg (INR)': 310,
       'No of Boxes': 60,
       'Damage Weight (Kg)': 0,
@@ -345,17 +345,15 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Fish Purchase Total (INR)': 620000
     };
 
-    let totalExp2 = 0;
-    activeExpenses.forEach((exp, idx) => {
-      const amt = sampleAmounts1[(idx + 2) % sampleAmounts1.length];
-      row2[`${exp.name} (INR)`] = amt;
-      totalExp2 += amt;
+    // Shared landing expenses entered on the batch automatically apportion; row 2 can be left 0
+    activeExpenses.forEach((exp) => {
+      row2[`${exp.name} (INR)`] = 0;
     });
 
-    row2['Total Purchase Value (including landing costs)'] = 620000 + totalExp2;
+    row2['Total Purchase Value (including landing costs)'] = 620000;
     row2['Amount Paid Now (INR)'] = 20000;
     row2['Invoice / Bill No'] = 'INV-2026-88';
-    row2['Remarks'] = 'Batch item 2 of 2: 2000 Kg shrimp (apportioned 1040 Kg yield at 52%)';
+    row2['Remarks'] = 'Batch OCT-01 (2,000 Kg of 7,000 Kg total). Same Batch No: automatically receives 2000/7000 (28.57%) of pooled expenses & 1,040 Kg yield.';
 
     const row3: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '19-10-2026',
@@ -514,7 +512,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     }
     const activeExpenses = baseExpensesMulti;
 
-    const purchasesRow: Record<string, any> = {
+    const purchasesRow1: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',
       'Supplier Name': 'Kochi Sea Harvesters',
       'Location Name': 'Munambam Harbour',
@@ -522,34 +520,59 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Grade Name': 'Grade A',
       'Size Name': 'Medium',
       'Count Name': '21/25',
-      'Weight (Kg)': 5000,
+      'Weight (Kg)': 3000,
       'Batch No': 'BATCH-01',
-      'Batch Yield Weight (Kg)': 2400,
-      'Batch Yield %': 48,
-      'Yield Weight (Kg)': '',
-      'Yield %': '',
+      'Yield Weight (Kg)': 2600,
+      'Yield %': 52,
       'Rate per Kg': 380,
       'No of Boxes': 15,
       'Damage Weight': 10,
       'Damage Rate': 120,
-      'Fish Purchase Total (INR)': 172390
+      'Fish Purchase Total (INR)': 1138800
     };
 
-    let totalExpMulti = 0;
+    let totalExpMulti1 = 0;
     const sampleAmountsMulti = [1200, 2500, 1500, 800, 500];
     activeExpenses.forEach((exp, idx) => {
       const amt = sampleAmountsMulti[idx % sampleAmountsMulti.length];
-      purchasesRow[`${exp.name} (INR)`] = amt;
-      totalExpMulti += amt;
+      purchasesRow1[`${exp.name} (INR)`] = amt;
+      totalExpMulti1 += amt;
     });
 
-    purchasesRow['Total Purchase Value (including landing costs)'] = 172390 + totalExpMulti;
-    purchasesRow['Amount Paid'] = 50000;
-    purchasesRow['Invoice No'] = 'INV-2026-88';
-    purchasesRow['Batch No'] = 'BATCH-01';
-    purchasesRow['Remarks'] = 'Prime shrimp landing';
+    purchasesRow1['Total Purchase Value (including landing costs)'] = 1138800 + totalExpMulti1;
+    purchasesRow1['Amount Paid'] = 50000;
+    purchasesRow1['Invoice No'] = 'INV-2026-88';
+    purchasesRow1['Remarks'] = 'Batch 01 (3000 Kg of 5000 Kg). Both landing expenses and yield automatically apportioned by Kg across BATCH-01.';
 
-    const wsPur = XLSX.utils.json_to_sheet([purchasesRow]);
+    const purchasesRow2: Record<string, any> = {
+      'Purchase Date (DD-MM-YYYY)': '18-10-2026',
+      'Supplier Name': 'Kochi Sea Harvesters',
+      'Location Name': 'Munambam Harbour',
+      'Species Name': 'Vannamei Shrimp',
+      'Grade Name': 'Grade B',
+      'Size Name': 'Small',
+      'Count Name': '31/40',
+      'Weight (Kg)': 2000,
+      'Batch No': 'BATCH-01',
+      'Yield Weight (Kg)': '',
+      'Yield %': '',
+      'Rate per Kg': 320,
+      'No of Boxes': 10,
+      'Damage Weight': 0,
+      'Damage Rate': 0,
+      'Fish Purchase Total (INR)': 640000
+    };
+
+    activeExpenses.forEach((exp) => {
+      purchasesRow2[`${exp.name} (INR)`] = 0;
+    });
+
+    purchasesRow2['Total Purchase Value (including landing costs)'] = 640000;
+    purchasesRow2['Amount Paid'] = 20000;
+    purchasesRow2['Invoice No'] = 'INV-2026-88';
+    purchasesRow2['Remarks'] = 'Batch 01 (2000 Kg of 5000 Kg). Same Batch No: automatically receives 40% of pooled expenses and 1,040 Kg yield.';
+
+    const wsPur = XLSX.utils.json_to_sheet([purchasesRow1, purchasesRow2]);
     XLSX.utils.book_append_sheet(wb, wsPur, 'Purchases');
 
     XLSX.writeFile(wb, 'Complete_Seafood_System_Template.xlsx');

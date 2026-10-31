@@ -122,13 +122,13 @@ export const BatchExpenseView: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-liquid-up">
       {/* Header Block */}
       <PageHeader
-        title="Shared batch expenses & yield allocation engine"
-        subtitle="Proportionally divides shared landing expenses (ice, transport, porters) and whole-batch finished meat yield across batched lots by intake weight."
+        title="Unified batch expenses & yield apportionment engine"
+        subtitle="When lots share the same Batch No, both landing expenses (ice, freight, dalali) and whole-batch finished meat yield are pooled and apportioned proportionally based on each item's intake weight (Kg)."
         breadcrumbs={['Purchase', 'Batch Expenses & Yield Engine']}
         primaryAction={
           selectedBatch
             ? {
-                label: 'Recalculate Batch Split',
+                label: 'Apportion Expenses & Yield by Kg',
                 onClick: () => recalculateBatch(selectedBatch),
                 icon: RefreshCw
               }

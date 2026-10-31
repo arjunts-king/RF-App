@@ -255,7 +255,20 @@ export function allocateBatchYield(
         // If single row had yield entered on multi-item batch, treat as entire batch total
         resolvedBatchYieldKg = rowsWithYield[0].yieldWeightKg;
       } else if (rowsWithYield.length > 1) {
-        resolvedBatchYieldKg = rowsWithYield.reduce((sum, p) => sum + (p.yieldWeightKg || 0), 0);
+        const allSame = rowsWithYield.every((p) => p.yieldWeightKg === rowsWithYield[0].yieldWeightKg);
+        if (allSame && rowsWithYield[0].yieldWeightKg && rowsWithYield[0].yieldWeightKg <= totalBatchWeight) {
+          // User entered the batch total yield on each row
+          resolvedBatchYieldKg = rowsWithYield[0].yieldWeightKg;
+        } else {
+          // Individual yields were entered on rows, pool them together as batch total
+          resolvedBatchYieldKg = rowsWithYield.reduce((sum, p) => sum + (p.yieldWeightKg || 0), 0);
+        }
+      } else {
+        // Check if any row has yieldPct
+        const rowWithPct = activeRows.find((p) => p.yieldPct && p.yieldPct > 0);
+        if (rowWithPct?.yieldPct) {
+          resolvedBatchYieldPct = rowWithPct.yieldPct;
+        }
       }
     }
   }
@@ -308,6 +321,52 @@ export function allocateBatchYield(
   });
 
   return { updatedPurchases, warnings };
+}
+
+/**
+ * Unified batch apportionment for BOTH landing expenses AND finished meat yield based on raw weight (Kg).
+ * When items share the same Batch No, both expenses and yield are pooled and apportioned by Kg.
+ */
+export function allocateBatchCombined(
+  purchasesInBatch: Purchase[],
+  explicitBatchYieldWeightKg?: number,
+  explicitBatchYieldPct?: number
+): { updatedPurchases: Purchase[]; warnings: string[] } {
+  const activeRows = purchasesInBatch.filter((p) => !p.isVoided);
+  if (activeRows.length === 0) {
+    return { updatedPurchases: purchasesInBatch, warnings: [] };
+  }
+
+  // 1. Apportion expenses proportionally by Kg
+  const { updatedPurchases: expenseUpdated, warnings: expWarnings } = allocateBatchExpenses(purchasesInBatch);
+
+  // 2. Determine if yield is entered for this batch
+  const hasYield =
+    (explicitBatchYieldWeightKg !== undefined && explicitBatchYieldWeightKg > 0) ||
+    (explicitBatchYieldPct !== undefined && explicitBatchYieldPct > 0) ||
+    expenseUpdated.some(
+      (p) =>
+        (p.batchYieldWeightKg && p.batchYieldWeightKg > 0) ||
+        (p.batchYieldPct && p.batchYieldPct > 0) ||
+        (p.yieldWeightKg && p.yieldWeightKg > 0) ||
+        (p.yieldPct && p.yieldPct > 0)
+    );
+
+  let finalPurchases = expenseUpdated;
+  const yieldWarnings: string[] = [];
+
+  if (hasYield) {
+    const yieldResult = allocateBatchYield(expenseUpdated, explicitBatchYieldWeightKg, explicitBatchYieldPct);
+    if (yieldResult.updatedPurchases) {
+      finalPurchases = yieldResult.updatedPurchases;
+    }
+    yieldWarnings.push(...yieldResult.warnings);
+  }
+
+  return {
+    updatedPurchases: finalPurchases,
+    warnings: [...expWarnings, ...yieldWarnings]
+  };
 }
 
 /**

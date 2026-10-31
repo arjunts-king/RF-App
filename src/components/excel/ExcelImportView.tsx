@@ -819,7 +819,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
               <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, and native Excel date cells are all recognized automatically.
             </li>
             <li>
-              <strong>Batch Yield Tracking:</strong> When purchasing goods in batches with whole-batch yield, specify <code>Batch No</code> and enter either <code>Batch Yield Weight (Kg)</code> or <code>Batch Yield %</code>. The system automatically apportions finished yield across every lot in that batch proportional to raw intake weight.
+              <strong>Unified Batch Apportionment for Expenses &amp; Yield:</strong> When multiple purchase rows share the same <code>Batch No</code>, both landing expenses (ice, vehicle rent, porters, dalali) and finished yield (meat output weight / yield %) are automatically pooled and apportioned proportionally based on each item&apos;s intake weight (Kg). You can enter batch expenses and yield on any row of that batch in Excel, and the system divides them accurately by Kg across the entire batch pool.
             </li>
             <li>
               Need the exact layout? Click <strong>"Download Sample Excel Template"</strong> above to

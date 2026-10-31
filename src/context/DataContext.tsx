@@ -46,7 +46,7 @@ import {
 } from '../data/initialData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { computePurchaseFields, allocateBatchExpenses, allocateBatchYield, getIndianFinancialYear } from '../utils/calculations';
+import { computePurchaseFields, allocateBatchCombined, getIndianFinancialYear } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelImport';
 
 interface DataContextType {
@@ -1074,12 +1074,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let allPurchases = [...purchases, newPurchase];
 
     if (newPurchase.batchNo) {
-      const batchRows = allPurchases.filter((p) => p.batchNo === newPurchase.batchNo);
-      const { updatedPurchases, warnings: batchWarnings } = allocateBatchExpenses(batchRows);
-      warnings.push(...batchWarnings);
+      const batchRows = allPurchases.filter((p) => p.batchNo === newPurchase.batchNo && !p.isVoided);
+      if (batchRows.length > 1) {
+        const { updatedPurchases, warnings: batchWarnings } = allocateBatchCombined(batchRows);
+        warnings.push(...batchWarnings);
 
-      const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
-      allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+        const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      }
     }
 
     setPurchases(allPurchases);
@@ -1141,10 +1143,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const batchToCheck = updatedPurchase.batchNo || existing.batchNo;
     if (batchToCheck) {
-      const batchRows = allPurchases.filter((p) => p.batchNo === batchToCheck);
-      const { updatedPurchases } = allocateBatchExpenses(batchRows);
-      const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
-      allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      const batchRows = allPurchases.filter((p) => p.batchNo === batchToCheck && !p.isVoided);
+      if (batchRows.length > 1) {
+        const { updatedPurchases } = allocateBatchCombined(batchRows);
+        const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      }
     }
 
     setPurchases(allPurchases);
@@ -1174,10 +1178,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let allPurchases = purchases.map((p) => (p.id === id ? voidedPurchase : p));
 
     if (existing.batchNo) {
-      const remainingBatchRows = allPurchases.filter((p) => p.batchNo === existing.batchNo);
-      const { updatedPurchases } = allocateBatchExpenses(remainingBatchRows);
-      const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
-      allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      const remainingBatchRows = allPurchases.filter((p) => p.batchNo === existing.batchNo && !p.isVoided);
+      if (remainingBatchRows.length > 0) {
+        const { updatedPurchases } = allocateBatchCombined(remainingBatchRows);
+        const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      }
     }
 
     setPurchases(allPurchases);
@@ -1197,10 +1203,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let allPurchases = purchases.filter((p) => p.id !== id);
 
     if (existing.batchNo) {
-      const remainingBatchRows = allPurchases.filter((p) => p.batchNo === existing.batchNo);
-      const { updatedPurchases } = allocateBatchExpenses(remainingBatchRows);
-      const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
-      allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      const remainingBatchRows = allPurchases.filter((p) => p.batchNo === existing.batchNo && !p.isVoided);
+      if (remainingBatchRows.length > 0) {
+        const { updatedPurchases } = allocateBatchCombined(remainingBatchRows);
+        const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p));
+      }
     }
 
     setPurchases(allPurchases);
@@ -1474,30 +1482,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const batchRows = purchases.filter((p) => p.batchNo === batchNo && !p.isVoided);
     if (batchRows.length === 0) return;
 
-    // 1. Recalculate expenses
-    const { updatedPurchases: expenseUpdated, warnings: expWarnings } = allocateBatchExpenses(batchRows);
-
-    // 2. If the batch has batch yield allocated or entered, also maintain/recalculate batch yield
-    const hasBatchYield = expenseUpdated.some(
-      (p) => (p.batchYieldWeightKg && p.batchYieldWeightKg > 0) || (p.batchYieldPct && p.batchYieldPct > 0)
-    );
-    let finalPurchases = expenseUpdated;
-    let yieldWarnings: string[] = [];
-
-    if (hasBatchYield) {
-      const res = allocateBatchYield(expenseUpdated);
-      finalPurchases = res.updatedPurchases;
-      yieldWarnings = res.warnings;
-    }
-
-    const batchMap = new Map(finalPurchases.map((p) => [p.id, p]));
+    const { updatedPurchases, warnings } = allocateBatchCombined(batchRows);
+    const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
     setPurchases((prev) => prev.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p)));
 
-    const allWarnings = [...expWarnings, ...yieldWarnings];
-    if (allWarnings.length > 0) {
-      allWarnings.forEach((w) => showToast(w, 'warning'));
+    if (warnings.length > 0) {
+      warnings.forEach((w) => showToast(w, 'warning'));
     } else {
-      showToast(`Batch ${batchNo} expenses & yield pool recalculated.`, 'success');
+      showToast(`Batch ${batchNo} expenses & yield pool apportioned by Kg.`, 'success');
     }
   };
 
@@ -1512,11 +1504,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: `No active lots found for batch ${batchNo}.` };
     }
 
-    const { updatedPurchases, warnings } = allocateBatchYield(batchRows, batchYieldWeightKg, batchYieldPct);
+    const { updatedPurchases, warnings } = allocateBatchCombined(batchRows, batchYieldWeightKg, batchYieldPct);
     const batchMap = new Map(updatedPurchases.map((p) => [p.id, p]));
     setPurchases((prev) => prev.map((p) => (batchMap.has(p.id) ? batchMap.get(p.id)! : p)));
 
-    logAudit('EDIT', 'Purchase', `Allocated batch yield for ${batchNo}`, {
+    logAudit('EDIT', 'Purchase', `Allocated batch expenses & yield for ${batchNo}`, {
       newValues: {
         batchNo,
         batchYieldWeightKg: updatedPurchases[0]?.batchYieldWeightKg,
@@ -1529,11 +1521,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       warnings.forEach((w) => showToast(w, 'warning'));
     } else {
       showToast(
-        `Batch ${batchNo} yield (${updatedPurchases[0]?.batchYieldWeightKg} Kg / ${updatedPurchases[0]?.batchYieldPct}%) allocated across ${updatedPurchases.length} lots.`,
+        `Batch ${batchNo} expenses & yield (${updatedPurchases[0]?.batchYieldWeightKg} Kg / ${updatedPurchases[0]?.batchYieldPct}%) apportioned by Kg across ${updatedPurchases.length} lots.`,
         'success'
       );
     }
-    return { success: true, message: `Batch ${batchNo} yield allocated successfully.` };
+    return { success: true, message: `Batch ${batchNo} expenses & yield apportioned by Kg.` };
   };
 
   const clearBatchYieldContext = (batchNo: string): { success: boolean; message: string } => {
@@ -3365,7 +3357,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       newPurchases.push(newPurchase);
     });
 
-    // Post-process Batch Yield allocation for multi-lot batches in newPurchases
+    // Post-process Unified Batch Apportionment: If rows share the same batchNo, apportion BOTH expense and yield by Kg
     const batchGroups = new Map<string, Purchase[]>();
     newPurchases.forEach((p) => {
       if (p.batchNo) {
@@ -3375,21 +3367,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
 
-    let batchesWithYieldAllocated = 0;
+    let batchesApportioned = 0;
     batchGroups.forEach((batchItems) => {
-      // Find if any item in this batch specified batch yield
-      const targetYieldKg = batchItems.find((p) => p.batchYieldWeightKg && p.batchYieldWeightKg > 0)?.batchYieldWeightKg;
-      const targetYieldPct = batchItems.find((p) => p.batchYieldPct && p.batchYieldPct > 0)?.batchYieldPct;
+      // If there are multiple items in this batch, apportion both expenses and yield by Kg
+      if (batchItems.length > 1) {
+        const targetYieldKg = batchItems.find((p) => p.batchYieldWeightKg && p.batchYieldWeightKg > 0)?.batchYieldWeightKg;
+        const targetYieldPct = batchItems.find((p) => p.batchYieldPct && p.batchYieldPct > 0)?.batchYieldPct;
 
-      if (targetYieldKg !== undefined || targetYieldPct !== undefined) {
-        const { updatedPurchases: allocatedItems } = allocateBatchYield(batchItems, targetYieldKg, targetYieldPct);
+        const { updatedPurchases: allocatedItems } = allocateBatchCombined(batchItems, targetYieldKg, targetYieldPct);
         const allocatedMap = new Map(allocatedItems.map((p) => [p.id, p]));
         for (let i = 0; i < newPurchases.length; i++) {
           if (allocatedMap.has(newPurchases[i].id)) {
             newPurchases[i] = allocatedMap.get(newPurchases[i].id)!;
           }
         }
-        batchesWithYieldAllocated++;
+        batchesApportioned++;
       }
     });
 
@@ -3409,12 +3401,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           createdSuppliers,
           createdSpecies,
           createdLocations,
-          batchesWithYieldAllocated
+          batchesApportioned
         }
       });
       showToast(
         `Successfully imported ${newPurchases.length} purchases from Excel${
-          batchesWithYieldAllocated > 0 ? ` (${batchesWithYieldAllocated} batch yield pools allocated)` : ''
+          batchesApportioned > 0 ? ` (${batchesApportioned} batch pools apportioned by Kg for expenses & yield)` : ''
         }.`,
         'success'
       );
