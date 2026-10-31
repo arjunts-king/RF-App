@@ -337,6 +337,38 @@ export const OperationalReportsHub: React.FC = () => {
     };
   }).filter((s) => s.lotsCount > 0).sort((a, b) => b.yieldPct - a.yieldPct);
 
+  // Batch-wise yield performance
+  const batchYieldMap = new Map<string, typeof yieldRecordedPurchases>();
+  yieldRecordedPurchases.forEach((p) => {
+    if (p.batchNo) {
+      const cur = batchYieldMap.get(p.batchNo) || [];
+      cur.push(p);
+      batchYieldMap.set(p.batchNo, cur);
+    }
+  });
+
+  const batchYieldAnalysis = Array.from(batchYieldMap.entries()).map(([batchNo, list]) => {
+    const rawWeight = list.reduce((s, p) => s + p.weightKg, 0);
+    const yieldWeight = list.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
+    const cost = list.reduce((s, p) => s + p.totalCost, 0);
+    const yieldPct = rawWeight > 0 ? (yieldWeight / rawWeight) * 100 : 0;
+    const lossKg = Math.max(0, rawWeight - yieldWeight);
+    const finishedCost = yieldWeight > 0 ? cost / yieldWeight : 0;
+    const isAllocated = list.some((p) => p.isBatchYieldAllocated);
+
+    return {
+      batchNo,
+      lotsCount: list.length,
+      rawWeight,
+      yieldWeight,
+      yieldPct,
+      lossKg,
+      cost,
+      finishedCost,
+      isAllocated
+    };
+  }).sort((a, b) => b.rawWeight - a.rawWeight);
+
   // Report Tabs Definition
   const tabs: { id: ReportTab; label: string; icon: any }[] = [
     { id: 'daily', label: '1. Daily Purchase', icon: Calendar },
@@ -1292,7 +1324,74 @@ export const OperationalReportsHub: React.FC = () => {
             </div>
           </div>
 
-          {/* SECTION 3: INDIVIDUAL LOT YIELD AUDIT REGISTER */}
+          {/* SECTION 3: BATCH PROCESSING YIELD POOLS SUMMARY */}
+          {batchYieldAnalysis.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+                  Batch Processing Yield Pools Summary
+                </h4>
+                <span className="text-[11px] text-gray-500">
+                  {batchYieldAnalysis.length} multi-lot procurement batch pool(s)
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-rose-50/40 text-[11px] font-bold text-ink-500 uppercase border-b border-rose-100">
+                      <th className="py-2.5 px-3">Batch Identifier</th>
+                      <th className="py-2.5 px-3 text-center">Lots Pooled</th>
+                      <th className="py-2.5 px-3 text-right">Intake Weight (Kg)</th>
+                      <th className="py-2.5 px-3 text-right">Finished Yield (Kg)</th>
+                      <th className="py-2.5 px-3 text-right">Batch Yield %</th>
+                      <th className="py-2.5 px-3 text-right">Processing Loss (Kg)</th>
+                      <th className="py-2.5 px-3 text-right">Total Landed Cost</th>
+                      <th className="py-2.5 px-3 text-right">Finished Meat Cost / Kg</th>
+                      <th className="py-2.5 px-3 text-center">Batch Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-medium">
+                    {batchYieldAnalysis.map((b) => (
+                      <tr key={b.batchNo} className="hover:bg-rose-50/30">
+                        <td className="py-2.5 px-3 font-bold text-rose-700 flex items-center gap-1.5">
+                          Batch {b.batchNo}
+                          {b.isAllocated && (
+                            <span className="px-1.5 py-0.2 rounded text-[8px] bg-emerald-100 text-emerald-800 font-extrabold uppercase">
+                              Allocated
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center font-semibold">{b.lotsCount}</td>
+                        <td className="py-2.5 px-3 text-right font-medium">{formatKg(b.rawWeight)}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-emerald-800">{formatKg(b.yieldWeight)}</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-ink-900">{b.yieldPct.toFixed(2)}%</td>
+                        <td className="py-2.5 px-3 text-right text-rose-700">{formatKg(b.lossKg)}</td>
+                        <td className="py-2.5 px-3 text-right text-gray-700">{formatINR(b.cost)}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-emerald-900">₹{b.finishedCost.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              b.yieldPct >= 50
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : b.yieldPct >= 40
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300'
+                            }`}
+                          >
+                            {b.yieldPct >= 50 ? 'Optimal Yield' : b.yieldPct >= 40 ? 'Normal Yield' : 'High Waste'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 4: INDIVIDUAL LOT YIELD AUDIT REGISTER */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">
@@ -1308,6 +1407,7 @@ export const OperationalReportsHub: React.FC = () => {
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
                     <th className="py-2.5 px-3">Purchase ID</th>
+                    <th className="py-2.5 px-3">Batch No</th>
                     <th className="py-2.5 px-3">Date</th>
                     <th className="py-2.5 px-3">Supplier</th>
                     <th className="py-2.5 px-3">Species &amp; Grade</th>
@@ -1322,7 +1422,7 @@ export const OperationalReportsHub: React.FC = () => {
                 <tbody className="divide-y divide-gray-100 font-medium">
                   {yieldRecordedPurchases.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-ink-500">
+                      <td colSpan={11} className="py-10 text-center text-ink-500">
                         <div className="max-w-md mx-auto space-y-2">
                           <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
                           <div className="font-bold text-ink-800">No Yield Data Recorded Yet</div>
@@ -1341,6 +1441,20 @@ export const OperationalReportsHub: React.FC = () => {
                       return (
                         <tr key={p.id} className="hover:bg-rose-50/30">
                           <td className="py-2.5 px-3 font-bold text-rose-700 whitespace-nowrap">{p.purchaseId}</td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            {p.batchNo ? (
+                              <span className="font-semibold text-ink-800 flex items-center gap-1">
+                                {p.batchNo}
+                                {p.isBatchYieldAllocated && (
+                                  <span className="px-1.5 py-0.2 rounded text-[8px] bg-emerald-100 text-emerald-800 font-extrabold uppercase">
+                                    Batch
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300 font-light">—</span>
+                            )}
+                          </td>
                           <td className="py-2.5 px-3 whitespace-nowrap text-gray-700">{p.purchaseDate}</td>
                           <td className="py-2.5 px-3 font-semibold text-ink-900">{supplierMap.get(p.supplierId)?.name || 'Unknown'}</td>
                           <td className="py-2.5 px-3">

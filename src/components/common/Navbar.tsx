@@ -91,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         { id: 'purchase-entry', label: 'Harbour Purchase Entry', icon: PlusCircle, desc: 'Single-action mobile landing form', show: permissions.canCreateEditPurchases },
         { id: 'purchases', label: 'Purchase Transactions', icon: Receipt, desc: 'Sortable register, CSV & Tally XML' },
         { id: 'purchase-returns', label: 'Purchase Returns (Debit Notes)', icon: RotateCcw, desc: 'Rejection deductions & debit notes' },
-        { id: 'batch-expenses', label: 'Shared Batch Expense Pools', icon: Layers, desc: 'Proportional ice & dalali cost distribution' }
+        { id: 'batch-expenses', label: 'Batch Expenses & Yield Engine', icon: Layers, desc: 'Proportional landing expenses & whole-batch yield distribution' }
       ]
     },
     {

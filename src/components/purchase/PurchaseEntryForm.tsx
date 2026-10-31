@@ -622,6 +622,15 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                   Note: Yield weight ({formatKg(numYield)}) exceeds raw purchase weight ({formatKg(numWeight)}). This can happen with glazing or water uptake, but please verify if unintentional.
                 </p>
               )}
+
+              {batchNo.trim() && (
+                <div className="text-[11px] text-emerald-800 bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Batch Procurement Active ({batchNo.trim()}):</strong> If finished yield is measured for the whole batch pool rather than per lot, you can leave this lot yield blank and allocate the whole-batch yield in the <strong>Batch Expenses &amp; Yield Engine</strong> or via the Excel Import Template.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

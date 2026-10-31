@@ -298,8 +298,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Medium',
       'Count Code or Name': '20/30',
       'Weight (Kg)': 5000,
-      'Yield Weight (Kg)': 2400,
-      'Yield %': 48,
+      'Batch No': 'BATCH-OCT-01',
+      'Batch Yield Weight (Kg)': 3640,
+      'Batch Yield %': 52,
+      'Yield Weight (Kg)': '',
+      'Yield %': '',
       'Rate per Kg (INR)': 380,
       'No of Boxes': 150,
       'Damage Weight (Kg)': 10,
@@ -316,13 +319,45 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       totalExp1 += amt;
     });
 
-    row1['Total Purchase Value (including landing costs)'] = 172390 + totalExp1;
+    row1['Total Purchase Value (including landing costs)'] = 1900000 + totalExp1;
     row1['Amount Paid Now (INR)'] = 50000;
     row1['Invoice / Bill No'] = 'INV-2026-88';
-    row1['Batch No'] = 'BATCH-OCT-01';
-    row1['Remarks'] = 'Prime morning landing';
+    row1['Remarks'] = 'Batch item 1 of 2: 5000 Kg shrimp (pooled batch yield 3640 Kg / 52% across 7000 Kg)';
 
     const row2: Record<string, any> = {
+      'Purchase Date (DD-MM-YYYY)': '18-10-2026',
+      'Supplier Code or Name': 'Kochi Sea Harvesters',
+      'Location Code or Name': 'Munambam Harbour',
+      'Species Code or Name': 'Vannamei Shrimp',
+      'Grade Code or Name': 'Grade B',
+      'Size Code or Name': 'Small',
+      'Count Code or Name': '31/40',
+      'Weight (Kg)': 2000,
+      'Batch No': 'BATCH-OCT-01',
+      'Batch Yield Weight (Kg)': 3640,
+      'Batch Yield %': 52,
+      'Yield Weight (Kg)': '',
+      'Yield %': '',
+      'Rate per Kg (INR)': 310,
+      'No of Boxes': 60,
+      'Damage Weight (Kg)': 0,
+      'Damage Rate per Kg': 0,
+      'Fish Purchase Total (INR)': 620000
+    };
+
+    let totalExp2 = 0;
+    activeExpenses.forEach((exp, idx) => {
+      const amt = sampleAmounts1[(idx + 2) % sampleAmounts1.length];
+      row2[`${exp.name} (INR)`] = amt;
+      totalExp2 += amt;
+    });
+
+    row2['Total Purchase Value (including landing costs)'] = 620000 + totalExp2;
+    row2['Amount Paid Now (INR)'] = 20000;
+    row2['Invoice / Bill No'] = 'INV-2026-88';
+    row2['Remarks'] = 'Batch item 2 of 2: 2000 Kg shrimp (apportioned 1040 Kg yield at 52%)';
+
+    const row3: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '19-10-2026',
       'Supplier Code or Name': 'Malabar Coast Fisheries',
       'Location Code or Name': 'Beypore Port Jetty',
@@ -331,6 +366,9 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Large',
       'Count Code or Name': '',
       'Weight (Kg)': 820,
+      'Batch No': '',
+      'Batch Yield Weight (Kg)': '',
+      'Batch Yield %': '',
       'Yield Weight (Kg)': 533,
       'Yield %': 65,
       'Rate per Kg (INR)': 260,
@@ -340,21 +378,20 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Fish Purchase Total (INR)': 213200
     };
 
-    let totalExp2 = 0;
+    let totalExp3 = 0;
     const sampleAmounts2 = [2000, 3000, 2000, 1000, 450, 750, 300];
     activeExpenses.forEach((exp, idx) => {
       const amt = sampleAmounts2[idx % sampleAmounts2.length];
-      row2[`${exp.name} (INR)`] = amt;
-      totalExp2 += amt;
+      row3[`${exp.name} (INR)`] = amt;
+      totalExp3 += amt;
     });
 
-    row2['Total Purchase Value (including landing costs)'] = 213200 + totalExp2;
-    row2['Amount Paid Now (INR)'] = 0;
-    row2['Invoice / Bill No'] = 'BILL-904';
-    row2['Batch No'] = '';
-    row2['Remarks'] = 'Export grade tuna';
+    row3['Total Purchase Value (including landing costs)'] = 213200 + totalExp3;
+    row3['Amount Paid Now (INR)'] = 0;
+    row3['Invoice / Bill No'] = 'BILL-904';
+    row3['Remarks'] = 'Individual lot yield (533 Kg from 820 Kg raw, 65% recovery)';
 
-    const row3: Record<string, any> = {
+    const row4: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '20-10-2026',
       'Supplier Code or Name': 'Kochi Sea Harvesters',
       'Location Code or Name': 'Munambam Harbour',
@@ -363,6 +400,9 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': '6/10 & 10/20',
       'Count Code or Name': '',
       'Weight (Kg)': 2000,
+      'Batch No': '',
+      'Batch Yield Weight (Kg)': '',
+      'Batch Yield %': '',
       'Yield Weight (Kg)': 1020,
       'Yield %': 51,
       'Rate per Kg (INR)': 310,
@@ -372,20 +412,19 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Fish Purchase Total (INR)': 620000
     };
 
-    let totalExp3 = 0;
+    let totalExp4 = 0;
     activeExpenses.forEach((exp, idx) => {
       const amt = sampleAmounts1[idx % sampleAmounts1.length];
-      row3[`${exp.name} (INR)`] = amt;
-      totalExp3 += amt;
+      row4[`${exp.name} (INR)`] = amt;
+      totalExp4 += amt;
     });
 
-    row3['Total Purchase Value (including landing costs)'] = 620000 + totalExp3;
-    row3['Amount Paid Now (INR)'] = 200000;
-    row3['Invoice / Bill No'] = 'INV-MIX-2026';
-    row3['Batch No'] = '';
-    row3['Remarks'] = '2000 kg total of both 6/10 and 10/20 size (dual size combined catch without distinction)';
+    row4['Total Purchase Value (including landing costs)'] = 620000 + totalExp4;
+    row4['Amount Paid Now (INR)'] = 200000;
+    row4['Invoice / Bill No'] = 'INV-MIX-2026';
+    row4['Remarks'] = '2000 kg total of both 6/10 and 10/20 size (dual size combined catch without distinction)';
 
-    const ws = XLSX.utils.json_to_sheet([row1, row2, row3]);
+    const ws = XLSX.utils.json_to_sheet([row1, row2, row3, row4]);
     XLSX.utils.book_append_sheet(wb, ws, 'Purchases');
     XLSX.writeFile(wb, 'Purchase_Transactions_Template.xlsx');
     return;
@@ -484,8 +523,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Name': 'Medium',
       'Count Name': '21/25',
       'Weight (Kg)': 5000,
-      'Yield Weight (Kg)': 2400,
-      'Yield %': 48,
+      'Batch No': 'BATCH-01',
+      'Batch Yield Weight (Kg)': 2400,
+      'Batch Yield %': 48,
+      'Yield Weight (Kg)': '',
+      'Yield %': '',
       'Rate per Kg': 380,
       'No of Boxes': 15,
       'Damage Weight': 10,

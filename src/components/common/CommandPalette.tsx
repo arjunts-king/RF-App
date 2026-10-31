@@ -184,8 +184,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'pur-batch',
-      title: 'Shared Batch Expense Allocation Pools',
-      subtitle: 'Distribute joint ice and dalali costs across batch items',
+      title: 'Batch Expenses & Yield Allocation Engine',
+      subtitle: 'Distribute joint landing costs and whole-batch finished meat yield across species',
       module: 'purchase',
       tab: 'batch-expenses',
       icon: Layers,

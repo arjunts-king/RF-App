@@ -385,6 +385,9 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         'Payment Status': p.paymentStatus,
         'Invoice No': p.invoiceNo,
         'Batch No': p.batchNo || '',
+        'Batch Yield Weight (Kg)': p.batchYieldWeightKg ?? '',
+        'Batch Yield %': p.batchYieldPct ? `${p.batchYieldPct}%` : '',
+        'Batch Yield Allocated': p.isBatchYieldAllocated ? 'Yes' : 'No',
         'Remarks': p.remarks
       };
     });
@@ -814,6 +817,9 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
             <li>
               Date format: <code>DD-MM-YYYY</code> (e.g. <code>18-10-2026</code>) is standard;{' '}
               <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, and native Excel date cells are all recognized automatically.
+            </li>
+            <li>
+              <strong>Batch Yield Tracking:</strong> When purchasing goods in batches with whole-batch yield, specify <code>Batch No</code> and enter either <code>Batch Yield Weight (Kg)</code> or <code>Batch Yield %</code>. The system automatically apportions finished yield across every lot in that batch proportional to raw intake weight.
             </li>
             <li>
               Need the exact layout? Click <strong>"Download Sample Excel Template"</strong> above to

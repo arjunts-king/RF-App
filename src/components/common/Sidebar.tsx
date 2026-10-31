@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         },
         { id: 'purchases', label: 'Purchase Transactions', icon: Receipt, show: true },
         { id: 'purchase-returns', label: 'Purchase Returns (Debit Notes)', icon: RotateCcw, show: true },
-        { id: 'batch-expenses', label: 'Shared Batch Expense Pools', icon: Layers, show: true }
+        { id: 'batch-expenses', label: 'Batch Expenses & Yields', icon: Layers, show: true }
       ]
     },
     {

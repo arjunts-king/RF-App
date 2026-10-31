@@ -152,6 +152,9 @@ export interface Purchase {
   // Yield & Processing Outcome
   yieldWeightKg?: number; // Finished/processed output weight in Kg (e.g. 2400 kg from 5000 kg raw purchase)
   yieldPct?: number; // Yield percentage: (yieldWeightKg / weightKg) * 100 (e.g. 48.00%)
+  batchYieldWeightKg?: number; // Total finished yield weight recorded for the entire batch pool
+  batchYieldPct?: number; // Overall yield percentage for the entire batch pool
+  isBatchYieldAllocated?: boolean; // Flag indicating yield was proportionally allocated from the whole batch pool
 
   // Server-computed pricing & damage
   purchaseValue: number; // weightKg * ratePerKg

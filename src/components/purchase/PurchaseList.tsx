@@ -245,6 +245,9 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       WeightKg: p.weightKg,
       YieldWeightKg: p.yieldWeightKg !== undefined ? p.yieldWeightKg : '',
       YieldPct: p.yieldPct !== undefined ? `${p.yieldPct}%` : '',
+      BatchYieldWeightKg: p.batchYieldWeightKg !== undefined ? p.batchYieldWeightKg : '',
+      BatchYieldPct: p.batchYieldPct !== undefined ? `${p.batchYieldPct}%` : '',
+      IsBatchYieldAllocated: p.isBatchYieldAllocated ? 'Yes' : 'No',
       RatePerKg: p.ratePerKg,
       PurchaseValue: p.purchaseValue,
       DamageAmount: p.damageAmount,
@@ -563,8 +566,13 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                         {p.yieldWeightKg ? (
                           <div>
                             <span className="font-bold text-emerald-800">{formatKg(p.yieldWeightKg)}</span>
-                            <div className="text-[10px] text-emerald-600 font-bold">
+                            <div className="text-[10px] text-emerald-600 font-bold flex items-center justify-end gap-1">
                               {p.yieldPct ? `${p.yieldPct.toFixed(1)}%` : `${((p.yieldWeightKg / p.weightKg) * 100).toFixed(1)}%`}
+                              {p.isBatchYieldAllocated && (
+                                <span className="px-1 py-0.2 rounded text-[8px] bg-emerald-100 text-emerald-800 font-extrabold uppercase" title={`Batch yield allocated from batch ${p.batchNo}`}>
+                                  Batch
+                                </span>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -810,11 +818,18 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                     Processing Yield &amp; Recovery Analysis
                   </h4>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {selectedPurchase.yieldPct
-                      ? `${selectedPurchase.yieldPct.toFixed(2)}% Recovery`
-                      : `${((selectedPurchase.yieldWeightKg / selectedPurchase.weightKg) * 100).toFixed(2)}% Recovery`}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {selectedPurchase.isBatchYieldAllocated && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-2xs">
+                        Batch {selectedPurchase.batchNo} Pool
+                      </span>
+                    )}
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      {selectedPurchase.yieldPct
+                        ? `${selectedPurchase.yieldPct.toFixed(2)}% Recovery`
+                        : `${((selectedPurchase.yieldWeightKg / selectedPurchase.weightKg) * 100).toFixed(2)}% Recovery`}
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>

@@ -210,6 +210,107 @@ export function allocateBatchExpenses(purchasesInBatch: Purchase[]): {
 }
 
 /**
+ * Proportionally allocates total batch yield weight (or batch yield %) across all active items in a batch.
+ */
+export function allocateBatchYield(
+  purchasesInBatch: Purchase[],
+  explicitBatchYieldWeightKg?: number,
+  explicitBatchYieldPct?: number
+): { updatedPurchases: Purchase[]; warnings: string[] } {
+  const warnings: string[] = [];
+  const activeRows = purchasesInBatch.filter((p) => !p.isVoided);
+
+  if (activeRows.length === 0) {
+    return { updatedPurchases: purchasesInBatch, warnings: ['No active lots found in batch to allocate yield.'] };
+  }
+
+  const totalBatchWeight = activeRows.reduce((sum, p) => sum + (p.weightKg || 0), 0);
+  if (totalBatchWeight <= 0) {
+    return { updatedPurchases: purchasesInBatch, warnings: ['Total batch raw weight is zero; cannot allocate batch yield.'] };
+  }
+
+  // Determine the batch yield weight and percentage
+  let resolvedBatchYieldKg: number | undefined =
+    explicitBatchYieldWeightKg !== undefined && !isNaN(Number(explicitBatchYieldWeightKg)) && Number(explicitBatchYieldWeightKg) > 0
+      ? Number(explicitBatchYieldWeightKg)
+      : undefined;
+
+  let resolvedBatchYieldPct: number | undefined =
+    explicitBatchYieldPct !== undefined && !isNaN(Number(explicitBatchYieldPct)) && Number(explicitBatchYieldPct) > 0
+      ? Number(explicitBatchYieldPct)
+      : undefined;
+
+  // If batch yield was not passed explicitly, check if any lot in the batch has batchYieldWeightKg, batchYieldPct, or pooled yield
+  if (resolvedBatchYieldKg === undefined && resolvedBatchYieldPct === undefined) {
+    const existingWithBatchYieldKg = activeRows.find((p) => p.batchYieldWeightKg && p.batchYieldWeightKg > 0);
+    const existingWithBatchYieldPct = activeRows.find((p) => p.batchYieldPct && p.batchYieldPct > 0);
+    if (existingWithBatchYieldKg?.batchYieldWeightKg) {
+      resolvedBatchYieldKg = existingWithBatchYieldKg.batchYieldWeightKg;
+    } else if (existingWithBatchYieldPct?.batchYieldPct) {
+      resolvedBatchYieldPct = existingWithBatchYieldPct.batchYieldPct;
+    } else {
+      // Check if yield was recorded on rows
+      const rowsWithYield = activeRows.filter((p) => p.yieldWeightKg && p.yieldWeightKg > 0);
+      if (rowsWithYield.length === 1 && activeRows.length > 1) {
+        // If single row had yield entered on multi-item batch, treat as entire batch total
+        resolvedBatchYieldKg = rowsWithYield[0].yieldWeightKg;
+      } else if (rowsWithYield.length > 1) {
+        resolvedBatchYieldKg = rowsWithYield.reduce((sum, p) => sum + (p.yieldWeightKg || 0), 0);
+      }
+    }
+  }
+
+  if (resolvedBatchYieldKg !== undefined && (resolvedBatchYieldPct === undefined || resolvedBatchYieldPct <= 0)) {
+    resolvedBatchYieldPct = Number(((resolvedBatchYieldKg / totalBatchWeight) * 100).toFixed(2));
+  } else if (resolvedBatchYieldPct !== undefined && (resolvedBatchYieldKg === undefined || resolvedBatchYieldKg <= 0)) {
+    resolvedBatchYieldKg = Number(((totalBatchWeight * resolvedBatchYieldPct) / 100).toFixed(2));
+  }
+
+  if (resolvedBatchYieldKg === undefined || resolvedBatchYieldKg <= 0) {
+    return {
+      updatedPurchases: purchasesInBatch,
+      warnings: ['No valid batch yield weight or percentage provided to allocate.']
+    };
+  }
+
+  if (resolvedBatchYieldKg > totalBatchWeight) {
+    warnings.push(
+      `Notice: Batch finished yield (${resolvedBatchYieldKg.toFixed(2)} Kg) exceeds total raw batch weight (${totalBatchWeight.toFixed(2)} Kg). Verify if glazing or water uptake was included.`
+    );
+  }
+
+  // Allocate proportionally to each row's weight
+  let allocatedYieldSoFar = 0;
+  const updatedPurchases = purchasesInBatch.map((p, index) => {
+    if (p.isVoided) return p;
+
+    let itemYieldKg = 0;
+    // For the last active item, assign remainder to prevent rounding drift
+    const isLastActive = index === activeRows.length - 1;
+    if (isLastActive && activeRows.length > 1) {
+      itemYieldKg = Number(Math.max(0, resolvedBatchYieldKg! - allocatedYieldSoFar).toFixed(2));
+    } else {
+      const share = p.weightKg / totalBatchWeight;
+      itemYieldKg = Number((resolvedBatchYieldKg! * share).toFixed(2));
+      allocatedYieldSoFar += itemYieldKg;
+    }
+
+    const itemYieldPct = p.weightKg > 0 ? Number(((itemYieldKg / p.weightKg) * 100).toFixed(2)) : 0;
+
+    return {
+      ...p,
+      yieldWeightKg: itemYieldKg,
+      yieldPct: itemYieldPct,
+      batchYieldWeightKg: resolvedBatchYieldKg,
+      batchYieldPct: resolvedBatchYieldPct,
+      isBatchYieldAllocated: true
+    };
+  });
+
+  return { updatedPurchases, warnings };
+}
+
+/**
  * Format Indian Currency (INR ₹)
  */
 export function formatINR(val: number | undefined | null): string {
