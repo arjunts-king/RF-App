@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { computePurchaseFields, formatINR, formatKg } from '../../utils/calculations';
+import { PageHeader } from '../common/PageHeader';
 import {
   Camera,
   Layers,
@@ -243,42 +244,34 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden max-w-5xl mx-auto">
-      {/* Header Banner */}
-      <div className="px-6 py-4 bg-gradient-to-r from-rose-50 via-white to-rose-50 border-b border-rose-100 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-ink-900">Harbour Purchase Entry</h2>
-            <span className="text-[11px] font-semibold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full border border-rose-200">
-              Mobile-First Form
-            </span>
-          </div>
-          <p className="text-xs text-ink-500">
-            One form, one save action. Record landing transactions directly from phone or desktop.
-          </p>
-        </div>
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      <PageHeader
+        title="Harbour purchase entry"
+        description="One form, one save action. Record raw seafood weighment, dynamic landing expenses, joint batch cost pool and payment terms."
+        badge={batchNo ? `Batch Pool: ${batchNo}` : 'Field Form'}
+        secondaryActions={[
+          {
+            label: 'Reset form',
+            icon: RotateCcw,
+            onClick: resetForm
+          }
+        ]}
+      />
 
-        {batchNo && (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-xs font-semibold">
-            <Layers className="w-3.5 h-3.5 text-amber-700" />
-            <span>Shared Batch Pool: {batchNo}</span>
+      <div className="bg-white rounded-3xl shadow-xs border border-gray-100 overflow-hidden">
+        {(activeSuppliers.length === 0 || activeSpecies.length === 0 || activeLocations.length === 0) && (
+          <div className="m-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 font-bold">!</div>
+            <div>
+              <strong className="block font-bold">Master Reference Data is currently empty:</strong>
+              <span className="block mt-0.5">
+                To record a purchase, please add your suppliers, species, and harbour locations under <strong>Master Reference Data</strong> in the sidebar, or click <strong>Business Settings</strong> to load starter templates.
+              </span>
+            </div>
           </div>
         )}
-      </div>
 
-      {(activeSuppliers.length === 0 || activeSpecies.length === 0 || activeLocations.length === 0) && (
-        <div className="mx-6 mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-          <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 font-bold">!</div>
-          <div>
-            <strong className="block font-bold">Master Reference Data is currently empty:</strong>
-            <span className="block mt-0.5">
-              To record a purchase, please add your suppliers, species, and harbour locations under <strong>Master Reference Data</strong> in the sidebar, or click <strong>Business Settings</strong> to load starter templates.
-            </span>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="p-6 space-y-8">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
         {/* SECTION 1: IDENTIFICATION */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-3 flex items-center gap-2">
@@ -900,26 +893,52 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
           </div>
         </div>
 
-        {/* SUBMISSION BUTTONS */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-          <button
-            type="button"
-            onClick={resetForm}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-ink-700 hover:bg-gray-100 text-xs font-semibold transition"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Form</span>
-          </button>
+        {/* FIGMA-STYLE STICKY SAVE BAR WITH LIVE METRICS */}
+        <div className="sticky bottom-4 z-30 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-xl border border-gray-200 flex flex-wrap items-center justify-between gap-4 mt-8">
+          <div className="flex items-center gap-4 sm:gap-6 text-xs flex-wrap">
+            <div>
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Landed Cost</span>
+              <span className="text-base font-extrabold text-rose-700 font-mono block">
+                {formatINR(liveDerived.totalCost)}
+              </span>
+            </div>
+            <div className="hidden sm:block h-7 w-px bg-gray-200" />
+            <div>
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Effective Rate</span>
+              <span className="text-sm font-bold text-ink-900 font-mono block">
+                ₹{liveDerived.effectiveRatePerKg.toFixed(2)} / Kg
+              </span>
+            </div>
+            <div className="hidden sm:block h-7 w-px bg-gray-200" />
+            <div>
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Balance Payable</span>
+              <span className="text-sm font-bold text-ink-900 font-mono block">
+                {formatINR(liveDerived.balancePayable)}
+              </span>
+            </div>
+          </div>
 
-          <button
-            type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-200 transition"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Purchase Transaction</span>
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-ink-500" />
+              <span>Reset</span>
+            </button>
+
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save Purchase Transaction</span>
+            </button>
+          </div>
         </div>
       </form>
+      </div>
     </div>
   );
 };

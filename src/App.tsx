@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
-import { Navbar } from './components/common/Navbar';
+import { Navbar, ActiveModuleType } from './components/common/Navbar';
 import { Sidebar, NavTab } from './components/common/Sidebar';
 import { ProductionSidebar, ProductionNavTab } from './components/production/ProductionSidebar';
 import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
+import { HomeScreen } from './components/home/HomeScreen';
+import { CommandPalette } from './components/common/CommandPalette';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
 import { PurchaseList } from './components/purchase/PurchaseList';
@@ -42,53 +44,103 @@ import {
   Layers,
   BarChart3,
   TrendingUp,
-  FileText
+  FileText,
+  Home,
+  ShoppingBag
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
-  const [activeModule, setActiveModule] = useState<'purchase' | 'production' | 'sales'>('purchase');
+  const [activeModule, setActiveModule] = useState<ActiveModuleType>('home');
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [returnPurchaseId, setReturnPurchaseId] = useState<string | undefined>();
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { permissions } = useAuth();
 
+  // Global Command Palette Shortcut (Ctrl+K / Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'home', tab: string) => {
+    if (module === 'home') {
+      setActiveModule('home');
+      return;
+    }
+    setActiveModule(module);
+    if (module === 'purchase') {
+      setActiveTab(tab as NavTab);
+    } else if (module === 'production') {
+      setProductionTab(tab as ProductionNavTab);
+    } else if (module === 'sales') {
+      setSalesTab(tab as SalesNavTab);
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#FBFBFB]">
+    <div className="min-h-screen flex flex-col bg-[#FBFBFB] text-[#1E1E24]">
+      {/* Figma-Inspired Global Shell Sticky Top Bar */}
       <Navbar
         activeModule={activeModule}
         onModuleChange={(mod) => {
           setActiveModule(mod);
           setIsMobileMenuOpen(false);
         }}
+        onNavigateTab={(mod, tab) => handleNavigateDirect(mod, tab)}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+      />
+
+      {/* Global Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={handleNavigateDirect}
       />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Sidebar (Switched dynamically per active module) */}
-        <div className="hidden md:block">
-          {activeModule === 'purchase' ? (
-            <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-          ) : activeModule === 'production' ? (
-            <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
-          ) : (
-            <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
-          )}
-        </div>
+        {/* Desktop Sidebar (Rendered when in Purchase, Production or Sales modules) */}
+        {activeModule !== 'home' && (
+          <div className="hidden md:block">
+            {activeModule === 'purchase' ? (
+              <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+            ) : activeModule === 'production' ? (
+              <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
+            ) : (
+              <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
+            )}
+          </div>
+        )}
 
-        {/* Mobile Drawer Menu */}
+        {/* Mobile Slide-in Drawer Menu */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-40 md:hidden bg-black/40 backdrop-blur-xs flex">
-            <div className="w-72 bg-white h-full shadow-2xl flex flex-col">
+          <div className="fixed inset-0 z-50 md:hidden bg-black/40 backdrop-blur-xs flex">
+            <div className="w-80 max-w-[85%] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
               <div className="p-4 border-b flex justify-between items-center bg-rose-50/50">
-                <span className="font-bold text-ink-900 text-sm">
-                  {activeModule === 'purchase'
-                    ? 'Procurement Menu'
-                    : activeModule === 'production'
-                    ? 'Production Menu'
-                    : 'Commercial Export Menu'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs">
+                    CM
+                  </div>
+                  <span className="font-bold text-ink-900 text-sm">
+                    {activeModule === 'home'
+                      ? 'Global Navigation'
+                      : activeModule === 'purchase'
+                      ? 'Procurement Menu'
+                      : activeModule === 'production'
+                      ? 'Production Menu'
+                      : 'Commercial Export Menu'}
+                  </span>
+                </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-1 rounded-lg text-ink-500 hover:text-rose-600"
@@ -96,6 +148,44 @@ const MainLayout: React.FC = () => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Module Switcher in mobile drawer */}
+              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-4 gap-1 text-[11px] font-bold text-center">
+                <button
+                  onClick={() => {
+                    setActiveModule('home');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'home' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveModule('purchase');
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'purchase' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Buy
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveModule('production');
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'production' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Plant
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveModule('sales');
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'sales' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Sales
+                </button>
+              </div>
+
               <div className="flex-1 overflow-y-auto">
                 {activeModule === 'purchase' ? (
                   <Sidebar
@@ -113,7 +203,7 @@ const MainLayout: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     }}
                   />
-                ) : (
+                ) : activeModule === 'sales' ? (
                   <SalesSidebar
                     activeTab={salesTab}
                     onTabChange={(tab) => {
@@ -121,6 +211,43 @@ const MainLayout: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     }}
                   />
+                ) : (
+                  <div className="p-4 space-y-3 text-xs">
+                    <p className="text-ink-500 font-medium">Select an operational module to open screen list:</p>
+                    <button
+                      onClick={() => {
+                        setActiveModule('purchase');
+                        setActiveTab('dashboard');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-between"
+                    >
+                      <span>Purchase &amp; Procurement</span>
+                      <Receipt className="w-4 h-4 text-rose-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveModule('production');
+                        setProductionTab('prod-dashboard');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-amber-50 hover:text-amber-800 flex items-center justify-between"
+                    >
+                      <span>Factory Floor &amp; Production</span>
+                      <Factory className="w-4 h-4 text-amber-700" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveModule('sales');
+                        setSalesTab('sales-dashboard');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-between"
+                    >
+                      <span>Commercial Sales &amp; Export</span>
+                      <TrendingUp className="w-4 h-4 text-rose-600" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -128,10 +255,15 @@ const MainLayout: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
-          {activeModule === 'purchase' ? (
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-12">
+          {activeModule === 'home' ? (
+            <HomeScreen
+              onNavigate={handleNavigateDirect}
+              onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            />
+          ) : activeModule === 'purchase' ? (
             <>
-              {activeTab === 'dashboard' && <DashboardOverview />}
+              {activeTab === 'dashboard' && <DashboardOverview onNavigateTab={(tab) => setActiveTab(tab as NavTab)} />}
               {activeTab === 'purchase-entry' && (
                 <PurchaseEntryForm onSuccess={() => setActiveTab('purchases')} />
               )}
@@ -202,8 +334,18 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Context aware) */}
+      {/* Mobile Bottom Navigation Bar (Context aware with Home) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-30 flex items-center justify-around py-2 px-1 shadow-lg print:hidden">
+        <button
+          onClick={() => setActiveModule('home')}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+            activeModule === 'home' ? 'text-rose-600' : 'text-ink-500'
+          }`}
+        >
+          <Home className="w-4 h-4" />
+          <span>Home</span>
+        </button>
+
         {activeModule === 'purchase' ? (
           <>
             <button
@@ -292,7 +434,7 @@ const MainLayout: React.FC = () => {
               <span>Reports</span>
             </button>
           </>
-        ) : (
+        ) : activeModule === 'sales' ? (
           <>
             <button
               onClick={() => setSalesTab('sales-dashboard')}
@@ -336,6 +478,14 @@ const MainLayout: React.FC = () => {
               <span>Reports</span>
             </button>
           </>
+        ) : (
+          <button
+            onClick={() => setActiveModule('purchase')}
+            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-ink-500"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Procurement</span>
+          </button>
         )}
 
         <button
