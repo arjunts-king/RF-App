@@ -20,7 +20,8 @@ import {
   Printer,
   FileText,
   Globe,
-  Plus
+  Plus,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -214,6 +215,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             : undefined
         }
         secondaryActions={[
+          ...(onNavigate ? [{
+            label: 'Import Excel',
+            onClick: () => onNavigate('sales-excel-import'),
+            icon: FileSpreadsheet
+          }] : []),
           {
             label: 'Export CSV',
             onClick: handleExportCSV,

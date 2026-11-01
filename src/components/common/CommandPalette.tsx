@@ -314,6 +314,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       icon: BarChart3,
       category: 'Production Module'
     },
+    {
+      id: 'prod-excel',
+      title: 'Production Excel Import & Migration',
+      subtitle: 'Bulk upload factory processing records, shifts, lots & slab types',
+      module: 'production',
+      tab: 'prod-excel-import',
+      icon: FileSpreadsheet,
+      category: 'Production Module'
+    },
 
     // Sales Screens
     {
@@ -370,6 +379,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       module: 'sales',
       tab: 'sales-reports',
       icon: BarChart3,
+      category: 'Sales Module'
+    },
+    {
+      id: 'sales-excel',
+      title: 'Sales & Export Excel Import & Migration',
+      subtitle: 'Bulk upload commercial export invoices, line items, buyers & ports',
+      module: 'sales',
+      tab: 'sales-excel-import',
+      icon: FileSpreadsheet,
       category: 'Sales Module'
     }
   ];

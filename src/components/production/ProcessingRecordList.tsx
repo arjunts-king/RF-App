@@ -16,7 +16,8 @@ import {
   Ban,
   AlertTriangle,
   CheckCircle2,
-  Plus
+  Plus,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -242,6 +243,11 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
             : undefined
         }
         secondaryActions={[
+          ...(onNavigate ? [{
+            label: 'Import Excel',
+            onClick: () => onNavigate('prod-excel-import'),
+            icon: FileSpreadsheet
+          }] : []),
           {
             label: 'Export CSV',
             onClick: handleExportCSV,

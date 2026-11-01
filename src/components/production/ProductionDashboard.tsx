@@ -136,6 +136,10 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
                 {
                   label: 'Slab master',
                   onClick: () => onNavigate('slab-types')
+                },
+                {
+                  label: 'Excel import',
+                  onClick: () => onNavigate('prod-excel-import')
                 }
               ]
             : undefined

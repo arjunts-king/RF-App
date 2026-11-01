@@ -310,7 +310,7 @@ const MainLayout: React.FC = () => {
               {activeTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {activeTab === 'audit-log' && <AuditLogView />}
               {activeTab === 'user-mgmt' && <UserManagementView />}
-              {activeTab === 'excel-import' && <ExcelImportView onNavigate={setActiveTab} />}
+              {activeTab === 'excel-import' && <ExcelImportView defaultModule="purchase" onNavigate={setActiveTab} />}
               {activeTab === 'settings' && <BusinessSettingsView />}
             </>
           ) : activeModule === 'production' ? (
@@ -328,6 +328,9 @@ const MainLayout: React.FC = () => {
               {productionTab === 'prod-reports' && <ProductionReportsHub />}
               {productionTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {productionTab === 'audit-log' && <AuditLogView />}
+              {productionTab === 'prod-excel-import' && (
+                <ExcelImportView defaultModule="production" onNavigate={(tab) => setProductionTab(tab as ProductionNavTab)} />
+              )}
             </>
           ) : (
             <>
@@ -348,6 +351,9 @@ const MainLayout: React.FC = () => {
               {salesTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {salesTab === 'sales-reports' && <SalesReportsHub />}
               {salesTab === 'audit-log' && <AuditLogView />}
+              {salesTab === 'sales-excel-import' && (
+                <ExcelImportView defaultModule="sales" onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+              )}
             </>
           )}
         </main>

@@ -9,7 +9,8 @@ import {
   Anchor,
   Database,
   BarChart3,
-  ShieldAlert
+  ShieldAlert,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export type SalesNavTab =
@@ -21,7 +22,8 @@ export type SalesNavTab =
   | 'ports'
   | 'master-data'
   | 'sales-reports'
-  | 'audit-log';
+  | 'audit-log'
+  | 'sales-excel-import';
 
 interface SalesSidebarProps {
   activeTab: SalesNavTab;
@@ -89,6 +91,18 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           label: 'Shared Master Data',
           icon: Database,
           show: permissions.canManageMasterData
+        }
+      ]
+    },
+    {
+      title: 'DATA & MIGRATION',
+      items: [
+        {
+          id: 'sales-excel-import',
+          label: 'Excel Import & Migration',
+          icon: FileSpreadsheet,
+          show: true,
+          badge: 'Migration'
         }
       ]
     },

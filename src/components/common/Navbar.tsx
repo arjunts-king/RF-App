@@ -133,7 +133,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       title: 'PACKAGING & MASTERS',
       items: [
         { id: 'slab-types', label: 'Slab Types Master', icon: Boxes, desc: 'Block freezing standard weight (2.0 Kg)', show: permissions.canManageMasterData },
-        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species, grades & supplier lookups', show: permissions.canManageMasterData }
+        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species, grades & supplier lookups', show: permissions.canManageMasterData },
+        { id: 'prod-excel-import', label: 'Production Import & Migration', icon: FileSpreadsheet, desc: 'Bulk processing entries, slabs & lot migration' }
       ]
     },
     {
@@ -165,7 +166,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       items: [
         { id: 'customers', label: 'Consignees & Buyers', icon: Users, desc: 'Foreign buyers & export credit terms', show: permissions.canManageSalesMasterData },
         { id: 'ports', label: 'Port Master', icon: Anchor, desc: 'Loading & destination ports', show: permissions.canManageSalesMasterData },
-        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species & product forms', show: permissions.canManageMasterData }
+        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species & product forms', show: permissions.canManageMasterData },
+        { id: 'sales-excel-import', label: 'Sales Import & Migration', icon: FileSpreadsheet, desc: 'Bulk export invoices, buyers & port migration' }
       ]
     },
     {

@@ -197,6 +197,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                   label: 'Invoices register',
                   onClick: () => onNavigate('invoice-list'),
                   icon: FileText
+                },
+                {
+                  label: 'Excel import',
+                  onClick: () => onNavigate('sales-excel-import')
                 }
               ]
             : undefined

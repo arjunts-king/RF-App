@@ -20,6 +20,8 @@ import {
   Customer,
   PortMaster,
   SalesInvoice,
+  SalesInvoiceLine,
+  SalesCurrency,
   RealizationRecord,
   RealizationStatus,
   PaymentStatus
@@ -192,6 +194,14 @@ interface DataContextType {
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
   ) => { added: number; errors: string[]; createdSuppliers: number; createdSpecies: number; createdLocations: number };
+  bulkImportProcessingEntries: (
+    rawRows: Record<string, any>[],
+    autoCreateMaster?: boolean
+  ) => { added: number; errors: string[]; createdSuppliers?: number; createdSpecies?: number; createdSlabTypes?: number };
+  bulkImportSalesInvoices: (
+    rawRows: Record<string, any>[],
+    autoCreateMaster?: boolean
+  ) => { added: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number };
 
   logAudit: (
     action: AuditAction,
@@ -3604,6 +3614,489 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
+  const bulkImportProcessingEntries = (
+    rawRows: Record<string, any>[],
+    autoCreateMaster = true
+  ) => {
+    let createdSuppliers = 0;
+    let createdSpecies = 0;
+    let createdSlabTypes = 0;
+    const errors: string[] = [];
+    const newEntries: DailyProcessingEntry[] = [];
+
+    const mutableSuppliers = [...suppliers];
+    const mutableSpecies = [...species];
+    const mutableGrades = [...grades];
+    const mutableSizes = [...sizes];
+    const mutableCounts = [...counts];
+    const mutableSlabTypes = [...slabTypes];
+
+    rawRows.forEach((row, idx) => {
+      const rowNum = idx + 2;
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const rawDate = getFlexibleValue(row, [
+        'processingdate',
+        'date',
+        'entrydate',
+        'shiftdate',
+        'productiondate'
+      ]);
+      const processingDate = formatExcelDate(rawDate);
+
+      const rawShift = String(getFlexibleValue(row, ['shift', 'shifttype', 'workshift']) || '').toLowerCase();
+      let shift = 'General Day Shift (08:00 - 17:00)';
+      if (rawShift.includes('morn') || rawShift.includes('06')) {
+        shift = 'Morning Shift (06:00 - 14:00)';
+      } else if (rawShift.includes('even') || rawShift.includes('14')) {
+        shift = 'Evening Shift (14:00 - 22:00)';
+      } else if (rawShift.includes('night') || rawShift.includes('22')) {
+        shift = 'Night Shift (22:00 - 06:00)';
+      }
+
+      const rawSupp = String(getFlexibleValue(row, ['supplier', 'suppliercode', 'suppliername', 'boat', 'party']) || '').trim();
+      let matchedSupplier = mutableSuppliers.find(
+        (s) => s.code.toLowerCase() === rawSupp.toLowerCase() || s.name.toLowerCase() === rawSupp.toLowerCase()
+      );
+      if (!matchedSupplier && rawSupp) {
+        matchedSupplier = mutableSuppliers.find((s) => s.name.toLowerCase().includes(rawSupp.toLowerCase()) || rawSupp.toLowerCase().includes(s.name.toLowerCase()));
+      }
+      if (!matchedSupplier && rawSupp && autoCreateMaster) {
+        const newSupp: Supplier = {
+          id: `sup-${Date.now()}-${mutableSuppliers.length + 1}`,
+          code: `SUP-${String(mutableSuppliers.length + 1).padStart(3, '0')}`,
+          name: rawSupp,
+          type: 'boat_owner',
+          contactPerson: '',
+          phone: '',
+          email: '',
+          address: '',
+          district: '',
+          state: 'Kerala',
+          bankName: '',
+          bankAccount: '',
+          bankIfsc: '',
+          paymentTerms: 'Immediate / 7 Days',
+          creditDays: 7,
+          openingBalance: 0,
+          active: true,
+          createdAt: new Date().toISOString()
+        };
+        mutableSuppliers.push(newSupp);
+        matchedSupplier = newSupp;
+        createdSuppliers++;
+      }
+      const supplierId = matchedSupplier?.id || mutableSuppliers[0]?.id || '';
+
+      const rawSpec = String(getFlexibleValue(row, ['species', 'speciescode', 'speciesname', 'product', 'fish', 'variety']) || '').trim();
+      let matchedSpecies = mutableSpecies.find(
+        (sp) => sp.code.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase() === rawSpec.toLowerCase()
+      );
+      if (!matchedSpecies && rawSpec) {
+        matchedSpecies = mutableSpecies.find((sp) => sp.name.toLowerCase().includes(rawSpec.toLowerCase()) || rawSpec.toLowerCase().includes(sp.name.toLowerCase()));
+      }
+      if (!matchedSpecies && rawSpec && autoCreateMaster) {
+        const newSpec: Species = {
+          id: `sp-${Date.now()}-${mutableSpecies.length + 1}`,
+          code: rawSpec.substring(0, 3).toUpperCase(),
+          name: rawSpec,
+          scientificName: '',
+          category: 'Marine Catch',
+          active: true
+        };
+        mutableSpecies.push(newSpec);
+        matchedSpecies = newSpec;
+        createdSpecies++;
+      }
+      const speciesId = matchedSpecies?.id || mutableSpecies[0]?.id || '';
+
+      const rawGrade = String(getFlexibleValue(row, ['grade', 'gradecode', 'gradename', 'quality']) || '').trim();
+      let matchedGrade = mutableGrades.find(
+        (g) => g.code.toLowerCase() === rawGrade.toLowerCase() || g.name.toLowerCase() === rawGrade.toLowerCase()
+      );
+      if (!matchedGrade && rawGrade) {
+        matchedGrade = mutableGrades.find((g) => g.name.toLowerCase().includes(rawGrade.toLowerCase()));
+      }
+      const gradeId = matchedGrade?.id || mutableGrades[0]?.id || '';
+
+      const rawSize = String(getFlexibleValue(row, ['size', 'sizecode', 'sizename']) || '').trim();
+      let matchedSize = mutableSizes.find(
+        (sz) => sz.code.toLowerCase() === rawSize.toLowerCase() || sz.name.toLowerCase() === rawSize.toLowerCase()
+      );
+      const sizeId = matchedSize?.id || mutableSizes[0]?.id || '';
+
+      const rawCount = String(getFlexibleValue(row, ['count', 'countcode', 'countname', 'countkg']) || '').trim();
+      let matchedCount = mutableCounts.find(
+        (c) => c.code.toLowerCase() === rawCount.toLowerCase() || c.name.toLowerCase() === rawCount.toLowerCase()
+      );
+      const countId = matchedCount?.id || '';
+
+      const supplierBoxId = String(getFlexibleValue(row, ['supplierboxid', 'boxid', 'crateid', 'lotid', 'boxno']) || '').trim();
+
+      const rawSlab = String(getFlexibleValue(row, ['slabtype', 'slabtypename', 'slabcode', 'slab', 'blocktype']) || '').trim();
+      let matchedSlabType = mutableSlabTypes.find(
+        (st) => st.code.toLowerCase() === rawSlab.toLowerCase() || st.name.toLowerCase() === rawSlab.toLowerCase()
+      );
+      if (!matchedSlabType && rawSlab) {
+        matchedSlabType = mutableSlabTypes.find((st) => st.name.toLowerCase().includes(rawSlab.toLowerCase()));
+      }
+      if (!matchedSlabType && rawSlab && autoCreateMaster) {
+        const newSlab: SlabType = {
+          id: `slb-${Date.now()}-${mutableSlabTypes.length + 1}`,
+          code: `SLB-${String(mutableSlabTypes.length + 1).padStart(3, '0')}`,
+          name: rawSlab,
+          standardWeightKg: 2.0,
+          unit: 'Kg',
+          productApplicability: 'All Products',
+          active: true
+        };
+        mutableSlabTypes.push(newSlab);
+        matchedSlabType = newSlab;
+        createdSlabTypes++;
+      }
+      const slabTypeId = matchedSlabType?.id || mutableSlabTypes[0]?.id || '';
+
+      const rawStdWeight = parseFloat(getFlexibleValue(row, ['standardslabweightkg', 'standardslabweight', 'standardslab', 'slabweight']) || '');
+      const standardSlabWeightKg = !isNaN(rawStdWeight) && rawStdWeight > 0 ? rawStdWeight : (matchedSlabType?.standardWeightKg || 2.0);
+
+      const rawSlabsCount = parseFloat(getFlexibleValue(row, ['slabscount', 'noofslabs', 'slabs', 'slabqty']) || '0');
+      const slabsCount = !isNaN(rawSlabsCount) ? Math.round(rawSlabsCount) : 0;
+
+      const rawProcWeight = parseFloat(getFlexibleValue(row, ['processedweightkg', 'processedweight', 'processedqty', 'netweightkg', 'netweight', 'weightkg', 'weight']) || '');
+      if (isNaN(rawProcWeight) || rawProcWeight <= 0) {
+        errors.push(`Row ${rowNum}: Processed weight (Kg) is missing or must be greater than 0.`);
+        return;
+      }
+      const processedWeightKg = Number(rawProcWeight.toFixed(2));
+
+      const rawRejWeight = parseFloat(getFlexibleValue(row, ['rejectionweightkg', 'rejectionweight', 'rejectionqty', 'rejectweight', 'rejection']) || '0');
+      const rejectionWeightKg = !isNaN(rawRejWeight) && rawRejWeight >= 0 ? Number(rawRejWeight.toFixed(2)) : 0;
+
+      const expectedWeightKg = Number((slabsCount * standardSlabWeightKg).toFixed(2));
+      const varianceWeightKg = Number((processedWeightKg - expectedWeightKg).toFixed(2));
+      const variancePct = expectedWeightKg > 0 ? Number(((varianceWeightKg / expectedWeightKg) * 100).toFixed(2)) : 0;
+      const hasSlabVariance = Math.abs(variancePct) > slabTolerancePct;
+
+      const remarks = String(getFlexibleValue(row, ['remarks', 'notes', 'comment']) || '').trim();
+      const nowIso = new Date().toISOString();
+      const monthYear = processingDate.slice(0, 7);
+
+      const entryIndex = processingEntries.length + newEntries.length + 1;
+      const entryNo = `PROD-${String(entryIndex).padStart(5, '0')}`;
+
+      const entry: DailyProcessingEntry = {
+        id: `pe-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
+        entryNo,
+        processingDate,
+        shift,
+        supplierId,
+        speciesId,
+        gradeId,
+        sizeId,
+        countId,
+        supplierBoxId,
+        slabTypeId,
+        standardSlabWeightKg,
+        slabsCount,
+        processedWeightKg,
+        rejectionWeightKg,
+        expectedWeightKg,
+        varianceWeightKg,
+        variancePct,
+        hasSlabVariance,
+        remarks,
+        operator: currentUser.name || 'System Migration',
+        dataEntryDate: nowIso,
+        monthYear,
+        financialYear: businessSettings.financialYear,
+        isVoided: false,
+        createdBy: currentUser.email || 'import@system',
+        createdAt: nowIso,
+        updatedAt: nowIso
+      };
+
+      newEntries.push(entry);
+    });
+
+    if (newEntries.length > 0) {
+      setProcessingEntries((prev) => [...newEntries, ...prev]);
+      if (createdSuppliers > 0) setSuppliers([...mutableSuppliers]);
+      if (createdSpecies > 0) setSpecies([...mutableSpecies]);
+      if (createdSlabTypes > 0) setSlabTypes([...mutableSlabTypes]);
+
+      logAudit('CREATE', 'PRODUCTION_ENTRY', `Excel bulk import: ${newEntries.length} production entries imported`, {
+        newValues: {
+          importedCount: newEntries.length,
+          createdSuppliers,
+          createdSpecies,
+          createdSlabTypes
+        }
+      });
+
+      showToast(`Successfully imported ${newEntries.length} production entries from Excel.`, 'success');
+    }
+
+    return {
+      added: newEntries.length,
+      errors,
+      createdSuppliers,
+      createdSpecies,
+      createdSlabTypes
+    };
+  };
+
+  const bulkImportSalesInvoices = (
+    rawRows: Record<string, any>[],
+    autoCreateMaster = true
+  ) => {
+    let createdCustomers = 0;
+    let createdPorts = 0;
+    let createdSpecies = 0;
+    const errors: string[] = [];
+    const newInvoices: SalesInvoice[] = [];
+
+    const mutableCustomers = [...customers];
+    const mutablePorts = [...ports];
+    const mutableSpecies = [...species];
+    const mutableSizes = [...sizes];
+    const mutableCounts = [...counts];
+
+    // Group rows by Invoice No
+    const invoiceGroups: { [key: string]: { headerRow: Record<string, any>; rows: { row: Record<string, any>; rowNum: number }[] } } = {};
+
+    rawRows.forEach((row, idx) => {
+      const rowNum = idx + 2;
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      let invNo = String(getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'exportinvoiceno', 'invoicenumber']) || '').trim();
+      if (!invNo) {
+        invNo = `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + Object.keys(invoiceGroups).length + 1).padStart(4, '0')}`;
+      }
+      const groupKey = invNo.toUpperCase();
+
+      if (!invoiceGroups[groupKey]) {
+        invoiceGroups[groupKey] = {
+          headerRow: row,
+          rows: []
+        };
+      }
+      invoiceGroups[groupKey].rows.push({ row, rowNum });
+    });
+
+    Object.entries(invoiceGroups).forEach(([invNoKey, group]) => {
+      const { headerRow, rows } = group;
+
+      const rawDate = getFlexibleValue(headerRow, ['invoicedate', 'date', 'billdate', 'shippingdate']);
+      const invoiceDate = formatExcelDate(rawDate);
+
+      const rawCust = String(getFlexibleValue(headerRow, ['customer', 'consignee', 'customername', 'buyer', 'client', 'buyername']) || '').trim();
+      let matchedCust = mutableCustomers.find(
+        (c) => c.code.toLowerCase() === rawCust.toLowerCase() || c.name.toLowerCase() === rawCust.toLowerCase()
+      );
+      if (!matchedCust && rawCust) {
+        matchedCust = mutableCustomers.find((c) => c.name.toLowerCase().includes(rawCust.toLowerCase()) || rawCust.toLowerCase().includes(c.name.toLowerCase()));
+      }
+      if (!matchedCust && rawCust && autoCreateMaster) {
+        const newCust: Customer = {
+          id: `cust-${Date.now()}-${mutableCustomers.length + 1}`,
+          code: `CUST-${String(mutableCustomers.length + 1).padStart(3, '0')}`,
+          name: rawCust,
+          address: String(getFlexibleValue(headerRow, ['customeraddress', 'address']) || ''),
+          country: String(getFlexibleValue(headerRow, ['destinationcountry', 'country']) || 'Global Export'),
+          contactPerson: '',
+          phone: '',
+          email: '',
+          taxId: '',
+          bankDetails: '',
+          active: true,
+          createdAt: new Date().toISOString()
+        };
+        mutableCustomers.push(newCust);
+        matchedCust = newCust;
+        createdCustomers++;
+      }
+      const consigneeId = matchedCust?.id || mutableCustomers[0]?.id || '';
+
+      const rawBuyer = String(getFlexibleValue(headerRow, ['buyer', 'buyername']) || '').trim();
+      const matchedBuyer = rawBuyer ? mutableCustomers.find((c) => c.name.toLowerCase().includes(rawBuyer.toLowerCase())) : undefined;
+      const buyerId = matchedBuyer?.id;
+
+      const getOrCreatePort = (val: string): string => {
+        const cleanVal = String(val || '').trim();
+        if (!cleanVal) return mutablePorts[0]?.id || '';
+        const matched = mutablePorts.find(
+          (p) => p.code.toLowerCase() === cleanVal.toLowerCase() || p.name.toLowerCase() === cleanVal.toLowerCase() || p.name.toLowerCase().includes(cleanVal.toLowerCase())
+        );
+        if (!matched && autoCreateMaster) {
+          const newPort: PortMaster = {
+            id: `port-${Date.now()}-${mutablePorts.length + 1}`,
+            code: cleanVal.slice(0, 5).toUpperCase(),
+            name: cleanVal,
+            country: 'Global',
+            active: true
+          };
+          mutablePorts.push(newPort);
+          createdPorts++;
+          return newPort.id;
+        }
+        return matched?.id || mutablePorts[0]?.id || '';
+      };
+
+      const rawPol = getFlexibleValue(headerRow, ['portofloading', 'loadingport', 'pol', 'portloading']);
+      const rawPod = getFlexibleValue(headerRow, ['portofdischarge', 'dischargeport', 'pod', 'portdischarge']);
+      const rawDest = getFlexibleValue(headerRow, ['finaldestination', 'destinationport', 'destination', 'finaldest']);
+
+      const portOfLoadingId = getOrCreatePort(rawPol);
+      const portOfDischargeId = getOrCreatePort(rawPod);
+      const finalDestinationId = getOrCreatePort(rawDest || rawPod);
+
+      const rawCurr = String(getFlexibleValue(headerRow, ['currency', 'invoicecurrency', 'curr']) || 'USD').toUpperCase().trim();
+      const allowedCurrs: SalesCurrency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR', 'AED', 'SGD'];
+      const currency: SalesCurrency = allowedCurrs.includes(rawCurr as SalesCurrency) ? (rawCurr as SalesCurrency) : 'USD';
+
+      const rawExRate = parseFloat(getFlexibleValue(headerRow, ['exchangerate', 'rate', 'forexrate', 'usdrate']) || '84.5');
+      const exchangeRate = !isNaN(rawExRate) && rawExRate > 0 ? Number(rawExRate.toFixed(2)) : 84.5;
+
+      const orderNo = String(getFlexibleValue(headerRow, ['orderno', 'order', 'pono', 'poref']) || '').trim();
+      const remarks = String(getFlexibleValue(headerRow, ['remarks', 'notes', 'comment']) || '').trim();
+
+      const lineItems: SalesInvoiceLine[] = [];
+
+      rows.forEach(({ row, rowNum }) => {
+        const rawSpec = String(getFlexibleValue(row, ['product', 'species', 'speciesname', 'item', 'description']) || '').trim();
+        let matchedSpec = mutableSpecies.find(
+          (sp) => sp.code.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase().includes(rawSpec.toLowerCase())
+        );
+        if (!matchedSpec && rawSpec && autoCreateMaster) {
+          const newSpec: Species = {
+            id: `sp-${Date.now()}-${mutableSpecies.length + 1}`,
+            code: rawSpec.substring(0, 3).toUpperCase(),
+            name: rawSpec,
+            scientificName: '',
+            category: 'Export Finish',
+            hsCode: String(getFlexibleValue(row, ['hscode', 'hs']) || '03061790'),
+            active: true
+          };
+          mutableSpecies.push(newSpec);
+          matchedSpec = newSpec;
+          createdSpecies++;
+        }
+        const speciesId = matchedSpec?.id || mutableSpecies[0]?.id || '';
+        const hsCode = String(getFlexibleValue(row, ['hscode', 'hs']) || matchedSpec?.hsCode || '03061790');
+
+        const rawSize = String(getFlexibleValue(row, ['size', 'sizename']) || '').trim();
+        const matchedSize = mutableSizes.find((sz) => sz.name.toLowerCase().includes(rawSize.toLowerCase()));
+        const sizeId = matchedSize?.id || mutableSizes[0]?.id || '';
+
+        const rawCount = String(getFlexibleValue(row, ['count', 'countname']) || '').trim();
+        const matchedCount = mutableCounts.find((c) => c.name.toLowerCase().includes(rawCount.toLowerCase()));
+        const countId = matchedCount?.id || undefined;
+
+        const rawCartons = parseFloat(getFlexibleValue(row, ['cartonscount', 'cartons', 'boxes', 'cases', 'pkgs']) || '0');
+        const cartonsCount = !isNaN(rawCartons) ? Math.round(rawCartons) : 0;
+
+        const rawWeight = parseFloat(getFlexibleValue(row, ['netweightkg', 'weightkg', 'netweight', 'weight', 'qtykg']) || '');
+        if (isNaN(rawWeight) || rawWeight <= 0) {
+          errors.push(`Row ${rowNum} (${invNoKey}): Net Weight (Kg) is missing or must be greater than 0.`);
+          return;
+        }
+        const weightKg = Number(rawWeight.toFixed(2));
+
+        const rawRate = parseFloat(getFlexibleValue(row, ['rateperkg', 'rate', 'priceperkg', 'unitprice']) || '0');
+        const ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(2)) : 0;
+
+        const amountCurrency = Number((weightKg * ratePerKg).toFixed(2));
+        const rawFob = parseFloat(getFlexibleValue(row, ['fobvaluecurrency', 'fobvalue', 'fobamount', 'fob']) || '');
+        const fobValueCurrency = !isNaN(rawFob) && rawFob > 0 ? Number(rawFob.toFixed(2)) : amountCurrency;
+
+        lineItems.push({
+          id: `line-${Date.now()}-${lineItems.length}-${Math.random().toString(36).substr(2, 4)}`,
+          speciesId,
+          hsCode,
+          sizeId,
+          countId,
+          cartonsCount,
+          weightKg,
+          ratePerKg,
+          amountCurrency,
+          fobValueCurrency
+        });
+      });
+
+      if (lineItems.length === 0) {
+        errors.push(`Invoice ${invNoKey}: No valid line items could be imported.`);
+        return;
+      }
+
+      const totalCartons = lineItems.reduce((s, l) => s + l.cartonsCount, 0);
+      const totalWeightKg = Number(lineItems.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
+      const totalAmountCurrency = Number(lineItems.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
+      const totalFobValueCurrency = Number(lineItems.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+      const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
+
+      const invRecord: SalesInvoice = {
+        id: `inv-${Date.now()}-${newInvoices.length}-${Math.random().toString(36).substr(2, 5)}`,
+        invoiceNo: String(getFlexibleValue(headerRow, ['invoiceno', 'invoice', 'billno']) || invNoKey).trim(),
+        invoiceDate,
+        financialYear: businessSettings.financialYear,
+        consigneeId,
+        buyerId,
+        orderNo,
+        portOfLoadingId,
+        portOfDischargeId,
+        finalDestinationId,
+        currency,
+        exchangeRate,
+        remarks,
+        lineItems,
+        totalCartons,
+        totalWeightKg,
+        totalAmountCurrency,
+        totalFobValueCurrency,
+        estimatedAmountINR,
+        realizations: [],
+        totalRealizedCurrency: 0,
+        balanceRealizationCurrency: totalAmountCurrency,
+        totalRealizedINR: 0,
+        realizationStatus: 'Not Realized',
+        isVoided: false,
+        createdBy: currentUser.email || 'import@system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      newInvoices.push(invRecord);
+    });
+
+    if (newInvoices.length > 0) {
+      setSalesInvoices((prev) => [...newInvoices, ...prev]);
+      if (createdCustomers > 0) setCustomers([...mutableCustomers]);
+      if (createdPorts > 0) setPorts([...mutablePorts]);
+      if (createdSpecies > 0) setSpecies([...mutableSpecies]);
+
+      logAudit('CREATE', 'SALES_INVOICE', `Excel bulk import: ${newInvoices.length} sales invoices imported`, {
+        newValues: {
+          importedCount: newInvoices.length,
+          createdCustomers,
+          createdPorts,
+          createdSpecies
+        }
+      });
+
+      showToast(`Successfully imported ${newInvoices.length} export sales invoices from Excel.`, 'success');
+    }
+
+    return {
+      added: newInvoices.length,
+      errors,
+      createdCustomers,
+      createdPorts,
+      createdSpecies
+    };
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -3732,6 +4225,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bulkImportBankAccounts,
         bulkImportExpenseTypes,
         bulkImportPurchases,
+        bulkImportProcessingEntries,
+        bulkImportSalesInvoices,
         logAudit
       }}
     >

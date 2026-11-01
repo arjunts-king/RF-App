@@ -7,7 +7,8 @@ import {
   Boxes,
   Database,
   BarChart3,
-  ShieldAlert
+  ShieldAlert,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export type ProductionNavTab =
@@ -17,7 +18,8 @@ export type ProductionNavTab =
   | 'slab-types'
   | 'prod-reports'
   | 'master-data'
-  | 'audit-log';
+  | 'audit-log'
+  | 'prod-excel-import';
 
 interface ProductionSidebarProps {
   activeTab: ProductionNavTab;
@@ -66,6 +68,18 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
           label: 'Shared Master Data',
           icon: Database,
           show: permissions.canManageMasterData
+        }
+      ]
+    },
+    {
+      title: 'DATA & MIGRATION',
+      items: [
+        {
+          id: 'prod-excel-import',
+          label: 'Excel Import & Migration',
+          icon: FileSpreadsheet,
+          show: true,
+          badge: 'Migration'
         }
       ]
     },

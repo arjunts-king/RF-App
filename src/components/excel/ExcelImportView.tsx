@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { PageHeader } from '../common/PageHeader';
@@ -23,7 +23,11 @@ import {
   Building2,
   DollarSign,
   Database,
-  HelpCircle
+  Factory,
+  Boxes,
+  TrendingUp,
+  FileText,
+  Anchor
 } from 'lucide-react';
 
 interface ImportSummary {
@@ -33,9 +37,17 @@ interface ImportSummary {
   createdSuppliers?: number;
   createdSpecies?: number;
   createdLocations?: number;
+  createdCustomers?: number;
+  createdPorts?: number;
+  createdSlabTypes?: number;
 }
 
-export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({ onNavigate }) => {
+export type ModuleCategory = 'purchase' | 'production' | 'sales';
+
+export const ExcelImportView: React.FC<{
+  onNavigate?: (tab: any) => void;
+  defaultModule?: ModuleCategory;
+}> = ({ onNavigate, defaultModule = 'purchase' }) => {
   const {
     suppliers,
     species,
@@ -44,7 +56,12 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     counts,
     locations,
     expenseTypes,
+    slabTypes,
+    customers,
+    ports,
     purchases,
+    processingEntries,
+    salesInvoices,
     bulkImportSuppliers,
     bulkImportSpecies,
     bulkImportGrades,
@@ -53,11 +70,36 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
     bulkImportLocations,
     bulkImportBankAccounts,
     bulkImportExpenseTypes,
-    bulkImportPurchases
+    bulkImportPurchases,
+    bulkImportSlabTypes,
+    bulkImportCustomers,
+    bulkImportPorts,
+    bulkImportProcessingEntries,
+    bulkImportSalesInvoices
   } = useData();
   const { showToast } = useToast();
 
-  const [selectedEntity, setSelectedEntity] = useState<ImportEntityType>('purchases');
+  const [selectedModule, setSelectedModule] = useState<ModuleCategory>(defaultModule);
+
+  // Synchronize when defaultModule prop changes
+  useEffect(() => {
+    setSelectedModule(defaultModule);
+    if (defaultModule === 'production') {
+      setSelectedEntity('processing-entries');
+    } else if (defaultModule === 'sales') {
+      setSelectedEntity('sales-invoices');
+    } else {
+      setSelectedEntity('purchases');
+    }
+  }, [defaultModule]);
+
+  const [selectedEntity, setSelectedEntity] = useState<ImportEntityType>(
+    defaultModule === 'production'
+      ? 'processing-entries'
+      : defaultModule === 'sales'
+      ? 'sales-invoices'
+      : 'purchases'
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sheetsData, setSheetsData] = useState<{ name: string; rows: Record<string, any>[] }[]>([]);
   const [activeSheetIndex, setActiveSheetIndex] = useState(0);
@@ -73,68 +115,174 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const entityOptions: { id: ImportEntityType; label: string; icon: any; desc: string }[] = [
+  // Entity definitions partitioned by module
+  const purchaseEntities: { id: ImportEntityType; label: string; icon: any; desc: string }[] = [
     {
       id: 'purchases',
       label: 'Purchase Transactions',
       icon: Receipt,
-      desc: 'Import daily purchase sheets, landing bills, rates & direct landing expenses (Ice, Transport, Dalali, Labour, Other Expenses)'
+      desc: 'Daily harbour purchase sheets, landing bills, rates, weighments & direct landing expenses'
     },
     {
       id: 'suppliers',
       label: 'Suppliers & Boat Owners',
       icon: Users,
-      desc: 'Import vendor registry, contact, credit days & bank accounts'
+      desc: 'Vendor registry, contact persons, credit days & bank accounts'
     },
     {
       id: 'species',
       label: 'Species & Products',
       icon: Fish,
-      desc: 'Import seafood species list and categories'
+      desc: 'Seafood species catalog, scientific names & categories'
     },
     {
       id: 'grades',
       label: 'Quality Grades',
       icon: Layers,
-      desc: 'Import trade gradings (Grade A, B, Export)'
+      desc: 'Quality gradings (Grade A Export, Grade B Market, Reject)'
     },
     {
       id: 'sizes',
       label: 'Physical Sizes',
       icon: Database,
-      desc: 'Import fish/product sizes (e.g. Small, Medium, Large, Extra Large)'
+      desc: 'Fish and crustacean sizes (Small, Medium, Large, Extra Large)'
     },
     {
       id: 'counts',
       label: 'Piece Counts / Pcs',
       icon: Database,
-      desc: 'Import count gradings per Kg (e.g. 10/20, 20/30, 41/50, 100+)'
+      desc: 'Count gradings per Kg (16/20, 21/25, 31/40, 100+)'
     },
     {
       id: 'locations',
       label: 'Landing Centres & Harbours',
       icon: MapPin,
-      desc: 'Import harbours, wharves, jetties and districts'
+      desc: 'Harbours, wharves, jetties and coastal districts'
     },
     {
       id: 'bank-accounts',
       label: 'Bank & Cash Accounts',
       icon: Building2,
-      desc: 'Import accounts for supplier payment reconciliation'
+      desc: 'Harbour operating accounts for supplier disbursements'
     },
     {
       id: 'expense-types',
       label: 'Recurring Expense Types',
       icon: DollarSign,
-      desc: 'Import expense categories (Ice, Transport, Dalali, Labour, Other Expenses)'
+      desc: 'Direct landing expenses (Ice, Transport, Dalali, Labour, Other Expenses)'
     },
     {
       id: 'multi-sheet',
       label: 'Multi-Sheet Complete Workbook',
       icon: FileSpreadsheet,
-      desc: 'Upload 1 Excel workbook with multiple sheets at once'
+      desc: 'Upload 1 complete workbook with Purchases, Suppliers, Species & Masters'
     }
   ];
+
+  const productionEntities: { id: ImportEntityType; label: string; icon: any; desc: string }[] = [
+    {
+      id: 'processing-entries',
+      label: 'Daily Processing & Plant Entries',
+      icon: Factory,
+      desc: 'Shift-wise factory throughput, supplier lots, processed weight, rejection & slab variance'
+    },
+    {
+      id: 'slab-types',
+      label: 'Slab Types Master',
+      icon: Boxes,
+      desc: 'Standard block freezing specifications (2.0 Kg Standard Block, 1.8 Kg Export Slab)'
+    },
+    {
+      id: 'species',
+      label: 'Species & Raw Materials',
+      icon: Fish,
+      desc: 'Factory raw material varieties, processing yield form & classifications'
+    },
+    {
+      id: 'grades',
+      label: 'Quality Grades',
+      icon: Layers,
+      desc: 'Factory grading standards (Export Grade A, Processing Grade B)'
+    },
+    {
+      id: 'sizes',
+      label: 'Physical Sizes',
+      icon: Database,
+      desc: 'Product sizing specifications for packing lines'
+    },
+    {
+      id: 'counts',
+      label: 'Piece Counts',
+      icon: Database,
+      desc: 'Piece count per Kg specifications for shrimp processing'
+    },
+    {
+      id: 'production-multi-sheet',
+      label: 'Multi-Sheet Production Workbook',
+      icon: FileSpreadsheet,
+      desc: 'Complete workbook containing Processing Entries, Slab Types & Species sheets'
+    }
+  ];
+
+  const salesEntities: { id: ImportEntityType; label: string; icon: any; desc: string }[] = [
+    {
+      id: 'sales-invoices',
+      label: 'Commercial Export Invoices',
+      icon: FileText,
+      desc: 'Export sales invoices, multi-line container items, cartons, weights, rates & FOB values'
+    },
+    {
+      id: 'customers',
+      label: 'Consignees & Foreign Buyers',
+      icon: Users,
+      desc: 'Overseas buyer profiles, tax IDs, destination countries & bank wire info'
+    },
+    {
+      id: 'ports',
+      label: 'Port Master (POL & POD)',
+      icon: Anchor,
+      desc: 'Ports of loading, transshipment hubs, discharge ports & destinations'
+    },
+    {
+      id: 'species',
+      label: 'Export Product Varieties',
+      icon: Fish,
+      desc: 'Commercial seafood products with Harmonized System (HS) trade codes'
+    },
+    {
+      id: 'sizes',
+      label: 'Export Finished Sizes',
+      icon: Database,
+      desc: 'Commercial packaging size classifications'
+    },
+    {
+      id: 'sales-multi-sheet',
+      label: 'Multi-Sheet Export Workbook',
+      icon: FileSpreadsheet,
+      desc: 'Complete export workbook with Sales Invoices, Buyers & Ports sheets'
+    }
+  ];
+
+  const currentEntityOptions =
+    selectedModule === 'production'
+      ? productionEntities
+      : selectedModule === 'sales'
+      ? salesEntities
+      : purchaseEntities;
+
+  const handleModuleSwitch = (mod: ModuleCategory) => {
+    setSelectedModule(mod);
+    setImportSummary(null);
+    setSelectedFile(null);
+    setSheetsData([]);
+    if (mod === 'production') {
+      setSelectedEntity('processing-entries');
+    } else if (mod === 'sales') {
+      setSelectedEntity('sales-invoices');
+    } else {
+      setSelectedEntity('purchases');
+    }
+  };
 
   const handleFile = async (file: File) => {
     setSelectedFile(file);
@@ -145,15 +293,30 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
       setSheetsData(sheets);
       setActiveSheetIndex(0);
 
-      // Intelligent Auto-Detection of Sheet / Entity
+      // Intelligent Auto-Detection of Sheet / Entity across Modules
       if (sheets.length > 1) {
         const names = sheets.map((s) => s.name.toLowerCase().trim());
         const hasSupp = names.some((n) => n.includes('supplier'));
         const hasSpec = names.some((n) => n.includes('specie') || n.includes('product'));
         const hasPur = names.some((n) => n.includes('purchase'));
-        if ((hasSupp && hasSpec) || (hasSupp && hasPur) || (hasSpec && hasPur)) {
+        const hasProc = names.some((n) => n.includes('process') || n.includes('production'));
+        const hasSlab = names.some((n) => n.includes('slab'));
+        const hasInv = names.some((n) => n.includes('invoice') || n.includes('export') || n.includes('sales'));
+        const hasCust = names.some((n) => n.includes('customer') || n.includes('buyer'));
+        const hasPort = names.some((n) => n.includes('port'));
+
+        if (hasProc || hasSlab) {
+          setSelectedModule('production');
+          setSelectedEntity('production-multi-sheet');
+          showToast('Detected Production multi-sheet workbook. Switched to Production Module.', 'info');
+        } else if (hasInv || (hasCust && hasPort)) {
+          setSelectedModule('sales');
+          setSelectedEntity('sales-multi-sheet');
+          showToast('Detected Sales & Export multi-sheet workbook. Switched to Sales Module.', 'info');
+        } else if ((hasSupp && hasSpec) || (hasSupp && hasPur) || (hasSpec && hasPur)) {
+          setSelectedModule('purchase');
           setSelectedEntity('multi-sheet');
-          showToast('Detected multi-sheet workbook. Automatically set to Multi-Sheet Workbook.', 'info');
+          showToast('Detected Purchase multi-sheet workbook. Switched to Purchase Module.', 'info');
         }
       } else if (sheets.length === 1) {
         const sheet = sheets[0];
@@ -161,25 +324,61 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         const fRow = sheet.rows[0] || {};
         const colKeys = Object.keys(fRow).map((k) => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-        if (sName.includes('supplier') || (colKeys.includes('suppliername') && !colKeys.includes('weightkg') && !colKeys.includes('weight'))) {
+        // Production Detection
+        if (
+          sName.includes('process') ||
+          sName.includes('production') ||
+          colKeys.includes('slabscount') ||
+          colKeys.includes('processedweightkg') ||
+          colKeys.includes('processedweight') ||
+          colKeys.includes('supplierboxid') ||
+          colKeys.includes('standardslabweightkg')
+        ) {
+          setSelectedModule('production');
+          setSelectedEntity('processing-entries');
+          showToast('Detected Production daily processing log sheet.', 'info');
+        } else if (sName.includes('slab') || (colKeys.includes('standardweightkg') && !colKeys.includes('rateperkg'))) {
+          setSelectedModule('production');
+          setSelectedEntity('slab-types');
+          showToast('Detected Slab Types master sheet.', 'info');
+        }
+        // Sales & Export Detection
+        else if (
+          sName.includes('export') ||
+          sName.includes('sales') ||
+          colKeys.includes('portofloading') ||
+          colKeys.includes('portofdischarge') ||
+          colKeys.includes('fobvaluecurrency') ||
+          colKeys.includes('fobvalue') ||
+          colKeys.includes('consignee') ||
+          colKeys.includes('cartonscount')
+        ) {
+          setSelectedModule('sales');
+          setSelectedEntity('sales-invoices');
+          showToast('Detected Commercial Export Invoices sheet.', 'info');
+        } else if (sName.includes('customer') || sName.includes('buyer') || colKeys.includes('customercode') || colKeys.includes('taxid')) {
+          setSelectedModule('sales');
+          setSelectedEntity('customers');
+          showToast('Detected Consignees & Buyers master sheet.', 'info');
+        } else if (sName.includes('port') || colKeys.includes('portcode') || colKeys.includes('portname')) {
+          setSelectedModule('sales');
+          setSelectedEntity('ports');
+          showToast('Detected Port Master sheet.', 'info');
+        }
+        // Purchase Detection
+        else if (sName.includes('supplier') || (colKeys.includes('suppliername') && !colKeys.includes('weightkg') && !colKeys.includes('weight'))) {
+          setSelectedModule('purchase');
           setSelectedEntity('suppliers');
-          showToast('Detected Supplier master sheet. Category switched to Suppliers & Boat Owners.', 'info');
+          showToast('Detected Supplier master sheet.', 'info');
         } else if (sName.includes('specie') || sName.includes('product') || (colKeys.includes('speciesname') && !colKeys.includes('weightkg'))) {
           setSelectedEntity('species');
-          showToast('Detected Species master sheet. Category switched to Species & Products.', 'info');
+          showToast('Detected Species catalog sheet.', 'info');
         } else if (sName.includes('location') || sName.includes('harbour') || (colKeys.includes('locationname') && !colKeys.includes('weightkg'))) {
+          setSelectedModule('purchase');
           setSelectedEntity('locations');
-          showToast('Detected Landing Centre sheet. Category switched to Landing Centres & Harbours.', 'info');
-        } else if (sName.includes('grade')) {
-          setSelectedEntity('grades');
-          showToast('Detected Grades sheet. Category switched to Quality Grades.', 'info');
-        } else if (sName.includes('count') || (colKeys.includes('countname') && !colKeys.includes('weightkg'))) {
-          setSelectedEntity('counts');
-          showToast('Detected Piece Counts sheet. Category switched to Piece Counts / Pcs.', 'info');
-        } else if (sName.includes('size')) {
-          setSelectedEntity('sizes');
-          showToast('Detected Physical Sizes sheet. Category switched to Physical Sizes.', 'info');
-        } else if (sName.includes('purchase') || colKeys.includes('weightkg') || colKeys.includes('weight')) {
+          showToast('Detected Landing Centre sheet.', 'info');
+        } else if (sName.includes('purchase') || colKeys.includes('rateperkg') || colKeys.includes('effectivecost')) {
+          setSelectedModule('purchase');
           setSelectedEntity('purchases');
         }
       }
@@ -217,7 +416,6 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
 
     try {
       if (selectedEntity === 'multi-sheet') {
-        // Multi-sheet workbook import: match sheet names
         let totalPurchasesAdded = 0;
         let totalSuppliersAdded = 0;
         let totalSpeciesAdded = 0;
@@ -258,6 +456,74 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           createdLocations: totalLocationsAdded,
           errors: allErrors
         });
+      } else if (selectedEntity === 'production-multi-sheet') {
+        let totalEntriesAdded = 0;
+        let totalSlabsAdded = 0;
+        let totalSpeciesAdded = 0;
+        const allErrors: string[] = [];
+
+        sheetsData.forEach((sheet) => {
+          const sheetNameNorm = sheet.name.toLowerCase().trim();
+          if (sheetNameNorm.includes('process') || sheetNameNorm.includes('production') || sheetNameNorm.includes('daily')) {
+            const res = bulkImportProcessingEntries(sheet.rows, autoCreateMaster);
+            totalEntriesAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('slab')) {
+            const res = bulkImportSlabTypes(sheet.rows);
+            totalSlabsAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
+            const res = bulkImportSpecies(sheet.rows);
+            totalSpeciesAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('grade')) {
+            bulkImportGrades(sheet.rows);
+          } else if (sheetNameNorm.includes('size')) {
+            bulkImportSizes(sheet.rows);
+          }
+        });
+
+        setImportSummary({
+          added: totalEntriesAdded + totalSlabsAdded + totalSpeciesAdded,
+          createdSlabTypes: totalSlabsAdded,
+          createdSpecies: totalSpeciesAdded,
+          errors: allErrors
+        });
+      } else if (selectedEntity === 'sales-multi-sheet') {
+        let totalInvoicesAdded = 0;
+        let totalCustomersAdded = 0;
+        let totalPortsAdded = 0;
+        let totalSpeciesAdded = 0;
+        const allErrors: string[] = [];
+
+        sheetsData.forEach((sheet) => {
+          const sheetNameNorm = sheet.name.toLowerCase().trim();
+          if (sheetNameNorm.includes('invoice') || sheetNameNorm.includes('export') || sheetNameNorm.includes('sales')) {
+            const res = bulkImportSalesInvoices(sheet.rows, autoCreateMaster);
+            totalInvoicesAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('customer') || sheetNameNorm.includes('buyer')) {
+            const res = bulkImportCustomers(sheet.rows);
+            totalCustomersAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('port')) {
+            const res = bulkImportPorts(sheet.rows);
+            totalPortsAdded += res.added;
+            allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
+            const res = bulkImportSpecies(sheet.rows);
+            totalSpeciesAdded += res.added;
+            allErrors.push(...res.errors);
+          }
+        });
+
+        setImportSummary({
+          added: totalInvoicesAdded + totalCustomersAdded + totalPortsAdded + totalSpeciesAdded,
+          createdCustomers: totalCustomersAdded,
+          createdPorts: totalPortsAdded,
+          createdSpecies: totalSpeciesAdded,
+          errors: allErrors
+        });
       } else if (selectedEntity === 'purchases') {
         const res = bulkImportPurchases(activeRows, autoCreateMaster);
         setImportSummary({
@@ -266,6 +532,45 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           createdSuppliers: res.createdSuppliers,
           createdSpecies: res.createdSpecies,
           createdLocations: res.createdLocations
+        });
+      } else if (selectedEntity === 'processing-entries') {
+        const res = bulkImportProcessingEntries(activeRows, autoCreateMaster);
+        setImportSummary({
+          added: res.added,
+          errors: res.errors,
+          createdSuppliers: res.createdSuppliers,
+          createdSpecies: res.createdSpecies,
+          createdSlabTypes: res.createdSlabTypes
+        });
+      } else if (selectedEntity === 'slab-types') {
+        const res = bulkImportSlabTypes(activeRows);
+        setImportSummary({
+          added: res.added,
+          updated: res.updated,
+          errors: res.errors
+        });
+      } else if (selectedEntity === 'sales-invoices') {
+        const res = bulkImportSalesInvoices(activeRows, autoCreateMaster);
+        setImportSummary({
+          added: res.added,
+          errors: res.errors,
+          createdCustomers: res.createdCustomers,
+          createdPorts: res.createdPorts,
+          createdSpecies: res.createdSpecies
+        });
+      } else if (selectedEntity === 'customers') {
+        const res = bulkImportCustomers(activeRows);
+        setImportSummary({
+          added: res.added,
+          updated: res.updated,
+          errors: res.errors
+        });
+      } else if (selectedEntity === 'ports') {
+        const res = bulkImportPorts(activeRows);
+        setImportSummary({
+          added: res.added,
+          updated: res.updated,
+          errors: res.errors
         });
       } else if (selectedEntity === 'suppliers') {
         const res = bulkImportSuppliers(activeRows, updateExistingMaster);
@@ -334,8 +639,150 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
   };
 
   const handleExportCurrent = () => {
+    if (selectedModule === 'production') {
+      if (processingEntries.length === 0 && slabTypes.length === 0) {
+        showToast('No production data in system yet to export.', 'warning');
+        return;
+      }
+
+      const procExport = processingEntries.map((e) => {
+        const supp = suppliers.find((s) => s.id === e.supplierId);
+        const sp = species.find((s) => s.id === e.speciesId);
+        const grd = grades.find((g) => g.id === e.gradeId);
+        const sz = sizes.find((s) => s.id === e.sizeId);
+        const cnt = counts.find((c) => c.id === e.countId);
+        const slb = slabTypes.find((st) => st.id === e.slabTypeId);
+
+        return {
+          'Entry No': e.entryNo,
+          'Processing Date': e.processingDate,
+          'Shift': e.shift,
+          'Supplier': supp?.name || '',
+          'Species': sp?.name || '',
+          'Grade': grd?.name || '',
+          'Size': sz?.name || '',
+          'Count': cnt?.name || '',
+          'Supplier Box ID': e.supplierBoxId,
+          'Slab Type': slb?.name || '',
+          'Standard Weight (Kg)': e.standardSlabWeightKg,
+          'Slabs Count': e.slabsCount,
+          'Processed Weight (Kg)': e.processedWeightKg,
+          'Expected Weight (Kg)': e.expectedWeightKg,
+          'Variance (Kg)': e.varianceWeightKg,
+          'Variance %': `${e.variancePct}%`,
+          'Status': e.hasSlabVariance ? 'Variance Exceeded' : 'Within Tolerance',
+          'Rejection Weight (Kg)': e.rejectionWeightKg,
+          'Operator': e.operator,
+          'Remarks': e.remarks
+        };
+      });
+
+      const slabExport = slabTypes.map((st) => ({
+        'Code': st.code,
+        'Slab Type Name': st.name,
+        'Standard Weight (Kg)': st.standardWeightKg,
+        'Unit': st.unit,
+        'Product Applicability': st.productApplicability,
+        'Active': st.active ? 'Yes' : 'No'
+      }));
+
+      exportDataToExcel(`Production_Data_Export_${new Date().toISOString().split('T')[0]}`, [
+        { sheetName: 'DailyProcessing', data: procExport },
+        { sheetName: 'SlabTypes', data: slabExport }
+      ]);
+      showToast('Exported production logs and slab types to Excel.', 'success');
+      return;
+    }
+
+    if (selectedModule === 'sales') {
+      if (salesInvoices.length === 0 && customers.length === 0) {
+        showToast('No sales data in system yet to export.', 'warning');
+        return;
+      }
+
+      const invExport = salesInvoices.map((inv) => {
+        const cust = customers.find((c) => c.id === inv.consigneeId);
+        const pol = ports.find((p) => p.id === inv.portOfLoadingId);
+        const pod = ports.find((p) => p.id === inv.portOfDischargeId);
+        const dest = ports.find((p) => p.id === inv.finalDestinationId);
+
+        return {
+          'Invoice No': inv.invoiceNo,
+          'Invoice Date': inv.invoiceDate,
+          'Customer / Consignee': cust?.name || '',
+          'Destination Country': cust?.country || '',
+          'Order No': inv.orderNo || '',
+          'Port of Loading': pol?.name || '',
+          'Port of Discharge': pod?.name || '',
+          'Final Destination': dest?.name || '',
+          'Currency': inv.currency,
+          'Exchange Rate': inv.exchangeRate,
+          'Total Cartons': inv.totalCartons,
+          'Total Net Weight (Kg)': inv.totalWeightKg,
+          'Total Amount': inv.totalAmountCurrency,
+          'Total FOB Value': inv.totalFobValueCurrency,
+          'Estimated INR Value': inv.estimatedAmountINR,
+          'Realized Currency': inv.totalRealizedCurrency,
+          'Balance Currency': inv.balanceRealizationCurrency,
+          'Realization Status': inv.realizationStatus,
+          'Remarks': inv.remarks || ''
+        };
+      });
+
+      const linesExport: any[] = [];
+      salesInvoices.forEach((inv) => {
+        inv.lineItems.forEach((l, idx) => {
+          const sp = species.find((s) => s.id === l.speciesId);
+          const sz = sizes.find((s) => s.id === l.sizeId);
+          const cnt = counts.find((c) => c.id === l.countId);
+
+          linesExport.push({
+            'Invoice No': inv.invoiceNo,
+            'Line #': idx + 1,
+            'Species / Product': sp?.name || '',
+            'HS Code': l.hsCode,
+            'Size': sz?.name || '',
+            'Count': cnt?.name || '',
+            'Cartons': l.cartonsCount,
+            'Net Weight (Kg)': l.weightKg,
+            'Rate per Kg': l.ratePerKg,
+            'Line Amount': l.amountCurrency,
+            'FOB Value': l.fobValueCurrency
+          });
+        });
+      });
+
+      const custExport = customers.map((c) => ({
+        'Customer Code': c.code,
+        'Name': c.name,
+        'Country': c.country,
+        'Contact Person': c.contactPerson,
+        'Phone': c.phone,
+        'Email': c.email,
+        'Tax ID': c.taxId,
+        'Address': c.address,
+        'Bank Details / SWIFT': c.bankDetails
+      }));
+
+      const portExport = ports.map((p) => ({
+        'Port Code': p.code,
+        'Port Name': p.name,
+        'Country': p.country
+      }));
+
+      exportDataToExcel(`Sales_Export_Data_${new Date().toISOString().split('T')[0]}`, [
+        { sheetName: 'SalesInvoices', data: invExport },
+        { sheetName: 'LineItems', data: linesExport },
+        { sheetName: 'Customers', data: custExport },
+        { sheetName: 'Ports', data: portExport }
+      ]);
+      showToast('Exported sales invoices, customers and ports to Excel.', 'success');
+      return;
+    }
+
+    // Default: Purchase Module Export
     if (purchases.length === 0 && suppliers.length === 0) {
-      showToast('No data in system yet to export.', 'warning');
+      showToast('No purchase data in system yet to export.', 'warning');
       return;
     }
 
@@ -394,38 +841,55 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
 
     const suppliersExport = suppliers.map((s) => ({
       'Supplier Code': s.code,
-      'Supplier Name': s.name,
+      'Name': s.name,
       'Type': s.type,
       'Contact Person': s.contactPerson,
       'Phone': s.phone,
       'Email': s.email,
+      'Address': s.address,
       'District': s.district,
       'State': s.state,
-      'GSTIN': s.gstin,
-      'PAN': s.pan,
+      'GSTIN': s.gstin || '',
+      'PAN': s.pan || '',
       'Bank Name': s.bankName,
-      'Bank Account No': s.bankAccount,
-      'Bank IFSC': s.bankIfsc,
+      'Account No': s.bankAccount,
+      'IFSC': s.bankIfsc,
+      'Payment Terms': s.paymentTerms,
       'Credit Days': s.creditDays,
-      'Opening Balance': s.openingBalance,
-      'Active': s.active ? 'Yes' : 'No'
+      'Opening Balance': s.openingBalance
     }));
 
-    exportDataToExcel('Seafood_Data_Backup.xlsx', [
+    exportDataToExcel(`Seafood_Procurement_Backup_${new Date().toISOString().split('T')[0]}`, [
       { sheetName: 'Purchases', data: purchasesExport },
       { sheetName: 'Suppliers', data: suppliersExport }
     ]);
+    showToast('Exported purchase register and suppliers to Excel.', 'success');
   };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Figma Make Standard Page Header */}
       <PageHeader
-        title="Excel bulk import & migration engine"
-        subtitle="Zero-dependency spreadsheet import for historical procurement entries, vendor ledgers, and master reference catalogs with intelligent column auto-mapping."
-        breadcrumbs={['Settings', 'Excel Migration']}
+        title={
+          selectedModule === 'production'
+            ? 'Production bulk import & factory migration engine'
+            : selectedModule === 'sales'
+            ? 'Commercial export sales import & migration engine'
+            : 'Excel bulk import & migration engine'
+        }
+        subtitle={
+          selectedModule === 'production'
+            ? 'Bulk upload factory processing shifts, lot tracking, standard slab freezing records, and yield variances with automatic tolerance verification.'
+            : selectedModule === 'sales'
+            ? 'Import commercial export invoices, container line items, foreign buyer profiles, and shipping discharge ports with automatic currency exchange rate mapping.'
+            : 'Zero-dependency spreadsheet import for historical procurement entries, vendor ledgers, and master reference catalogs with intelligent column auto-mapping.'
+        }
+        breadcrumbs={[
+          selectedModule === 'production' ? 'Production' : selectedModule === 'sales' ? 'Sales' : 'Settings',
+          'Excel Migration'
+        ]}
         primaryAction={{
-          label: 'Backup data to Excel',
+          label: `Backup ${selectedModule === 'production' ? 'production' : selectedModule === 'sales' ? 'sales' : 'purchase'} data`,
           icon: Download,
           onClick: handleExportCurrent
         }}
@@ -435,6 +899,49 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           onClick: () => downloadExcelTemplate(selectedEntity, expenseTypes)
         }}
       />
+
+      {/* Module Workspace Switcher Tabs */}
+      <div className="bg-white p-3 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-gray-100/90 rounded-xl">
+          <button
+            onClick={() => handleModuleSwitch('purchase')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+              selectedModule === 'purchase'
+                ? 'bg-white text-rose-700 shadow-xs'
+                : 'text-ink-600 hover:text-ink-900'
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Purchase Module</span>
+          </button>
+          <button
+            onClick={() => handleModuleSwitch('production')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+              selectedModule === 'production'
+                ? 'bg-white text-rose-700 shadow-xs'
+                : 'text-ink-600 hover:text-ink-900'
+            }`}
+          >
+            <Factory className="w-3.5 h-3.5" />
+            <span>Production Module</span>
+          </button>
+          <button
+            onClick={() => handleModuleSwitch('sales')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+              selectedModule === 'sales'
+                ? 'bg-white text-rose-700 shadow-xs'
+                : 'text-ink-600 hover:text-ink-900'
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Sales & Export Module</span>
+          </button>
+        </div>
+
+        <div className="text-xs text-ink-500 font-medium px-2">
+          Workspace: <strong className="text-ink-900 capitalize">{selectedModule} Data Migration</strong>
+        </div>
+      </div>
 
       {/* Step 1: Select Category */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
@@ -452,7 +959,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {entityOptions.map((opt) => {
+          {currentEntityOptions.map((opt) => {
             const Icon = opt.icon;
             const isSelected = selectedEntity === opt.id;
             return (
@@ -493,7 +1000,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         </div>
       </div>
 
-      {/* Step 2: Upload File Box */}
+      {/* Step 2: Upload File */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-ink-500">
@@ -569,7 +1076,7 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
         </div>
 
         {/* Options & Configuration */}
-        {selectedEntity === 'purchases' && (
+        {(selectedEntity === 'purchases' || selectedEntity === 'processing-entries' || selectedEntity === 'sales-invoices') && (
           <div className="p-3.5 bg-rose-50/40 rounded-xl border border-rose-100 flex items-start gap-3">
             <input
               type="checkbox"
@@ -579,14 +1086,18 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
               className="mt-0.5 rounded text-rose-600 focus:ring-rose-500"
             />
             <label htmlFor="autoCreateMaster" className="text-xs text-ink-800 cursor-pointer">
-              <strong>Auto-create missing master data:</strong> If an imported purchase contains a
-              supplier, species, or harbour landing centre not yet in the master database,
-              automatically register it rather than throwing an error.
+              <strong>Auto-create missing master data:</strong> If an imported record contains a
+              {selectedModule === 'production'
+                ? ' supplier, species, or slab type'
+                : selectedModule === 'sales'
+                ? ' buyer / customer, species, or shipping port'
+                : ' supplier, species, or harbour landing centre'}{' '}
+              not yet registered in the system, automatically register it rather than throwing an error.
             </label>
           </div>
         )}
 
-        {(selectedEntity === 'suppliers' || selectedEntity === 'species') && (
+        {(selectedEntity === 'suppliers' || selectedEntity === 'species' || selectedEntity === 'customers' || selectedEntity === 'ports' || selectedEntity === 'slab-types') && (
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex items-start gap-3">
             <input
               type="checkbox"
@@ -653,46 +1164,51 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {activeRows.slice(0, 8).map((row, rIdx) => (
-                    <tr key={rIdx} className="hover:bg-rose-50/20">
-                      <td className="py-2 px-3 text-ink-400 font-mono text-[10px]">{rIdx + 1}</td>
+                  {activeRows.slice(0, 10).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50">
+                      <td className="py-2 px-3 font-mono text-[11px] text-ink-400">{idx + 1}</td>
                       {Object.keys(activeRows[0] || {}).map((col) => (
-                        <td key={col} className="py-2 px-3 text-ink-800 whitespace-nowrap">
-                          {String(row[col] ?? '—')}
+                        <td key={col} className="py-2 px-3 whitespace-nowrap text-ink-700">
+                          {String(row[col] ?? '')}
                         </td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {activeRows.length > 8 && (
-                <div className="p-2 text-center text-[11px] text-ink-400 bg-gray-50 border-t border-gray-100">
-                  + {activeRows.length - 8} additional rows will be imported
+              {activeRows.length > 10 && (
+                <div className="p-2.5 text-center text-xs text-ink-500 bg-gray-50 border-t border-gray-100">
+                  Showing first 10 rows of {activeRows.length} total rows in this sheet
                 </div>
               )}
             </div>
           ) : (
             <div className="p-8 text-center text-xs text-ink-500 bg-gray-50 rounded-xl">
-              This sheet appears to be empty.
+              This sheet appears to be empty or does not contain recognizable tabular rows.
             </div>
           )}
 
-          {/* Import Action Button */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100">
-            <div className="text-xs text-ink-500 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              Ready to import {activeRows.length} records into your database.
+          <div className="flex items-center justify-between pt-2">
+            <div className="text-xs text-ink-500">
+              Target Entity:{' '}
+              <strong className="text-ink-900">
+                {currentEntityOptions.find((e) => e.id === selectedEntity)?.label || selectedEntity}
+              </strong>
             </div>
 
             <button
               onClick={handleExecuteImport}
               disabled={isProcessing || activeRows.length === 0}
-              className="w-full sm:w-auto px-6 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all ${
+                isProcessing || activeRows.length === 0
+                  ? 'bg-gray-200 text-ink-400 cursor-not-allowed'
+                  : 'bg-rose-600 hover:bg-rose-700 text-white hover:shadow-md'
+              }`}
             >
               {isProcessing ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Importing records...
+                  Importing &amp; Validating...
                 </>
               ) : (
                 <>
@@ -758,6 +1274,39 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
                 </span>
               </div>
             )}
+
+            {importSummary.createdCustomers !== undefined && importSummary.createdCustomers > 0 && (
+              <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <span className="text-[10px] font-bold text-indigo-800 uppercase block">
+                  Auto-Created Buyers
+                </span>
+                <span className="text-lg font-black text-indigo-700">
+                  {importSummary.createdCustomers}
+                </span>
+              </div>
+            )}
+
+            {importSummary.createdPorts !== undefined && importSummary.createdPorts > 0 && (
+              <div className="p-3 bg-teal-50 rounded-xl border border-teal-100">
+                <span className="text-[10px] font-bold text-teal-800 uppercase block">
+                  Auto-Created Ports
+                </span>
+                <span className="text-lg font-black text-teal-700">
+                  {importSummary.createdPorts}
+                </span>
+              </div>
+            )}
+
+            {importSummary.createdSlabTypes !== undefined && importSummary.createdSlabTypes > 0 && (
+              <div className="p-3 bg-sky-50 rounded-xl border border-sky-100">
+                <span className="text-[10px] font-bold text-sky-800 uppercase block">
+                  Auto-Created Slab Types
+                </span>
+                <span className="text-lg font-black text-sky-700">
+                  {importSummary.createdSlabTypes}
+                </span>
+              </div>
+            )}
           </div>
 
           {importSummary.errors.length > 0 && (
@@ -777,57 +1326,81 @@ export const ExcelImportView: React.FC<{ onNavigate?: (tab: any) => void }> = ({
           <div className="flex flex-wrap items-center gap-2 pt-2">
             {onNavigate && (
               <>
-                <button
-                  onClick={() => onNavigate('purchases')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition"
-                >
-                  <Receipt className="w-3.5 h-3.5" />
-                  View Purchases Register
-                </button>
-                <button
-                  onClick={() => onNavigate('master-data')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
-                >
-                  <Database className="w-3.5 h-3.5" />
-                  View Master Data
-                </button>
-                <button
-                  onClick={() => onNavigate('dashboard')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
-                >
-                  Dashboard
-                </button>
+                {selectedModule === 'production' ? (
+                  <>
+                    <button
+                      onClick={() => onNavigate('processing-log')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      View Processing Records &amp; Lots
+                    </button>
+                    <button
+                      onClick={() => onNavigate('slab-types')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      <Boxes className="w-3.5 h-3.5" />
+                      View Slab Types
+                    </button>
+                    <button
+                      onClick={() => onNavigate('prod-dashboard')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      Production Dashboard
+                    </button>
+                  </>
+                ) : selectedModule === 'sales' ? (
+                  <>
+                    <button
+                      onClick={() => onNavigate('invoices')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      View Invoices &amp; Shipments
+                    </button>
+                    <button
+                      onClick={() => onNavigate('customers')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      View Buyers &amp; Consignees
+                    </button>
+                    <button
+                      onClick={() => onNavigate('sales-dashboard')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      Commercial Dashboard
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => onNavigate('purchases')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition"
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      View Purchases Register
+                    </button>
+                    <button
+                      onClick={() => onNavigate('master-data')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      <Database className="w-3.5 h-3.5" />
+                      View Master Data
+                    </button>
+                    <button
+                      onClick={() => onNavigate('dashboard')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 text-xs font-semibold rounded-xl transition"
+                    >
+                      Dashboard
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>
         </div>
       )}
-
-      {/* Helpful Tips Card */}
-      <div className="bg-rose-50/40 p-5 rounded-2xl border border-rose-100 flex items-start gap-3">
-        <HelpCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-        <div className="space-y-1 text-xs text-ink-700">
-          <div className="font-bold text-ink-900">Tips for seamless Excel importing:</div>
-          <ul className="list-disc list-inside space-y-1 text-ink-600">
-            <li>
-              Column header matching is smart and case-insensitive (e.g.{' '}
-              <code>"Weight"</code>, <code>"Weight Kg"</code>, <code>"Qty"</code>, and{' '}
-              <code>"Quantity"</code> are all recognized automatically).
-            </li>
-            <li>
-              Date format: <code>DD-MM-YYYY</code> (e.g. <code>18-10-2026</code>) is standard;{' '}
-              <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, and native Excel date cells are all recognized automatically.
-            </li>
-            <li>
-              <strong>Unified Batch Apportionment for Expenses &amp; Yield:</strong> When multiple purchase rows share the same <code>Batch No</code>, both landing expenses (ice, vehicle rent, porters, dalali) and finished yield (meat output weight / yield %) are automatically pooled and apportioned proportionally based on each item&apos;s intake weight (Kg). You can enter batch expenses and yield on any row of that batch in Excel, and the system divides them accurately by Kg across the entire batch pool.
-            </li>
-            <li>
-              Need the exact layout? Click <strong>"Download Sample Excel Template"</strong> above to
-              get a pre-populated Excel file you can fill and re-upload.
-            </li>
-          </ul>
-        </div>
-      </div>
     </div>
   );
 };

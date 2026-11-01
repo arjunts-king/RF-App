@@ -11,7 +11,16 @@ export type ImportEntityType =
   | 'counts'
   | 'locations'
   | 'bank-accounts'
-  | 'expense-types';
+  | 'expense-types'
+  // Production entities
+  | 'processing-entries'
+  | 'slab-types'
+  | 'production-multi-sheet'
+  // Sales & Export entities
+  | 'sales-invoices'
+  | 'customers'
+  | 'ports'
+  | 'sales-multi-sheet';
 
 /**
  * Normalizes string keys for flexible column matching (e.g. "Rate/Kg" -> "ratekg", "Supplier Name" -> "suppliername")
@@ -268,6 +277,295 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'ExpenseTypes');
     XLSX.writeFile(wb, 'Expense_Types_Template.xlsx');
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Production Module Templates
+  // ---------------------------------------------------------------------------
+
+  if (type === 'processing-entries') {
+    const data = [
+      {
+        'Processing Date (DD-MM-YYYY)': '18-10-2026',
+        'Shift': 'Morning Shift (06:00 - 14:00)',
+        'Supplier Code or Name': 'Kochi Sea Harvesters',
+        'Species Code or Name': 'Vannamei Shrimp',
+        'Grade Code or Name': 'Grade A (Export Premium)',
+        'Size Code or Name': 'Medium',
+        'Count Code or Name': '21/25',
+        'Supplier Box ID': 'BOX-VAP-09',
+        'Slab Type Code or Name': '2.0 Kg Standard Block',
+        'Standard Slab Weight (Kg)': 2.0,
+        'No of Slabs': 500,
+        'Processed Weight (Kg)': 1000,
+        'Rejection Weight (Kg)': 18.5,
+        'Remarks': 'Shift A block freezing - export lot'
+      },
+      {
+        'Processing Date (DD-MM-YYYY)': '18-10-2026',
+        'Shift': 'Evening Shift (14:00 - 22:00)',
+        'Supplier Code or Name': 'Malabar Coast Fisheries',
+        'Species Code or Name': 'Yellowfin Tuna',
+        'Grade Code or Name': 'Grade A (Export Premium)',
+        'Size Code or Name': 'Large',
+        'Count Code or Name': '',
+        'Supplier Box ID': 'BOX-YFT-02',
+        'Slab Type Code or Name': '2.0 Kg Standard Block',
+        'Standard Slab Weight (Kg)': 2.0,
+        'No of Slabs': 350,
+        'Processed Weight (Kg)': 702,
+        'Rejection Weight (Kg)': 8.0,
+        'Remarks': 'Blast frozen tuna loins'
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'DailyProcessing');
+    XLSX.writeFile(wb, 'Production_Daily_Processing_Template.xlsx');
+    return;
+  }
+
+  if (type === 'slab-types') {
+    const data = [
+      { 'Code': 'SLB-001', 'Slab Type Name': '2.0 Kg Standard Block', 'Standard Weight (Kg)': 2.0, 'Unit': 'Kg', 'Product Applicability': 'All Products' },
+      { 'Code': 'SLB-002', 'Slab Type Name': '1.8 Kg Export Slab', 'Standard Weight (Kg)': 1.8, 'Unit': 'Kg', 'Product Applicability': 'Shrimp / Prawns' },
+      { 'Code': 'SLB-003', 'Slab Type Name': '5.0 Kg Tuna Loin Block', 'Standard Weight (Kg)': 5.0, 'Unit': 'Kg', 'Product Applicability': 'Tuna / Marine Fish' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'SlabTypes');
+    XLSX.writeFile(wb, 'Slab_Types_Template.xlsx');
+    return;
+  }
+
+  if (type === 'production-multi-sheet') {
+    const processingData = [
+      {
+        'Processing Date (DD-MM-YYYY)': '18-10-2026',
+        'Shift': 'Morning Shift (06:00 - 14:00)',
+        'Supplier Code or Name': 'Kochi Sea Harvesters',
+        'Species Code or Name': 'Vannamei Shrimp',
+        'Grade Code or Name': 'Grade A (Export Premium)',
+        'Size Code or Name': 'Medium',
+        'Count Code or Name': '21/25',
+        'Supplier Box ID': 'BOX-VAP-09',
+        'Slab Type Code or Name': '2.0 Kg Standard Block',
+        'Standard Slab Weight (Kg)': 2.0,
+        'No of Slabs': 500,
+        'Processed Weight (Kg)': 1000,
+        'Rejection Weight (Kg)': 15,
+        'Remarks': 'Batch 1 block freezing'
+      },
+      {
+        'Processing Date (DD-MM-YYYY)': '18-10-2026',
+        'Shift': 'Evening Shift (14:00 - 22:00)',
+        'Supplier Code or Name': 'Malabar Coast Fisheries',
+        'Species Code or Name': 'Indian Squid',
+        'Grade Code or Name': 'Grade B (Standard Market)',
+        'Size Code or Name': 'Small',
+        'Count Code or Name': '',
+        'Supplier Box ID': 'BOX-SQD-11',
+        'Slab Type Code or Name': '2.0 Kg Standard Block',
+        'Standard Slab Weight (Kg)': 2.0,
+        'No of Slabs': 250,
+        'Processed Weight (Kg)': 500,
+        'Rejection Weight (Kg)': 10,
+        'Remarks': 'Cleaned squid tubes'
+      }
+    ];
+    const wsProc = XLSX.utils.json_to_sheet(processingData);
+    XLSX.utils.book_append_sheet(wb, wsProc, 'ProcessingEntries');
+
+    const slabTypesData = [
+      { 'Code': 'SLB-001', 'Slab Type Name': '2.0 Kg Standard Block', 'Standard Weight (Kg)': 2.0, 'Unit': 'Kg', 'Product Applicability': 'All Products' },
+      { 'Code': 'SLB-002', 'Slab Type Name': '1.8 Kg Export Slab', 'Standard Weight (Kg)': 1.8, 'Unit': 'Kg', 'Product Applicability': 'Shrimp / Prawns' }
+    ];
+    const wsSlab = XLSX.utils.json_to_sheet(slabTypesData);
+    XLSX.utils.book_append_sheet(wb, wsSlab, 'SlabTypes');
+
+    const speciesData = [
+      { 'Code': 'VAN', 'Name': 'Vannamei Shrimp', 'Scientific Name': 'Litopenaeus vannamei', 'Category': 'Shrimp' },
+      { 'Code': 'YFT', 'Name': 'Yellowfin Tuna', 'Scientific Name': 'Thunnus albacares', 'Category': 'Tuna' },
+      { 'Code': 'SQD', 'Name': 'Indian Squid', 'Scientific Name': 'Uroteuthis duvaucelii', 'Category': 'Cephalopod' }
+    ];
+    const wsSpec = XLSX.utils.json_to_sheet(speciesData);
+    XLSX.utils.book_append_sheet(wb, wsSpec, 'Species');
+
+    XLSX.writeFile(wb, 'Complete_Production_System_Template.xlsx');
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sales & Export Module Templates
+  // ---------------------------------------------------------------------------
+
+  if (type === 'sales-invoices') {
+    const data = [
+      {
+        'Invoice No': 'EXP-2026-001',
+        'Invoice Date (DD-MM-YYYY)': '19-10-2026',
+        'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+        'Buyer (Optional)': 'Tokyo Seafood Trading Co.',
+        'Order / PO No': 'PO-TYO-9912',
+        'Port of Loading': 'Cochin Port (INCOK)',
+        'Port of Discharge': 'Tokyo Port (JPTYO)',
+        'Final Destination Port': 'Tokyo Port (JPTYO)',
+        'Currency': 'USD',
+        'Exchange Rate': 84.50,
+        'Product / Species': 'Vannamei Shrimp',
+        'HS Code': '03061790',
+        'Size': 'Medium',
+        'Count': '21/25',
+        'No of Cartons': 100,
+        'Net Weight (Kg)': 2000,
+        'Rate per Kg (USD)': 9.80,
+        'FOB Value (USD)': 19600,
+        'Remarks': 'Reefer 40ft container #CRXU-89214'
+      },
+      {
+        'Invoice No': 'EXP-2026-001',
+        'Invoice Date (DD-MM-YYYY)': '19-10-2026',
+        'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+        'Buyer (Optional)': 'Tokyo Seafood Trading Co.',
+        'Order / PO No': 'PO-TYO-9912',
+        'Port of Loading': 'Cochin Port (INCOK)',
+        'Port of Discharge': 'Tokyo Port (JPTYO)',
+        'Final Destination Port': 'Tokyo Port (JPTYO)',
+        'Currency': 'USD',
+        'Exchange Rate': 84.50,
+        'Product / Species': 'Indian Squid',
+        'HS Code': '03074320',
+        'Size': 'Large',
+        'Count': '',
+        'No of Cartons': 50,
+        'Net Weight (Kg)': 1000,
+        'Rate per Kg (USD)': 6.50,
+        'FOB Value (USD)': 6500,
+        'Remarks': 'Line 2 of same invoice'
+      },
+      {
+        'Invoice No': 'EXP-2026-002',
+        'Invoice Date (DD-MM-YYYY)': '20-10-2026',
+        'Customer / Consignee': 'Pacific Rim Imports LLC',
+        'Buyer (Optional)': '',
+        'Order / PO No': 'PRI-8812',
+        'Port of Loading': 'Cochin Port (INCOK)',
+        'Port of Discharge': 'Port of Los Angeles (USLAX)',
+        'Final Destination Port': 'Port of Los Angeles (USLAX)',
+        'Currency': 'USD',
+        'Exchange Rate': 84.50,
+        'Product / Species': 'Yellowfin Tuna',
+        'HS Code': '03038990',
+        'Size': 'Extra Large',
+        'Count': '',
+        'No of Cartons': 80,
+        'Net Weight (Kg)': 1600,
+        'Rate per Kg (USD)': 11.20,
+        'FOB Value (USD)': 17920,
+        'Remarks': 'Blast frozen sashimi grade'
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'SalesInvoices');
+    XLSX.writeFile(wb, 'Commercial_Export_Invoices_Template.xlsx');
+    return;
+  }
+
+  if (type === 'customers') {
+    const data = [
+      {
+        'Customer Code': 'CUST-001',
+        'Customer / Consignee Name': 'Tokyo Seafood Trading Co.',
+        'Destination Country': 'Japan',
+        'Contact Person': 'Kenji Sato',
+        'Phone': '+81 3 5555 0142',
+        'Email': 'procurement@tokyoseafood.jp',
+        'Tax ID / VAT': 'JP892182910',
+        'Address': '5-2-1 Tsukiji, Chuo City, Tokyo',
+        'Bank Details / SWIFT': 'BOTKJPJT / Standard Chartered Tokyo #992810'
+      },
+      {
+        'Customer Code': 'CUST-002',
+        'Customer / Consignee Name': 'Pacific Rim Imports LLC',
+        'Destination Country': 'USA',
+        'Contact Person': 'Michael Vance',
+        'Phone': '+1 213 555 0199',
+        'Email': 'mvance@pacrimimports.com',
+        'Tax ID / VAT': 'US95-4819283',
+        'Address': '450 S Grand Ave, Los Angeles, CA 90071',
+        'Bank Details / SWIFT': 'BOFAUS3N / Bank of America LA #441920'
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, 'Export_Customers_Template.xlsx');
+    return;
+  }
+
+  if (type === 'ports') {
+    const data = [
+      { 'Port Code': 'INCOK', 'Port Name': 'Cochin Port', 'Country': 'India' },
+      { 'Port Code': 'JPTYO', 'Port Name': 'Tokyo Port', 'Country': 'Japan' },
+      { 'Port Code': 'JPOSA', 'Port Name': 'Osaka Port', 'Country': 'Japan' },
+      { 'Port Code': 'USNYC', 'Port Name': 'Port of New York & New Jersey', 'Country': 'USA' },
+      { 'Port Code': 'USLAX', 'Port Name': 'Port of Los Angeles', 'Country': 'USA' },
+      { 'Port Code': 'NLRTM', 'Port Name': 'Port of Rotterdam', 'Country': 'Netherlands' },
+      { 'Port Code': 'AEDXB', 'Port Name': 'Jebel Ali Port (Dubai)', 'Country': 'UAE' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Ports');
+    XLSX.writeFile(wb, 'Port_Master_Template.xlsx');
+    return;
+  }
+
+  if (type === 'sales-multi-sheet') {
+    const invoicesData = [
+      {
+        'Invoice No': 'EXP-2026-001',
+        'Invoice Date (DD-MM-YYYY)': '19-10-2026',
+        'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+        'Port of Loading': 'Cochin Port (INCOK)',
+        'Port of Discharge': 'Tokyo Port (JPTYO)',
+        'Final Destination Port': 'Tokyo Port (JPTYO)',
+        'Currency': 'USD',
+        'Exchange Rate': 84.50,
+        'Product / Species': 'Vannamei Shrimp',
+        'HS Code': '03061790',
+        'Size': 'Medium',
+        'Count': '21/25',
+        'No of Cartons': 100,
+        'Net Weight (Kg)': 2000,
+        'Rate per Kg (USD)': 9.80,
+        'FOB Value (USD)': 19600,
+        'Remarks': 'Export batch 1'
+      }
+    ];
+    const wsInv = XLSX.utils.json_to_sheet(invoicesData);
+    XLSX.utils.book_append_sheet(wb, wsInv, 'SalesInvoices');
+
+    const custData = [
+      {
+        'Customer Code': 'CUST-001',
+        'Customer / Consignee Name': 'Tokyo Seafood Trading Co.',
+        'Destination Country': 'Japan',
+        'Contact Person': 'Kenji Sato',
+        'Phone': '+81 3 5555 0142',
+        'Email': 'procurement@tokyoseafood.jp',
+        'Tax ID / VAT': 'JP892182910',
+        'Address': 'Tokyo, Japan',
+        'Bank Details / SWIFT': 'BOTKJPJT'
+      }
+    ];
+    const wsCust = XLSX.utils.json_to_sheet(custData);
+    XLSX.utils.book_append_sheet(wb, wsCust, 'Customers');
+
+    const portsData = [
+      { 'Port Code': 'INCOK', 'Port Name': 'Cochin Port', 'Country': 'India' },
+      { 'Port Code': 'JPTYO', 'Port Name': 'Tokyo Port', 'Country': 'Japan' }
+    ];
+    const wsPorts = XLSX.utils.json_to_sheet(portsData);
+    XLSX.utils.book_append_sheet(wb, wsPorts, 'Ports');
+
+    XLSX.writeFile(wb, 'Complete_Sales_Export_System_Template.xlsx');
     return;
   }
 
