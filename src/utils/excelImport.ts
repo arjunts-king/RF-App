@@ -287,7 +287,18 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     if (!baseExpenses.some((e) => e.name.toLowerCase().includes('other'))) {
       baseExpenses.push({ name: 'Other Expenses', category: 'Landing' });
     }
-    const activeExpenses = baseExpenses;
+
+    // Deduplicate by clean normalized name so that no expense head is ever duplicated in the template
+    const seenExpenseNames = new Set<string>();
+    const activeExpenses: { name: string; category?: string }[] = [];
+    baseExpenses.forEach((exp) => {
+      const cleanName = exp.name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+      const norm = normalizeKey(cleanName);
+      if (!seenExpenseNames.has(norm)) {
+        seenExpenseNames.add(norm);
+        activeExpenses.push({ ...exp, name: cleanName });
+      }
+    });
 
     const row1: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',
@@ -510,7 +521,18 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     if (!baseExpensesMulti.some((e) => e.name.toLowerCase().includes('other'))) {
       baseExpensesMulti.push({ name: 'Other Expenses', category: 'Landing' });
     }
-    const activeExpenses = baseExpensesMulti;
+
+    // Deduplicate by clean normalized name so that no expense head is ever duplicated in the template
+    const seenMultiExpenseNames = new Set<string>();
+    const activeExpenses: { name: string; category?: string }[] = [];
+    baseExpensesMulti.forEach((exp) => {
+      const cleanName = exp.name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+      const norm = normalizeKey(cleanName);
+      if (!seenMultiExpenseNames.has(norm)) {
+        seenMultiExpenseNames.add(norm);
+        activeExpenses.push({ ...exp, name: cleanName });
+      }
+    });
 
     const purchasesRow1: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',

@@ -21,7 +21,8 @@ import {
   PortMaster,
   SalesInvoice,
   RealizationRecord,
-  RealizationStatus
+  RealizationStatus,
+  PaymentStatus
 } from '../types';
 import {
   DEFAULT_BUSINESS_SETTINGS,
@@ -253,18 +254,29 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const saved = localStorage.getItem(`${DB_PREFIX}expense_types`);
     let list: ExpenseType[] = saved ? JSON.parse(saved) : INITIAL_EXPENSE_TYPES;
     if (list && list.length > 0) {
-      const hasOther = list.some((e) => e.name.toLowerCase().includes('other'));
+      // Deduplicate expense types by normalized clean name, keeping canonical primary
+      const seen = new Set<string>();
+      const deduplicated: ExpenseType[] = [];
+      for (const et of list) {
+        const norm = et.name.toLowerCase().replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').replace(/[^a-z0-9]/g, '');
+        const key = (norm.includes('other') || norm.includes('misc')) ? 'otherexpenses' : norm;
+        if (!seen.has(key)) {
+          seen.add(key);
+          const cleanName = et.name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+          deduplicated.push({ ...et, name: cleanName });
+        }
+      }
+      list = deduplicated;
+
+      const hasOther = list.some((e) => e.name.toLowerCase().includes('other') || e.name.toLowerCase().includes('misc'));
       if (!hasOther) {
-        list = [
-          ...list,
-          {
-            id: 'exp-other-landing',
-            code: `EXP-${String(list.length + 1).padStart(3, '0')}`,
-            name: 'Other Expenses',
-            category: 'Landing',
-            active: true
-          }
-        ];
+        list.push({
+          id: 'exp-5',
+          code: `EXP-${String(list.length + 1).padStart(3, '0')}`,
+          name: 'Other Expenses',
+          category: 'Landing',
+          active: true
+        });
       }
     } else {
       list = SAMPLE_STARTER_PRESETS.expenseTypes;
@@ -274,7 +286,67 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}purchases`);
-    return saved ? JSON.parse(saved) : INITIAL_PURCHASES;
+    let list: Purchase[] = saved ? JSON.parse(saved) : INITIAL_PURCHASES;
+    if (list && list.length > 0) {
+      list = list.map((p) => {
+        if (!p.expenseBreakdown || Object.keys(p.expenseBreakdown).length === 0) return p;
+
+        const eb = { ...p.expenseBreakdown };
+        let modified = false;
+
+        // Detect any keys that correspond to "Other Expenses"
+        const otherKeys: string[] = [];
+        Object.keys(eb).forEach((k) => {
+          const lowerK = k.toLowerCase();
+          if (
+            k === 'exp-5' ||
+            lowerK.includes('otherexpense') ||
+            lowerK.includes('otherlanding') ||
+            lowerK.includes('miscexpense') ||
+            lowerK.includes('other')
+          ) {
+            otherKeys.push(k);
+          }
+        });
+
+        if (otherKeys.length > 1) {
+          // Keep canonical 'exp-5' if present, else the first otherKey
+          const primaryKey = otherKeys.includes('exp-5') ? 'exp-5' : otherKeys[0];
+          const validAmt = Number(eb[primaryKey]) || Math.max(...otherKeys.map((k) => Number(eb[k]) || 0));
+
+          otherKeys.forEach((k) => {
+            if (k !== primaryKey) {
+              delete eb[k];
+              modified = true;
+            }
+          });
+          eb[primaryKey] = validAmt;
+        }
+
+        if (modified) {
+          const totalExpenses = Number(Object.values(eb).reduce((sum, v) => sum + (Number(v) || 0), 0).toFixed(2));
+          const grossPurchaseValue = Number(p.grossPurchaseValue ?? (p.purchaseValue - (p.damageAmount || 0))) || 0;
+          const totalCost = Number((grossPurchaseValue + totalExpenses).toFixed(2));
+          const effectiveRatePerKg = p.weightKg > 0 ? Number((totalCost / p.weightKg).toFixed(2)) : 0;
+          const amountPaid = Number(p.amountPaid) || 0;
+          const balancePayable = Number(Math.max(0, totalCost - amountPaid).toFixed(2));
+          const paymentStatus: PaymentStatus =
+            amountPaid === 0 ? 'Unpaid' : amountPaid >= totalCost ? 'Fully Paid' : 'Partially Paid';
+
+          return {
+            ...p,
+            expenseBreakdown: eb,
+            totalExpenses,
+            totalCost,
+            effectiveRatePerKg,
+            balancePayable,
+            paymentStatus
+          };
+        }
+        return p;
+      });
+    }
+    return list;
   });
 
   const [payments, setPayments] = useState<PaymentRecord[]>(() => {
@@ -2684,6 +2756,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         errors.push(`Row ${idx + 1}: Expense type name is required.`);
         return;
       }
+      const cleanName = name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
       const rawCode = getFlexibleValue(row, ['expensecode', 'code']);
       const code = rawCode ? String(rawCode).trim() : `EXP-${String(currentList.length + 1).padStart(2, '0')}`;
       const category = String(getFlexibleValue(row, ['category', 'type']) || 'Landing').trim();
@@ -2691,13 +2764,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const existingIdx = currentList.findIndex(
         (e) =>
           (code && normalizeKey(e.code) === normalizeKey(code)) ||
-          normalizeKey(e.name) === normalizeKey(name)
+          normalizeKey(e.name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '')) === normalizeKey(cleanName)
       );
 
       if (existingIdx >= 0) {
         currentList[existingIdx] = {
           ...currentList[existingIdx],
-          name,
+          name: cleanName,
           category: category || currentList[existingIdx].category
         };
         updated++;
@@ -2705,7 +2778,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentList.push({
           id: `exp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
           code,
-          name,
+          name: cleanName,
           category,
           active: true
         });
@@ -2735,22 +2808,84 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const mutableGrades = [...grades];
     const mutableSizes = [...sizes];
     const mutableCounts = [...counts];
-    const mutableExpenseTypes = [...expenseTypes];
+    // Deduplicate mutableExpenseTypes by clean normalized name, keeping canonical (preferring exp-1..exp-5)
+    const seenExpenseNorms = new Set<string>();
+    const deduplicatedMutableExpenseTypes: ExpenseType[] = [];
+
+    expenseTypes.forEach((et) => {
+      const norm = et.name.toLowerCase().replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').replace(/[^a-z0-9]/g, '');
+      const key = (norm.includes('other') || norm.includes('misc')) ? 'otherexpenses' : norm;
+      if (!seenExpenseNorms.has(key)) {
+        seenExpenseNorms.add(key);
+        const cleanName = et.name.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+        deduplicatedMutableExpenseTypes.push({ ...et, name: cleanName });
+      }
+    });
+
+    // Ensure standard "Other Expenses" exists in mutableExpenseTypes
+    if (!deduplicatedMutableExpenseTypes.some((e) => e.name.toLowerCase().includes('other') || e.name.toLowerCase().includes('misc'))) {
+      deduplicatedMutableExpenseTypes.push({
+        id: 'exp-5',
+        code: `EXP-${String(deduplicatedMutableExpenseTypes.length + 1).padStart(3, '0')}`,
+        name: 'Other Expenses',
+        category: 'Landing',
+        active: true
+      });
+    }
+
+    const mutableExpenseTypes = deduplicatedMutableExpenseTypes;
 
     const getExpenseTypeId = (keywords: string[], defaultName: string, category: string): string => {
+      const cleanDefaultName = defaultName.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+      const normDefault = cleanDefaultName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Special check: Is this "Other Expenses" or "Misc"?
+      const isOther = normDefault.includes('other') || normDefault.includes('misc') || keywords.some((k) => {
+        const kl = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return kl.includes('other') || kl.includes('misc');
+      });
+
+      if (isOther) {
+        // ALWAYS match existing other/misc expense in mutableExpenseTypes (preferring exp-5)
+        const existingOther =
+          mutableExpenseTypes.find((et) => et.id === 'exp-5') ||
+          mutableExpenseTypes.find((et) => {
+            const n = et.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return n.includes('other') || n.includes('misc');
+          });
+        if (existingOther) return existingOther.id;
+      }
+
+      // Exact normalized name match
+      const exactMatch = mutableExpenseTypes.find((et) => {
+        const n = et.name.toLowerCase().replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').replace(/[^a-z0-9]/g, '');
+        return n === normDefault;
+      });
+      if (exactMatch) return exactMatch.id;
+
+      // Keyword match
       const matched = mutableExpenseTypes.find((et) => {
-        const n = et.name.toLowerCase().trim();
-        const c = et.code.toLowerCase().trim();
-        return keywords.some((kw) => n.includes(kw.toLowerCase()) || c.includes(kw.toLowerCase()));
+        const n = et.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const c = et.code.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return keywords.some((kw) => {
+          const cleanKw = kw.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+          if (!cleanKw || cleanKw.length < 3) return false;
+          return n.includes(cleanKw) || c.includes(cleanKw);
+        });
       });
       if (matched) return matched.id;
 
       if (autoCreateMaster) {
-        const newCode = `EXP-${defaultName.substring(0, 3).toUpperCase()}-${String(mutableExpenseTypes.length + 1).padStart(2, '0')}`;
+        const existingByName = mutableExpenseTypes.find(
+          (et) => et.name.toLowerCase().trim() === cleanDefaultName.toLowerCase()
+        );
+        if (existingByName) return existingByName.id;
+
+        const newCode = `EXP-${cleanDefaultName.substring(0, 3).toUpperCase()}-${String(mutableExpenseTypes.length + 1).padStart(2, '0')}`;
         const newEt: ExpenseType = {
-          id: `exp-${defaultName.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+          id: `exp-${cleanDefaultName.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
           code: newCode,
-          name: defaultName,
+          name: cleanDefaultName,
           category,
           active: true
         };
@@ -3183,6 +3318,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!et.active) return;
         if (expenseBreakdown[et.id]) return; // Already resolved above
 
+        // If this is an other/misc expense and other expenses were already captured in Step 5, skip
+        const isOther = et.name.toLowerCase().includes('other') || et.name.toLowerCase().includes('misc');
+        if (isOther && othExp > 0) return;
+
         const cleanName = et.name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanCode = et.code.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -3206,21 +3345,60 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       });
 
-      // 6. Optional auto-creation of unknown custom direct landing expense columns
+      // 7. Optional auto-creation of unknown custom direct landing expense columns
       if (autoCreateMaster) {
         Object.keys(row).forEach((colHeader) => {
           const lower = colHeader.toLowerCase().trim();
+          const norm = lower.replace(/[^a-z0-9]/g, '');
+
+          // Skip headers already processed or standard fields
           if (
-            (lower.includes('expense') || lower.includes('charges') || lower.includes('cost') || lower.includes('fee')) &&
-            !lower.includes('total') && !lower.includes('damage') && !lower.includes('rate') && !lower.includes('weight') &&
-            !lower.includes('fish') && !lower.includes('purchase')
+            norm.includes('total') ||
+            norm.includes('damage') ||
+            norm.includes('rate') ||
+            norm.includes('weight') ||
+            norm.includes('fish') ||
+            norm.includes('purchase') ||
+            norm.includes('invoice') ||
+            norm.includes('batch') ||
+            norm.includes('boxes') ||
+            norm.includes('supplier') ||
+            norm.includes('location') ||
+            norm.includes('species') ||
+            norm.includes('grade') ||
+            norm.includes('size') ||
+            norm.includes('count') ||
+            norm.includes('paid') ||
+            norm.includes('balance') ||
+            // Standard landing expense heads already extracted in Steps 1 to 5:
+            norm.includes('ice') ||
+            norm.includes('flake') ||
+            norm.includes('transport') ||
+            norm.includes('vehicle') ||
+            norm.includes('freight') ||
+            norm.includes('truck') ||
+            norm.includes('commission') ||
+            norm.includes('dalali') ||
+            norm.includes('brokerage') ||
+            norm.includes('labour') ||
+            norm.includes('labor') ||
+            norm.includes('unloading') ||
+            norm.includes('coolie') ||
+            norm.includes('hamali') ||
+            norm.includes('other') ||
+            norm.includes('misc')
           ) {
+            return;
+          }
+
+          if (lower.includes('expense') || lower.includes('charges') || lower.includes('cost') || lower.includes('fee')) {
             const rawVal = row[colHeader];
             if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
               const num = Number(rawVal);
               if (num > 0) {
-                const baseName = colHeader.replace(/\(inr\)|\(rs\)|\(₹\)|expense|charges|cost/gi, '').trim() || colHeader.trim();
-                const expId = getExpenseTypeId([baseName], colHeader.trim(), 'Harbour Landing');
+                const cleanHeader = colHeader.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
+                const baseName = cleanHeader.replace(/\b(expenses?|charges?|costs?|fees?)\b/gi, '').trim() || cleanHeader;
+                const expId = getExpenseTypeId([baseName, cleanHeader], cleanHeader, 'Harbour Landing');
                 if (expId && !expenseBreakdown[expId]) {
                   expenseBreakdown[expId] = num;
                 }
@@ -3393,7 +3571,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (mutableGrades.length > grades.length) setGrades([...mutableGrades]);
       if (mutableSizes.length > sizes.length) setSizes([...mutableSizes]);
       if (mutableCounts.length > counts.length) setCounts([...mutableCounts]);
-      if (mutableExpenseTypes.length > expenseTypes.length) setExpenseTypes([...mutableExpenseTypes]);
+      if (
+        mutableExpenseTypes.length !== expenseTypes.length ||
+        mutableExpenseTypes.some((et, i) => !expenseTypes[i] || et.id !== expenseTypes[i].id)
+      ) {
+        setExpenseTypes([...mutableExpenseTypes]);
+      }
 
       logAudit('CREATE', 'Purchase', `Excel bulk import: ${newPurchases.length} purchases imported`, {
         newValues: {
