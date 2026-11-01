@@ -5,11 +5,10 @@ import { ToastProvider } from './context/ToastContext';
 import { LiquidGlassProvider, useLiquidGlass } from './context/LiquidGlassContext';
 import { Navbar, ActiveModuleType } from './components/common/Navbar';
 import { Sidebar, NavTab } from './components/common/Sidebar';
-import { ProductionSidebar, ProductionNavTab } from './components/production/ProductionSidebar';
-import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
+import { ProductionNavTab } from './components/production/ProductionSidebar';
+import { SalesNavTab } from './components/sales/SalesSidebar';
 import { HomeScreen } from './components/home/HomeScreen';
 import { CommandPalette } from './components/common/CommandPalette';
-import { RoleSwitcher } from './components/common/RoleSwitcher';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
 import { PurchaseList } from './components/purchase/PurchaseList';
@@ -40,15 +39,12 @@ import {
   PlusCircle,
   Receipt,
   BookOpen,
-  Menu,
-  X,
   Factory,
   Layers,
   BarChart3,
   TrendingUp,
   FileText,
-  Home,
-  ShoppingBag
+  Home
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -77,6 +73,7 @@ const MainLayout: React.FC = () => {
   const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'home', tab: string) => {
     if (module === 'home') {
       setActiveModule('home');
+      setIsMobileMenuOpen(false);
       return;
     }
     setActiveModule(module);
@@ -90,9 +87,59 @@ const MainLayout: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const getCurrentBreadcrumb = (): string => {
+    if (activeModule === 'home') return 'Operational Overview';
+    if (activeModule === 'purchase') {
+      const tabNames: Record<NavTab, string> = {
+        'dashboard': 'Executive Dashboard',
+        'purchase-entry': 'Harbour Purchase Entry',
+        'purchases': 'Purchase Transactions',
+        'purchase-returns': 'Debit Notes & Returns',
+        'batch-expenses': 'Batch Expenses & Yield Engine',
+        'payments': 'Supplier Ledger & Statements',
+        'outstanding': 'Outstanding & Ageing',
+        'reports': 'Operational Reports Hub',
+        'data-quality': 'Data Quality & Reconciliation',
+        'master-data': 'Master Reference Data',
+        'excel-import': 'Excel Import & Migration',
+        'user-mgmt': 'Staff & User Management',
+        'audit-log': 'Surveillance Audit Trail',
+        'settings': 'Business Settings'
+      };
+      return tabNames[activeTab] || 'Procurement';
+    }
+    if (activeModule === 'production') {
+      const prodNames: Record<ProductionNavTab, string> = {
+        'prod-dashboard': 'Production Dashboard',
+        'daily-entry': 'Daily Processing Entry',
+        'processing-log': 'Processing Records & Lots',
+        'slab-types': 'Slab Types Master',
+        'prod-reports': 'Production Reports Hub',
+        'master-data': 'Shared Master Data',
+        'audit-log': 'Surveillance Audit Trail'
+      };
+      return prodNames[productionTab] || 'Production';
+    }
+    if (activeModule === 'sales') {
+      const salesNames: Record<SalesNavTab, string> = {
+        'sales-dashboard': 'Commercial Dashboard',
+        'invoice-entry': 'Commercial Invoice Entry',
+        'invoices': 'Invoices & Shipments',
+        'realizations': 'Realization & Settlement',
+        'customers': 'Consignees & Buyers',
+        'ports': 'Port Master',
+        'master-data': 'Shared Master Data',
+        'sales-reports': 'Commercial Reports Hub',
+        'audit-log': 'Surveillance Audit Trail'
+      };
+      return salesNames[salesTab] || 'Commercial Export';
+    }
+    return '';
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-white relative overflow-x-hidden">
-      {/* Ambient Fluid Glow Orbs on Red Canvas */}
+      {/* Ambient Fluid Glow Orbs on Crimson Canvas */}
       {ambientGlow && (
         <div className="liquid-ambient-backdrop" aria-hidden="true">
           <div className="liquid-orb-1" />
@@ -101,16 +148,22 @@ const MainLayout: React.FC = () => {
         </div>
       )}
 
-      {/* Figma-Inspired Global Shell Sticky Top Bar with Liquid Glass */}
+      {/* Clean Top Utility Bar with Liquid Glass */}
       <Navbar
         activeModule={activeModule}
         onModuleChange={(mod) => {
-          setActiveModule(mod);
+          if (mod === 'reports') {
+            setActiveModule('purchase');
+            setActiveTab('reports');
+          } else {
+            setActiveModule(mod);
+          }
           setIsMobileMenuOpen(false);
         }}
         onNavigateTab={(mod, tab) => handleNavigateDirect(mod, tab)}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        currentBreadcrumb={getCurrentBreadcrumb()}
       />
 
       {/* Global Command Palette */}
@@ -121,156 +174,63 @@ const MainLayout: React.FC = () => {
       />
 
       <div className="flex-1 flex overflow-hidden relative z-10">
-        {/* Desktop Sidebar (Rendered when in Purchase, Production or Sales modules) */}
-        {activeModule !== 'home' && (
-          <div className="hidden md:block">
-            {activeModule === 'purchase' ? (
-              <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-            ) : activeModule === 'production' ? (
-              <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
-            ) : (
-              <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
-            )}
-          </div>
-        )}
+        {/* Persistent Desktop Sidebar */}
+        <div className="hidden md:block h-full shrink-0">
+          <Sidebar
+            activeModule={activeModule}
+            onModuleChange={(mod) => {
+              if (mod === 'reports') {
+                setActiveModule('purchase');
+                setActiveTab('reports');
+              } else {
+                setActiveModule(mod);
+              }
+            }}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            productionTab={productionTab}
+            onProductionTabChange={setProductionTab}
+            salesTab={salesTab}
+            onSalesTabChange={setSalesTab}
+            onNavigateDirect={handleNavigateDirect}
+          />
+        </div>
 
-        {/* Mobile Slide-in Drawer Menu with Dense White Glass */}
+        {/* Mobile Slide-in Drawer Menu with Persistent Sidebar Navigation */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-md flex">
-            <div className="w-80 max-w-[85%] glass-surface-dense h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200 text-ink-900">
-              <div className="p-4 border-b flex justify-between items-center bg-rose-50/60 border-rose-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    CM
-                  </div>
-                  <span className="font-bold text-ink-900 text-sm">
-                    {activeModule === 'home'
-                      ? 'Global Navigation'
-                      : activeModule === 'purchase'
-                      ? 'Procurement Menu'
-                      : activeModule === 'production'
-                      ? 'Production Menu'
-                      : 'Commercial Export Menu'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1 rounded-lg text-ink-500 hover:text-rose-600 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Module Switcher in mobile drawer */}
-              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-4 gap-1 text-[11px] font-bold text-center">
-                <button
-                  onClick={() => {
-                    setActiveModule('home');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`py-1.5 rounded-lg transition ${activeModule === 'home' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
-                >
-                  Home
-                </button>
-                <button
-                  onClick={() => {
+            <div className="w-80 max-w-[85%] h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+              <Sidebar
+                activeModule={activeModule}
+                onModuleChange={(mod) => {
+                  if (mod === 'reports') {
                     setActiveModule('purchase');
-                  }}
-                  className={`py-1.5 rounded-lg transition ${activeModule === 'purchase' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
-                >
-                  Buy
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveModule('production');
-                  }}
-                  className={`py-1.5 rounded-lg transition ${activeModule === 'production' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
-                >
-                  Plant
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveModule('sales');
-                  }}
-                  className={`py-1.5 rounded-lg transition ${activeModule === 'sales' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
-                >
-                  Sales
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                {activeModule === 'purchase' ? (
-                  <Sidebar
-                    activeTab={activeTab}
-                    onTabChange={(tab) => {
-                      setActiveTab(tab);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  />
-                ) : activeModule === 'production' ? (
-                  <ProductionSidebar
-                    activeTab={productionTab}
-                    onTabChange={(tab) => {
-                      setProductionTab(tab);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  />
-                ) : activeModule === 'sales' ? (
-                  <SalesSidebar
-                    activeTab={salesTab}
-                    onTabChange={(tab) => {
-                      setSalesTab(tab);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  />
-                ) : (
-                  <div className="p-4 space-y-3 text-xs">
-                    <p className="text-ink-500 font-medium">Select an operational module to open screen list:</p>
-                    <button
-                      onClick={() => {
-                        setActiveModule('purchase');
-                        setActiveTab('dashboard');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-between"
-                    >
-                      <span>Purchase &amp; Procurement</span>
-                      <Receipt className="w-4 h-4 text-rose-600" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveModule('production');
-                        setProductionTab('prod-dashboard');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-amber-50 hover:text-amber-800 flex items-center justify-between"
-                    >
-                      <span>Factory Floor &amp; Production</span>
-                      <Factory className="w-4 h-4 text-amber-700" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveModule('sales');
-                        setSalesTab('sales-dashboard');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left p-3 rounded-xl bg-gray-50 font-bold text-ink-900 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-between"
-                    >
-                      <span>Commercial Sales &amp; Export</span>
-                      <TrendingUp className="w-4 h-4 text-rose-600" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Mobile Drawer Role Switcher */}
-              <div className="p-3.5 bg-rose-50/40 border-t border-gray-200">
-                <RoleSwitcher
-                  variant="inline"
-                  onRoleChanged={() => setIsMobileMenuOpen(false)}
-                />
-              </div>
+                    setActiveTab('reports');
+                  } else {
+                    setActiveModule(mod);
+                  }
+                  setIsMobileMenuOpen(false);
+                }}
+                activeTab={activeTab}
+                onTabChange={(tab) => {
+                  setActiveTab(tab);
+                  setIsMobileMenuOpen(false);
+                }}
+                productionTab={productionTab}
+                onProductionTabChange={(tab) => {
+                  setProductionTab(tab);
+                  setIsMobileMenuOpen(false);
+                }}
+                salesTab={salesTab}
+                onSalesTabChange={(tab) => {
+                  setSalesTab(tab);
+                  setIsMobileMenuOpen(false);
+                }}
+                onNavigateDirect={handleNavigateDirect}
+                onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
+              />
             </div>
+            <div className="flex-1" onClick={() => setIsMobileMenuOpen(false)} />
           </div>
         )}
 
@@ -363,7 +323,7 @@ const MainLayout: React.FC = () => {
           }`}
         >
           <Home className="w-4 h-4" />
-          <span>Home</span>
+          <span>Overview</span>
         </button>
 
         {activeModule === 'purchase' ? (
@@ -454,7 +414,7 @@ const MainLayout: React.FC = () => {
               <span>Reports</span>
             </button>
           </>
-        ) : activeModule === 'sales' ? (
+        ) : (
           <>
             <button
               onClick={() => setSalesTab('sales-dashboard')}
@@ -485,7 +445,7 @@ const MainLayout: React.FC = () => {
               }`}
             >
               <FileText className="w-4 h-4" />
-              <span>Invoices</span>
+              <span>Shipments</span>
             </button>
 
             <button
@@ -498,38 +458,24 @@ const MainLayout: React.FC = () => {
               <span>Reports</span>
             </button>
           </>
-        ) : (
-          <button
-            onClick={() => setActiveModule('purchase')}
-            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-white/70 hover:text-white transition"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Procurement</span>
-          </button>
         )}
-
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-ink-500 hover:text-rose-600"
-        >
-          <Menu className="w-4 h-4" />
-          <span>More</span>
-        </button>
       </nav>
     </div>
   );
 };
 
-export default function App() {
+export function App() {
   return (
-    <LiquidGlassProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <DataProvider>
         <ToastProvider>
-          <DataProvider>
+          <LiquidGlassProvider>
             <MainLayout />
-          </DataProvider>
+          </LiquidGlassProvider>
         </ToastProvider>
-      </AuthProvider>
-    </LiquidGlassProvider>
+      </DataProvider>
+    </AuthProvider>
   );
 }
+
+export default App;
