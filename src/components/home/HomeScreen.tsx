@@ -1,6 +1,7 @@
 import React from 'react';
-import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useData } from '../../context/DataContext';
+import { RoleSwitcher } from '../common/RoleSwitcher';
 import { formatINR, formatKg } from '../../utils/calculations';
 import {
   ShoppingBag,
@@ -9,18 +10,14 @@ import {
   PlusCircle,
   Receipt,
   BookOpen,
+  ArrowRight,
   Clock,
   Sparkles,
-  ArrowRight,
-  Command,
-  AlertTriangle,
-  Scale,
-  Calendar,
-  Layers
+  Command
 } from 'lucide-react';
 
 interface HomeScreenProps {
-  onNavigate: (module: 'purchase' | 'production' | 'sales' | 'home', tab: string) => void;
+  onNavigate: (module: 'purchase' | 'production' | 'sales', tab: string) => void;
   onOpenCommandPalette: () => void;
 }
 
@@ -44,7 +41,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
   const customerMap = new Map(customers.map((c) => [c.id, c]));
 
-  // Active records
+  // Metrics for tiles
   const activePurchases = purchases.filter((p) => !p.isVoided);
   const totalPurchaseVolume = activePurchases.reduce((s, p) => s + p.weightKg, 0);
   const totalPurchaseCost = activePurchases.reduce((s, p) => s + p.totalCost, 0);
@@ -57,65 +54,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const totalExportKg = activeSales.reduce((s, inv) => s + inv.totalWeightKg, 0);
   const totalExportUSD = activeSales.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
 
-  // Accounting & Variance Calculations
-  const todayStr = new Date().toISOString().split('T')[0];
-  const totalOutstandingPayable = activePurchases.reduce((s, p) => s + (p.balancePayable || 0), 0);
-  const overduePurchases = activePurchases.filter((p) => p.balancePayable > 0 && p.dueDate && p.dueDate < todayStr);
-  const overdueCount = overduePurchases.length;
-  const varianceLots = activeProcessing.filter((p) => p.hasSlabVariance);
-  const varianceLotsCount = varianceLots.length;
-  const pendingRealizations = activeSales.filter((inv) => inv.realizationStatus !== 'Fully Realized');
-  const pendingRealizationCount = pendingRealizations.length;
-
-  // Recent transactions
+  // Recent purchases
   const recentPurchases = [...activePurchases]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 4);
 
+  // Recent processing entries
   const recentProcessing = [...activeProcessing]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 4);
 
+  // Recent sales invoices
   const recentSales = [...activeSales]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 4);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* 1. COMPACT GREETING & OPERATIONAL OVERVIEW HEADER */}
-      <section className="glass-surface-thin rounded-3xl p-5 sm:p-6 border border-white/25 shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div className="space-y-1.5 max-w-2xl">
+    <div className="space-y-12 max-w-7xl mx-auto pb-12">
+      {/* 1. WELCOMING HERO SECTION (Headline-First Screen with Generous Whitespace) */}
+      <section className="pt-2 sm:pt-4">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 pb-6 border-b border-gray-100">
+          <div className="space-y-2.5 max-w-3xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                FY {businessSettings.financialYear} Active Accounting Period
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100/80 text-rose-800 border border-rose-200">
+                <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                {businessSettings.financialYear} Active Session
               </span>
-              <span className="text-xs text-rose-200/90 font-medium hidden sm:inline">
-                {businessSettings.businessName} · Coastal Trading Suite
+              <RoleSwitcher />
+              <span className="text-xs text-ink-500 font-medium hidden sm:inline">
+                {businessSettings.businessName} · {businessSettings.tagline}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-ink-900 leading-tight">
               Welcome back, {currentUser.name.split(' ')[0]}
             </h1>
 
-            <p className="text-xs sm:text-sm text-rose-100/90 font-normal leading-relaxed">
-              Marine procurement, factory floor freezing, and foreign export compliance overview.
-              Choose an operational action or inspect the integrated flow below.
+            <p className="text-base sm:text-lg text-ink-500 font-normal leading-relaxed">
+              Unified marine procurement, factory floor freezing, and export trade compliance.
+              Choose an operational workspace below or use quick shortcuts.
             </p>
           </div>
 
-          {/* Action Row: Prominent Primary Action + Quieter Secondary Search */}
+          {/* Action Row: One confident primary button with quieter secondary actions */}
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <button
               onClick={onOpenCommandPalette}
-              className="btn-secondary-liquid inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full text-xs font-semibold"
-              title="Command search (Ctrl+K)"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all"
             >
-              <Command className="w-3.5 h-3.5 text-white/80" />
-              <span>Search</span>
-              <kbd className="text-[10px] font-mono bg-white/20 text-white px-1.5 py-0.5 rounded">
+              <Command className="w-3.5 h-3.5 text-ink-500" />
+              <span>Command palette</span>
+              <kbd className="text-[10px] font-mono bg-gray-100 px-1.5 py-0.5 rounded text-ink-500">
                 Ctrl+K
               </kbd>
             </button>
@@ -123,263 +112,97 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {permissions.canCreateEditPurchases && (
               <button
                 onClick={() => onNavigate('purchase', 'purchase-entry')}
-                className="btn-liquid inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
               >
-                <PlusCircle className="w-4 h-4 text-rose-900" />
-                <span>New Harbour Purchase</span>
+                <PlusCircle className="w-4 h-4" />
+                <span>New harbour purchase</span>
               </button>
             )}
           </div>
         </div>
       </section>
 
-      {/* 2. OPERATIONAL PRIORITY METRICS (Harbour Purchases, Production Output, Export Sales, Outstanding Payments) */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-              <Scale className="w-4 h-4 text-rose-300" />
-              <span>Key Operational Indicators</span>
-            </h2>
-            <p className="text-xs text-rose-200/80 mt-0.5">
-              Live figures aggregated for the current active financial period (FY {businessSettings.financialYear}).
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* 1. Harbour Purchases */}
-          <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/25 shadow-md flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-200">
-                  Harbour Purchases
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30">
-                  {activePurchases.length} Batches
-                </span>
-              </div>
-              <div className="text-2xl font-black text-white font-mono mt-1">
-                {formatKg(totalPurchaseVolume)}
-              </div>
-              <p className="text-[11px] text-rose-100/80">
-                Landed cost: <strong className="text-white">{formatINR(totalPurchaseCost)}</strong>
-              </p>
-            </div>
-            <div className="pt-3 mt-3 border-t border-white/15">
-              <button
-                onClick={() => onNavigate('purchase', 'purchases')}
-                className="text-xs font-bold text-white hover:text-rose-200 inline-flex items-center gap-1 group transition-colors"
-              >
-                <span>View purchase transactions</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Production Output */}
-          <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/25 shadow-md flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-200">
-                  Production Output
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30">
-                  {activeProcessing.length} Lots
-                </span>
-              </div>
-              <div className="text-2xl font-black text-white font-mono mt-1">
-                {formatKg(totalProcessedKg)}
-              </div>
-              <p className="text-[11px] text-rose-100/80">
-                Packaged slabs: <strong className="text-white">{totalSlabs.toLocaleString()} Slabs</strong> (2.0 Kg)
-              </p>
-            </div>
-            <div className="pt-3 mt-3 border-t border-white/15">
-              <button
-                onClick={() => onNavigate('production', 'processing-log')}
-                className="text-xs font-bold text-white hover:text-rose-200 inline-flex items-center gap-1 group transition-colors"
-              >
-                <span>View processing log</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* 3. Export Sales */}
-          <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/25 shadow-md flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-200">
-                  Export Sales
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30">
-                  {activeSales.length} Invoices
-                </span>
-              </div>
-              <div className="text-2xl font-black text-white font-mono mt-1">
-                ${totalExportUSD.toLocaleString()} USD
-              </div>
-              <p className="text-[11px] text-rose-100/80">
-                Commercial shipping: <strong className="text-white">{formatKg(totalExportKg)}</strong>
-              </p>
-            </div>
-            <div className="pt-3 mt-3 border-t border-white/15">
-              <button
-                onClick={() => onNavigate('sales', 'invoices')}
-                className="text-xs font-bold text-white hover:text-rose-200 inline-flex items-center gap-1 group transition-colors"
-              >
-                <span>View export shipments</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* 4. Outstanding Payments */}
-          <div className="glass-surface-blush card-liquid-hover p-5 rounded-2xl border border-white/40 shadow-md flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-100">
-                  Outstanding Payables
-                </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  overdueCount > 0
-                    ? 'bg-amber-400/30 text-amber-100 border-amber-300/40'
-                    : 'bg-emerald-400/30 text-emerald-100 border-emerald-300/40'
-                }`}>
-                  {overdueCount > 0 ? `${overdueCount} Overdue` : 'Current'}
-                </span>
-              </div>
-              <div className="text-2xl font-black text-white font-mono mt-1">
-                {formatINR(totalOutstandingPayable)}
-              </div>
-              <p className="text-[11px] text-rose-100/90">
-                {overdueCount > 0 ? `${overdueCount} invoices past due date` : 'All supplier invoices within terms'}
-              </p>
-            </div>
-            <div className="pt-3 mt-3 border-t border-white/20">
-              <button
-                onClick={() => onNavigate('purchase', 'payments')}
-                className="text-xs font-bold text-white hover:text-rose-200 inline-flex items-center gap-1 group transition-colors"
-              >
-                <span>View supplier ledger</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. THREE CONNECTED BUSINESS MODULES (Purchase → Production → Sales as a Connected Operational Flow) */}
+      {/* 2. ALTERNATING FULL-WIDTH SECTION: CORE MODULE TILES (Filtered by Role Permissions) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              <Layers className="w-4.5 h-4.5 text-rose-300" />
-              <span>Connected Operational Flow</span>
+            <h2 className="text-xl font-bold tracking-tight text-ink-900">
+              Operational Workspaces
             </h2>
-            <p className="text-xs text-rose-200/80 mt-0.5">
-              Traceability lifecycle: Vessel Landing Weighment → Plate Freezing Yield → Commercial Export Shipping Bill.
+            <p className="text-xs text-ink-500 mt-0.5">
+              Role-authorized modules configured for {currentUser.designation}.
             </p>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md">
-            <span>Purchase</span>
-            <span className="text-rose-300">→</span>
-            <span>Production</span>
-            <span className="text-rose-300">→</span>
-            <span>Sales</span>
+          <span className="text-xs font-semibold text-rose-700">
+            Role: {currentUser.role.replace('_', ' ').toUpperCase()}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          {/* MODULE 1: PURCHASE */}
-          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 border border-white/30 flex flex-col justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* PURCHASE MODULE TILE */}
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-rose-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-sm group-hover:bg-white group-hover:text-rose-900 transition-all duration-200">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase block">
-                      Stage 01 · Inbound
-                    </span>
-                    <h3 className="text-base font-bold text-white group-hover:text-rose-100 transition">
-                      Harbour Procurement
-                    </h3>
-                  </div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-2xs group-hover:bg-rose-600 group-hover:text-white transition-colors duration-200">
+                  <ShoppingBag className="w-6 h-6" />
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
                   {activePurchases.length} Batches
                 </span>
               </div>
 
-              {/* Primary Metric */}
-              <div className="bg-white/15 backdrop-blur-md p-3.5 rounded-2xl border border-white/25">
-                <span className="text-[10px] font-bold text-rose-200 uppercase block">Total Landed Cost</span>
-                <span className="text-xl font-black text-white mt-0.5 block font-mono">
-                  {formatINR(totalPurchaseCost)}
-                </span>
+              <div>
+                <h3 className="text-lg font-bold text-ink-900 group-hover:text-rose-700 transition">
+                  Procurement &amp; Purchase
+                </h3>
+                <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+                  Harbour weighments, dynamic landing expenses, joint batch cost pools and supplier ledgers.
+                </p>
               </div>
 
-              {/* Two Supporting Figures */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Total Volume</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{formatKg(totalPurchaseVolume)}</span>
+              {/* Snapshot metrics */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Total Volume</span>
+                  <span className="text-sm font-extrabold text-ink-900 mt-0.5 block">{formatKg(totalPurchaseVolume)}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Active Batches</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{activePurchases.length} Recorded</span>
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Landed Cost</span>
+                  <span className="text-sm font-extrabold text-rose-700 mt-0.5 block">{formatINR(totalPurchaseCost)}</span>
                 </div>
-              </div>
-
-              {/* Pending Items or Alerts */}
-              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 text-[11px] flex items-center gap-2">
-                {overdueCount > 0 ? (
-                  <>
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                    <span className="text-amber-200 font-medium">{overdueCount} supplier payments pending due date</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                    <span className="text-rose-100/90 font-medium">All harbour purchases reconciled within terms</span>
-                  </>
-                )}
               </div>
 
               {/* Sub-links */}
-              <div className="pt-1 flex flex-wrap gap-2 text-xs">
+              <div className="pt-2 flex flex-wrap gap-2 text-xs">
                 {permissions.canCreateEditPurchases && (
                   <button
                     onClick={() => onNavigate('purchase', 'purchase-entry')}
-                    className="font-semibold text-white hover:text-rose-200 hover:underline flex items-center gap-1"
+                    className="font-semibold text-rose-700 hover:text-rose-900 hover:underline flex items-center gap-1"
                   >
                     + Harbour Entry
                   </button>
                 )}
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('purchase', 'purchases')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
                 >
                   Transactions
                 </button>
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('purchase', 'payments')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
                 >
                   Ledgers
                 </button>
               </div>
             </div>
 
-            <div className="pt-5">
+            <div className="pt-6">
               <button
                 onClick={() => onNavigate('purchase', 'dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold btn-liquid"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Purchase Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -387,94 +210,70 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
 
-          {/* MODULE 2: PRODUCTION */}
-          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 border border-white/30 flex flex-col justify-between">
+          {/* PRODUCTION MODULE TILE */}
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-amber-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-sm group-hover:bg-white group-hover:text-rose-900 transition-all duration-200">
-                    <Factory className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-amber-300 tracking-wider uppercase block">
-                      Stage 02 · Factory
-                    </span>
-                    <h3 className="text-base font-bold text-white group-hover:text-rose-100 transition">
-                      Plant Freezing &amp; Slabs
-                    </h3>
-                  </div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-2xs group-hover:bg-amber-700 group-hover:text-white transition-colors duration-200">
+                  <Factory className="w-6 h-6" />
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
                   {activeProcessing.length} Lots
                 </span>
               </div>
 
-              {/* Primary Metric */}
-              <div className="bg-white/15 backdrop-blur-md p-3.5 rounded-2xl border border-white/25">
-                <span className="text-[10px] font-bold text-rose-200 uppercase block">Processed Output</span>
-                <span className="text-xl font-black text-white mt-0.5 block font-mono">
-                  {formatKg(totalProcessedKg)}
-                </span>
+              <div>
+                <h3 className="text-lg font-bold text-ink-900 group-hover:text-amber-800 transition">
+                  Factory Floor &amp; Production
+                </h3>
+                <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+                  Daily shift processing, standard slab freezing (2.0 Kg), yield recovery and variance alarms.
+                </p>
               </div>
 
-              {/* Two Supporting Figures */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Slabs Packed</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{totalSlabs.toLocaleString()} (2.0 Kg)</span>
+              {/* Snapshot metrics */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Processed Output</span>
+                  <span className="text-sm font-extrabold text-ink-900 mt-0.5 block">{formatKg(totalProcessedKg)}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Shift Lots</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{activeProcessing.length} Lots</span>
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Total Slabs</span>
+                  <span className="text-sm font-extrabold text-amber-800 mt-0.5 block">{totalSlabs.toLocaleString()} Slabs</span>
                 </div>
-              </div>
-
-              {/* Pending Items or Alerts */}
-              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 text-[11px] flex items-center gap-2">
-                {varianceLotsCount > 0 ? (
-                  <>
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                    <span className="text-amber-200 font-medium">{varianceLotsCount} lot(s) exceeded slab weight variance</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                    <span className="text-rose-100/90 font-medium">Standard 2.0 Kg slab tolerances maintained</span>
-                  </>
-                )}
               </div>
 
               {/* Sub-links */}
-              <div className="pt-1 flex flex-wrap gap-2 text-xs">
+              <div className="pt-2 flex flex-wrap gap-2 text-xs">
                 {permissions.canCreateEditPurchases && (
                   <button
                     onClick={() => onNavigate('production', 'daily-entry')}
-                    className="font-semibold text-white hover:text-rose-200 hover:underline flex items-center gap-1"
+                    className="font-semibold text-amber-800 hover:text-amber-950 hover:underline flex items-center gap-1"
                   >
                     + Plant Entry
                   </button>
                 )}
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('production', 'processing-log')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-amber-800 hover:underline"
                 >
                   Lot Log
                 </button>
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('production', 'slab-types')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-amber-800 hover:underline"
                 >
                   Slab Master
                 </button>
               </div>
             </div>
 
-            <div className="pt-5">
+            <div className="pt-6">
               <button
                 onClick={() => onNavigate('production', 'prod-dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold btn-liquid"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-ink-900 hover:bg-black text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Production Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -482,94 +281,70 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
 
-          {/* MODULE 3: SALES */}
-          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 border border-white/30 flex flex-col justify-between">
+          {/* SALES MODULE TILE */}
+          <div className="group relative glass-surface-regular card-liquid-hover rounded-3xl p-6 sm:p-7 border border-white/80 hover:border-rose-300 shadow-xs flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-sm group-hover:bg-white group-hover:text-rose-900 transition-all duration-200">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase block">
-                      Stage 03 · Export
-                    </span>
-                    <h3 className="text-base font-bold text-white group-hover:text-rose-100 transition">
-                      Commercial Export
-                    </h3>
-                  </div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-2xs group-hover:bg-rose-600 group-hover:text-white transition-colors duration-200">
+                  <TrendingUp className="w-6 h-6" />
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                   {activeSales.length} Invoices
                 </span>
               </div>
 
-              {/* Primary Metric */}
-              <div className="bg-white/15 backdrop-blur-md p-3.5 rounded-2xl border border-white/25">
-                <span className="text-[10px] font-bold text-rose-200 uppercase block">Export Turnover</span>
-                <span className="text-xl font-black text-white mt-0.5 block font-mono">
-                  ${totalExportUSD.toLocaleString()} USD
-                </span>
+              <div>
+                <h3 className="text-lg font-bold text-ink-900 group-hover:text-rose-700 transition">
+                  Commercial Export &amp; Sales
+                </h3>
+                <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+                  Foreign buyer orders, commercial shipping bills, container lines and FIRC foreign realizations.
+                </p>
               </div>
 
-              {/* Two Supporting Figures */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Export Volume</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{formatKg(totalExportKg)}</span>
+              {/* Snapshot metrics */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Export Volume</span>
+                  <span className="text-sm font-extrabold text-ink-900 mt-0.5 block">{formatKg(totalExportKg)}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
-                  <span className="text-[10px] text-rose-200 font-semibold block uppercase">Shipments</span>
-                  <span className="font-extrabold text-white mt-0.5 block font-mono">{activeSales.length} Invoices</span>
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase block">Export Turnover</span>
+                  <span className="text-sm font-extrabold text-emerald-700 mt-0.5 block">${totalExportUSD.toLocaleString()} USD</span>
                 </div>
-              </div>
-
-              {/* Pending Items or Alerts */}
-              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 text-[11px] flex items-center gap-2">
-                {pendingRealizationCount > 0 ? (
-                  <>
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                    <span className="text-amber-200 font-medium">{pendingRealizationCount} invoice(s) pending foreign realization</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                    <span className="text-rose-100/90 font-medium">All foreign commercial shipping bills realized</span>
-                  </>
-                )}
               </div>
 
               {/* Sub-links */}
-              <div className="pt-1 flex flex-wrap gap-2 text-xs">
+              <div className="pt-2 flex flex-wrap gap-2 text-xs">
                 {permissions.canCreateEditSales && (
                   <button
                     onClick={() => onNavigate('sales', 'invoice-entry')}
-                    className="font-semibold text-white hover:text-rose-200 hover:underline flex items-center gap-1"
+                    className="font-semibold text-rose-700 hover:text-rose-900 hover:underline flex items-center gap-1"
                   >
                     + New Invoice
                   </button>
                 )}
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('sales', 'invoices')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
                 >
                   Shipments
                 </button>
-                <span className="text-white/40">·</span>
+                <span className="text-gray-300">·</span>
                 <button
                   onClick={() => onNavigate('sales', 'realizations')}
-                  className="font-medium text-white/90 hover:text-white hover:underline"
+                  className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
                 >
                   Settlement
                 </button>
               </div>
             </div>
 
-            <div className="pt-5">
+            <div className="pt-6">
               <button
                 onClick={() => onNavigate('sales', 'sales-dashboard')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold btn-liquid"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold btn-liquid"
               >
                 <span>Open Commercial Workspace</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -579,138 +354,130 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </section>
 
-      {/* 4. PRESERVED QUICK ACTIONS WITH CLEAR VISUAL HIERARCHY */}
-      <section className="glass-surface-regular rounded-3xl p-6 sm:p-7 border border-white/30 shadow-lg space-y-4">
+      {/* 3. ALTERNATING SECTION: HIGH-FREQUENCY SHORTCUT TILES */}
+      <section className="glass-surface-regular rounded-3xl p-6 sm:p-8 border border-white/80 shadow-xs space-y-4">
         <div>
-          <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-rose-300" />
-            <span>High-Frequency Shortcuts</span>
+          <h2 className="text-lg font-bold tracking-tight text-ink-900">
+            High-Frequency Actions
           </h2>
-          <p className="text-xs text-rose-200/80 mt-0.5">
-            Two-click shortcuts for primary operational tasks.
+          <p className="text-xs text-ink-500 mt-0.5">
+            Two-click shortcuts for primary tasks permitted for your authenticated credentials.
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {/* Prominent Primary Shortcut */}
           {permissions.canCreateEditPurchases && (
             <button
               onClick={() => onNavigate('purchase', 'purchase-entry')}
-              className="p-4 rounded-2xl bg-white text-rose-900 border border-white shadow-xl text-left card-liquid-hover flex flex-col justify-between group transition-all"
+              className="p-4 rounded-2xl glass-surface-blush border border-rose-200 text-left card-liquid-hover flex flex-col justify-between group"
             >
-              <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <PlusCircle className="w-4 h-4" />
               </div>
               <div className="mt-3">
-                <span className="text-xs font-black text-rose-950 block leading-tight">
+                <span className="text-xs font-bold text-ink-900 group-hover:text-rose-900 block leading-tight">
                   New Purchase
                 </span>
-                <span className="text-[11px] text-rose-800 font-semibold mt-0.5 block">Harbour landing</span>
+                <span className="text-[11px] text-ink-500 mt-0.5 block">Harbour landing</span>
               </div>
             </button>
           )}
 
-          {/* Secondary Shortcut: Plant Entry */}
           {permissions.canCreateEditPurchases && (
             <button
               onClick={() => onNavigate('production', 'daily-entry')}
-              className="p-4 rounded-2xl glass-surface-thin hover:glass-surface-blush border border-white/25 text-left card-liquid-hover flex flex-col justify-between group transition-all"
+              className="p-4 rounded-2xl bg-amber-50/50 backdrop-blur-md hover:bg-amber-100/70 border border-amber-200/80 text-left card-liquid-hover flex flex-col justify-between group"
             >
-              <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-xs border border-white/30 group-hover:bg-white group-hover:text-rose-900 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Factory className="w-4 h-4" />
               </div>
               <div className="mt-3">
-                <span className="text-xs font-bold text-white group-hover:text-white block leading-tight">
+                <span className="text-xs font-bold text-ink-900 group-hover:text-amber-900 block leading-tight">
                   New Plant Entry
                 </span>
-                <span className="text-[11px] text-rose-200/80 mt-0.5 block">Processing &amp; slabs</span>
+                <span className="text-[11px] text-ink-500 mt-0.5 block">Processing &amp; slabs</span>
               </div>
             </button>
           )}
 
-          {/* Secondary Shortcut: Export Invoice */}
           {permissions.canCreateEditSales && (
             <button
               onClick={() => onNavigate('sales', 'invoice-entry')}
-              className="p-4 rounded-2xl glass-surface-thin hover:glass-surface-blush border border-white/25 text-left card-liquid-hover flex flex-col justify-between group transition-all"
+              className="p-4 rounded-2xl bg-emerald-50/50 backdrop-blur-md hover:bg-emerald-100/70 border border-emerald-200/80 text-left card-liquid-hover flex flex-col justify-between group"
             >
-              <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-xs border border-white/30 group-hover:bg-white group-hover:text-rose-900 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Receipt className="w-4 h-4" />
               </div>
               <div className="mt-3">
-                <span className="text-xs font-bold text-white group-hover:text-white block leading-tight">
+                <span className="text-xs font-bold text-ink-900 group-hover:text-emerald-900 block leading-tight">
                   New Export Invoice
                 </span>
-                <span className="text-[11px] text-rose-200/80 mt-0.5 block">Commercial bill</span>
+                <span className="text-[11px] text-ink-500 mt-0.5 block">Commercial bill</span>
               </div>
             </button>
           )}
 
-          {/* Secondary Shortcut: Supplier Ledger */}
           <button
             onClick={() => onNavigate('purchase', 'payments')}
-            className="p-4 rounded-2xl glass-surface-thin hover:glass-surface-blush border border-white/25 text-left card-liquid-hover flex flex-col justify-between group transition-all"
+            className="p-4 rounded-2xl glass-surface-thin hover:border-gray-300 text-left card-liquid-hover flex flex-col justify-between group"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-xs border border-white/30 group-hover:bg-white group-hover:text-rose-900 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-ink-900 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <BookOpen className="w-4 h-4" />
             </div>
             <div className="mt-3">
-              <span className="text-xs font-bold text-white block leading-tight">
+              <span className="text-xs font-bold text-ink-900 block leading-tight">
                 Supplier Ledger
               </span>
-              <span className="text-[11px] text-rose-200/80 mt-0.5 block">A4 Statement</span>
+              <span className="text-[11px] text-ink-500 mt-0.5 block">A4 Statement</span>
             </div>
           </button>
 
-          {/* Secondary Shortcut: Outstanding Ageing */}
           <button
             onClick={() => onNavigate('purchase', 'outstanding')}
-            className="p-4 rounded-2xl glass-surface-thin hover:glass-surface-blush border border-white/25 text-left card-liquid-hover flex flex-col justify-between group transition-all"
+            className="p-4 rounded-2xl glass-surface-thin hover:border-gray-300 text-left card-liquid-hover flex flex-col justify-between group"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-xs border border-white/30 group-hover:bg-white group-hover:text-rose-900 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <Clock className="w-4 h-4" />
             </div>
             <div className="mt-3">
-              <span className="text-xs font-bold text-white block leading-tight">
+              <span className="text-xs font-bold text-ink-900 block leading-tight">
                 Outstanding Ageing
               </span>
-              <span className="text-[11px] text-rose-200/80 mt-0.5 block">180+ Days</span>
+              <span className="text-[11px] text-ink-500 mt-0.5 block">180+ Days</span>
             </div>
           </button>
 
-          {/* Secondary Shortcut: Reports Hub */}
           <button
             onClick={() => onNavigate('purchase', 'reports')}
-            className="p-4 rounded-2xl glass-surface-thin hover:glass-surface-blush border border-white/25 text-left card-liquid-hover flex flex-col justify-between group transition-all"
+            className="p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 border border-gray-200 text-left transition flex flex-col justify-between group"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-xs border border-white/30 group-hover:bg-white group-hover:text-rose-900 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-ink-700 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="mt-3">
-              <span className="text-xs font-bold text-white block leading-tight">
+              <span className="text-xs font-bold text-ink-900 block leading-tight">
                 Reports Hub
               </span>
-              <span className="text-[11px] text-rose-200/80 mt-0.5 block">8 Analysis views</span>
+              <span className="text-[11px] text-ink-500 mt-0.5 block">8 Analysis views</span>
             </div>
           </button>
         </div>
       </section>
 
-      {/* 5. LIVE RECENT TRANSACTIONS FEED (Purchases, Processing Lots, Sales Invoices) WITH HELPFUL EMPTY STATES */}
+      {/* 4. SCROLLABLE STRIP OF RECENT ENTRIES (Purchases, Processing Lots, Sales Invoices) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-rose-300" />
-              <span>Live Feed of Recent Transactions</span>
+            <h2 className="text-lg font-bold tracking-tight text-ink-900">
+              Live Feed of Recent Transactions
             </h2>
-            <p className="text-xs text-rose-200/80 mt-0.5">
+            <p className="text-xs text-ink-500 mt-0.5">
               Instant audit trail of recent harbour purchases, plant floor lots, and export shipments.
             </p>
           </div>
           <button
             onClick={() => onNavigate('purchase', 'purchases')}
-            className="text-xs font-bold text-white hover:text-rose-200 hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline flex items-center gap-1"
           >
             <span>View all register</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -718,179 +485,134 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Column 1: Recent Purchases */}
-          <div className="glass-surface-regular rounded-2xl p-5 border border-white/30 shadow-lg space-y-3">
-            <div className="flex items-center justify-between border-b border-white/20 pb-2.5">
-              <span className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5 text-rose-300" />
+          {/* Recent Purchases Column */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <span className="text-xs font-bold text-ink-900 uppercase tracking-wide flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-rose-600" />
                 Latest Landings
               </span>
-              <span className="text-[11px] font-semibold text-rose-200">Procurement</span>
+              <span className="text-[11px] font-semibold text-rose-700">Procurement</span>
             </div>
 
-            {recentPurchases.length === 0 ? (
-              <div className="py-8 text-center text-xs text-rose-200/90 space-y-2">
-                <p>No harbour purchases recorded yet.</p>
-                {permissions.canCreateEditPurchases && (
-                  <button
-                    onClick={() => onNavigate('purchase', 'purchase-entry')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-rose-900 font-bold text-xs"
+            <div className="space-y-2.5">
+              {recentPurchases.map((p) => {
+                const supp = supplierMap.get(p.supplierId);
+                const sp = speciesMap.get(p.speciesId);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => onNavigate('purchase', 'purchases')}
+                    className="p-3 rounded-xl bg-gray-50/70 hover:bg-rose-50/50 border border-gray-100 hover:border-rose-200 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
                   >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Record First Landing</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {recentPurchases.map((p) => {
-                  const supp = supplierMap.get(p.supplierId);
-                  const sp = speciesMap.get(p.speciesId);
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => onNavigate('purchase', 'purchases')}
-                      className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{p.purchaseId}</div>
-                        <div className="text-rose-100 font-semibold mt-0.5 truncate max-w-[130px]">
-                          {supp?.name || 'Unknown Supplier'}
-                        </div>
-                        <div className="text-[11px] text-rose-200/80 truncate">{sp?.name} · {formatKg(p.weightKg)}</div>
+                    <div>
+                      <div className="font-bold text-rose-700">{p.purchaseId}</div>
+                      <div className="text-ink-900 font-semibold mt-0.5 truncate max-w-[140px]">
+                        {supp?.name || 'Unknown Supplier'}
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-extrabold text-white font-mono">{formatINR(p.totalCost)}</div>
-                        <span
-                          className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            p.paymentStatus === 'Fully Paid'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                              : p.paymentStatus === 'Partially Paid'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
-                              : 'bg-rose-500/20 text-rose-200 border border-rose-400/30'
-                          }`}
-                        >
-                          {p.paymentStatus}
-                        </span>
-                      </div>
+                      <div className="text-[11px] text-ink-500">{sp?.name} · {formatKg(p.weightKg)}</div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="text-right shrink-0">
+                      <div className="font-extrabold text-ink-900">{formatINR(p.totalCost)}</div>
+                      <span
+                        className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          p.paymentStatus === 'Fully Paid'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : p.paymentStatus === 'Partially Paid'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {p.paymentStatus}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Column 2: Recent Processing Lots */}
-          <div className="glass-surface-regular rounded-2xl p-5 border border-white/30 shadow-lg space-y-3">
-            <div className="flex items-center justify-between border-b border-white/20 pb-2.5">
-              <span className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-1.5">
-                <Factory className="w-3.5 h-3.5 text-amber-300" />
+          {/* Recent Processing Lots Column */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <span className="text-xs font-bold text-ink-900 uppercase tracking-wide flex items-center gap-1.5">
+                <Factory className="w-3.5 h-3.5 text-amber-700" />
                 Latest Plant Lots
               </span>
-              <span className="text-[11px] font-semibold text-rose-200">Production</span>
+              <span className="text-[11px] font-semibold text-amber-800">Production</span>
             </div>
 
-            {recentProcessing.length === 0 ? (
-              <div className="py-8 text-center text-xs text-rose-200/90 space-y-2">
-                <p>No production lots recorded yet.</p>
-                {permissions.canCreateEditPurchases && (
-                  <button
-                    onClick={() => onNavigate('production', 'daily-entry')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-amber-900 font-bold text-xs"
+            <div className="space-y-2.5">
+              {recentProcessing.map((proc) => {
+                const supp = supplierMap.get(proc.supplierId);
+                const sp = speciesMap.get(proc.speciesId);
+                return (
+                  <div
+                    key={proc.id}
+                    onClick={() => onNavigate('production', 'processing-log')}
+                    className="p-3 rounded-xl bg-gray-50/70 hover:bg-amber-50/50 border border-gray-100 hover:border-amber-200 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
                   >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Create Plant Entry</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {recentProcessing.map((proc) => {
-                  const supp = supplierMap.get(proc.supplierId);
-                  const sp = speciesMap.get(proc.speciesId);
-                  return (
-                    <div
-                      key={proc.id}
-                      onClick={() => onNavigate('production', 'processing-log')}
-                      className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{proc.entryNo}</div>
-                        <div className="text-rose-100 font-semibold mt-0.5 truncate max-w-[130px]">
-                          {supp?.name || 'Raw Lot'}
-                        </div>
-                        <div className="text-[11px] text-rose-200/80 truncate">{sp?.name}</div>
+                    <div>
+                      <div className="font-bold text-ink-900">{proc.entryNo}</div>
+                      <div className="text-ink-900 font-semibold mt-0.5 truncate max-w-[140px]">
+                        {supp?.name || 'Raw Lot'}
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-extrabold text-white font-mono">{formatKg(proc.processedWeightKg)}</div>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white border border-white/30">
-                          {proc.slabsCount} Slabs
-                        </span>
-                      </div>
+                      <div className="text-[11px] text-ink-500">{sp?.name}</div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="text-right shrink-0">
+                      <div className="font-extrabold text-amber-900">{formatKg(proc.processedWeightKg)}</div>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        {proc.slabsCount} Slabs
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Column 3: Recent Commercial Invoices */}
-          <div className="glass-surface-regular rounded-2xl p-5 border border-white/30 shadow-lg space-y-3">
-            <div className="flex items-center justify-between border-b border-white/20 pb-2.5">
-              <span className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-rose-300" />
+          {/* Recent Commercial Invoices Column */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <span className="text-xs font-bold text-ink-900 uppercase tracking-wide flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-rose-600" />
                 Latest Export Shipments
               </span>
-              <span className="text-[11px] font-semibold text-rose-200">Commercial</span>
+              <span className="text-[11px] font-semibold text-rose-700">Commercial</span>
             </div>
 
-            {recentSales.length === 0 ? (
-              <div className="py-8 text-center text-xs text-rose-200/90 space-y-2">
-                <p>No export invoices recorded yet.</p>
-                {permissions.canCreateEditSales && (
-                  <button
-                    onClick={() => onNavigate('sales', 'invoice-entry')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-rose-900 font-bold text-xs"
+            <div className="space-y-2.5">
+              {recentSales.map((inv) => {
+                const buyer = customerMap.get(inv.consigneeId);
+                return (
+                  <div
+                    key={inv.id}
+                    onClick={() => onNavigate('sales', 'invoices')}
+                    className="p-3 rounded-xl bg-gray-50/70 hover:bg-rose-50/50 border border-gray-100 hover:border-rose-200 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
                   >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Prepare First Invoice</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {recentSales.map((inv) => {
-                  const buyer = customerMap.get(inv.consigneeId);
-                  return (
-                    <div
-                      key={inv.id}
-                      onClick={() => onNavigate('sales', 'invoices')}
-                      className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{inv.invoiceNo}</div>
-                        <div className="text-rose-100 font-semibold mt-0.5 truncate max-w-[130px]">
-                          {buyer?.name || 'Consignee'}
-                        </div>
-                        <div className="text-[11px] text-rose-200/80 truncate">{formatKg(inv.totalWeightKg)} · {inv.orderNo || 'Contract'}</div>
+                    <div>
+                      <div className="font-bold text-rose-700">{inv.invoiceNo}</div>
+                      <div className="text-ink-900 font-semibold mt-0.5 truncate max-w-[140px]">
+                        {buyer?.name || 'Consignee'}
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-extrabold text-white font-mono">${inv.totalAmountCurrency.toLocaleString()}</div>
-                        <span
-                          className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            inv.realizationStatus === 'Fully Realized'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                              : 'bg-rose-500/20 text-rose-200 border border-rose-400/30'
-                          }`}
-                        >
-                          {inv.realizationStatus}
-                        </span>
-                      </div>
+                      <div className="text-[11px] text-ink-500">{formatKg(inv.totalWeightKg)} · {inv.orderNo || 'Contract'}</div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="text-right shrink-0">
+                      <div className="font-extrabold text-ink-900">${inv.totalAmountCurrency.toLocaleString()}</div>
+                      <span
+                        className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          inv.realizationStatus === 'Fully Realized'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {inv.realizationStatus}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
