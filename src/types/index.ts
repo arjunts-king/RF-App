@@ -365,6 +365,10 @@ export interface SalesInvoiceLine {
   ratePerKg: number; // Rate per Kg (in invoice currency, e.g. USD/Kg)
   amountCurrency: number; // weightKg * ratePerKg (server-calculated, read-only)
   fobValueCurrency: number; // FOB Value in invoice currency
+
+  // Export Invoice Format Particulars
+  productDescription?: string; // e.g. "FROZEN INDIAN MACKEREL – A GRADE"
+  gradeSize?: string; // e.g. "6/8", "8/10"
 }
 
 export interface RealizationRecord {
@@ -408,6 +412,43 @@ export interface SalesInvoice {
   totalAmountCurrency: number; // Total Amount in USD
   totalFobValueCurrency: number; // Total FOB Value in USD
   estimatedAmountINR: number; // totalAmountCurrency * exchangeRate
+
+  // Export Invoice Specific Particulars (Matching Official Export Sample)
+  exporterName?: string;
+  exporterAddress?: string;
+  exporterRef?: string;
+  otherReferences?: string;
+  consigneeName?: string;
+  consigneeAddress?: string;
+  buyerName?: string;
+  buyerAddress?: string;
+  countryOfOrigin?: string;
+  countryOfDestination?: string;
+  preCarriageBy?: string;
+  placeOfReceipt?: string;
+  termsOfPayment?: string;
+  priceTerms?: string;
+  vesselFlightNo?: string;
+  portOfLoading?: string;
+  portOfDischarge?: string;
+  finalDestination?: string;
+  commodityDescription?: string;
+  packingDescription?: string;
+  scientificName?: string;
+  shippingMarks?: string;
+  containerNo?: string;
+  sealNo?: string;
+  netWeightKg?: number;
+  grossWeightKg?: number;
+  amountInWords?: string;
+  factoryNameAndAddress?: string;
+  factoryApprovalNumber?: string;
+  billOfLadingNo?: string;
+  declarationText?: string;
+  signatoryCompany?: string;
+  signatoryDesignation?: string;
+  signatureDate?: string;
+  includeSignatureImage?: boolean;
 
   // Realization / Settlement Tracking
   realizations: RealizationRecord[];

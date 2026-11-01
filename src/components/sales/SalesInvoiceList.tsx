@@ -9,6 +9,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
+import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
 import {
   Search,
   Download,
@@ -21,7 +22,8 @@ import {
   FileText,
   Globe,
   Plus,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileDown
 } from 'lucide-react';
 
 export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -461,6 +463,20 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                             <Eye className="w-3.5 h-3.5" />
                           </button>
 
+                          <button
+                            onClick={async () => {
+                              try {
+                                await exportInvoiceToWord(inv, businessSettings);
+                              } catch (err: any) {
+                                alert(`Export failed: ${err.message || 'Unknown error'}`);
+                              }
+                            }}
+                            title="Export to Word Document (.docx)"
+                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                          >
+                            <FileDown className="w-3.5 h-3.5 text-rose-600" />
+                          </button>
+
                           {!inv.isVoided && (
                             <button
                               onClick={() => setRealizationTarget(inv)}
@@ -531,13 +547,28 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             {/* Action Bar for Invoice */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <span className="font-mono text-xs text-ink-500">Document Date: {selectedInvoice.invoiceDate}</span>
-              <button
-                onClick={triggerPrint}
-                className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Commercial Invoice</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      await exportInvoiceToWord(selectedInvoice, businessSettings);
+                    } catch (err: any) {
+                      alert(`Export failed: ${err.message || 'Unknown error'}`);
+                    }
+                  }}
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export Word (.docx)</span>
+                </button>
+                <button
+                  onClick={triggerPrint}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Commercial Invoice</span>
+                </button>
+              </div>
             </div>
 
             {/* Invoice Header Details */}

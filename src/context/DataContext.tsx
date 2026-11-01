@@ -1892,7 +1892,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         weightKg: weight,
         ratePerKg: rate,
         amountCurrency: amount,
-        fobValueCurrency: fobVal
+        fobValueCurrency: fobVal,
+        productDescription: l.productDescription,
+        gradeSize: l.gradeSize
       };
     });
 
@@ -1917,6 +1919,43 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       currency,
       exchangeRate,
       remarks: invoiceData.remarks || '',
+
+      // Export Invoice particulars
+      exporterName: invoiceData.exporterName || businessSettings.businessName,
+      exporterAddress: invoiceData.exporterAddress || businessSettings.address,
+      exporterRef: invoiceData.exporterRef,
+      otherReferences: invoiceData.otherReferences,
+      consigneeName: invoiceData.consigneeName,
+      consigneeAddress: invoiceData.consigneeAddress,
+      buyerName: invoiceData.buyerName,
+      buyerAddress: invoiceData.buyerAddress,
+      countryOfOrigin: invoiceData.countryOfOrigin || 'INDIA',
+      countryOfDestination: invoiceData.countryOfDestination,
+      preCarriageBy: invoiceData.preCarriageBy || 'N.A.',
+      placeOfReceipt: invoiceData.placeOfReceipt || 'N.A.',
+      termsOfPayment: invoiceData.termsOfPayment,
+      priceTerms: invoiceData.priceTerms,
+      vesselFlightNo: invoiceData.vesselFlightNo,
+      portOfLoading: invoiceData.portOfLoading,
+      portOfDischarge: invoiceData.portOfDischarge,
+      finalDestination: invoiceData.finalDestination,
+      commodityDescription: invoiceData.commodityDescription,
+      packingDescription: invoiceData.packingDescription,
+      scientificName: invoiceData.scientificName,
+      shippingMarks: invoiceData.shippingMarks,
+      containerNo: invoiceData.containerNo,
+      sealNo: invoiceData.sealNo,
+      netWeightKg: invoiceData.netWeightKg !== undefined ? invoiceData.netWeightKg : totalWeightKg,
+      grossWeightKg: invoiceData.grossWeightKg,
+      amountInWords: invoiceData.amountInWords,
+      factoryNameAndAddress: invoiceData.factoryNameAndAddress,
+      factoryApprovalNumber: invoiceData.factoryApprovalNumber,
+      billOfLadingNo: invoiceData.billOfLadingNo,
+      declarationText: invoiceData.declarationText,
+      signatoryCompany: invoiceData.signatoryCompany,
+      signatoryDesignation: invoiceData.signatoryDesignation,
+      signatureDate: invoiceData.signatureDate,
+      includeSignatureImage: invoiceData.includeSignatureImage !== false,
 
       lineItems: computedLines,
       totalCartons,
@@ -1979,7 +2018,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         weightKg: weight,
         ratePerKg: rate,
         amountCurrency: amount,
-        fobValueCurrency: fobVal
+        fobValueCurrency: fobVal,
+        productDescription: l.productDescription,
+        gradeSize: l.gradeSize
       };
     });
 
