@@ -109,7 +109,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [signatoryCompany, setSignatoryCompany] = useState(`For ${businessSettings.businessName || 'RELISH FOODS'}`);
   const [signatoryDesignation, setSignatoryDesignation] = useState('Partner');
   const [signatureDate, setSignatureDate] = useState(today);
-  const [includeSignatureImage, setIncludeSignatureImage] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExportingWord, setIsExportingWord] = useState(false);
@@ -390,7 +389,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       signatoryCompany: signatoryCompany.trim(),
       signatoryDesignation: signatoryDesignation.trim(),
       signatureDate: signatureDate || invoiceDate,
-      includeSignatureImage,
       totalCartons,
       totalWeightKg,
       totalAmountCurrency,
@@ -1403,16 +1401,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-ink-800">
-              <input
-                type="checkbox"
-                checked={includeSignatureImage}
-                onChange={(e) => setIncludeSignatureImage(e.target.checked)}
-                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-400 accent-rose-600"
-              />
-              <span>Include Official Stamp &amp; Signature Image in Word Document</span>
-            </label>
+          <div className="pt-2 flex items-center justify-end">
             <button
               type="button"
               onClick={handleExportWord}

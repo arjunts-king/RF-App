@@ -1955,7 +1955,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       signatoryCompany: invoiceData.signatoryCompany,
       signatoryDesignation: invoiceData.signatoryDesignation,
       signatureDate: invoiceData.signatureDate,
-      includeSignatureImage: invoiceData.includeSignatureImage !== false,
 
       lineItems: computedLines,
       totalCartons,

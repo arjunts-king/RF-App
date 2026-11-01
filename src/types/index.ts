@@ -448,7 +448,6 @@ export interface SalesInvoice {
   signatoryCompany?: string;
   signatoryDesignation?: string;
   signatureDate?: string;
-  includeSignatureImage?: boolean;
 
   // Realization / Settlement Tracking
   realizations: RealizationRecord[];

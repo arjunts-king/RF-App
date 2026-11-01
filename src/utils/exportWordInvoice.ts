@@ -157,38 +157,6 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const defaultAmountWords = `${priceTermsPrefix}${currencyName}: ${numberToWordsInternational(totalAmount)}`;
   const finalAmountWords = inv.amountInWords || defaultAmountWords;
 
-  // Signature Block
-  const signatureDrawing = inv.includeSignatureImage !== false ? `
-    <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
-      <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-      <w:r w:rsidRPr="00C94A24">
-        <w:rPr><w:rFonts w:eastAsiaTheme="minorEastAsia"/><w:b/><w:bCs/><w:noProof/><w:lang w:val="en-IN" w:eastAsia="en-IN"/></w:rPr>
-        <w:drawing>
-          <wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251660288" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1" wp14:anchorId="64889011" wp14:editId="660BD1A9">
-            <wp:simplePos x="0" y="0"/>
-            <wp:positionH relativeFrom="margin"><wp:posOffset>109182</wp:posOffset></wp:positionH>
-            <wp:positionV relativeFrom="paragraph"><wp:posOffset>-65178</wp:posOffset></wp:positionV>
-            <wp:extent cx="1935978" cy="911877"/>
-            <wp:effectExtent l="0" t="0" r="0" b="0"/>
-            <wp:wrapNone/>
-            <wp:docPr id="1" name="Picture 1"/>
-            <wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>
-            <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-              <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-                <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-                  <pic:nvPicPr><pic:cNvPr id="2" name="image1.png"/><pic:cNvPicPr/></pic:nvPicPr>
-                  <pic:blipFill><a:blip r:embed="rId4" cstate="print"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>
-                  <pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1935978" cy="911877"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>
-                </pic:pic>
-              </a:graphicData>
-            </a:graphic>
-            <wp14:sizeRelH relativeFrom="margin"><wp14:pctWidth>0</wp14:pctWidth></wp14:sizeRelH>
-            <wp14:sizeRelV relativeFrom="margin"><wp14:pctHeight>0</wp14:pctHeight></wp14:sizeRelV>
-          </wp:anchor>
-        </w:drawing>
-      </w:r>
-    </w:p>` : '';
-
   const signatoryCompany = inv.signatoryCompany || (`For ${settings?.businessName || 'RELISH FOODS'}`);
   const signatoryDesignation = inv.signatoryDesignation || 'Partner';
   const signatureDate = inv.signatureDate || inv.invoiceDate;
@@ -686,7 +654,6 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
     </w:tc>
     <w:tc>
       <w:tcPr><w:tcW w:w="3357" w:type="dxa"/><w:gridSpan w:val="4"/></w:tcPr>
-      ${signatureDrawing}
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">          </w:t></w:r>
@@ -694,11 +661,17 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${formatDDMMYYYY(signatureDate)}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
-        <w:pPr><w:rPr><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>Signature &amp; Date${signatoryDesignation ? ' (' + escapeXml(signatoryDesignation) + ')' : ''}</w:t></w:r>
+        <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+      </w:p>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${formatDDMMYYYY(signatureDate)}</w:t></w:r>
+      </w:p>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRPr="00AA1D6A" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:pPr>
+        <w:r w:rsidRPr="0073267B"><w:rPr><w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>Signature &amp; Date${signatoryDesignation ? ' (' + escapeXml(signatoryDesignation) + ')' : ''}</w:t></w:r>
       </w:p>
     </w:tc>
   </w:tr>
