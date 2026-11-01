@@ -6,6 +6,7 @@ import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
+import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
 import {
   FileText,
   PlusCircle,
@@ -20,7 +21,8 @@ import {
   Download,
   Ship,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Eye
 } from 'lucide-react';
 
 interface LineItemDraft {
@@ -112,6 +114,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Auto-generate invoice sequential number & pre-select defaults
   useEffect(() => {
@@ -491,6 +494,11 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         subtitle="Complete export particulars matching the official commercial invoice format. Edit and export directly to Word (.docx) with 100% exact alignment."
         breadcrumbs={['Sales', 'New Commercial Invoice']}
         secondaryActions={[
+          {
+            label: 'Preview Document',
+            onClick: () => setIsPreviewOpen(true),
+            icon: Eye
+          },
           {
             label: isExportingWord ? 'Exporting Word...' : 'Export Word (.docx)',
             onClick: handleExportWord,
@@ -1401,7 +1409,15 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-end">
+          <div className="pt-2 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 rounded-xl text-xs font-bold flex items-center gap-2 transition"
+            >
+              <Eye className="w-3.5 h-3.5 text-rose-700" />
+              <span>Preview Word Document</span>
+            </button>
             <button
               type="button"
               onClick={handleExportWord}
@@ -1444,6 +1460,13 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             highlight: true
           }
         ]}
+      />
+      {/* Export Word Replica Preview Modal */}
+      <ExportInvoicePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        invoice={getCurrentInvoiceDraft()}
+        settings={businessSettings}
       />
     </form>
   );

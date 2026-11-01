@@ -8,7 +8,8 @@ import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
-import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
+import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
+import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
 import {
   Search,
@@ -18,7 +19,6 @@ import {
   Trash2,
   Ban,
   BadgeDollarSign,
-  Printer,
   FileText,
   Globe,
   Plus,
@@ -31,9 +31,6 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     salesInvoices,
     customers,
     ports,
-    species,
-    sizes,
-    counts,
     businessSettings,
     updateSalesInvoice,
     voidSalesInvoice,
@@ -74,9 +71,6 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
   // Lookups
   const customerMap = new Map(customers.map((c) => [c.id, c]));
   const portMap = new Map(ports.map((p) => [p.id, p]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
-  const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
-  const countMap = new Map(counts.map((cnt) => [cnt.id, cnt]));
 
   // Filtered List
   const filteredInvoices = salesInvoices.filter((inv) => {
@@ -534,185 +528,15 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         invoice={realizationTarget}
       />
 
-      {/* View Commercial Invoice Modal (Printable) */}
-      <Modal
+      {/* View Commercial Invoice Word Replica Preview Modal */}
+      <ExportInvoicePreviewModal
         isOpen={selectedInvoice !== null}
         onClose={() => setSelectedInvoice(null)}
-        title={`Commercial Export Invoice — ${selectedInvoice?.invoiceNo}`}
-        subtitle="Official export documentation and packing breakdown"
-        maxWidth="max-w-4xl"
-      >
-        {selectedInvoice && (
-          <div className="space-y-6 text-xs text-ink-900 print:text-black">
-            {/* Action Bar for Invoice */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <span className="font-mono text-xs text-ink-500">Document Date: {selectedInvoice.invoiceDate}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={async () => {
-                    try {
-                      await exportInvoiceToWord(selectedInvoice, businessSettings);
-                    } catch (err: any) {
-                      alert(`Export failed: ${err.message || 'Unknown error'}`);
-                    }
-                  }}
-                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export Word (.docx)</span>
-                </button>
-                <button
-                  onClick={triggerPrint}
-                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-full text-xs font-bold flex items-center gap-1.5 transition"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print Commercial Invoice</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Invoice Header Details */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50/70 rounded-2xl border border-gray-200">
-              <div>
-                <span className="text-[10px] font-bold text-ink-500 uppercase block">Exporter / Shipper</span>
-                <span className="text-sm font-extrabold text-ink-900 block mt-0.5">
-                  {businessSettings.businessName}
-                </span>
-                <span className="text-[11px] text-ink-600 block">{businessSettings.address}</span>
-                <span className="text-[10px] text-ink-500 block mt-1">
-                  GSTIN: {businessSettings.gstin || '32AABCS1429B1Z2'} · PAN: {businessSettings.pan || 'AABCS1429B'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold text-ink-500 uppercase block">Consignee</span>
-                <span className="text-sm font-extrabold text-ink-900 block mt-0.5">
-                  {customerMap.get(selectedInvoice.consigneeId)?.name}
-                </span>
-                <span className="text-[11px] text-ink-600 block">
-                  {customerMap.get(selectedInvoice.consigneeId)?.address}
-                </span>
-                <span className="text-[10px] text-ink-500 block mt-1">
-                  Country: {customerMap.get(selectedInvoice.consigneeId)?.country} · Tax ID:{' '}
-                  {customerMap.get(selectedInvoice.consigneeId)?.taxId || 'N/A'}
-                </span>
-              </div>
-            </div>
-
-            {/* Shipping & Shipment Meta */}
-            <div className="grid grid-cols-4 gap-3 p-3 bg-white rounded-xl border border-gray-200 text-xs">
-              <div>
-                <span className="text-ink-500 text-[10px] block font-medium">Port of Loading (POL)</span>
-                <span className="font-bold text-ink-900 block mt-0.5">
-                  {portMap.get(selectedInvoice.portOfLoadingId)?.name}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-500 text-[10px] block font-medium">Port of Discharge (POD)</span>
-                <span className="font-bold text-ink-900 block mt-0.5">
-                  {portMap.get(selectedInvoice.portOfDischargeId)?.name}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-500 text-[10px] block font-medium">Final Destination</span>
-                <span className="font-bold text-ink-900 block mt-0.5">
-                  {portMap.get(selectedInvoice.finalDestinationId)?.name}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-500 text-[10px] block font-medium">Order / PO No</span>
-                <span className="font-bold text-ink-900 block mt-0.5">
-                  {selectedInvoice.orderNo || 'Open Contract'}
-                </span>
-              </div>
-            </div>
-
-            {/* Line Items Table */}
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
-                    <th className="py-2 px-3">Description of Goods</th>
-                    <th className="py-2 px-3">HS Code</th>
-                    <th className="py-2 px-3">Size / Count</th>
-                    <th className="py-2 px-3 text-right">Cartons</th>
-                    <th className="py-2 px-3 text-right">Net Wt (Kg)</th>
-                    <th className="py-2 px-3 text-right">Rate ({selectedInvoice.currency})</th>
-                    <th className="py-2 px-3 text-right">Amount ({selectedInvoice.currency})</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
-                  {selectedInvoice.lineItems.map((line, idx) => (
-                    <tr key={line.id || idx}>
-                      <td className="py-2 px-3 font-bold text-ink-900">
-                        {speciesMap.get(line.speciesId)?.name || 'Marine Seafood'}
-                        {speciesMap.get(line.speciesId)?.productForm && (
-                          <span className="block text-[10px] text-ink-500 font-normal">
-                            {speciesMap.get(line.speciesId)?.productForm}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 font-mono text-[11px] text-ink-600">{line.hsCode}</td>
-                      <td className="py-2 px-3">
-                        {sizeMap.get(line.sizeId)?.name || 'Standard'}
-                        {line.countId && (
-                          <span className="text-ink-500 text-[10px] ml-1">({countMap.get(line.countId)?.name})</span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 text-right">{line.cartonsCount}</td>
-                      <td className="py-2 px-3 text-right font-bold">{formatKg(line.weightKg)}</td>
-                      <td className="py-2 px-3 text-right font-semibold">
-                        ${line.ratePerKg.toFixed(2)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-extrabold text-ink-900">
-                        ${line.amountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gray-50 font-bold border-t border-gray-200">
-                    <td colSpan={3} className="py-2 px-3 uppercase text-[11px]">
-                      Total Export Consignment
-                    </td>
-                    <td className="py-2 px-3 text-right">{selectedInvoice.totalCartons} ctn</td>
-                    <td className="py-2 px-3 text-right">{formatKg(selectedInvoice.totalWeightKg)}</td>
-                    <td className="py-2 px-3 text-right text-[10px] text-ink-500">Total CIF/FOB</td>
-                    <td className="py-2 px-3 text-right font-extrabold text-rose-950 text-sm">
-                      {selectedInvoice.currency} {selectedInvoice.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {/* Banking & Realization Status Strip */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div>
-                <span className="text-ink-500 block">Bank Realization Status:</span>
-                <span className="inline-flex items-center gap-1.5 font-bold mt-0.5">
-                  <StatusBadge
-                    status={
-                      selectedInvoice.realizationStatus === 'Fully Realized'
-                        ? 'Realized'
-                        : selectedInvoice.realizationStatus === 'Partially Realized'
-                        ? 'Partially realized'
-                        : 'Not realized'
-                    }
-                  />
-                  <span>· Realized: ${selectedInvoice.totalRealizedCurrency.toLocaleString()} (₹{selectedInvoice.totalRealizedINR.toLocaleString()})</span>
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-ink-500 block">Outstanding Remittance:</span>
-                <span className="font-extrabold text-rose-700 text-sm">
-                  ${selectedInvoice.balanceRealizationCurrency.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+        invoice={selectedInvoice}
+        settings={businessSettings}
+        customers={customers}
+        ports={ports}
+      />
 
       {/* Edit Invoice Modal */}
       <Modal
