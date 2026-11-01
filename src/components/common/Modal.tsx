@@ -41,17 +41,17 @@ export const Modal: React.FC<ModalProps> = ({
       aria-modal="true"
     >
       <div
-        className={`glass-surface-thick rounded-2xl w-full ${maxWidth} transform transition-all animate-liquid-pop overflow-hidden`}
+        className={`glass-surface-dense rounded-3xl w-full ${maxWidth} transform transition-all animate-liquid-pop overflow-hidden border border-white/60 shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-rose-100/60 bg-rose-50/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/70">
           <div>
             <h3 className="text-lg font-bold text-ink-900">{title}</h3>
             {subtitle && <p className="text-xs text-ink-500 mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-rose-600 hover:bg-rose-100/50 p-1.5 rounded-lg transition"
+            className="text-gray-400 hover:text-ink-900 hover:bg-gray-100 p-1.5 rounded-lg transition"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />

@@ -184,14 +184,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass-surface-thin border-b border-white/75 px-4 lg:px-6 py-2.5 transition-all">
+      <header className="sticky top-0 z-40 glass-surface-thin border-b border-white/20 px-4 lg:px-6 py-2.5 transition-all text-white">
         <div className="flex items-center justify-between gap-3">
           {/* Brand Logo & Title with Home Link */}
           <div className="flex items-center gap-3">
             {onOpenMobileMenu && (
               <button
                 onClick={onOpenMobileMenu}
-                className="md:hidden p-1.5 -ml-1 text-ink-700 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                className="md:hidden p-1.5 -ml-1 text-white hover:text-rose-200 hover:bg-white/10 rounded-xl transition"
                 aria-label="Open mobile navigation menu"
               >
                 <Menu className="w-5 h-5" />
@@ -203,21 +203,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-2.5 text-left group focus:outline-none"
               title="Return to Home Dashboard"
             >
-              <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-xs group-hover:bg-rose-700 transition-colors shrink-0 btn-liquid">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+              <div className="w-10 h-10 rounded-xl bg-white text-rose-900 flex items-center justify-center shadow-md group-hover:scale-105 transition-all shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-rose-900">
                   <path d="M18.5 8C17 6.5 14.5 6 12 7C9.5 8 7 9 4.5 8C3.5 10 3.5 14 4.5 16C7 15 9.5 16 12 17C14.5 18 17 17.5 18.5 16C20.5 14 20.5 10 18.5 8ZM15.5 11C14.95 11 14.5 10.55 14.5 10C14.5 9.45 14.95 9 15.5 9C16.05 9 16.5 9.45 16.5 10C16.5 10.55 16.05 11 15.5 11Z" />
                 </svg>
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black tracking-tight text-ink-900 group-hover:text-rose-700 transition">
+                  <span className="text-sm font-black tracking-tight text-white group-hover:text-rose-200 transition">
                     {businessSettings.businessName}
                   </span>
-                  <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                  <span className="text-[10px] font-bold text-white bg-white/20 px-1.5 py-0.2 rounded border border-white/30">
                     {businessSettings.financialYear}
                   </span>
                 </div>
-                <p className="text-[11px] text-ink-500 font-medium leading-none mt-0.5 truncate max-w-[190px]">
+                <p className="text-[11px] text-rose-100/90 font-medium leading-none mt-0.5 truncate max-w-[190px]">
                   {businessSettings.tagline}
                 </p>
               </div>
@@ -225,7 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Module Switcher with Grouped Mega-Menu Dropdown Buttons */}
-          <div ref={megaMenuRef} className="relative hidden md:flex items-center glass-surface-thin p-1 rounded-full border border-white/80 text-xs font-semibold">
+          <div ref={megaMenuRef} className="relative hidden md:flex items-center glass-surface-thin p-1 rounded-full border border-white/30 text-xs font-semibold">
             {/* Home Pill */}
             <button
               onClick={() => {
@@ -234,8 +234,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
                 activeModule === 'home'
-                  ? 'bg-rose-600 text-white shadow-2xs font-bold'
-                  : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                  ? 'bg-white text-rose-900 shadow-md font-bold'
+                  : 'text-white/80 hover:text-white hover:bg-white/15'
               }`}
             >
               <Home className="w-3.5 h-3.5" />
@@ -251,8 +251,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
                   activeModule === 'purchase'
-                    ? 'bg-rose-600 text-white shadow-2xs font-bold'
-                    : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                    ? 'bg-white text-rose-900 shadow-md font-bold'
+                    : 'text-white/80 hover:text-white hover:bg-white/15'
                 }`}
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
@@ -270,8 +270,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
                   activeModule === 'production'
-                    ? 'bg-rose-600 text-white shadow-2xs font-bold'
-                    : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                    ? 'bg-white text-rose-900 shadow-md font-bold'
+                    : 'text-white/80 hover:text-white hover:bg-white/15'
                 }`}
               >
                 <Factory className="w-3.5 h-3.5" />
@@ -289,13 +289,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
                   activeModule === 'sales'
-                    ? 'bg-rose-600 text-white shadow-2xs font-bold'
-                    : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                    ? 'bg-white text-rose-900 shadow-md font-bold'
+                    : 'text-white/80 hover:text-white hover:bg-white/15'
                 }`}
               >
                 <TrendingUp className="w-3.5 h-3.5" />
                 <span>Sales</span>
-                <span className={`text-[9px] uppercase px-1 py-0.2 rounded font-extrabold ${activeModule === 'sales' ? 'bg-white/20 text-white' : 'bg-rose-200 text-rose-900'}`}>
+                <span className={`text-[9px] uppercase px-1 py-0.2 rounded font-extrabold ${activeModule === 'sales' ? 'bg-rose-100 text-rose-900' : 'bg-white/20 text-white'}`}>
                   New
                 </span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${activeMegaMenu === 'sales' ? 'rotate-180' : ''}`} />
@@ -304,7 +304,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* GROUPED MEGA-MENU POPOVER FOR ACTIVE MODULE */}
             {activeMegaMenu && (
-              <div className="absolute left-0 top-full mt-2 w-[720px] glass-surface-thick rounded-2xl border border-white/90 p-6 z-50 animate-liquid-pop text-left">
+              <div className="absolute left-0 top-full mt-2 w-[720px] glass-surface-dense rounded-2xl border border-white/60 p-6 z-50 animate-liquid-pop text-left shadow-2xl">
                 <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-ink-900 capitalize">
@@ -373,12 +373,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Global Search / Command Palette Shortcut */}
             <button
               onClick={onOpenCommandPalette}
-              className="btn-secondary-liquid flex items-center gap-2 px-3 py-1.5 rounded-full glass-surface-thin hover:border-rose-300 text-ink-600 hover:text-ink-900 text-xs font-medium transition group"
+              className="btn-secondary-liquid flex items-center gap-2 px-3 py-1.5 rounded-full glass-surface-thin hover:border-white/50 text-white text-xs font-medium transition group border border-white/30"
               title="Open Global Command Palette (Ctrl+K)"
             >
-              <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-rose-600 transition-colors" />
+              <Search className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors" />
               <span className="hidden xl:inline">Search anything...</span>
-              <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white border border-gray-200 rounded text-ink-500 shadow-2xs">
+              <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white/20 border border-white/30 rounded text-white shadow-2xs">
                 ⌘K
               </kbd>
             </button>
@@ -387,13 +387,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="btn-secondary-liquid relative p-2 rounded-full glass-surface-thin hover:border-rose-300 text-ink-700 hover:text-rose-600 transition"
+                className="btn-secondary-liquid relative p-2 rounded-full glass-surface-thin hover:border-white/50 text-white transition border border-white/30"
                 title="System Notifications & Alerts"
                 aria-label="View notifications"
               >
                 <Bell className="w-4 h-4" />
                 {totalAlerts > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white font-bold text-[9px] flex items-center justify-center shadow-xs animate-pulse">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-rose-900 font-bold text-[9px] flex items-center justify-center shadow-md animate-pulse">
                     {totalAlerts}
                   </span>
                 )}
@@ -427,28 +427,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div
               className={`hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
                 isOnline
-                  ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200'
-                  : 'bg-amber-50/80 text-amber-800 border-amber-200 animate-pulse'
+                  ? 'bg-white/15 text-white border-white/30'
+                  : 'bg-amber-500/20 text-amber-200 border-amber-400/40 animate-pulse'
               }`}
             >
-              {isOnline ? <Wifi className="w-3 h-3 text-emerald-600" /> : <WifiOff className="w-3 h-3 text-amber-700" />}
+              {isOnline ? <Wifi className="w-3 h-3 text-emerald-300" /> : <WifiOff className="w-3 h-3 text-amber-300" />}
               <span className="text-[11px] font-semibold">{isOnline ? 'Live' : 'Offline'}</span>
             </div>
 
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}
             <button
               onClick={() => setShowProfile(true)}
-              className="btn-secondary-liquid flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full glass-surface-thin hover:border-rose-300 transition text-left shrink-0"
+              className="btn-secondary-liquid flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full glass-surface-thin hover:border-white/50 border border-white/30 transition text-left shrink-0 text-white"
               title="Click to view authenticated user credentials"
             >
-              <div className="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+              <div className="w-7 h-7 rounded-full bg-white text-rose-900 flex items-center justify-center font-bold text-xs shadow-md">
                 {currentUser.name.charAt(0)}
               </div>
               <div className="hidden md:block">
-                <div className="text-xs font-bold text-ink-900 leading-tight truncate max-w-[110px]">
+                <div className="text-xs font-bold text-white leading-tight truncate max-w-[110px]">
                   {currentUser.name}
                 </div>
-                <div className="text-[10px] font-bold text-rose-700 uppercase tracking-tight">
+                <div className="text-[10px] font-bold text-rose-200 uppercase tracking-tight">
                   {currentUser.role.replace('_', ' ')}
                 </div>
               </div>

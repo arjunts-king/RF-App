@@ -12,75 +12,190 @@
   }
 
   body {
-    @apply bg-[#FBFBFB] text-[#1E1E24] antialiased selection:bg-rose-200 selection:text-rose-900;
+    background: radial-gradient(circle at 18% 12%, #8C1C2C 0%, #68121E 38%, #4A0B14 72%, #2B050B 100%);
+    background-attachment: fixed;
+    color: #FFFFFF;
+    min-height: 100vh;
+    @apply antialiased selection:bg-rose-300 selection:text-rose-950;
   }
 }
 
 /* =========================================================================
-   LIQUID GLASS SYSTEM (iOS "Liquid Glass" Inspired Surfaces)
+   RED CANVAS & WHITE GLASS SYSTEM (Luminous Frosted Glass Surfaces)
    ========================================================================= */
 
-/* Thin Glass: Sticky Top Bar, Save Bars, Filter Bars, Pill Elements */
+/* Thin White Glass: Sticky Top Bar, Save Bars, Filter Bars, Pill Elements */
 .glass-surface-thin {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9), 0 4px 16px -2px rgba(178, 58, 72, 0.04);
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.45), 0 8px 30px 0 rgba(0, 0, 0, 0.28);
+  color: #FFFFFF;
 }
 
-/* Regular Glass: KPI Cards, Bento Tiles, Popovers, Dropdown Mega-Menus */
+/* Regular White Glass: KPI Cards, Bento Tiles, Popovers, Dropdown Mega-Menus */
 .glass-surface-regular {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 30px -4px rgba(178, 58, 72, 0.06);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.5), 0 16px 40px -8px rgba(0, 0, 0, 0.35);
+  color: #FFFFFF;
 }
 
-/* Blush Tinted Glass: Highlighted KPI Cards, Active Filters, Hero Surfaces */
+/* Radiant / Blush Tinted White Glass: Highlighted KPI Cards, Active Filters, Hero Surfaces */
 .glass-surface-blush {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 218, 218, 0.42) 100%);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(246, 218, 218, 0.7);
-  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 30px -4px rgba(178, 58, 72, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.14) 100%);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  box-shadow: inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.75), 0 20px 45px -8px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
 }
 
-/* Thick Glass: Dialog Modals, Drawers, Global Command Palette */
+/* Thick White Glass: Dialog Modals, Drawers, Global Command Palette */
 .glass-surface-thick {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 1), 0 20px 50px -8px rgba(178, 58, 72, 0.12);
+  background: rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 2px 3px 0 rgba(255, 255, 255, 0.6), 0 25px 60px -12px rgba(0, 0, 0, 0.5);
+  color: #FFFFFF;
+}
+
+/* Dense White Glass: High-Density Financial Registers, Tables, Form Panels */
+.glass-surface-dense {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 20px 50px -8px rgba(0, 0, 0, 0.35) !important;
+  color: #1E1E24 !important;
+}
+
+/* Content cards and tables sitting on red canvas take high-density crisp white glass */
+.bg-white:not(button):not(input):not(select):not(.bg-white-keep) {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.28);
 }
 
 /* =========================================================================
-   BUTTON & INTERACTION POLISH (Spring Lifts & Haptic Presses)
+   TEXT & CONTRAST ON RED CANVAS & WHITE GLASS
+   ========================================================================= */
+
+/* Typography directly sitting on red canvas */
+.text-ink-900:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *) {
+  color: #FFFFFF !important;
+}
+.text-ink-800:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *) {
+  color: #FEE2E2 !important;
+}
+.text-ink-700:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *) {
+  color: #FCE7F3 !important;
+}
+.text-ink-600:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *),
+.text-ink-500:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *) {
+  color: #FECDD3 !important;
+}
+.text-ink-400:not(.bg-white *):not(.glass-surface-dense *):not(table *):not(form *):not(.modal-content *) {
+  color: #FDA4AF !important;
+}
+
+/* Subtle border utility adaptations on red canvas */
+.border-gray-100:not(.bg-white *):not(table *):not(form *),
+.border-gray-200:not(.bg-white *):not(table *):not(form *) {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.border-gray-300:not(.bg-white *):not(table *):not(form *) {
+  border-color: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Background chips and pills on red canvas */
+.bg-gray-50:not(.bg-white *):not(table *):not(form *),
+.bg-gray-100:not(.bg-white *):not(table *):not(form *) {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
+}
+
+/* Ensure red/rose text inside glass cards shines in luminous white for readability */
+.glass-surface-regular .text-rose-700:not(.bg-white *),
+.glass-surface-blush .text-rose-700:not(.bg-white *),
+.glass-surface-thin .text-rose-700:not(.bg-white *) {
+  color: #FFFFFF !important;
+}
+
+.glass-surface-regular .text-rose-800:not(.bg-white *),
+.glass-surface-blush .text-rose-800:not(.bg-white *),
+.glass-surface-thin .text-rose-800:not(.bg-white *) {
+  color: #FFE4E6 !important;
+}
+
+.glass-surface-regular .text-rose-600:not(.bg-white *),
+.glass-surface-blush .text-rose-600:not(.bg-white *),
+.glass-surface-thin .text-rose-600:not(.bg-white *) {
+  color: #FFD1D8 !important;
+}
+
+.glass-surface-regular button:not(.btn-liquid):not(.btn-secondary-liquid):not(.bg-white *),
+.glass-surface-blush button:not(.btn-liquid):not(.btn-secondary-liquid):not(.bg-white *) {
+  color: #FFFFFF !important;
+}
+.glass-surface-regular button:not(.btn-liquid):not(.btn-secondary-liquid):not(.bg-white *):hover,
+.glass-surface-blush button:not(.btn-liquid):not(.btn-secondary-liquid):not(.bg-white *):hover {
+  color: #FFE4E6 !important;
+}
+
+/* =========================================================================
+   BUTTON & INTERACTION POLISH (Confident White Glass Primary Buttons)
    ========================================================================= */
 
 .btn-liquid {
+  background: #FFFFFF !important;
+  color: #8C1C2C !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
   transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease;
 }
 .btn-liquid:hover:not(:disabled) {
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 18px -2px rgba(178, 58, 72, 0.28);
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: #68121E !important;
 }
 .btn-liquid:active:not(:disabled) {
   transform: translateY(0.5px) scale(0.985);
-  box-shadow: 0 2px 6px rgba(178, 58, 72, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+.btn-liquid svg {
+  color: #8C1C2C !important;
 }
 
 .btn-secondary-liquid {
+  background: rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease, border-color 150ms ease;
 }
 .btn-secondary-liquid:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
+  color: #FFFFFF !important;
 }
 .btn-secondary-liquid:active:not(:disabled) {
   transform: translateY(0.5px) scale(0.985);
+}
+.btn-secondary-liquid svg {
+  color: #FFFFFF !important;
 }
 
 .card-liquid-hover {
@@ -88,7 +203,8 @@
 }
 .card-liquid-hover:hover {
   transform: translateY(-2px);
-  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 14px 34px -4px rgba(178, 58, 72, 0.09);
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.7), 0 20px 45px -6px rgba(0, 0, 0, 0.45) !important;
 }
 
 /* =========================================================================
@@ -133,7 +249,7 @@
 }
 
 .liquid-ambient-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -141,25 +257,52 @@
 }
 .liquid-orb-1 {
   position: absolute;
-  top: -120px;
+  top: -100px;
   left: -80px;
-  width: 480px;
-  height: 480px;
+  width: 580px;
+  height: 580px;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgba(246, 218, 218, 0.55) 0%, rgba(253, 247, 247, 0) 70%);
-  filter: blur(64px);
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.42) 0%, rgba(159, 18, 57, 0) 70%);
+  filter: blur(72px);
   animation: float-slow 18s ease-in-out infinite alternate;
 }
 .liquid-orb-2 {
   position: absolute;
-  top: -60px;
+  top: -40px;
   right: -100px;
-  width: 520px;
-  height: 520px;
+  width: 620px;
+  height: 620px;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgba(234, 187, 191, 0.38) 0%, rgba(251, 239, 237, 0) 70%);
-  filter: blur(72px);
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.35) 0%, rgba(136, 19, 55, 0) 70%);
+  filter: blur(80px);
   animation: float-slow-reverse 22s ease-in-out infinite alternate;
+}
+.liquid-orb-3 {
+  position: absolute;
+  bottom: 5%;
+  left: 25%;
+  width: 540px;
+  height: 540px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(251, 113, 133, 0.25) 0%, rgba(159, 18, 57, 0) 70%);
+  filter: blur(85px);
+  animation: float-slow 24s ease-in-out infinite alternate;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 /* =========================================================================

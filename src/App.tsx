@@ -91,12 +91,13 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FBFBFB] text-[#1E1E24] relative overflow-x-hidden">
-      {/* Ambient Fluid Glow Orbs (Soft Blush Light Refraction) */}
+    <div className="min-h-screen flex flex-col bg-transparent text-white relative overflow-x-hidden">
+      {/* Ambient Fluid Glow Orbs on Red Canvas */}
       {ambientGlow && (
         <div className="liquid-ambient-backdrop" aria-hidden="true">
           <div className="liquid-orb-1" />
           <div className="liquid-orb-2" />
+          <div className="liquid-orb-3" />
         </div>
       )}
 
@@ -133,13 +134,13 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Mobile Slide-in Drawer Menu with Thick Liquid Glass */}
+        {/* Mobile Slide-in Drawer Menu with Dense White Glass */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden bg-ink-900/40 backdrop-blur-md flex">
-            <div className="w-80 max-w-[85%] glass-surface-thick h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-              <div className="p-4 border-b flex justify-between items-center bg-rose-50/50">
+          <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-md flex">
+            <div className="w-80 max-w-[85%] glass-surface-dense h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200 text-ink-900">
+              <div className="p-4 border-b flex justify-between items-center bg-rose-50/60 border-rose-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs">
+                  <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
                     CM
                   </div>
                   <span className="font-bold text-ink-900 text-sm">
@@ -154,7 +155,7 @@ const MainLayout: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1 rounded-lg text-ink-500 hover:text-rose-600"
+                  className="p-1 rounded-lg text-ink-500 hover:text-rose-600 transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -353,12 +354,12 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Liquid Glass Surface) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-surface-thin border-t border-white/80 z-30 flex items-center justify-around py-2 px-1 shadow-[0_-4px_20px_rgba(178,58,72,0.06)] print:hidden">
+      {/* Mobile Bottom Navigation Bar (White Glass Surface on Red Canvas) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-surface-thin border-t border-white/30 z-30 flex items-center justify-around py-2 px-1 shadow-[0_-4px_25px_rgba(0,0,0,0.4)] print:hidden text-white">
         <button
           onClick={() => setActiveModule('home')}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-            activeModule === 'home' ? 'text-rose-600' : 'text-ink-500'
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+            activeModule === 'home' ? 'text-white font-black' : 'text-white/60 hover:text-white'
           }`}
         >
           <Home className="w-4 h-4" />
@@ -369,8 +370,8 @@ const MainLayout: React.FC = () => {
           <>
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                activeTab === 'dashboard' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                activeTab === 'dashboard' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -380,19 +381,19 @@ const MainLayout: React.FC = () => {
             {permissions.canCreateEditPurchases && (
               <button
                 onClick={() => setActiveTab('purchase-entry')}
-                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                  activeTab === 'purchase-entry' ? 'text-rose-600' : 'text-ink-500'
+                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                  activeTab === 'purchase-entry' ? 'text-white font-black' : 'text-white/60 hover:text-white'
                 }`}
               >
-                <PlusCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                <PlusCircle className="w-5 h-5 text-rose-300 animate-pulse" />
                 <span>Harbour Entry</span>
               </button>
             )}
 
             <button
               onClick={() => setActiveTab('purchases')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                activeTab === 'purchases' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                activeTab === 'purchases' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <Receipt className="w-4 h-4" />
@@ -401,8 +402,8 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('payments')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                activeTab === 'payments' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                activeTab === 'payments' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -413,8 +414,8 @@ const MainLayout: React.FC = () => {
           <>
             <button
               onClick={() => setProductionTab('prod-dashboard')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                productionTab === 'prod-dashboard' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                productionTab === 'prod-dashboard' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <Factory className="w-4 h-4" />
@@ -424,19 +425,19 @@ const MainLayout: React.FC = () => {
             {permissions.canCreateEditPurchases && (
               <button
                 onClick={() => setProductionTab('daily-entry')}
-                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                  productionTab === 'daily-entry' ? 'text-rose-600' : 'text-ink-500'
+                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                  productionTab === 'daily-entry' ? 'text-white font-black' : 'text-white/60 hover:text-white'
                 }`}
               >
-                <PlusCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                <PlusCircle className="w-5 h-5 text-amber-300 animate-pulse" />
                 <span>Plant Entry</span>
               </button>
             )}
 
             <button
               onClick={() => setProductionTab('processing-log')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                productionTab === 'processing-log' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                productionTab === 'processing-log' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <Layers className="w-4 h-4" />
@@ -445,8 +446,8 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setProductionTab('prod-reports')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                productionTab === 'prod-reports' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                productionTab === 'prod-reports' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -457,8 +458,8 @@ const MainLayout: React.FC = () => {
           <>
             <button
               onClick={() => setSalesTab('sales-dashboard')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                salesTab === 'sales-dashboard' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                salesTab === 'sales-dashboard' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <TrendingUp className="w-4 h-4" />
@@ -468,19 +469,19 @@ const MainLayout: React.FC = () => {
             {permissions.canCreateEditSales && (
               <button
                 onClick={() => setSalesTab('invoice-entry')}
-                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                  salesTab === 'invoice-entry' ? 'text-rose-600' : 'text-ink-500'
+                className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                  salesTab === 'invoice-entry' ? 'text-white font-black' : 'text-white/60 hover:text-white'
                 }`}
               >
-                <PlusCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                <PlusCircle className="w-5 h-5 text-rose-300 animate-pulse" />
                 <span>New Invoice</span>
               </button>
             )}
 
             <button
               onClick={() => setSalesTab('invoices')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                salesTab === 'invoices' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                salesTab === 'invoices' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <FileText className="w-4 h-4" />
@@ -489,8 +490,8 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setSalesTab('sales-reports')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
-                salesTab === 'sales-reports' ? 'text-rose-600' : 'text-ink-500'
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold transition ${
+                salesTab === 'sales-reports' ? 'text-white font-black' : 'text-white/60 hover:text-white'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -500,7 +501,7 @@ const MainLayout: React.FC = () => {
         ) : (
           <button
             onClick={() => setActiveModule('purchase')}
-            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-ink-500"
+            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-white/70 hover:text-white transition"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Procurement</span>
