@@ -467,13 +467,13 @@ const MainLayout: React.FC = () => {
 export function App() {
   return (
     <AuthProvider>
-      <DataProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <DataProvider>
           <LiquidGlassProvider>
             <MainLayout />
           </LiquidGlassProvider>
-        </ToastProvider>
-      </DataProvider>
+        </DataProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
