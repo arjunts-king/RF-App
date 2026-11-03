@@ -10,7 +10,8 @@ import {
   Database,
   BarChart3,
   ShieldAlert,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Fish
 } from 'lucide-react';
 
 export type SalesNavTab =
@@ -20,6 +21,7 @@ export type SalesNavTab =
   | 'realizations'
   | 'customers'
   | 'ports'
+  | 'species'
   | 'master-data'
   | 'sales-reports'
   | 'audit-log'
@@ -87,8 +89,15 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           badge: 'Port'
         },
         {
+          id: 'species',
+          label: 'Species / Product Master',
+          icon: Fish,
+          show: permissions.canManageSalesMasterData || permissions.canManageMasterData,
+          badge: 'HSN'
+        },
+        {
           id: 'master-data',
-          label: 'Shared Master Data',
+          label: 'All Master Lists',
           icon: Database,
           show: permissions.canManageMasterData
         }

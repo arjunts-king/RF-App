@@ -2475,6 +2475,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
       const category = String(getFlexibleValue(row, ['category', 'type', 'group']) || 'Fish').trim();
 
+      const rawHsCode = String(getFlexibleValue(row, ['hsn', 'hsncode', 'hscode', 'hs_code', 'tariff', 'tariffcode']) || '').trim();
+      const productForm = String(getFlexibleValue(row, ['productform', 'form']) || '').trim();
+      const processingType = String(getFlexibleValue(row, ['processingtype', 'processing']) || '').trim();
+
       const existingIdx = currentList.findIndex(
         (s) =>
           (code && normalizeKey(s.code) === normalizeKey(code)) ||
@@ -2486,7 +2490,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...currentList[existingIdx],
           name,
           scientificName: scientificName || currentList[existingIdx].scientificName,
-          category: category || currentList[existingIdx].category
+          category: category || currentList[existingIdx].category,
+          hsCode: rawHsCode || currentList[existingIdx].hsCode,
+          productForm: productForm || currentList[existingIdx].productForm,
+          processingType: processingType || currentList[existingIdx].processingType
         };
         updated++;
       } else {
@@ -2496,6 +2503,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           name,
           scientificName,
           category,
+          hsCode: rawHsCode,
+          productForm,
+          processingType,
           active: true
         });
         added++;

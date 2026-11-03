@@ -348,6 +348,7 @@ const MainLayout: React.FC = () => {
               )}
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
+              {salesTab === 'species' && <MasterDataManager initialTab="species" onNavigate={setActiveTab} />}
               {salesTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {salesTab === 'sales-reports' && <SalesReportsHub />}
               {salesTab === 'audit-log' && <AuditLogView />}

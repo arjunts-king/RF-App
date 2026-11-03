@@ -190,10 +190,10 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
 
   if (type === 'species') {
     const data = [
-      { 'Code': 'VAN', 'Name': 'Vannamei Shrimp', 'Scientific Name': 'Litopenaeus vannamei', 'Category': 'Shrimp' },
-      { 'Code': 'YFT', 'Name': 'Yellowfin Tuna', 'Scientific Name': 'Thunnus albacares', 'Category': 'Tuna' },
-      { 'Code': 'SQD', 'Name': 'Indian Squid', 'Scientific Name': 'Uroteuthis duvaucelii', 'Category': 'Cephalopod' },
-      { 'Code': 'POM', 'Name': 'Silver Pomfret', 'Scientific Name': 'Pampus argenteus', 'Category': 'White Fish' }
+      { 'Code': 'VAN', 'Name': 'Vannamei Shrimp', 'Scientific Name': 'Litopenaeus vannamei', 'Category': 'Shrimp', 'HSN / HS Code': '03061790', 'Product Form': 'Headless Shell-On (HLSO)', 'Processing Type': 'Block Frozen' },
+      { 'Code': 'YFT', 'Name': 'Yellowfin Tuna', 'Scientific Name': 'Thunnus albacares', 'Category': 'Tuna', 'HSN / HS Code': '03038990', 'Product Form': 'Loins & Steaks', 'Processing Type': 'Plate Frozen' },
+      { 'Code': 'SQD', 'Name': 'Indian Squid', 'Scientific Name': 'Uroteuthis duvaucelii', 'Category': 'Cephalopod', 'HSN / HS Code': '03074310', 'Product Form': 'Cleaned Tubes & Rings', 'Processing Type': 'Blast Frozen' },
+      { 'Code': 'POM', 'Name': 'Silver Pomfret', 'Scientific Name': 'Pampus argenteus', 'Category': 'White Fish', 'HSN / HS Code': '03038990', 'Product Form': 'Whole Fresh/Frozen', 'Processing Type': 'Block Frozen' }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'Species');

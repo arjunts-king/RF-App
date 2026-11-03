@@ -37,6 +37,7 @@ import {
   BadgeDollarSign,
   Users,
   Anchor,
+  Fish,
   Sparkles
 } from 'lucide-react';
 
@@ -166,7 +167,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       items: [
         { id: 'customers', label: 'Consignees & Buyers', icon: Users, desc: 'Foreign buyers & export credit terms', show: permissions.canManageSalesMasterData },
         { id: 'ports', label: 'Port Master', icon: Anchor, desc: 'Loading & destination ports', show: permissions.canManageSalesMasterData },
-        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species & product forms', show: permissions.canManageMasterData },
+        { id: 'species', label: 'Species / Product Master', icon: Fish, desc: 'Product forms, processing types & HSN codes', show: permissions.canManageSalesMasterData || permissions.canManageMasterData },
+        { id: 'master-data', label: 'All Master Lists', icon: Database, desc: 'Suppliers, grades, accounts & expense heads', show: permissions.canManageMasterData },
         { id: 'sales-excel-import', label: 'Sales Import & Migration', icon: FileSpreadsheet, desc: 'Bulk export invoices, buyers & port migration' }
       ]
     },

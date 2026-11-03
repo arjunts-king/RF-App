@@ -26,6 +26,7 @@ import {
   BadgeDollarSign,
   Users,
   Anchor,
+  Fish,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
@@ -371,6 +372,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       icon: Anchor,
       category: 'Sales Module',
       permission: permissions.canManageSalesMasterData
+    },
+    {
+      id: 'sales-species',
+      title: 'Species / Product Master (HSN)',
+      subtitle: 'Manage seafood varieties, product lines, and 8-digit HSN codes',
+      module: 'sales',
+      tab: 'species',
+      icon: Fish,
+      category: 'Sales Module',
+      permission: permissions.canManageSalesMasterData || permissions.canManageMasterData
     },
     {
       id: 'sales-reports',

@@ -1151,18 +1151,31 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                         required
                         className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-rose-400"
                       />
-                      <select
-                        value={l.speciesId}
-                        onChange={(e) => handleSpeciesChange(l.id, e.target.value)}
-                        className="w-full px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] text-ink-500"
-                      >
-                        <option value="">Select Master species...</option>
-                        {species.map((sp) => (
-                          <option key={sp.id} value={sp.id}>
-                            {sp.name} {sp.productForm ? `(${sp.productForm})` : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={l.speciesId}
+                          onChange={(e) => handleSpeciesChange(l.id, e.target.value)}
+                          className="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] text-ink-500"
+                        >
+                          <option value="">Select Master species...</option>
+                          {species.map((sp) => (
+                            <option key={sp.id} value={sp.id}>
+                              {sp.name} {sp.hsCode ? `[HSN: ${sp.hsCode}]` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5" title="Harmonized System Code (HSN/SAC)">
+                          <span className="text-[9px] font-bold text-gray-500 uppercase">HSN:</span>
+                          <input
+                            type="text"
+                            value={l.hsCode}
+                            onChange={(e) => updateLine(l.id, 'hsCode', e.target.value)}
+                            placeholder="03061790"
+                            maxLength={12}
+                            className="w-16 bg-transparent text-[10px] font-mono font-bold text-ink-800 outline-none"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </td>
 

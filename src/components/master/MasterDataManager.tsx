@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
@@ -23,7 +23,12 @@ import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, E
 
 type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses' | 'slabs';
 
-export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = ({ onNavigate }) => {
+export interface MasterDataManagerProps {
+  onNavigate?: (tab: any) => void;
+  initialTab?: MasterTab;
+}
+
+export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate, initialTab = 'suppliers' }) => {
   const {
     suppliers,
     species,
@@ -69,10 +74,16 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
     toggleSlabTypeActive
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<MasterTab>('suppliers');
+  const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const confirmDelete = () => {
     if (!deleteTarget) return;
@@ -114,6 +125,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
   const [spCategory, setSpCategory] = useState('Shrimp / Prawns');
   const [spProductForm, setSpProductForm] = useState('Headless Shell-On (HLSO)');
   const [spProcessingType, setSpProcessingType] = useState('Block Frozen');
+  const [spHsCode, setSpHsCode] = useState('');
 
   // Grade form state
   const [grdCode, setGrdCode] = useState('');
@@ -192,6 +204,9 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setSpName('');
       setSpScientific('');
       setSpCategory('Shrimp / Prawns');
+      setSpProductForm('Headless Shell-On (HLSO)');
+      setSpProcessingType('Block Frozen');
+      setSpHsCode('');
     } else if (activeTab === 'grades') {
       setGrdCode(`GRD-${String(grades.length + 1).padStart(3, '0')}`);
       setGrdName('');
@@ -259,6 +274,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       setSpCategory(sp.category);
       setSpProductForm(sp.productForm || 'Headless Shell-On (HLSO)');
       setSpProcessingType(sp.processingType || 'Block Frozen');
+      setSpHsCode(sp.hsCode || '');
     } else if (activeTab === 'grades') {
       const g = item as Grade;
       setGrdCode(g.code);
@@ -332,12 +348,13 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
       else addSupplier(payload);
     } else if (activeTab === 'species') {
       const payload = {
-        code: spCode,
-        name: spName,
-        scientificName: spScientific,
-        category: spCategory,
-        productForm: spProductForm,
-        processingType: spProcessingType,
+        code: spCode.trim(),
+        name: spName.trim(),
+        scientificName: spScientific.trim(),
+        category: spCategory.trim(),
+        productForm: spProductForm.trim(),
+        processingType: spProcessingType.trim(),
+        hsCode: spHsCode.trim(),
         active: true
       };
       if (editingId) updateSpecies(editingId, payload);
@@ -544,6 +561,7 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                     <th className="py-2.5 px-3">Category</th>
                     <th className="py-2.5 px-3">Product Form</th>
                     <th className="py-2.5 px-3">Processing Type</th>
+                    <th className="py-2.5 px-3">HSN Code</th>
                     <th className="py-2.5 px-3 text-center">Status</th>
                     <th className="py-2.5 px-3 text-center">Actions</th>
                   </tr>
@@ -557,6 +575,15 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                       <td className="py-3 px-3">{sp.category}</td>
                       <td className="py-3 px-3 text-ink-700 font-medium">{sp.productForm || 'Standard'}</td>
                       <td className="py-3 px-3 text-ink-700 font-medium">{sp.processingType || 'Block Frozen'}</td>
+                      <td className="py-3 px-3">
+                        {sp.hsCode ? (
+                          <span className="font-mono text-[11px] font-bold bg-gray-100 text-gray-800 px-2 py-0.5 rounded border border-gray-200 inline-block">
+                            {sp.hsCode}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 italic text-[11px]">Not set</span>
+                        )}
+                      </td>
                       <td className="py-3 px-3 text-center">
                         <button
                           onClick={() => toggleSpeciesActive(sp.id)}
@@ -912,9 +939,25 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
 
           {activeTab === 'species' && (
             <div className="space-y-3">
-              <div>
-                <label className="block font-semibold mb-1">Code</label>
-                <input type="text" value={spCode} onChange={(e) => setSpCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Code</label>
+                  <input type="text" value={spCode} onChange={(e) => setSpCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg font-mono text-sm" />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 flex items-center justify-between">
+                    <span>HSN / HS Code</span>
+                    <span className="text-[10px] text-rose-600 font-semibold">GST &amp; Export</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 03061790"
+                    value={spHsCode}
+                    onChange={(e) => setSpHsCode(e.target.value)}
+                    maxLength={12}
+                    className="w-full p-2 bg-gray-50 border rounded-lg font-mono text-sm"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block font-semibold mb-1">Species Name</label>
@@ -950,6 +993,9 @@ export const MasterDataManager: React.FC<{ onNavigate?: (tab: any) => void }> = 
                   />
                 </div>
               </div>
+              <p className="text-[11px] text-ink-600 bg-rose-50/70 border border-rose-200 p-2.5 rounded-lg leading-relaxed">
+                💡 <strong>HSN / Tariff Code:</strong> Harmonized System code is auto-populated into Commercial Sales Invoices, Export Shipping Bills, and GST Invoices (e.g., <code>03061790</code> for Shrimps, <code>03074310</code> for Squid, <code>03038990</code> for Marine Fish).
+              </p>
             </div>
           )}
 
