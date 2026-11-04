@@ -4327,19 +4327,43 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const mutableSizes = [...sizes];
     const mutableCounts = [...counts];
 
-    // Group rows by Invoice No
+    // Group rows by Invoice No or Date + Customer
     const invoiceGroups: { [key: string]: { headerRow: Record<string, any>; rows: { row: Record<string, any>; rowNum: number }[] } } = {};
+
+    let currentGroupKey = '';
+    let lastDate = '';
+    let lastCustomer = '';
 
     rawRows.forEach((row, idx) => {
       const rowNum = idx + 2;
       const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
       if (!hasData) return;
 
-      let invNo = String(getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'exportinvoiceno', 'invoicenumber']) || '').trim();
-      if (!invNo) {
-        invNo = `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + Object.keys(invoiceGroups).length + 1).padStart(4, '0')}`;
+      const rawInvNo = String(getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'exportinvoiceno', 'invoicenumber']) || '').trim();
+      const rawDate = formatExcelDate(getFlexibleValue(row, ['invoicedate', 'date', 'billdate', 'shippingdate']));
+      const rawCust = String(getFlexibleValue(row, ['customer', 'consignee', 'customername', 'buyer', 'client', 'buyername']) || '').trim();
+
+      let groupKey = '';
+
+      if (rawInvNo) {
+        groupKey = rawInvNo.toUpperCase();
+      } else {
+        const isContinuation =
+          Boolean(currentGroupKey) &&
+          (!rawDate || rawDate === lastDate) &&
+          (!rawCust || !lastCustomer || rawCust.toLowerCase() === lastCustomer.toLowerCase());
+
+        if (isContinuation) {
+          groupKey = currentGroupKey;
+        } else {
+          const newInvNo = `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + Object.keys(invoiceGroups).length + 1).padStart(4, '0')}`;
+          groupKey = newInvNo.toUpperCase();
+        }
       }
-      const groupKey = invNo.toUpperCase();
+
+      currentGroupKey = groupKey;
+      if (rawDate) lastDate = rawDate;
+      if (rawCust) lastCustomer = rawCust;
 
       if (!invoiceGroups[groupKey]) {
         invoiceGroups[groupKey] = {
@@ -4427,7 +4451,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const orderNo = String(getFlexibleValue(headerRow, ['orderno', 'order', 'pono', 'poref']) || '').trim();
       const remarks = String(getFlexibleValue(headerRow, ['remarks', 'notes', 'comment']) || '').trim();
 
-      const lineItems: SalesInvoiceLine[] = [];
+      const fobCandidateKeys = [
+        'totalfobvaluefullinvoice',
+        'totalfobvalue',
+        'fobvaluefullinvoice',
+        'invoicefobvalue',
+        'invoicefob',
+        'totalfob',
+        'fobvaluecurrency',
+        'fobvalueusd',
+        'fobvalue',
+        'fobamount',
+        'fob'
+      ];
+
+      interface ParsedCandidate {
+        line: SalesInvoiceLine;
+        rowFob: number | null;
+      }
+
+      const candidates: ParsedCandidate[] = [];
 
       rows.forEach(({ row, rowNum }) => {
         const rawSpec = String(
@@ -4488,32 +4531,89 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(2)) : 0;
 
         const amountCurrency = Number((weightKg * ratePerKg).toFixed(2));
-        const rawFob = parseFloat(getFlexibleValue(row, ['fobvaluecurrency', 'fobvalue', 'fobamount', 'fob']) || '');
-        const fobValueCurrency = !isNaN(rawFob) && rawFob > 0 ? Number(rawFob.toFixed(2)) : amountCurrency;
+        const rawFob = parseFloat(getFlexibleValue(row, fobCandidateKeys) || '');
+        const rowFob = !isNaN(rawFob) && rawFob > 0 ? Number(rawFob.toFixed(2)) : null;
 
-        lineItems.push({
-          id: `line-${Date.now()}-${lineItems.length}-${Math.random().toString(36).substr(2, 4)}`,
-          speciesId,
-          hsCode,
-          sizeId,
-          countId,
-          cartonsCount,
-          weightKg,
-          ratePerKg,
-          amountCurrency,
-          fobValueCurrency
+        candidates.push({
+          line: {
+            id: `line-${Date.now()}-${candidates.length}-${Math.random().toString(36).substr(2, 4)}`,
+            speciesId,
+            hsCode,
+            sizeId,
+            countId,
+            cartonsCount,
+            weightKg,
+            ratePerKg,
+            amountCurrency,
+            fobValueCurrency: amountCurrency
+          },
+          rowFob
         });
       });
 
-      if (lineItems.length === 0) {
+      if (candidates.length === 0) {
         errors.push(`Invoice ${invNoKey}: No valid line items could be imported.`);
         return;
       }
 
-      const totalCartons = lineItems.reduce((s, l) => s + l.cartonsCount, 0);
-      const totalWeightKg = Number(lineItems.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
-      const totalAmountCurrency = Number(lineItems.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
-      const totalFobValueCurrency = Number(lineItems.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+      const totalCartons = candidates.reduce((s, c) => s + c.line.cartonsCount, 0);
+      const totalWeightKg = Number(candidates.reduce((s, c) => s + c.line.weightKg, 0).toFixed(2));
+      const totalAmountCurrency = Number(candidates.reduce((s, c) => s + c.line.amountCurrency, 0).toFixed(2));
+
+      // FOB Value Resolution:
+      // If the FOB value is provided in the first row of a date/invoice, it represents the Full Invoice FOB value.
+      // We also handle repeated full invoice FOB values or individual product line FOBs.
+      const firstRowFob = candidates[0]?.rowFob ?? null;
+      const validFobs = candidates.map((c) => c.rowFob).filter((v): v is number => v !== null && v > 0);
+
+      let totalFobValueCurrency = totalAmountCurrency;
+
+      const isFullInvoiceFobOnFirstRow =
+        firstRowFob !== null &&
+        firstRowFob > 0 &&
+        (validFobs.length === 1 || validFobs.every((v) => Math.abs(v - firstRowFob) < 0.01));
+
+      if (isFullInvoiceFobOnFirstRow) {
+        totalFobValueCurrency = firstRowFob;
+
+        if (candidates.length === 1) {
+          candidates[0].line.fobValueCurrency = totalFobValueCurrency;
+        } else {
+          // Proportionally distribute full invoice FOB across all line items
+          candidates.forEach((c) => {
+            const ratio =
+              totalAmountCurrency > 0
+                ? c.line.amountCurrency / totalAmountCurrency
+                : totalWeightKg > 0
+                ? c.line.weightKg / totalWeightKg
+                : 1 / candidates.length;
+            c.line.fobValueCurrency = Number((totalFobValueCurrency * ratio).toFixed(2));
+          });
+
+          // Ensure exact reconciliation down to the cent
+          const allocatedSum = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
+          const diff = Number((totalFobValueCurrency - allocatedSum).toFixed(2));
+          if (diff !== 0 && candidates.length > 0) {
+            candidates[candidates.length - 1].line.fobValueCurrency = Number(
+              (candidates[candidates.length - 1].line.fobValueCurrency + diff).toFixed(2)
+            );
+          }
+        }
+      } else if (validFobs.length > 0) {
+        // Line-level distinct FOB values provided
+        candidates.forEach((c) => {
+          c.line.fobValueCurrency = c.rowFob !== null && c.rowFob > 0 ? c.rowFob : c.line.amountCurrency;
+        });
+        totalFobValueCurrency = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
+      } else {
+        // No FOB specified; default each line to its calculated value
+        candidates.forEach((c) => {
+          c.line.fobValueCurrency = c.line.amountCurrency;
+        });
+        totalFobValueCurrency = totalAmountCurrency;
+      }
+
+      const lineItems: SalesInvoiceLine[] = candidates.map((c) => c.line);
       const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
       const invRecord: SalesInvoice = {

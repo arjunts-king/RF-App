@@ -459,8 +459,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 100,
         'Net Weight (Kg)': 2000,
         'Rate per Kg (USD)': 9.80,
-        'FOB Value (USD)': 19600,
-        'Remarks': 'Reefer 40ft container #CRXU-89214'
+        'Total FOB Value (Full Invoice)': 26100,
+        'Remarks': 'Reefer 40ft container #CRXU-89214 (Total FOB in 1st row covers full invoice)'
       },
       {
         'Invoice No': 'EXP-2026-001',
@@ -481,8 +481,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 50,
         'Net Weight (Kg)': 1000,
         'Rate per Kg (USD)': 6.50,
-        'FOB Value (USD)': 6500,
-        'Remarks': 'Line 2 of same invoice'
+        'Total FOB Value (Full Invoice)': '',
+        'Remarks': 'Line 2 of same invoice/date (FOB in row 1 applies to full invoice)'
       },
       {
         'Invoice No': 'EXP-2026-002',
@@ -503,8 +503,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 80,
         'Net Weight (Kg)': 1600,
         'Rate per Kg (USD)': 11.20,
-        'FOB Value (USD)': 17920,
-        'Remarks': 'Blast frozen sashimi grade'
+        'Total FOB Value (Full Invoice)': 17920,
+        'Remarks': 'Blast frozen sashimi grade (Single product invoice FOB)'
       }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
@@ -579,8 +579,28 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 100,
         'Net Weight (Kg)': 2000,
         'Rate per Kg (USD)': 9.80,
-        'FOB Value (USD)': 19600,
-        'Remarks': 'Export batch 1'
+        'Total FOB Value (Full Invoice)': 26100,
+        'Remarks': 'Export batch 1 (Total FOB in 1st row covers full invoice)'
+      },
+      {
+        'Invoice No': 'EXP-2026-001',
+        'Invoice Date (DD-MM-YYYY)': '19-10-2026',
+        'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+        'Port of Loading': 'Cochin Port (INCOK)',
+        'Port of Discharge': 'Tokyo Port (JPTYO)',
+        'Final Destination Port': 'Tokyo Port (JPTYO)',
+        'Currency': 'USD',
+        'Exchange Rate': 84.50,
+        'Product Name (Export Ready Name)': 'Indian Squid Cleaned Tubes & Rings',
+        'Purchase Species': 'Indian Squid',
+        'HS Code': '03074320',
+        'Size': 'Large',
+        'Count': '',
+        'No of Cartons': 50,
+        'Net Weight (Kg)': 1000,
+        'Rate per Kg (USD)': 6.50,
+        'Total FOB Value (Full Invoice)': '',
+        'Remarks': 'Line 2 of same invoice/date (FOB in row 1 applies to full invoice)'
       }
     ];
     const wsInv = XLSX.utils.json_to_sheet(invoicesData);
