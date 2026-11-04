@@ -194,6 +194,11 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           onNavigate
             ? [
                 {
+                  label: 'FOB Dashboard (USD & INR)',
+                  onClick: () => onNavigate('fob-dashboard'),
+                  icon: BadgeDollarSign
+                },
+                {
                   label: 'Invoices register',
                   onClick: () => onNavigate('invoice-list'),
                   icon: FileText
@@ -206,6 +211,44 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             : undefined
         }
       />
+
+      {/* FOB Value Intelligence Quick Banner (USD & INR) */}
+      <div className="p-4 bg-gradient-to-r from-rose-950 via-rose-900 to-ink-950 rounded-2xl text-white flex flex-wrap items-center justify-between gap-4 shadow-sm border border-rose-800/40">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
+            <BadgeDollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm text-white">FOB Export Valuation Ledger</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">Dual Currency (USD &amp; INR)</span>
+            </div>
+            <p className="text-xs text-rose-200 mt-0.5">
+              Net Free On Board export values, foreign buyers, and exchange rate realizations in both USD ($) and Indian Rupees (₹).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-[10px] uppercase font-bold text-rose-300">Total Net FOB Valuation</div>
+            <div className="text-sm font-extrabold text-white flex items-center gap-2 justify-end">
+              <span>${totalFOB.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-rose-300">&bull;</span>
+              <span className="text-amber-300">{formatINR(totalFOB * 84.5)}</span>
+            </div>
+          </div>
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('fob-dashboard')}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0"
+            >
+              <span>Open FOB Dashboard</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Combinable Multi-Filter Bar with Removable Filter Chips (Liquid Glass Surface) */}
       <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">

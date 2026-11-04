@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, getAgeingBucket } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
@@ -27,81 +27,112 @@ export const OutstandingReport: React.FC = () => {
     d180Plus: number;
   }
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
-  const reportData: SupplierAgeing[] = suppliers.map((supp) => {
-    const suppPurchases = purchases.filter((p) => p.supplierId === supp.id && !p.isVoided);
-    const suppPayments = payments.filter((pay) => pay.supplierId === supp.id && !pay.isVoided);
-    const suppReturns = (purchaseReturns || []).filter(
-      (r) => r.supplierId === supp.id && !r.isVoided && r.adjustSupplierPayable !== false
-    );
-
-    const purchasesTotal = suppPurchases.reduce((s, p) => s + p.totalCost, 0);
-    const directPaid = suppPurchases.reduce((s, p) => s + (p.directAmountPaid !== undefined ? p.directAmountPaid : (suppPayments.length === 0 ? p.amountPaid : 0)), 0);
-    const standalonePaid = suppPayments.reduce((s, pay) => s + pay.amount, 0);
-    const paymentsTotal = directPaid + standalonePaid;
-    const returnsTotal = suppReturns.reduce((s, r) => s + r.returnedValue, 0);
-
-    const openingBalance = supp.openingBalance || 0;
-    const closingBalance = openingBalance + purchasesTotal - paymentsTotal - returnsTotal;
-
-    // Ageing bucket calculations across unpaid balances on purchases
-    let notDue = 0;
-    let d0_30 = 0;
-    let d31_60 = 0;
-    let d61_90 = 0;
-    let d91_180 = 0;
-    let d180Plus = 0;
-
-    suppPurchases.forEach((p) => {
-      const balance = p.balancePayable || 0;
-      if (balance > 0) {
-        const bucket = getAgeingBucket(p.dueDate, today);
-        if (bucket === 'Not Due') notDue += balance;
-        else if (bucket === '0-30 Days') d0_30 += balance;
-        else if (bucket === '31-60 Days') d31_60 += balance;
-        else if (bucket === '61-90 Days') d61_90 += balance;
-        else if (bucket === '91-180 Days') d91_180 += balance;
-        else if (bucket === '180+ Days') d180Plus += balance;
+  const reportData: SupplierAgeing[] = useMemo(() => {
+    // Pre-index records by supplierId in a single pass O(P + Y + R)
+    const purchasesBySupplier = new Map<string, typeof purchases>();
+    purchases.forEach((p) => {
+      if (!p.isVoided) {
+        const list = purchasesBySupplier.get(p.supplierId) || [];
+        list.push(p);
+        purchasesBySupplier.set(p.supplierId, list);
       }
     });
 
-    // Prior financial year opening balance is allocated to 180+ Days bucket for accounting reconciliation
-    if (openingBalance > 0) {
-      d180Plus += openingBalance;
-    }
+    const paymentsBySupplier = new Map<string, typeof payments>();
+    payments.forEach((pay) => {
+      if (!pay.isVoided) {
+        const list = paymentsBySupplier.get(pay.supplierId) || [];
+        list.push(pay);
+        paymentsBySupplier.set(pay.supplierId, list);
+      }
+    });
 
-    return {
-      supplierId: supp.id,
-      code: supp.code,
-      name: supp.name,
-      creditDays: supp.creditDays,
-      openingBalance,
-      purchasesTotal,
-      paymentsTotal,
-      returnsTotal,
-      closingBalance,
-      notDue,
-      d0_30,
-      d31_60,
-      d61_90,
-      d91_180,
-      d180Plus
-    };
-  });
+    const returnsBySupplier = new Map<string, NonNullable<typeof purchaseReturns>>();
+    (purchaseReturns || []).forEach((r) => {
+      if (!r.isVoided && r.adjustSupplierPayable !== false && r.supplierId) {
+        const list = returnsBySupplier.get(r.supplierId) || [];
+        list.push(r);
+        returnsBySupplier.set(r.supplierId, list);
+      }
+    });
 
-  // Calculate totals
-  const totalOpening = reportData.reduce((s, r) => s + r.openingBalance, 0);
-  const totalPurchases = reportData.reduce((s, r) => s + r.purchasesTotal, 0);
-  const totalPayments = reportData.reduce((s, r) => s + r.paymentsTotal, 0);
-  const totalReturns = reportData.reduce((s, r) => s + r.returnsTotal, 0);
-  const totalClosing = reportData.reduce((s, r) => s + r.closingBalance, 0);
-  const totalNotDue = reportData.reduce((s, r) => s + r.notDue, 0);
-  const total0_30 = reportData.reduce((s, r) => s + r.d0_30, 0);
-  const total31_60 = reportData.reduce((s, r) => s + r.d31_60, 0);
-  const total61_90 = reportData.reduce((s, r) => s + r.d61_90, 0);
-  const total91_180 = reportData.reduce((s, r) => s + r.d91_180, 0);
-  const total180Plus = reportData.reduce((s, r) => s + r.d180Plus, 0);
+    return suppliers.map((supp) => {
+      const suppPurchases = purchasesBySupplier.get(supp.id) || [];
+      const suppPayments = paymentsBySupplier.get(supp.id) || [];
+      const suppReturns = returnsBySupplier.get(supp.id) || [];
+
+      const purchasesTotal = suppPurchases.reduce((s, p) => s + p.totalCost, 0);
+      const directPaid = suppPurchases.reduce((s, p) => s + (p.directAmountPaid !== undefined ? p.directAmountPaid : (suppPayments.length === 0 ? p.amountPaid : 0)), 0);
+      const standalonePaid = suppPayments.reduce((s, pay) => s + pay.amount, 0);
+      const paymentsTotal = directPaid + standalonePaid;
+      const returnsTotal = suppReturns.reduce((s, r) => s + r.returnedValue, 0);
+
+      const openingBalance = supp.openingBalance || 0;
+      const closingBalance = openingBalance + purchasesTotal - paymentsTotal - returnsTotal;
+
+      // Ageing bucket calculations across unpaid balances on purchases
+      let notDue = 0;
+      let d0_30 = 0;
+      let d31_60 = 0;
+      let d61_90 = 0;
+      let d91_180 = 0;
+      let d180Plus = 0;
+
+      suppPurchases.forEach((p) => {
+        const balance = p.balancePayable || 0;
+        if (balance > 0) {
+          const bucket = getAgeingBucket(p.dueDate || '', today);
+          if (bucket === 'Not Due') notDue += balance;
+          else if (bucket === '0-30 Days') d0_30 += balance;
+          else if (bucket === '31-60 Days') d31_60 += balance;
+          else if (bucket === '61-90 Days') d61_90 += balance;
+          else if (bucket === '91-180 Days') d91_180 += balance;
+          else if (bucket === '180+ Days') d180Plus += balance;
+        }
+      });
+
+      // Prior financial year opening balance is allocated to 180+ Days bucket for accounting reconciliation
+      if (openingBalance > 0) {
+        d180Plus += openingBalance;
+      }
+
+      return {
+        supplierId: supp.id,
+        code: supp.code,
+        name: supp.name,
+        creditDays: supp.creditDays,
+        openingBalance,
+        purchasesTotal,
+        paymentsTotal,
+        returnsTotal,
+        closingBalance,
+        notDue,
+        d0_30,
+        d31_60,
+        d61_90,
+        d91_180,
+        d180Plus
+      };
+    });
+  }, [suppliers, purchases, payments, purchaseReturns, today]);
+
+  // Memoized totals
+  const totals = useMemo(() => ({
+    totalOpening: reportData.reduce((s, r) => s + r.openingBalance, 0),
+    totalPurchases: reportData.reduce((s, r) => s + r.purchasesTotal, 0),
+    totalPayments: reportData.reduce((s, r) => s + r.paymentsTotal, 0),
+    totalReturns: reportData.reduce((s, r) => s + r.returnsTotal, 0),
+    totalClosing: reportData.reduce((s, r) => s + r.closingBalance, 0),
+    totalNotDue: reportData.reduce((s, r) => s + r.notDue, 0),
+    total0_30: reportData.reduce((s, r) => s + r.d0_30, 0),
+    total31_60: reportData.reduce((s, r) => s + r.d31_60, 0),
+    total61_90: reportData.reduce((s, r) => s + r.d61_90, 0),
+    total91_180: reportData.reduce((s, r) => s + r.d91_180, 0),
+    total180Plus: reportData.reduce((s, r) => s + r.d180Plus, 0)
+  }), [reportData]);
+  const { totalOpening, totalPurchases, totalPayments, totalReturns, totalClosing, totalNotDue, total0_30, total31_60, total61_90, total91_180, total180Plus } = totals;
 
   const handleExportCSV = () => {
     const csvStr = convertToCSV(reportData, [

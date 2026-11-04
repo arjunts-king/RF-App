@@ -63,7 +63,7 @@ import {
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { computePurchaseFields, allocateBatchCombined, getIndianFinancialYear } from '../utils/calculations';
-import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelImport';
+import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 
 interface DataContextType {
@@ -4451,7 +4451,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const orderNo = String(getFlexibleValue(headerRow, ['orderno', 'order', 'pono', 'poref']) || '').trim();
       const remarks = String(getFlexibleValue(headerRow, ['remarks', 'notes', 'comment']) || '').trim();
 
-      const fobCandidateKeys = [
+      const salesValUsdCandidateKeys = [
+        'totalsalesvalueusd',
+        'totalsalesvalue',
+        'totalsalesamountusd',
+        'totalsalesamount',
+        'salesvalueusd',
+        'salesvalue',
+        'salesamountusd',
+        'salesamount',
+        'invoicesalesvalueusd',
+        'invoicesalesvalue',
+        'totalinvoicevalueusd',
+        'totalinvoicevalue'
+      ];
+
+      const fobUsdCandidateKeys = [
+        'totalfobvalueusd',
         'totalfobvaluefullinvoice',
         'totalfobvalue',
         'fobvaluefullinvoice',
@@ -4461,13 +4477,53 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'fobvaluecurrency',
         'fobvalueusd',
         'fobvalue',
+        'fobamountusd',
         'fobamount',
         'fob'
       ];
 
+      const fobInrCandidateKeys = [
+        'totalfobvalueinr',
+        'totalfobvalinr',
+        'totalfobinr',
+        'totalfobvalrupees',
+        'fobvalueinr',
+        'fobamountinr',
+        'fobinr',
+        'fobrupees',
+        'fobvalinr',
+        'fobinrrupees'
+      ];
+
+      const purchaseInrCandidateKeys = [
+        'totalpurchasevalueinr',
+        'totalpurchasevalinr',
+        'totalpurchasevalrupees',
+        'purchasevalueinr',
+        'purchasecostinr',
+        'purchasevalinr',
+        'purchaserps',
+        'purchaseinr',
+        'purchaseamountinr'
+      ];
+
+      const purchaseUsdCandidateKeys = [
+        'totalpurchasevalueusd',
+        'totalpurchasevaluecurrency',
+        'totalpurchasevalue',
+        'purchasevalueusd',
+        'purchasevaluecurrency',
+        'purchasevalue',
+        'purchasecostusd'
+      ];
+
       interface ParsedCandidate {
         line: SalesInvoiceLine;
-        rowFob: number | null;
+        rowSalesUsd: number | null;
+        rowFobUsd: number | null;
+        rowFobInr: number | null;
+        rowPurUsd: number | null;
+        rowPurInr: number | null;
       }
 
       const candidates: ParsedCandidate[] = [];
@@ -4531,8 +4587,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(2)) : 0;
 
         const amountCurrency = Number((weightKg * ratePerKg).toFixed(2));
-        const rawFob = parseFloat(getFlexibleValue(row, fobCandidateKeys) || '');
-        const rowFob = !isNaN(rawFob) && rawFob > 0 ? Number(rawFob.toFixed(2)) : null;
+
+        const rawSalesUsdVal = parseFloat(getFlexibleValue(row, salesValUsdCandidateKeys) || '');
+        const rowSalesUsd = !isNaN(rawSalesUsdVal) && rawSalesUsdVal > 0 ? Number(rawSalesUsdVal.toFixed(2)) : null;
+
+        let rawFobUsdVal = parseFloat(getFlexibleValue(row, fobUsdCandidateKeys) || '');
+        let rawFobInrVal = parseFloat(getFlexibleValue(row, fobInrCandidateKeys) || '');
+
+        if (!isNaN(rawFobUsdVal) && rawFobUsdVal > 0 && (isNaN(rawFobInrVal) || rawFobInrVal <= 0)) {
+          rawFobInrVal = Number((rawFobUsdVal * exchangeRate).toFixed(2));
+        } else if (!isNaN(rawFobInrVal) && rawFobInrVal > 0 && (isNaN(rawFobUsdVal) || rawFobUsdVal <= 0)) {
+          rawFobUsdVal = Number((rawFobInrVal / exchangeRate).toFixed(2));
+        }
+
+        const rowFobUsd = !isNaN(rawFobUsdVal) && rawFobUsdVal > 0 ? Number(rawFobUsdVal.toFixed(2)) : null;
+        const rowFobInr = !isNaN(rawFobInrVal) && rawFobInrVal > 0 ? Number(rawFobInrVal.toFixed(2)) : null;
+
+        let rawPurUsdVal = parseFloat(getFlexibleValue(row, purchaseUsdCandidateKeys) || '');
+        let rawPurInrVal = parseFloat(getFlexibleValue(row, purchaseInrCandidateKeys) || '');
+
+        if (!isNaN(rawPurUsdVal) && rawPurUsdVal > 0 && (isNaN(rawPurInrVal) || rawPurInrVal <= 0)) {
+          rawPurInrVal = Number((rawPurUsdVal * exchangeRate).toFixed(2));
+        } else if (!isNaN(rawPurInrVal) && rawPurInrVal > 0 && (isNaN(rawPurUsdVal) || rawPurUsdVal <= 0)) {
+          rawPurUsdVal = Number((rawPurInrVal / exchangeRate).toFixed(2));
+        }
+
+        const rowPurUsd = !isNaN(rawPurUsdVal) && rawPurUsdVal > 0 ? Number(rawPurUsdVal.toFixed(2)) : null;
+        const rowPurInr = !isNaN(rawPurInrVal) && rawPurInrVal > 0 ? Number(rawPurInrVal.toFixed(2)) : null;
 
         candidates.push({
           line: {
@@ -4545,9 +4626,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             weightKg,
             ratePerKg,
             amountCurrency,
-            fobValueCurrency: amountCurrency
+            fobValueCurrency: amountCurrency,
+            fobValueINR: Number((amountCurrency * exchangeRate).toFixed(2)),
+            purchaseValueCurrency: rowPurUsd || undefined,
+            purchaseValueINR: rowPurInr || undefined
           },
-          rowFob
+          rowSalesUsd,
+          rowFobUsd,
+          rowFobInr,
+          rowPurUsd,
+          rowPurInr
         });
       });
 
@@ -4558,28 +4646,63 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const totalCartons = candidates.reduce((s, c) => s + c.line.cartonsCount, 0);
       const totalWeightKg = Number(candidates.reduce((s, c) => s + c.line.weightKg, 0).toFixed(2));
-      const totalAmountCurrency = Number(candidates.reduce((s, c) => s + c.line.amountCurrency, 0).toFixed(2));
 
-      // FOB Value Resolution:
-      // If the FOB value is provided in the first row of a date/invoice, it represents the Full Invoice FOB value.
-      // We also handle repeated full invoice FOB values or individual product line FOBs.
-      const firstRowFob = candidates[0]?.rowFob ?? null;
-      const validFobs = candidates.map((c) => c.rowFob).filter((v): v is number => v !== null && v > 0);
+      // 1. Total Sales Value (USD) Resolution
+      const firstRowSalesUsd = candidates[0]?.rowSalesUsd ?? null;
+      const validSalesUsd = candidates.map(c => c.rowSalesUsd).filter((v): v is number => v !== null && v > 0);
+      const calculatedSumAmount = Number(candidates.reduce((s, c) => s + c.line.amountCurrency, 0).toFixed(2));
+      let totalAmountCurrency = calculatedSumAmount;
+
+      const isFullInvoiceSalesOnFirstRow =
+        firstRowSalesUsd !== null &&
+        firstRowSalesUsd > 0 &&
+        (validSalesUsd.length === 1 || validSalesUsd.every(v => Math.abs(v - firstRowSalesUsd) < 0.01));
+
+      if (isFullInvoiceSalesOnFirstRow) {
+        totalAmountCurrency = firstRowSalesUsd;
+        if (candidates.length === 1) {
+          candidates[0].line.amountCurrency = totalAmountCurrency;
+        } else if (calculatedSumAmount > 0) {
+          candidates.forEach(c => {
+            const ratio = c.line.amountCurrency / calculatedSumAmount;
+            c.line.amountCurrency = Number((totalAmountCurrency * ratio).toFixed(2));
+          });
+          const sumAlloc = Number(candidates.reduce((s, c) => s + c.line.amountCurrency, 0).toFixed(2));
+          const diff = Number((totalAmountCurrency - sumAlloc).toFixed(2));
+          if (diff !== 0 && candidates.length > 0) {
+            candidates[candidates.length - 1].line.amountCurrency = Number(
+              (candidates[candidates.length - 1].line.amountCurrency + diff).toFixed(2)
+            );
+          }
+        }
+      }
+
+      // 2. FOB Value (USD & INR) Resolution
+      const firstRowFobUsd = candidates[0]?.rowFobUsd ?? null;
+      const firstRowFobInr = candidates[0]?.rowFobInr ?? null;
+      const validFobsUsd = candidates.map((c) => c.rowFobUsd).filter((v): v is number => v !== null && v > 0);
+      const validFobsInr = candidates.map((c) => c.rowFobInr).filter((v): v is number => v !== null && v > 0);
 
       let totalFobValueCurrency = totalAmountCurrency;
+      let totalFobValueINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
       const isFullInvoiceFobOnFirstRow =
-        firstRowFob !== null &&
-        firstRowFob > 0 &&
-        (validFobs.length === 1 || validFobs.every((v) => Math.abs(v - firstRowFob) < 0.01));
+        (firstRowFobUsd !== null && firstRowFobUsd > 0 && (validFobsUsd.length === 1 || validFobsUsd.every((v) => Math.abs(v - firstRowFobUsd) < 0.01))) ||
+        (firstRowFobInr !== null && firstRowFobInr > 0 && (validFobsInr.length === 1 || validFobsInr.every((v) => Math.abs(v - firstRowFobInr) < 0.01)));
 
       if (isFullInvoiceFobOnFirstRow) {
-        totalFobValueCurrency = firstRowFob;
+        totalFobValueCurrency = firstRowFobUsd !== null && firstRowFobUsd > 0
+          ? firstRowFobUsd
+          : Number(((firstRowFobInr || 0) / exchangeRate).toFixed(2));
+
+        totalFobValueINR = firstRowFobInr !== null && firstRowFobInr > 0
+          ? firstRowFobInr
+          : Number((totalFobValueCurrency * exchangeRate).toFixed(2));
 
         if (candidates.length === 1) {
           candidates[0].line.fobValueCurrency = totalFobValueCurrency;
+          candidates[0].line.fobValueINR = totalFobValueINR;
         } else {
-          // Proportionally distribute full invoice FOB across all line items
           candidates.forEach((c) => {
             const ratio =
               totalAmountCurrency > 0
@@ -4588,30 +4711,86 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ? c.line.weightKg / totalWeightKg
                 : 1 / candidates.length;
             c.line.fobValueCurrency = Number((totalFobValueCurrency * ratio).toFixed(2));
+            c.line.fobValueINR = Number((totalFobValueINR * ratio).toFixed(2));
           });
 
-          // Ensure exact reconciliation down to the cent
-          const allocatedSum = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
-          const diff = Number((totalFobValueCurrency - allocatedSum).toFixed(2));
-          if (diff !== 0 && candidates.length > 0) {
+          // Reconcile cents
+          const allocatedSumUsd = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
+          const diffUsd = Number((totalFobValueCurrency - allocatedSumUsd).toFixed(2));
+          if (diffUsd !== 0 && candidates.length > 0) {
             candidates[candidates.length - 1].line.fobValueCurrency = Number(
-              (candidates[candidates.length - 1].line.fobValueCurrency + diff).toFixed(2)
+              (candidates[candidates.length - 1].line.fobValueCurrency + diffUsd).toFixed(2)
+            );
+          }
+          const allocatedSumInr = Number(candidates.reduce((s, c) => s + (c.line.fobValueINR || 0), 0).toFixed(2));
+          const diffInr = Number((totalFobValueINR - allocatedSumInr).toFixed(2));
+          if (diffInr !== 0 && candidates.length > 0) {
+            candidates[candidates.length - 1].line.fobValueINR = Number(
+              ((candidates[candidates.length - 1].line.fobValueINR || 0) + diffInr).toFixed(2)
             );
           }
         }
-      } else if (validFobs.length > 0) {
-        // Line-level distinct FOB values provided
+      } else if (validFobsUsd.length > 0 || validFobsInr.length > 0) {
         candidates.forEach((c) => {
-          c.line.fobValueCurrency = c.rowFob !== null && c.rowFob > 0 ? c.rowFob : c.line.amountCurrency;
+          c.line.fobValueCurrency = c.rowFobUsd !== null && c.rowFobUsd > 0
+            ? c.rowFobUsd
+            : c.rowFobInr !== null && c.rowFobInr > 0
+            ? Number((c.rowFobInr / exchangeRate).toFixed(2))
+            : c.line.amountCurrency;
+
+          c.line.fobValueINR = c.rowFobInr !== null && c.rowFobInr > 0
+            ? c.rowFobInr
+            : Number((c.line.fobValueCurrency * exchangeRate).toFixed(2));
         });
         totalFobValueCurrency = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
+        totalFobValueINR = Number(candidates.reduce((s, c) => s + (c.line.fobValueINR || 0), 0).toFixed(2));
       } else {
-        // No FOB specified; default each line to its calculated value
         candidates.forEach((c) => {
           c.line.fobValueCurrency = c.line.amountCurrency;
+          c.line.fobValueINR = Number((c.line.amountCurrency * exchangeRate).toFixed(2));
         });
         totalFobValueCurrency = totalAmountCurrency;
+        totalFobValueINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
       }
+
+      // 3. Purchase Value (USD & INR) Resolution
+      const firstRowPurUsd = candidates[0]?.rowPurUsd ?? null;
+      const firstRowPurInr = candidates[0]?.rowPurInr ?? null;
+      const validPursUsd = candidates.map(c => c.rowPurUsd).filter((v): v is number => v !== null && v > 0);
+      const validPursInr = candidates.map(c => c.rowPurInr).filter((v): v is number => v !== null && v > 0);
+
+      let totalPurchaseValueCurrency = 0;
+      let totalPurchaseValueINR = 0;
+
+      const isFullInvoicePurOnFirstRow =
+        (firstRowPurUsd !== null && firstRowPurUsd > 0 && (validPursUsd.length === 1 || validPursUsd.every(v => Math.abs(v - firstRowPurUsd) < 0.01))) ||
+        (firstRowPurInr !== null && firstRowPurInr > 0 && (validPursInr.length === 1 || validPursInr.every(v => Math.abs(v - firstRowPurInr) < 0.01)));
+
+      if (isFullInvoicePurOnFirstRow) {
+        totalPurchaseValueCurrency = firstRowPurUsd !== null && firstRowPurUsd > 0
+          ? firstRowPurUsd
+          : Number(((firstRowPurInr || 0) / exchangeRate).toFixed(2));
+        totalPurchaseValueINR = firstRowPurInr !== null && firstRowPurInr > 0
+          ? firstRowPurInr
+          : Number((totalPurchaseValueCurrency * exchangeRate).toFixed(2));
+
+        candidates.forEach(c => {
+          const ratio = totalAmountCurrency > 0 ? c.line.amountCurrency / totalAmountCurrency : 1 / candidates.length;
+          c.line.purchaseValueCurrency = Number((totalPurchaseValueCurrency * ratio).toFixed(2));
+          c.line.purchaseValueINR = Number((totalPurchaseValueINR * ratio).toFixed(2));
+        });
+      } else if (validPursUsd.length > 0 || validPursInr.length > 0) {
+        candidates.forEach(c => {
+          c.line.purchaseValueCurrency = c.rowPurUsd !== null && c.rowPurUsd > 0 ? c.rowPurUsd : 0;
+          c.line.purchaseValueINR = c.rowPurInr !== null && c.rowPurInr > 0 ? c.rowPurInr : Number(((c.rowPurUsd || 0) * exchangeRate).toFixed(2));
+        });
+        totalPurchaseValueCurrency = Number(candidates.reduce((s, c) => s + (c.line.purchaseValueCurrency || 0), 0).toFixed(2));
+        totalPurchaseValueINR = Number(candidates.reduce((s, c) => s + (c.line.purchaseValueINR || 0), 0).toFixed(2));
+      }
+
+      const grossProfitCurrency = totalPurchaseValueCurrency > 0 ? Number((totalFobValueCurrency - totalPurchaseValueCurrency).toFixed(2)) : undefined;
+      const grossProfitINR = totalPurchaseValueINR > 0 ? Number((totalFobValueINR - totalPurchaseValueINR).toFixed(2)) : undefined;
+      const profitMarginPct = totalFobValueCurrency > 0 && grossProfitCurrency !== undefined ? Number(((grossProfitCurrency / totalFobValueCurrency) * 100).toFixed(2)) : undefined;
 
       const lineItems: SalesInvoiceLine[] = candidates.map((c) => c.line);
       const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
@@ -4635,6 +4814,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         totalWeightKg,
         totalAmountCurrency,
         totalFobValueCurrency,
+        totalFobValueINR,
+        totalPurchaseValueCurrency: totalPurchaseValueCurrency > 0 ? totalPurchaseValueCurrency : undefined,
+        totalPurchaseValueINR: totalPurchaseValueINR > 0 ? totalPurchaseValueINR : undefined,
+        grossProfitCurrency,
+        grossProfitINR,
+        profitMarginPct,
         estimatedAmountINR,
         realizations: [],
         totalRealizedCurrency: 0,
@@ -4677,170 +4862,199 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
+  const contextValue = useMemo(() => ({
+    businessSettings,
+    updateBusinessSettings,
+    suppliers,
+    species,
+    grades,
+    sizes,
+    counts,
+    locations,
+    bankAccounts,
+    expenseTypes,
+    slabTypes,
+    customers,
+    ports,
+    purchases,
+    payments,
+    purchaseReturns,
+    processingEntries,
+    salesInvoices,
+    auditLogs,
+    offlineQueue,
+    isOnline,
+    slabTolerancePct,
+    setSlabTolerancePct,
+
+    addSupplier,
+    updateSupplier,
+    deleteSupplier,
+    toggleSupplierActive,
+
+    addSpecies,
+    updateSpecies,
+    deleteSpecies,
+    toggleSpeciesActive,
+
+    addGrade,
+    updateGrade,
+    deleteGrade,
+    toggleGradeActive,
+
+    addSize,
+    updateSize,
+    deleteSize,
+    toggleSizeActive,
+
+    addCount,
+    updateCount,
+    deleteCount,
+    toggleCountActive,
+
+    addLocation,
+    updateLocation,
+    deleteLocation,
+    toggleLocationActive,
+
+    addBankAccount,
+    updateBankAccount,
+    deleteBankAccount,
+    toggleBankAccountActive,
+
+    addExpenseType,
+    updateExpenseType,
+    deleteExpenseType,
+    toggleExpenseTypeActive,
+
+    addSlabType,
+    updateSlabType,
+    deleteSlabType,
+    toggleSlabTypeActive,
+    bulkImportSlabTypes,
+
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    toggleCustomerActive,
+    bulkImportCustomers,
+
+    addPort,
+    updatePort,
+    deletePort,
+    togglePortActive,
+    bulkImportPorts,
+
+    addPurchase,
+    updatePurchase,
+    voidPurchase,
+    deletePurchasePermanently,
+
+    addProcessingEntry,
+    updateProcessingEntry,
+    voidProcessingEntry,
+    deleteProcessingEntryPermanently,
+
+    addSalesInvoice,
+    updateSalesInvoice,
+    addInvoiceRealization,
+    deleteInvoiceRealization,
+    voidSalesInvoice,
+    deleteSalesInvoicePermanently,
+
+    addPayment,
+    voidPayment,
+
+    addPurchaseReturn,
+    updatePurchaseReturn,
+    voidPurchaseReturn,
+    deletePurchaseReturnPermanently,
+
+    recalculateBatch,
+    allocateBatchYield: allocateBatchYieldContext,
+    clearBatchYield: clearBatchYieldContext,
+    syncOfflineQueue,
+
+    clearAllTransactions,
+    wipeDatabaseCompletely,
+    loadStarterPresets,
+
+    bulkImportSuppliers,
+    bulkImportSpecies,
+    bulkImportGrades,
+    bulkImportSizes,
+    bulkImportCounts,
+    bulkImportLocations,
+    bulkImportBankAccounts,
+    bulkImportExpenseTypes,
+    bulkImportPurchases,
+    bulkImportProcessingEntries,
+    bulkImportSalesInvoices,
+    logAudit,
+
+    // Inventory Module Exports
+    inventoryItems,
+    inventoryMappings,
+    openingStocks,
+    stockAdjustments,
+    physicalStockCounts,
+    periodCloseLocks,
+    inventoryCalculation,
+
+    addInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+    toggleInventoryItemActive,
+
+    addInventoryMapping,
+    deleteInventoryMapping,
+
+    saveOpeningStock,
+    deleteOpeningStock,
+
+    addStockAdjustment,
+    deleteStockAdjustment,
+
+    savePhysicalStockCount,
+    postPhysicalStockCount,
+    deletePhysicalStockCount,
+
+    closePeriodLock,
+    unlockPeriod,
+    rebuildInventoryLedger
+  }), [
+    businessSettings,
+    suppliers,
+    species,
+    grades,
+    sizes,
+    counts,
+    locations,
+    bankAccounts,
+    expenseTypes,
+    slabTypes,
+    customers,
+    ports,
+    purchases,
+    payments,
+    purchaseReturns,
+    processingEntries,
+    salesInvoices,
+    auditLogs,
+    offlineQueue,
+    isOnline,
+    slabTolerancePct,
+    inventoryItems,
+    inventoryMappings,
+    openingStocks,
+    stockAdjustments,
+    physicalStockCounts,
+    periodCloseLocks,
+    inventoryCalculation
+  ]);
+
   return (
-    <DataContext.Provider
-      value={{
-        businessSettings,
-        updateBusinessSettings,
-        suppliers,
-        species,
-        grades,
-        sizes,
-        counts,
-        locations,
-        bankAccounts,
-        expenseTypes,
-        slabTypes,
-        customers,
-        ports,
-        purchases,
-        payments,
-        purchaseReturns,
-        processingEntries,
-        salesInvoices,
-        auditLogs,
-        offlineQueue,
-        isOnline,
-        slabTolerancePct,
-        setSlabTolerancePct,
-
-        addSupplier,
-        updateSupplier,
-        deleteSupplier,
-        toggleSupplierActive,
-
-        addSpecies,
-        updateSpecies,
-        deleteSpecies,
-        toggleSpeciesActive,
-
-        addGrade,
-        updateGrade,
-        deleteGrade,
-        toggleGradeActive,
-
-        addSize,
-        updateSize,
-        deleteSize,
-        toggleSizeActive,
-
-        addCount,
-        updateCount,
-        deleteCount,
-        toggleCountActive,
-
-        addLocation,
-        updateLocation,
-        deleteLocation,
-        toggleLocationActive,
-
-        addBankAccount,
-        updateBankAccount,
-        deleteBankAccount,
-        toggleBankAccountActive,
-
-        addExpenseType,
-        updateExpenseType,
-        deleteExpenseType,
-        toggleExpenseTypeActive,
-
-        addSlabType,
-        updateSlabType,
-        deleteSlabType,
-        toggleSlabTypeActive,
-        bulkImportSlabTypes,
-
-        addCustomer,
-        updateCustomer,
-        deleteCustomer,
-        toggleCustomerActive,
-        bulkImportCustomers,
-
-        addPort,
-        updatePort,
-        deletePort,
-        togglePortActive,
-        bulkImportPorts,
-
-        addPurchase,
-        updatePurchase,
-        voidPurchase,
-        deletePurchasePermanently,
-
-        addProcessingEntry,
-        updateProcessingEntry,
-        voidProcessingEntry,
-        deleteProcessingEntryPermanently,
-
-        addSalesInvoice,
-        updateSalesInvoice,
-        addInvoiceRealization,
-        deleteInvoiceRealization,
-        voidSalesInvoice,
-        deleteSalesInvoicePermanently,
-
-        addPayment,
-        voidPayment,
-
-        addPurchaseReturn,
-        updatePurchaseReturn,
-        voidPurchaseReturn,
-        deletePurchaseReturnPermanently,
-
-        recalculateBatch,
-        allocateBatchYield: allocateBatchYieldContext,
-        clearBatchYield: clearBatchYieldContext,
-        syncOfflineQueue,
-
-        clearAllTransactions,
-        wipeDatabaseCompletely,
-        loadStarterPresets,
-
-        bulkImportSuppliers,
-        bulkImportSpecies,
-        bulkImportGrades,
-        bulkImportSizes,
-        bulkImportCounts,
-        bulkImportLocations,
-        bulkImportBankAccounts,
-        bulkImportExpenseTypes,
-        bulkImportPurchases,
-        bulkImportProcessingEntries,
-        bulkImportSalesInvoices,
-        logAudit,
-
-        // Inventory Module Exports
-        inventoryItems,
-        inventoryMappings,
-        openingStocks,
-        stockAdjustments,
-        physicalStockCounts,
-        periodCloseLocks,
-        inventoryCalculation,
-
-        addInventoryItem,
-        updateInventoryItem,
-        deleteInventoryItem,
-        toggleInventoryItemActive,
-
-        addInventoryMapping,
-        deleteInventoryMapping,
-
-        saveOpeningStock,
-        deleteOpeningStock,
-
-        addStockAdjustment,
-        deleteStockAdjustment,
-
-        savePhysicalStockCount,
-        postPhysicalStockCount,
-        deletePhysicalStockCount,
-
-        closePeriodLock,
-        unlockPeriod,
-        rebuildInventoryLedger
-      }}
-    >
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );

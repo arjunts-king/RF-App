@@ -1,4 +1,4 @@
-import {
+import type {
   InventoryItem,
   InventoryItemMapping,
   OpeningStock,
@@ -19,7 +19,7 @@ import {
   Species,
   Customer,
   Supplier
-} from '../types';
+} from '../types/index.ts';
 
 export type { InventoryCalculationResult };
 
@@ -286,7 +286,8 @@ export function calculatePerpetualInventory(params: {
   });
 
   // 3. PURCHASE RETURNS (Priority 3 - Stock Out at cost it came in)
-  purchaseReturns.forEach((pr) => {
+  const activeReturns = (purchaseReturns || []).filter((r) => !r.isVoided);
+  activeReturns.forEach((pr) => {
     const origPurchase = activePurchases.find((p) => p.id === pr.purchaseId);
     if (!origPurchase) return;
 
@@ -545,7 +546,12 @@ export function calculatePerpetualInventory(params: {
 
         balanceQty = newBalanceQty;
         // Balance value = balance quantity * current average cost
-        balanceValue = roundValue(balanceQty * currentAverageCost);
+        if (ev.movementType === 'purchase_return') {
+          balanceValue = roundValue(Math.max(0, balanceValue - movementValue));
+          currentAverageCost = balanceQty > 0 ? roundRate(balanceValue / balanceQty) : 0;
+        } else {
+          balanceValue = roundValue(balanceQty * currentAverageCost);
+        }
       }
 
       const mov: InventoryMovement = {
@@ -637,8 +643,14 @@ export function calculatePerpetualInventory(params: {
     const openingValue = openingMov ? openingMov.movementValue : 0;
 
     const receipts = itemMovs.filter((m) => m.movementType === 'purchase_receipt');
-    const receiptsQty = roundQty(receipts.reduce((s, m) => s + m.quantityIn, 0));
-    const receiptsValue = roundValue(receipts.reduce((s, m) => s + m.movementValue, 0));
+    const returns = itemMovs.filter((m) => m.movementType === 'purchase_return');
+    const grossReceiptsQty = receipts.reduce((s, m) => s + m.quantityIn, 0);
+    const returnsQty = returns.reduce((s, m) => s + m.quantityOut, 0);
+    const receiptsQty = roundQty(grossReceiptsQty - returnsQty);
+
+    const grossReceiptsValue = receipts.reduce((s, m) => s + m.movementValue, 0);
+    const returnsValue = returns.reduce((s, m) => s + m.movementValue, 0);
+    const receiptsValue = roundValue(grossReceiptsValue - returnsValue);
 
     const issues = itemMovs.filter((m) => m.movementType === 'sales_issue');
     const issuesQty = roundQty(issues.reduce((s, m) => s + m.quantityOut, 0));
@@ -760,7 +772,19 @@ export function calculatePerpetualInventory(params: {
   const formulaCheck = Math.abs(formulaCalc - totalClosingValue) < 0.05;
 
   // Tie-outs with Purchase and Sales Modules
-  const purchaseModuleTotalCost = roundValue(activePurchases.reduce((s, p) => s + p.totalCost, 0));
+  const totalReturnsCost = roundValue(
+    (purchaseReturns || [])
+      .filter((r) => !r.isVoided)
+      .reduce((s, r) => {
+        if (r.returnedValue !== undefined && r.returnedValue > 0) return s + r.returnedValue;
+        const orig = activePurchases.find((p) => p.id === r.purchaseId);
+        const rate = orig && orig.weightKg > 0 ? orig.totalCost / orig.weightKg : (orig?.ratePerKg || 0);
+        return s + roundValue((r.returnedWeightKg || 0) * rate);
+      }, 0)
+  );
+  const purchaseModuleTotalCost = roundValue(
+    activePurchases.reduce((s, p) => s + p.totalCost, 0) - totalReturnsCost
+  );
   const purchaseVariance = roundValue(Math.abs(totalReceiptsValue - purchaseModuleTotalCost));
   const purchaseModuleAgreed = purchaseVariance < 0.05;
 

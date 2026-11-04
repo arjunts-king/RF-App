@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
@@ -31,50 +31,82 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
   const [locationFilter, setLocationFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
-  const filteredPurchases = purchases.filter((p) => {
-    if (p.isVoided) return false;
-    if (supplierFilter && p.supplierId !== supplierFilter) return false;
-    if (speciesFilter && p.speciesId !== speciesFilter) return false;
-    if (locationFilter && p.locationId !== locationFilter) return false;
-    if (dateFilter && p.purchaseDate !== dateFilter) return false;
-    return true;
-  });
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter((p) => {
+      if (p.isVoided) return false;
+      if (supplierFilter && p.supplierId !== supplierFilter) return false;
+      if (speciesFilter && p.speciesId !== speciesFilter) return false;
+      if (locationFilter && p.locationId !== locationFilter) return false;
+      if (dateFilter && p.purchaseDate !== dateFilter) return false;
+      return true;
+    });
+  }, [purchases, supplierFilter, speciesFilter, locationFilter, dateFilter]);
 
-  // KPI Calculations
-  const totalWeight = filteredPurchases.reduce((s, p) => s + p.weightKg, 0);
-  const totalPurchaseValue = filteredPurchases.reduce((s, p) => s + p.purchaseValue, 0);
-  const totalCost = filteredPurchases.reduce((s, p) => s + p.totalCost, 0);
-  const totalExpenses = filteredPurchases.reduce((s, p) => s + p.totalExpenses, 0);
-  const totalOutstanding = filteredPurchases.reduce((s, p) => s + p.balancePayable, 0);
+  // Memoized KPI Calculations
+  const kpis = useMemo(() => {
+    const totalWeight = filteredPurchases.reduce((s, p) => s + p.weightKg, 0);
+    const totalPurchaseValue = filteredPurchases.reduce((s, p) => s + p.purchaseValue, 0);
+    const totalCost = filteredPurchases.reduce((s, p) => s + p.totalCost, 0);
+    const totalExpenses = filteredPurchases.reduce((s, p) => s + p.totalExpenses, 0);
+    const totalOutstanding = filteredPurchases.reduce((s, p) => s + p.balancePayable, 0);
 
-  const avgRate = totalWeight > 0 ? totalPurchaseValue / totalWeight : 0;
-  const effectiveCostPerKg = totalWeight > 0 ? totalCost / totalWeight : 0;
-  const activeSupplierCount = new Set(filteredPurchases.map((p) => p.supplierId)).size;
+    const avgRate = totalWeight > 0 ? totalPurchaseValue / totalWeight : 0;
+    const effectiveCostPerKg = totalWeight > 0 ? totalCost / totalWeight : 0;
+    const activeSupplierCount = new Set(filteredPurchases.map((p) => p.supplierId)).size;
 
-  // Chart 1: Species Volume & Value Split
-  const speciesData = species.map((sp) => {
-    const list = filteredPurchases.filter((p) => p.speciesId === sp.id);
-    const weight = list.reduce((s, p) => s + p.weightKg, 0);
-    const cost = list.reduce((s, p) => s + p.totalCost, 0);
-    return { name: sp.name, weight, cost };
-  }).filter((d) => d.weight > 0);
+    return {
+      totalWeight,
+      totalPurchaseValue,
+      totalCost,
+      totalExpenses,
+      totalOutstanding,
+      avgRate,
+      effectiveCostPerKg,
+      activeSupplierCount
+    };
+  }, [filteredPurchases]);
 
-  // Chart 2: Expense Breakdown
-  const expenseBreakdownData = expenseTypes.map((exp) => {
-    const total = filteredPurchases.reduce(
-      (s, p) => s + (p.expenseBreakdown?.[exp.id] || 0),
-      0
-    );
-    return { name: exp.name, total };
-  }).filter((d) => d.total > 0);
+  const {
+    totalWeight,
+    totalPurchaseValue,
+    totalCost,
+    totalExpenses,
+    totalOutstanding,
+    avgRate,
+    effectiveCostPerKg,
+    activeSupplierCount
+  } = kpis;
 
-  // Chart 3: Outstanding Payables by Supplier
-  const supplierOutstandingData = suppliers.map((supp) => {
-    const outstanding = filteredPurchases
-      .filter((p) => p.supplierId === supp.id)
-      .reduce((s, p) => s + (p.balancePayable || 0), 0);
-    return { name: supp.name, outstanding };
-  }).filter((d) => d.outstanding > 0);
+  // Chart 1: Species Volume & Value Split (Memoized)
+  const speciesData = useMemo(() => {
+    return species.map((sp) => {
+      const list = filteredPurchases.filter((p) => p.speciesId === sp.id);
+      const weight = list.reduce((s, p) => s + p.weightKg, 0);
+      const cost = list.reduce((s, p) => s + p.totalCost, 0);
+      return { name: sp.name, weight, cost };
+    }).filter((d) => d.weight > 0);
+  }, [species, filteredPurchases]);
+
+  // Chart 2: Expense Breakdown (Memoized)
+  const expenseBreakdownData = useMemo(() => {
+    return expenseTypes.map((exp) => {
+      const total = filteredPurchases.reduce(
+        (s, p) => s + (p.expenseBreakdown?.[exp.id] || 0),
+        0
+      );
+      return { name: exp.name, total };
+    }).filter((d) => d.total > 0);
+  }, [expenseTypes, filteredPurchases]);
+
+  // Chart 3: Outstanding Payables by Supplier (Memoized)
+  const supplierOutstandingData = useMemo(() => {
+    return suppliers.map((supp) => {
+      const outstanding = filteredPurchases
+        .filter((p) => p.supplierId === supp.id)
+        .reduce((s, p) => s + (p.balancePayable || 0), 0);
+      return { name: supp.name, outstanding };
+    }).filter((d) => d.outstanding > 0);
+  }, [suppliers, filteredPurchases]);
 
   // Helpers for active filter label lookups
   const selectedSupplierObj = suppliers.find((s) => s.id === supplierFilter);

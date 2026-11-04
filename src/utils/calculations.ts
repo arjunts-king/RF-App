@@ -1,4 +1,4 @@
-import { Purchase, Supplier, PaymentStatus } from '../types';
+import type { Purchase, Supplier, PaymentStatus } from '../types/index.ts';
 
 /**
  * Calculates the Indian Financial Year string (e.g. "FY 2026-27") for any given date string.
@@ -294,12 +294,12 @@ export function allocateBatchYield(
 
   // Allocate proportionally to each row's weight
   let allocatedYieldSoFar = 0;
-  const updatedPurchases = purchasesInBatch.map((p, index) => {
+  const updatedPurchases = purchasesInBatch.map((p) => {
     if (p.isVoided) return p;
 
     let itemYieldKg = 0;
     // For the last active item, assign remainder to prevent rounding drift
-    const isLastActive = index === activeRows.length - 1;
+    const isLastActive = p === activeRows[activeRows.length - 1];
     if (isLastActive && activeRows.length > 1) {
       itemYieldKg = Number(Math.max(0, resolvedBatchYieldKg! - allocatedYieldSoFar).toFixed(2));
     } else {

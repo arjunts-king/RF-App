@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types --test src/__tests__/*.test.mjs"
   },
   "dependencies": {
-    "docx": "^9.15.1",
     "jszip": "^3.10.2",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",

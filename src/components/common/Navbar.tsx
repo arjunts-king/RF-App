@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useLiquidGlass } from '../../context/LiquidGlassContext';
@@ -79,11 +79,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const overdueCount = purchases.filter((p) => !p.isVoided && p.balancePayable > 0 && p.dueDate && p.dueDate < todayStr).length;
-  const varianceCount = processingEntries.filter((p) => !p.isVoided && p.hasSlabVariance).length;
-  const pendingRealizationCount = salesInvoices.filter((inv) => !inv.isVoided && inv.realizationStatus !== 'Fully Realized').length;
-  const totalAlerts = (offlineQueue.length > 0 ? 1 : 0) + (overdueCount > 0 ? 1 : 0) + (varianceCount > 0 ? 1 : 0) + (pendingRealizationCount > 0 ? 1 : 0);
+  const totalAlerts = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const overdueCount = purchases.filter((p) => !p.isVoided && p.balancePayable > 0 && p.dueDate && p.dueDate < todayStr).length;
+    const varianceCount = processingEntries.filter((p) => !p.isVoided && p.hasSlabVariance).length;
+    const pendingRealizationCount = salesInvoices.filter((inv) => !inv.isVoided && inv.realizationStatus !== 'Fully Realized').length;
+    return (offlineQueue.length > 0 ? 1 : 0) + (overdueCount > 0 ? 1 : 0) + (varianceCount > 0 ? 1 : 0) + (pendingRealizationCount > 0 ? 1 : 0);
+  }, [purchases, processingEntries, salesInvoices, offlineQueue]);
 
   const purchaseGroups = [
     {
@@ -152,6 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       title: 'CORE COMMERCIAL',
       items: [
         { id: 'sales-dashboard', label: 'Commercial Dashboard', icon: TrendingUp, desc: 'Export value in USD & FOB analytics' },
+        { id: 'fob-dashboard', label: 'FOB Performance Dashboard', icon: BadgeDollarSign, desc: 'FOB valuations & turnover in USD and INR' },
         { id: 'invoice-entry', label: 'Commercial Invoice Entry', icon: PlusCircle, desc: 'Export shipping bills & container lines', show: permissions.canCreateEditSales },
         { id: 'invoices', label: 'Invoices & Shipments', icon: FileText, desc: 'Audit invoices & export status' }
       ]

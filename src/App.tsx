@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { ToastProvider } from './context/ToastContext';
@@ -10,42 +10,46 @@ import { SalesSidebar, SalesNavTab } from './components/sales/SalesSidebar';
 import { HomeScreen } from './components/home/HomeScreen';
 import { CommandPalette } from './components/common/CommandPalette';
 import { RoleSwitcher } from './components/common/RoleSwitcher';
-import { DashboardOverview } from './components/dashboard/DashboardOverview';
-import { PurchaseEntryForm } from './components/purchase/PurchaseEntryForm';
-import { PurchaseList } from './components/purchase/PurchaseList';
-import { PurchaseReturnsView } from './components/purchase/PurchaseReturnsView';
-import { BatchExpenseView } from './components/purchase/BatchExpenseView';
-import { SupplierLedgerView } from './components/payments/SupplierLedgerView';
-import { OutstandingReport } from './components/payments/OutstandingReport';
-import { OperationalReportsHub } from './components/reports/OperationalReportsHub';
-import { DataQualityPanel } from './components/dashboard/DataQualityPanel';
-import { MasterDataManager } from './components/master/MasterDataManager';
-import { AuditLogView } from './components/admin/AuditLogView';
-import { UserManagementView } from './components/admin/UserManagementView';
-import { BusinessSettingsView } from './components/settings/BusinessSettingsView';
-import { ExcelImportView } from './components/excel/ExcelImportView';
-import { ProductionDashboard } from './components/production/ProductionDashboard';
-import { DailyProcessingEntryForm } from './components/production/DailyProcessingEntryForm';
-import { ProcessingRecordList } from './components/production/ProcessingRecordList';
-import { SlabTypeManager } from './components/production/SlabTypeManager';
-import { ProductionReportsHub } from './components/production/ProductionReportsHub';
-import { SalesDashboard } from './components/sales/SalesDashboard';
-import { SalesInvoiceEntryForm } from './components/sales/SalesInvoiceEntryForm';
-import { SalesInvoiceList } from './components/sales/SalesInvoiceList';
-import { CustomerManager } from './components/sales/CustomerManager';
-import { PortManager } from './components/sales/PortManager';
-import { CommercialSpeciesManager } from './components/sales/CommercialSpeciesManager';
-import { SalesReportsHub } from './components/sales/SalesReportsHub';
+const DashboardOverview = lazy(() => import('./components/dashboard/DashboardOverview').then(m => ({ default: m.DashboardOverview })));
+const PurchaseEntryForm = lazy(() => import('./components/purchase/PurchaseEntryForm').then(m => ({ default: m.PurchaseEntryForm })));
+const PurchaseList = lazy(() => import('./components/purchase/PurchaseList').then(m => ({ default: m.PurchaseList })));
+const PurchaseReturnsView = lazy(() => import('./components/purchase/PurchaseReturnsView').then(m => ({ default: m.PurchaseReturnsView })));
+const BatchExpenseView = lazy(() => import('./components/purchase/BatchExpenseView').then(m => ({ default: m.BatchExpenseView })));
+const SupplierLedgerView = lazy(() => import('./components/payments/SupplierLedgerView').then(m => ({ default: m.SupplierLedgerView })));
+const OutstandingReport = lazy(() => import('./components/payments/OutstandingReport').then(m => ({ default: m.OutstandingReport })));
+const OperationalReportsHub = lazy(() => import('./components/reports/OperationalReportsHub').then(m => ({ default: m.OperationalReportsHub })));
+const DataQualityPanel = lazy(() => import('./components/dashboard/DataQualityPanel').then(m => ({ default: m.DataQualityPanel })));
+const MasterDataManager = lazy(() => import('./components/master/MasterDataManager').then(m => ({ default: m.MasterDataManager })));
+const AuditLogView = lazy(() => import('./components/admin/AuditLogView').then(m => ({ default: m.AuditLogView })));
+const UserManagementView = lazy(() => import('./components/admin/UserManagementView').then(m => ({ default: m.UserManagementView })));
+const BusinessSettingsView = lazy(() => import('./components/settings/BusinessSettingsView').then(m => ({ default: m.BusinessSettingsView })));
+const ExcelImportView = lazy(() => import('./components/excel/ExcelImportView').then(m => ({ default: m.ExcelImportView })));
+
+const ProductionDashboard = lazy(() => import('./components/production/ProductionDashboard').then(m => ({ default: m.ProductionDashboard })));
+const DailyProcessingEntryForm = lazy(() => import('./components/production/DailyProcessingEntryForm').then(m => ({ default: m.DailyProcessingEntryForm })));
+const ProcessingRecordList = lazy(() => import('./components/production/ProcessingRecordList').then(m => ({ default: m.ProcessingRecordList })));
+const SlabTypeManager = lazy(() => import('./components/production/SlabTypeManager').then(m => ({ default: m.SlabTypeManager })));
+const ProductionReportsHub = lazy(() => import('./components/production/ProductionReportsHub').then(m => ({ default: m.ProductionReportsHub })));
+
+const SalesDashboard = lazy(() => import('./components/sales/SalesDashboard').then(m => ({ default: m.SalesDashboard })));
+const FobDashboard = lazy(() => import('./components/sales/FobDashboard').then(m => ({ default: m.FobDashboard })));
+const SalesInvoiceEntryForm = lazy(() => import('./components/sales/SalesInvoiceEntryForm').then(m => ({ default: m.SalesInvoiceEntryForm })));
+const SalesInvoiceList = lazy(() => import('./components/sales/SalesInvoiceList').then(m => ({ default: m.SalesInvoiceList })));
+const CustomerManager = lazy(() => import('./components/sales/CustomerManager').then(m => ({ default: m.CustomerManager })));
+const PortManager = lazy(() => import('./components/sales/PortManager').then(m => ({ default: m.PortManager })));
+const CommercialSpeciesManager = lazy(() => import('./components/sales/CommercialSpeciesManager').then(m => ({ default: m.CommercialSpeciesManager })));
+const SalesReportsHub = lazy(() => import('./components/sales/SalesReportsHub').then(m => ({ default: m.SalesReportsHub })));
+
 import { InventorySidebar, InventoryNavTab } from './components/inventory/InventorySidebar';
-import { InventoryDashboard } from './components/inventory/InventoryDashboard';
-import { InventoryLedgerView } from './components/inventory/InventoryLedgerView';
-import { InventoryPositionView } from './components/inventory/InventoryPositionView';
-import { InventoryItemManager } from './components/inventory/InventoryItemManager';
-import { StockAdjustmentView } from './components/inventory/StockAdjustmentView';
-import { PhysicalStockCountView } from './components/inventory/PhysicalStockCountView';
-import { PeriodCloseView } from './components/inventory/PeriodCloseView';
-import { InventoryReportsHub } from './components/inventory/InventoryReportsHub';
-import { InventoryAuditView } from './components/inventory/InventoryAuditView';
+const InventoryDashboard = lazy(() => import('./components/inventory/InventoryDashboard').then(m => ({ default: m.InventoryDashboard })));
+const InventoryLedgerView = lazy(() => import('./components/inventory/InventoryLedgerView').then(m => ({ default: m.InventoryLedgerView })));
+const InventoryPositionView = lazy(() => import('./components/inventory/InventoryPositionView').then(m => ({ default: m.InventoryPositionView })));
+const InventoryItemManager = lazy(() => import('./components/inventory/InventoryItemManager').then(m => ({ default: m.InventoryItemManager })));
+const StockAdjustmentView = lazy(() => import('./components/inventory/StockAdjustmentView').then(m => ({ default: m.StockAdjustmentView })));
+const PhysicalStockCountView = lazy(() => import('./components/inventory/PhysicalStockCountView').then(m => ({ default: m.PhysicalStockCountView })));
+const PeriodCloseView = lazy(() => import('./components/inventory/PeriodCloseView').then(m => ({ default: m.PeriodCloseView })));
+const InventoryReportsHub = lazy(() => import('./components/inventory/InventoryReportsHub').then(m => ({ default: m.InventoryReportsHub })));
+const InventoryAuditView = lazy(() => import('./components/inventory/InventoryAuditView').then(m => ({ default: m.InventoryAuditView })));
 
 import {
   LayoutDashboard,
@@ -310,7 +314,15 @@ const MainLayout: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-12">
-          {activeModule === 'home' ? (
+          <Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center min-h-[300px] gap-3 text-rose-600">
+                <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin" />
+                <span className="text-sm font-medium text-ink-600">Loading module...</span>
+              </div>
+            }
+          >
+            {activeModule === 'home' ? (
             <HomeScreen
               onNavigate={handleNavigateDirect}
               onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -372,6 +384,9 @@ const MainLayout: React.FC = () => {
               {salesTab === 'sales-dashboard' && (
                 <SalesDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
               )}
+              {salesTab === 'fob-dashboard' && (
+                <FobDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+              )}
               {salesTab === 'invoice-entry' && (
                 <SalesInvoiceEntryForm onSuccess={() => setSalesTab('invoices')} />
               )}
@@ -408,6 +423,7 @@ const MainLayout: React.FC = () => {
               {inventoryTab === 'audit-log' && <InventoryAuditView />}
             </>
           )}
+          </Suspense>
         </main>
       </div>
 

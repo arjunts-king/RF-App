@@ -227,9 +227,9 @@ export const ExcelImportView: React.FC<{
   const salesEntities: { id: ImportEntityType; label: string; icon: any; desc: string }[] = [
     {
       id: 'sales-invoices',
-      label: 'Commercial Export Invoices',
+      label: 'Export Performance & Invoices',
       icon: FileText,
-      desc: 'Export sales invoices, multi-line container items, cartons, weights, rates & FOB values'
+      desc: 'Export performance register, total sales value in USD, and FOB values in both USD and Indian rupees'
     },
     {
       id: 'customers',

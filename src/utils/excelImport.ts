@@ -22,86 +22,9 @@ export type ImportEntityType =
   | 'ports'
   | 'sales-multi-sheet';
 
-/**
- * Normalizes string keys for flexible column matching (e.g. "Rate/Kg" -> "ratekg", "Supplier Name" -> "suppliername")
- */
-export function normalizeKey(key: string): string {
-  return String(key || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-}
+import { normalizeKey, getFlexibleValue, formatExcelDate } from './excelFormatters';
+export { normalizeKey, getFlexibleValue, formatExcelDate };
 
-/**
- * Finds the first value in an object whose key matches one of the candidate normalized keys.
- * Supports exact normalized matching as well as fuzzy substring matching (e.g. "Supplier Name *" -> matches "suppliername").
- */
-export function getFlexibleValue(row: Record<string, any>, candidateKeys: string[]): any {
-  if (!row || typeof row !== 'object') return undefined;
-  const normalizedCandidateKeys = candidateKeys.map(normalizeKey);
-
-  // 1. Exact match on normalized key
-  for (const [key, val] of Object.entries(row)) {
-    const norm = normalizeKey(key);
-    if (normalizedCandidateKeys.includes(norm) && val !== undefined && val !== null && String(val).trim() !== '') {
-      return typeof val === 'string' ? val.trim() : val;
-    }
-  }
-
-  // 2. Substring / Prefix match (e.g. "Supplier Name (Required)" matches "suppliername")
-  for (const [key, val] of Object.entries(row)) {
-    const norm = normalizeKey(key);
-    for (const cand of normalizedCandidateKeys) {
-      if (cand.length >= 4 && (norm.includes(cand) || cand.includes(norm))) {
-        if (val !== undefined && val !== null && String(val).trim() !== '') {
-          return typeof val === 'string' ? val.trim() : val;
-        }
-      }
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Formats JS Date or Excel serial date into YYYY-MM-DD
- */
-export function formatExcelDate(rawDate: any): string {
-  if (!rawDate) return new Date().toISOString().split('T')[0];
-
-  if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
-    const y = rawDate.getFullYear();
-    const m = String(rawDate.getMonth() + 1).padStart(2, '0');
-    const d = String(rawDate.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-
-  const str = String(rawDate).trim();
-
-  // Check DD-MM-YYYY, DD/MM/YYYY, or DD.MM.YYYY
-  const ddmmyyyy = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-  if (ddmmyyyy) {
-    const [, day, month, year] = ddmmyyyy;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-
-  // Check standard YYYY-MM-DD or YYYY/MM/DD
-  const yyyymmdd = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
-  if (yyyymmdd) {
-    const [, year, month, day] = yyyymmdd;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-
-  // Fallback to Date parser
-  const parsed = new Date(str);
-  if (!isNaN(parsed.getTime())) {
-    const y = parsed.getFullYear();
-    const m = String(parsed.getMonth() + 1).padStart(2, '0');
-    const d = String(parsed.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-
-  return new Date().toISOString().split('T')[0];
-}
 
 /**
  * Reads an Excel (.xlsx, .xls, .csv) file and returns sheet names & row arrays.
@@ -459,8 +382,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 100,
         'Net Weight (Kg)': 2000,
         'Rate per Kg (USD)': 9.80,
-        'Total FOB Value (Full Invoice)': 26100,
-        'Remarks': 'Reefer 40ft container #CRXU-89214 (Total FOB in 1st row covers full invoice)'
+        'Total Sales Value (USD)': 26100,
+        'Total FOB Value (USD)': 26100,
+        'Total FOB Value (INR)': 2205450,
+        'Total Purchase Value (INR)': 1563250,
+        'Remarks': 'Reefer 40ft container #CRXU-89214 (Total Sales Value & FOB values in 1st row cover full invoice)'
       },
       {
         'Invoice No': 'EXP-2026-001',
@@ -481,8 +407,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 50,
         'Net Weight (Kg)': 1000,
         'Rate per Kg (USD)': 6.50,
-        'Total FOB Value (Full Invoice)': '',
-        'Remarks': 'Line 2 of same invoice/date (FOB in row 1 applies to full invoice)'
+        'Total Sales Value (USD)': '',
+        'Total FOB Value (USD)': '',
+        'Total FOB Value (INR)': '',
+        'Total Purchase Value (INR)': '',
+        'Remarks': 'Line 2 of same invoice/date (Full invoice Sales & FOB values given in row 1)'
       },
       {
         'Invoice No': 'EXP-2026-002',
@@ -503,13 +432,16 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 80,
         'Net Weight (Kg)': 1600,
         'Rate per Kg (USD)': 11.20,
-        'Total FOB Value (Full Invoice)': 17920,
-        'Remarks': 'Blast frozen sashimi grade (Single product invoice FOB)'
+        'Total Sales Value (USD)': 17920,
+        'Total FOB Value (USD)': 17920,
+        'Total FOB Value (INR)': 1514240,
+        'Total Purchase Value (INR)': 1115400,
+        'Remarks': 'Blast frozen sashimi grade (Single product invoice with USD Sales & dual-currency FOB)'
       }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'SalesInvoices');
-    XLSX.writeFile(wb, 'Commercial_Export_Invoices_Template.xlsx');
+    XLSX.writeFile(wb, 'Export_Performance_Commercial_Invoices_Template.xlsx');
     return;
   }
 
@@ -579,8 +511,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 100,
         'Net Weight (Kg)': 2000,
         'Rate per Kg (USD)': 9.80,
-        'Total FOB Value (Full Invoice)': 26100,
-        'Remarks': 'Export batch 1 (Total FOB in 1st row covers full invoice)'
+        'Total Sales Value (USD)': 26100,
+        'Total FOB Value (USD)': 26100,
+        'Total FOB Value (INR)': 2205450,
+        'Total Purchase Value (INR)': 1563250,
+        'Remarks': 'Export batch 1 (Total Sales Value & FOB values in 1st row cover full invoice)'
       },
       {
         'Invoice No': 'EXP-2026-001',
@@ -599,8 +534,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 50,
         'Net Weight (Kg)': 1000,
         'Rate per Kg (USD)': 6.50,
-        'Total FOB Value (Full Invoice)': '',
-        'Remarks': 'Line 2 of same invoice/date (FOB in row 1 applies to full invoice)'
+        'Total Sales Value (USD)': '',
+        'Total FOB Value (USD)': '',
+        'Total FOB Value (INR)': '',
+        'Total Purchase Value (INR)': '',
+        'Remarks': 'Line 2 of same invoice/date (Full invoice Sales & FOB in row 1)'
       }
     ];
     const wsInv = XLSX.utils.json_to_sheet(invoicesData);

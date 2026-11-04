@@ -336,6 +336,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Sales Module'
     },
     {
+      id: 'sales-fob-dash',
+      title: 'FOB Performance Dashboard (USD & INR)',
+      subtitle: 'Dual-currency FOB valuations, total sales value, and Indian rupee conversions',
+      module: 'sales',
+      tab: 'fob-dashboard',
+      icon: BadgeDollarSign,
+      category: 'Sales Module'
+    },
+    {
       id: 'sales-invoices',
       title: 'Commercial Invoices & Shipments',
       subtitle: 'View export invoices, shipping bills and packing lists',

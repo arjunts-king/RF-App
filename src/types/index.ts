@@ -369,6 +369,9 @@ export interface SalesInvoiceLine {
   ratePerKg: number; // Rate per Kg (in invoice currency, e.g. USD/Kg)
   amountCurrency: number; // weightKg * ratePerKg (server-calculated, read-only)
   fobValueCurrency: number; // FOB Value in invoice currency
+  fobValueINR?: number; // FOB Value in Indian Rupees
+  purchaseValueCurrency?: number; // Purchase value in USD
+  purchaseValueINR?: number; // Purchase value in INR
 
   // Export Invoice Format Particulars
   productDescription?: string; // e.g. "FROZEN INDIAN MACKEREL – A GRADE"
@@ -415,6 +418,12 @@ export interface SalesInvoice {
   totalWeightKg: number;
   totalAmountCurrency: number; // Total Amount in USD
   totalFobValueCurrency: number; // Total FOB Value in USD
+  totalFobValueINR?: number; // Total FOB Value in Indian Rupees
+  totalPurchaseValueCurrency?: number; // Total Raw Purchase Value in USD
+  totalPurchaseValueINR?: number; // Total Raw Purchase Value in INR
+  grossProfitCurrency?: number; // Gross export profit (FOB USD - Purchase USD)
+  grossProfitINR?: number; // Gross export profit (FOB INR - Purchase INR)
+  profitMarginPct?: number; // Gross profit margin %
   estimatedAmountINR: number; // totalAmountCurrency * exchangeRate
 
   // Export Invoice Specific Particulars (Matching Official Export Sample)

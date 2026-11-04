@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -91,14 +91,25 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     editReason: ''
   });
 
-  // Lookups
-  const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
-  const gradeMap = new Map(grades.map((g) => [g.id, g]));
-  const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
-  const countMap = new Map(counts.map((c) => [c.id, c]));
-  const locationMap = new Map(locations.map((l) => [l.id, l]));
-  const expenseTypeMap = new Map(expenseTypes.map((e) => [e.id, e]));
+  // Memoized Lookups
+  const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
+  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+  const gradeMap = useMemo(() => new Map(grades.map((g) => [g.id, g])), [grades]);
+  const sizeMap = useMemo(() => new Map(sizes.map((sz) => [sz.id, sz])), [sizes]);
+  const countMap = useMemo(() => new Map(counts.map((c) => [c.id, c])), [counts]);
+  const locationMap = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
+  const expenseTypeMap = useMemo(() => new Map(expenseTypes.map((e) => [e.id, e])), [expenseTypes]);
+
+  // Precomputed returns by purchaseId Map to eliminate O(N*M) scans during rendering
+  const returnsByPurchaseId = useMemo(() => {
+    const map = new Map<string, number>();
+    (purchaseReturns || []).forEach((r) => {
+      if (!r.isVoided && r.purchaseId) {
+        map.set(r.purchaseId, (map.get(r.purchaseId) || 0) + r.returnedWeightKg);
+      }
+    });
+    return map;
+  }, [purchaseReturns]);
 
   // Filtered List
   const filteredPurchases = purchases.filter((p) => {
@@ -636,8 +647,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                   const spec = speciesMap.get(p.speciesId);
                   const sz = sizeMap.get(p.sizeId);
                   const cnt = countMap.get(p.countId);
-                  const lotReturns = (purchaseReturns || []).filter((r) => !r.isVoided && r.purchaseId === p.id);
-                  const totalReturnedKg = lotReturns.reduce((s, r) => s + r.returnedWeightKg, 0);
+                  const totalReturnedKg = returnsByPurchaseId.get(p.id) || 0;
                   const isSelected = selectedIds.includes(p.id);
 
                   return (

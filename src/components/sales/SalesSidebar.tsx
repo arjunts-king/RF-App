@@ -15,6 +15,7 @@ import {
 
 export type SalesNavTab =
   | 'sales-dashboard'
+  | 'fob-dashboard'
   | 'invoice-entry'
   | 'invoices'
   | 'realizations'
@@ -47,6 +48,7 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
       title: 'CORE COMMERCIAL',
       items: [
         { id: 'sales-dashboard', label: 'Commercial Dashboard', icon: TrendingUp, show: true },
+        { id: 'fob-dashboard', label: 'FOB Performance Dashboard', icon: BadgeDollarSign, show: true, badge: 'USD / INR' },
         {
           id: 'invoice-entry',
           label: 'Commercial Invoice Entry',
