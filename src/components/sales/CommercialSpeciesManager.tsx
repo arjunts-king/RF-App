@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -13,7 +13,9 @@ import {
   Trash2,
   Search,
   Download,
-  Hash
+  Hash,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -54,6 +56,7 @@ export const CommercialSpeciesManager: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [rawSpeciesFilter, setRawSpeciesFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Species | null>(null);
@@ -62,38 +65,82 @@ export const CommercialSpeciesManager: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  // Form State
+  // Form State for Commercial Product
   const [code, setCode] = useState('');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(''); // Export Ready Name
+  const [rawSpeciesName, setRawSpeciesName] = useState(''); // Purchase origin raw species
+  const [rawSpeciesId, setRawSpeciesId] = useState('');
+  const [isCustomRawSpecies, setIsCustomRawSpecies] = useState(false);
+  const [customRawSpeciesInput, setCustomRawSpeciesInput] = useState('');
   const [scientificName, setScientificName] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [productForm, setProductForm] = useState(PRODUCT_FORMS[0]);
   const [processingType, setProcessingType] = useState(PROCESSING_TYPES[0]);
   const [hsCode, setHsCode] = useState('');
 
+  // Collect distinct raw catch species names from procurement
+  const distinctPurchaseSpecies = useMemo(() => {
+    const set = new Set<string>();
+    species.forEach((s) => {
+      if (s.rawSpeciesName && s.rawSpeciesName.trim()) {
+        set.add(s.rawSpeciesName.trim());
+      } else if (s.name && s.name.trim()) {
+        set.add(s.name.trim());
+      }
+    });
+    // Add default popular procurement raw species if list is empty
+    if (set.size === 0) {
+      set.add('Vannamei Shrimp');
+      set.add('Black Tiger');
+      set.add('Yellowfin Tuna');
+      set.add('Indian Squid');
+      set.add('Cuttlefish');
+      set.add('Ribbon Fish');
+    }
+    return Array.from(set).sort();
+  }, [species]);
+
   const filteredSpecies = species.filter((sp) => {
     if (categoryFilter && sp.category !== categoryFilter) return false;
+    if (rawSpeciesFilter) {
+      const spRaw = (sp.rawSpeciesName || sp.name || '').toLowerCase();
+      if (spRaw !== rawSpeciesFilter.toLowerCase()) return false;
+    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const matchName = sp.name.toLowerCase().includes(q);
+      const matchRaw = (sp.rawSpeciesName || '').toLowerCase().includes(q);
       const matchCode = sp.code.toLowerCase().includes(q);
       const matchSci = sp.scientificName?.toLowerCase().includes(q);
       const matchHs = sp.hsCode?.toLowerCase().includes(q);
       const matchForm = sp.productForm?.toLowerCase().includes(q);
-      return matchName || matchCode || matchSci || matchHs || matchForm;
+      return matchName || matchRaw || matchCode || matchSci || matchHs || matchForm;
     }
     return true;
   });
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setCode(`SPE-${String(species.length + 1).padStart(3, '0')}`);
+    setCode(`PRD-${String(species.length + 1).padStart(3, '0')}`);
     setName('');
+    const defaultRaw = distinctPurchaseSpecies[0] || '';
+    setRawSpeciesName(defaultRaw);
+    setRawSpeciesId('');
+    setIsCustomRawSpecies(false);
+    setCustomRawSpeciesInput('');
     setScientificName('');
     setCategory(CATEGORIES[0]);
     setProductForm(PRODUCT_FORMS[0]);
     setProcessingType(PROCESSING_TYPES[0]);
     setHsCode('');
+
+    // Pre-populate scientific name and HSN from matched purchase species if available
+    const matched = species.find((s) => s.name.toLowerCase() === defaultRaw.toLowerCase());
+    if (matched) {
+      if (matched.scientificName) setScientificName(matched.scientificName);
+      if (matched.category && CATEGORIES.includes(matched.category)) setCategory(matched.category);
+      if (matched.hsCode) setHsCode(matched.hsCode);
+    }
     setIsModalOpen(true);
   };
 
@@ -101,6 +148,18 @@ export const CommercialSpeciesManager: React.FC = () => {
     setEditingId(sp.id);
     setCode(sp.code);
     setName(sp.name);
+    const existingRaw = sp.rawSpeciesName || sp.name;
+    const isKnown = distinctPurchaseSpecies.includes(existingRaw);
+    if (isKnown || !existingRaw) {
+      setRawSpeciesName(existingRaw);
+      setIsCustomRawSpecies(false);
+      setCustomRawSpeciesInput('');
+    } else {
+      setRawSpeciesName('__custom__');
+      setIsCustomRawSpecies(true);
+      setCustomRawSpeciesInput(existingRaw);
+    }
+    setRawSpeciesId(sp.rawSpeciesId || '');
     setScientificName(sp.scientificName || '');
     setCategory(sp.category || CATEGORIES[0]);
     setProductForm(sp.productForm || PRODUCT_FORMS[0]);
@@ -109,13 +168,43 @@ export const CommercialSpeciesManager: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handlePurchaseSpeciesSelect = (val: string) => {
+    if (val === '__custom__') {
+      setIsCustomRawSpecies(true);
+      setRawSpeciesName('__custom__');
+    } else {
+      setIsCustomRawSpecies(false);
+      setRawSpeciesName(val);
+      const matched = species.find((s) => s.name.toLowerCase() === val.toLowerCase());
+      if (matched) {
+        setRawSpeciesId(matched.id);
+        if (!scientificName && matched.scientificName) {
+          setScientificName(matched.scientificName);
+        }
+        if (matched.category && CATEGORIES.includes(matched.category)) {
+          setCategory(matched.category);
+        }
+        if (!hsCode && matched.hsCode) {
+          setHsCode(matched.hsCode);
+        }
+      }
+    }
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showToast('Please enter an export-ready product name.', 'error');
+      return;
+    }
+
+    const finalRawSpecies = isCustomRawSpecies ? customRawSpeciesInput.trim() : rawSpeciesName.trim();
 
     const payload = {
       code: code.trim().toUpperCase(),
-      name: name.trim(),
+      name: name.trim(), // Export Ready Product Name
+      rawSpeciesName: finalRawSpecies || undefined, // Purchase Origin Species Name
+      rawSpeciesId: rawSpeciesId || undefined,
       scientificName: scientificName.trim(),
       category: category.trim(),
       productForm: productForm.trim(),
@@ -126,10 +215,10 @@ export const CommercialSpeciesManager: React.FC = () => {
 
     if (editingId) {
       updateSpecies(editingId, payload);
-      showToast('Updated commercial product & species details.', 'success');
+      showToast('Updated commercial export product details.', 'success');
     } else {
       addSpecies(payload);
-      showToast('Registered new commercial product & species.', 'success');
+      showToast('Registered new commercial export product.', 'success');
     }
     setIsModalOpen(false);
   };
@@ -172,7 +261,8 @@ export const CommercialSpeciesManager: React.FC = () => {
 
     const data = targetSpecies.map((sp) => ({
       Code: sp.code,
-      CommercialName: sp.name,
+      ProductName: sp.name,
+      PurchaseSpecies: sp.rawSpeciesName || sp.name,
       ScientificName: sp.scientificName || '',
       Category: sp.category,
       ProductForm: sp.productForm || 'Standard',
@@ -183,16 +273,17 @@ export const CommercialSpeciesManager: React.FC = () => {
 
     const csv = convertToCSV(data, [
       { key: 'Code', label: 'Product Code' },
-      { key: 'CommercialName', label: 'Commercial Name' },
+      { key: 'ProductName', label: 'Product Name (Export Ready Name)' },
+      { key: 'PurchaseSpecies', label: 'Purchase Species' },
       { key: 'ScientificName', label: 'Scientific Name' },
       { key: 'Category', label: 'Category' },
       { key: 'ProductForm', label: 'Product Form' },
       { key: 'ProcessingType', label: 'Processing Type' },
-      { key: 'HSNCode', label: 'HSN Code' },
+      { key: 'HSNCode', label: 'HSN / HS Code' },
       { key: 'Status', label: 'Status' }
     ]);
 
-    downloadFile(csv, `Commercial_Species_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadFile(csv, `Commercial_Products_Selected_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const handleBulkToggleActive = () => {
@@ -201,7 +292,7 @@ export const CommercialSpeciesManager: React.FC = () => {
       toggleSpeciesActive(id);
       count++;
     }
-    showToast(`Updated status for ${count} species records.`, 'success');
+    showToast(`Updated status for ${count} product records.`, 'success');
     setSelectedIds([]);
   };
 
@@ -211,7 +302,7 @@ export const CommercialSpeciesManager: React.FC = () => {
       deleteSpecies(id);
       count++;
     }
-    showToast(`Deleted ${count} species records.`, 'success');
+    showToast(`Deleted ${count} product records.`, 'success');
     setIsBulkDeleteModalOpen(false);
     setSelectedIds([]);
   };
@@ -220,13 +311,13 @@ export const CommercialSpeciesManager: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Page Header */}
       <PageHeader
-        title="Commercial product & species master"
-        subtitle="Manage export seafood species, product packaging forms, processing methods, and customs HSN classification codes."
-        breadcrumbs={['Commercial Sales', 'Species & Product Master']}
+        title="Commercial product master"
+        subtitle="Manage export-ready seafood products, link to purchase raw material catch species, define product packaging forms, processing methods, and customs HSN codes."
+        breadcrumbs={['Commercial Sales', 'Product Master']}
         primaryAction={
           permissions.canManageSalesMasterData || permissions.canManageMasterData
             ? {
-                label: 'Add New Product / Species',
+                label: 'Add New Product',
                 onClick: handleOpenAdd,
                 icon: PlusCircle
               }
@@ -248,7 +339,7 @@ export const CommercialSpeciesManager: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
             <input
               type="text"
-              placeholder="Search by commercial name, code, HSN, form, scientific name..."
+              placeholder="Search product name, purchase species, code, HSN code, form..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
@@ -260,21 +351,79 @@ export const CommercialSpeciesManager: React.FC = () => {
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
-            <option value="">All Categories ({species.length})</option>
+            <option value="">All Categories</option>
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
               </option>
             ))}
           </select>
+
+          <select
+            value={rawSpeciesFilter}
+            onChange={(e) => setRawSpeciesFilter(e.target.value)}
+            className="text-xs font-medium px-3 py-2 bg-emerald-50/80 border border-emerald-200 text-emerald-900 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition"
+          >
+            <option value="">All Purchase Species ({distinctPurchaseSpecies.length})</option>
+            {distinctPurchaseSpecies.map((sp) => (
+              <option key={sp} value={sp}>
+                Raw: {sp}
+              </option>
+            ))}
+          </select>
         </div>
 
         <span className="text-xs text-ink-500 font-medium">
-          Showing <strong>{filteredSpecies.length}</strong> of {species.length} registered commercial products
+          Showing <strong>{filteredSpecies.length}</strong> of {species.length} registered export products
         </span>
       </div>
 
-      {/* Species Table */}
+      {/* Bulk Action Strip */}
+      {selectedIds.length > 0 && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 animate-slide-down">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold">
+              {selectedIds.length}
+            </span>
+            <span className="text-xs font-semibold text-rose-950">
+              {selectedIds.length} {selectedIds.length === 1 ? 'product selected' : 'products selected'} across views
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleBulkToggleActive}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-300 bg-white text-rose-800 hover:bg-rose-100/70 transition flex items-center gap-1.5"
+            >
+              Toggle Active Status
+            </button>
+            <button
+              onClick={handleBulkExportCSV}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-300 bg-white text-rose-800 hover:bg-rose-100/70 transition flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export Selected ({selectedIds.length})
+            </button>
+            {(permissions.canManageSalesMasterData || permissions.canManageMasterData) && (
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white transition flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete Selected
+              </button>
+            )}
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs font-semibold px-2.5 py-1.5 text-rose-700 hover:text-rose-950 transition"
+            >
+              Deselect All
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Products Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
@@ -293,7 +442,8 @@ export const CommercialSpeciesManager: React.FC = () => {
                   />
                 </th>
                 <th className="py-3 px-4">Code</th>
-                <th className="py-3 px-4">Commercial Name</th>
+                <th className="py-3 px-4">Product Name (Export Ready Name)</th>
+                <th className="py-3 px-4">Purchase Species (Raw Catch)</th>
                 <th className="py-3 px-4">Scientific Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Product Form</th>
@@ -308,14 +458,15 @@ export const CommercialSpeciesManager: React.FC = () => {
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredSpecies.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-ink-500">
+                  <td colSpan={11} className="py-12 text-center text-ink-500">
                     <Fish className="w-8 h-8 mx-auto mb-2 text-ink-400" />
-                    No commercial products match your criteria.
+                    No commercial export products match your criteria.
                   </td>
                 </tr>
               ) : (
                 filteredSpecies.map((sp) => {
                   const isSelected = selectedIds.includes(sp.id);
+                  const originRawSpecies = sp.rawSpeciesName || sp.name;
                   return (
                     <tr
                       key={sp.id}
@@ -336,7 +487,21 @@ export const CommercialSpeciesManager: React.FC = () => {
                           {sp.code}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-bold text-ink-900">{sp.name}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-ink-900 text-sm">{sp.name}</div>
+                        {sp.productForm && (
+                          <div className="text-[11px] text-ink-500 font-medium mt-0.5 flex items-center gap-1">
+                            <Layers className="w-3 h-3 text-ink-400" />
+                            <span>{sp.productForm} · {sp.processingType || 'Block Frozen'}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <Fish className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{originRawSpecies}</span>
+                        </span>
+                      </td>
                       <td className="py-3 px-4 italic text-ink-500">{sp.scientificName || '—'}</td>
                       <td className="py-3 px-4 text-ink-700">{sp.category}</td>
                       <td className="py-3 px-4 text-ink-700 font-medium">{sp.productForm || 'Standard'}</td>
@@ -368,20 +533,18 @@ export const CommercialSpeciesManager: React.FC = () => {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleOpenEdit(sp)}
-                              title="Edit Species & HSN Code"
-                              className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                              title="Edit product"
+                              className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
                             >
-                              <Pencil className="w-3.5 h-3.5" />
+                              <Pencil className="w-4 h-4" />
                             </button>
-                            {permissions.canPermanentlyDelete && (
-                              <button
-                                onClick={() => setDeleteTarget(sp)}
-                                title="Delete Species"
-                                className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => setDeleteTarget(sp)}
+                              title="Delete product"
+                              className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       )}
@@ -394,98 +557,81 @@ export const CommercialSpeciesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Bulk Action Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
-          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
-            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
-              {selectedIds.length}
-            </span>
-            <span>selected</span>
-          </span>
-
-          <button
-            onClick={handleBulkExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={handleBulkToggleActive}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 transition"
-          >
-            <span>Toggle Status</span>
-          </button>
-
-          {(permissions.canManageSalesMasterData || permissions.canPermanentlyDelete) && (
-            <button
-              onClick={() => setIsBulkDeleteModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Bulk Delete</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setSelectedIds([])}
-            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
-          >
-            Deselect
-          </button>
-        </div>
-      )}
-
-      {/* Add / Edit Species Modal */}
+      {/* Add / Edit Product Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingId ? 'Edit Commercial Product & Species' : 'Register New Commercial Product & Species'}
-        subtitle="Maintain commercial trade names, HSN codes, product forms and blast/block freezing types"
-        maxWidth="max-w-2xl"
+        title={editingId ? `Edit Product — ${code}` : 'Register New Commercial Product'}
+        subtitle="Export-ready commercial seafood product linked to purchase raw catch species"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
+          {/* Product Name (Export Ready Name) */}
+          <div>
+            <label className="block text-[11px] font-bold text-ink-800 mb-1">
+              Product Name (Export Ready Name) <span className="text-rose-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Frozen Raw Headless Shell-On Vannamei Shrimp / Yellowfin Tuna Steaks"
+              required
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold text-ink-900 outline-none focus:border-rose-400"
+            />
+            <p className="text-[10px] text-ink-500 mt-1">
+              Official export designation used on commercial shipping invoices, packing lists, and bill of lading.
+            </p>
+          </div>
+
+          {/* Purchase Species Selection */}
+          <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+            <label className="block text-[11px] font-bold text-emerald-950 mb-1 flex items-center gap-1.5">
+              <Fish className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Purchase Species (Raw Material Catch Origin) <span className="text-rose-600">*</span></span>
+            </label>
+            <select
+              value={isCustomRawSpecies ? '__custom__' : rawSpeciesName}
+              onChange={(e) => handlePurchaseSpeciesSelect(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-semibold text-emerald-950 outline-none focus:border-emerald-600"
+            >
+              <option value="">-- Select Origin Species from Purchase Module --</option>
+              {distinctPurchaseSpecies.map((spName) => (
+                <option key={spName} value={spName}>
+                  {spName}
+                </option>
+              ))}
+              <option value="__custom__">+ Enter Custom Raw Species Name...</option>
+            </select>
+
+            {isCustomRawSpecies && (
+              <div className="mt-2 animate-fade-in">
+                <input
+                  type="text"
+                  placeholder="Enter raw catch species name (e.g. Vannamei, Tiger, Yellowfin Tuna)"
+                  value={customRawSpeciesInput}
+                  onChange={(e) => setCustomRawSpeciesInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-bold text-ink-900 outline-none focus:border-emerald-600"
+                />
+              </div>
+            )}
+            <p className="text-[10px] text-emerald-800 mt-1 flex items-center gap-1">
+              <ArrowRight className="w-3 h-3 shrink-0" />
+              <span>Specifies which raw catch species from the Purchase Module this export product belongs to and is processed from.</span>
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 mb-1">
-                Product Code <span className="text-rose-600">*</span>
+                Product Code / SKU <span className="text-rose-600">*</span>
               </label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="e.g. SPE-001"
+                placeholder="e.g. PRD-001"
                 required
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">
-                Commercial Trade Name <span className="text-rose-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Vannamei White Shrimp / Tiger Shrimp"
-                required
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">Scientific Name (Latin)</label>
-              <input
-                type="text"
-                value={scientificName}
-                onChange={(e) => setScientificName(e.target.value)}
-                placeholder="e.g. Litopenaeus vannamei"
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl italic outline-none focus:border-rose-400"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-mono uppercase font-bold outline-none focus:border-rose-400"
               />
             </div>
 
@@ -502,6 +648,33 @@ export const CommercialSpeciesManager: React.FC = () => {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Scientific Name (Latin)</label>
+              <input
+                type="text"
+                value={scientificName}
+                onChange={(e) => setScientificName(e.target.value)}
+                placeholder="e.g. Litopenaeus vannamei"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl italic outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1 flex items-center gap-1">
+                <Hash className="w-3 h-3 text-amber-600" />
+                <span>Customs HSN Code</span>
+              </label>
+              <input
+                type="text"
+                value={hsCode}
+                onChange={(e) => setHsCode(e.target.value)}
+                placeholder="e.g. 03061790 (Shrimp), 03038990 (Fish)"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-mono text-xs font-bold text-ink-900 outline-none focus:border-rose-400"
+              />
             </div>
           </div>
 
@@ -537,23 +710,6 @@ export const CommercialSpeciesManager: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-rose-50/60 rounded-xl border border-rose-200">
-            <label className="block text-[11px] font-bold text-rose-950 mb-1 flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-rose-700" />
-              <span>Harmonized System (HSN) Code (Customs / Trade Tariff)</span>
-            </label>
-            <input
-              type="text"
-              value={hsCode}
-              onChange={(e) => setHsCode(e.target.value)}
-              placeholder="e.g. 03061790 (Shrimp/Prawn Frozen), 03038990 (Tuna Frozen), 03048900"
-              className="w-full px-3 py-2 bg-white border border-rose-300 rounded-xl font-mono text-xs font-bold text-rose-900 outline-none focus:border-rose-600 placeholder-rose-300"
-            />
-            <p className="text-[10px] text-rose-800 mt-1">
-              Required on commercial export invoices, shipping bills, certificate of origin, and e-invoicing declarations.
-            </p>
-          </div>
-
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
@@ -577,11 +733,11 @@ export const CommercialSpeciesManager: React.FC = () => {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         title={`Delete Product — ${deleteTarget?.name}`}
-        subtitle="Permanent purge from species repository"
+        subtitle="Permanent purge from commercial product repository"
       >
         <div className="space-y-4 text-xs">
           <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
-            <strong>Warning:</strong> You are about to permanently delete <strong>{deleteTarget?.name}</strong> ({deleteTarget?.code}).
+            <strong>Warning:</strong> You are about to permanently delete product <strong>{deleteTarget?.name}</strong> ({deleteTarget?.code}), derived from purchase species <em>{deleteTarget?.rawSpeciesName || deleteTarget?.name}</em>.
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -604,12 +760,12 @@ export const CommercialSpeciesManager: React.FC = () => {
       <Modal
         isOpen={isBulkDeleteModalOpen}
         onClose={() => setIsBulkDeleteModalOpen(false)}
-        title={`Delete ${selectedIds.length} Species / Product Records`}
-        subtitle="Permanent purge from species master"
+        title={`Bulk Delete (${selectedIds.length}) Selected Products`}
+        subtitle="Permanent purge from commercial product master"
       >
         <div className="space-y-4 text-xs">
           <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
-            <strong>Warning:</strong> You are about to permanently delete <strong>{selectedIds.length}</strong> selected species records.
+            <strong>Warning:</strong> You are about to permanently delete <strong>{selectedIds.length}</strong> selected products. This action cannot be undone.
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -622,7 +778,7 @@ export const CommercialSpeciesManager: React.FC = () => {
               onClick={handleBulkConfirmDelete}
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
-              Permanently Delete Selected
+              Yes, Delete {selectedIds.length} Products
             </button>
           </div>
         </div>
@@ -630,3 +786,5 @@ export const CommercialSpeciesManager: React.FC = () => {
     </div>
   );
 };
+
+export const CommercialProductManager = CommercialSpeciesManager;

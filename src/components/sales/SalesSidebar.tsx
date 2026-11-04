@@ -88,10 +88,10 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
         },
         {
           id: 'species',
-          label: 'Species / Product Master',
+          label: 'Product Master',
           icon: Fish,
           show: permissions.canManageSalesMasterData || permissions.canManageMasterData,
-          badge: 'HSN'
+          badge: 'Export/HSN'
         }
       ]
     },

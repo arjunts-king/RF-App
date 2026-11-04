@@ -60,6 +60,8 @@ export interface Species {
   productForm?: string; // e.g. "Whole", "HLSO", "PUD", "PD", "Steaks", "Fillets"
   processingType?: string; // e.g. "Block Frozen", "IQF", "Blast Frozen", "Plate Frozen", "Fresh/Chilled"
   hsCode?: string; // Harmonized System Code, e.g. "03061790" for Shrimps, "03038990" for Marine Fish
+  rawSpeciesName?: string; // Origin purchase raw species name e.g. "Vannamei Shrimp", "Yellowfin Tuna"
+  rawSpeciesId?: string; // Foreign key linking to purchase raw material species
   active: boolean;
 }
 

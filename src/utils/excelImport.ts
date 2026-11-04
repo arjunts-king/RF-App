@@ -190,14 +190,54 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
 
   if (type === 'species') {
     const data = [
-      { 'Code': 'VAN', 'Name': 'Vannamei Shrimp', 'Scientific Name': 'Litopenaeus vannamei', 'Category': 'Shrimp', 'HSN / HS Code': '03061790', 'Product Form': 'Headless Shell-On (HLSO)', 'Processing Type': 'Block Frozen' },
-      { 'Code': 'YFT', 'Name': 'Yellowfin Tuna', 'Scientific Name': 'Thunnus albacares', 'Category': 'Tuna', 'HSN / HS Code': '03038990', 'Product Form': 'Loins & Steaks', 'Processing Type': 'Plate Frozen' },
-      { 'Code': 'SQD', 'Name': 'Indian Squid', 'Scientific Name': 'Uroteuthis duvaucelii', 'Category': 'Cephalopod', 'HSN / HS Code': '03074310', 'Product Form': 'Cleaned Tubes & Rings', 'Processing Type': 'Blast Frozen' },
-      { 'Code': 'POM', 'Name': 'Silver Pomfret', 'Scientific Name': 'Pampus argenteus', 'Category': 'White Fish', 'HSN / HS Code': '03038990', 'Product Form': 'Whole Fresh/Frozen', 'Processing Type': 'Block Frozen' }
+      {
+        'Product Code': 'PRD-001',
+        'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
+        'Purchase Species Name': 'Vannamei Shrimp',
+        'Scientific Name': 'Litopenaeus vannamei',
+        'Category': 'Shrimp / Prawns',
+        'Product Form': 'Headless Shell-On (HLSO)',
+        'Processing Type': 'Block Frozen',
+        'HSN / HS Code': '03061790',
+        'Active': 'Yes'
+      },
+      {
+        'Product Code': 'PRD-002',
+        'Product Name (Export Ready Name)': 'Yellowfin Tuna Steaks (CO Treated)',
+        'Purchase Species Name': 'Yellowfin Tuna',
+        'Scientific Name': 'Thunnus albacares',
+        'Category': 'Fish',
+        'Product Form': 'Steaks',
+        'Processing Type': 'Individually Quick Frozen (IQF)',
+        'HSN / HS Code': '03038990',
+        'Active': 'Yes'
+      },
+      {
+        'Product Code': 'PRD-003',
+        'Product Name (Export Ready Name)': 'Indian Squid Cleaned Tubes & Rings',
+        'Purchase Species Name': 'Indian Squid',
+        'Scientific Name': 'Uroteuthis duvaucelii',
+        'Category': 'Cephalopods (Squid / Cuttlefish / Octopus)',
+        'Product Form': 'Tubes / Rings',
+        'Processing Type': 'Blast Frozen',
+        'HSN / HS Code': '03074310',
+        'Active': 'Yes'
+      },
+      {
+        'Product Code': 'PRD-004',
+        'Product Name (Export Ready Name)': 'Black Tiger Head-On Shell-On Raw',
+        'Purchase Species Name': 'Black Tiger',
+        'Scientific Name': 'Penaeus monodon',
+        'Category': 'Shrimp / Prawns',
+        'Product Form': 'Head-On Shell-On (HOSO)',
+        'Processing Type': 'Semi-IQF',
+        'HSN / HS Code': '03061790',
+        'Active': 'Yes'
+      }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'Species');
-    XLSX.writeFile(wb, 'Species_Import_Template.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    XLSX.writeFile(wb, 'Commercial_Product_Master_Template.xlsx');
     return;
   }
 
@@ -411,7 +451,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'Final Destination Port': 'Tokyo Port (JPTYO)',
         'Currency': 'USD',
         'Exchange Rate': 84.50,
-        'Product / Species': 'Vannamei Shrimp',
+        'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
+        'Purchase Species': 'Vannamei Shrimp',
         'HS Code': '03061790',
         'Size': 'Medium',
         'Count': '21/25',
@@ -432,7 +473,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'Final Destination Port': 'Tokyo Port (JPTYO)',
         'Currency': 'USD',
         'Exchange Rate': 84.50,
-        'Product / Species': 'Indian Squid',
+        'Product Name (Export Ready Name)': 'Indian Squid Cleaned Tubes & Rings',
+        'Purchase Species': 'Indian Squid',
         'HS Code': '03074320',
         'Size': 'Large',
         'Count': '',
@@ -453,7 +495,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'Final Destination Port': 'Port of Los Angeles (USLAX)',
         'Currency': 'USD',
         'Exchange Rate': 84.50,
-        'Product / Species': 'Yellowfin Tuna',
+        'Product Name (Export Ready Name)': 'Yellowfin Tuna Steaks (CO Treated)',
+        'Purchase Species': 'Yellowfin Tuna',
         'HS Code': '03038990',
         'Size': 'Extra Large',
         'Count': '',
@@ -528,7 +571,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'Final Destination Port': 'Tokyo Port (JPTYO)',
         'Currency': 'USD',
         'Exchange Rate': 84.50,
-        'Product / Species': 'Vannamei Shrimp',
+        'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
+        'Purchase Species': 'Vannamei Shrimp',
         'HS Code': '03061790',
         'Size': 'Medium',
         'Count': '21/25',
@@ -541,6 +585,33 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     ];
     const wsInv = XLSX.utils.json_to_sheet(invoicesData);
     XLSX.utils.book_append_sheet(wb, wsInv, 'SalesInvoices');
+
+    const productsData = [
+      {
+        'Product Code': 'PRD-001',
+        'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
+        'Purchase Species Name': 'Vannamei Shrimp',
+        'Scientific Name': 'Litopenaeus vannamei',
+        'Category': 'Shrimp / Prawns',
+        'Product Form': 'Headless Shell-On (HLSO)',
+        'Processing Type': 'Block Frozen',
+        'HSN / HS Code': '03061790',
+        'Active': 'Yes'
+      },
+      {
+        'Product Code': 'PRD-002',
+        'Product Name (Export Ready Name)': 'Yellowfin Tuna Steaks (CO Treated)',
+        'Purchase Species Name': 'Yellowfin Tuna',
+        'Scientific Name': 'Thunnus albacares',
+        'Category': 'Fish',
+        'Product Form': 'Steaks',
+        'Processing Type': 'Individually Quick Frozen (IQF)',
+        'HSN / HS Code': '03038990',
+        'Active': 'Yes'
+      }
+    ];
+    const wsProd = XLSX.utils.json_to_sheet(productsData);
+    XLSX.utils.book_append_sheet(wb, wsProd, 'Products');
 
     const custData = [
       {

@@ -1157,10 +1157,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                           onChange={(e) => handleSpeciesChange(l.id, e.target.value)}
                           className="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] text-ink-500"
                         >
-                          <option value="">Select Master species...</option>
+                          <option value="">Select Product...</option>
                           {species.map((sp) => (
                             <option key={sp.id} value={sp.id}>
-                              {sp.name} {sp.hsCode ? `[HSN: ${sp.hsCode}]` : ''}
+                              {sp.name} {sp.rawSpeciesName ? `(Raw: ${sp.rawSpeciesName})` : ''} {sp.hsCode ? `[HSN: ${sp.hsCode}]` : ''}
                             </option>
                           ))}
                         </select>

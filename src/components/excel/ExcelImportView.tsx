@@ -245,9 +245,9 @@ export const ExcelImportView: React.FC<{
     },
     {
       id: 'species',
-      label: 'Export Product Varieties',
+      label: 'Product Master',
       icon: Fish,
-      desc: 'Commercial seafood products with Harmonized System (HS) trade codes'
+      desc: 'Export-ready commercial products, purchase species link & customs HSN codes'
     },
     {
       id: 'sizes',

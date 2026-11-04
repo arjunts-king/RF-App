@@ -2460,20 +2460,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!hasData) return;
 
       const rawName = getFlexibleValue(row, [
+        'productnameexportreadyname',
+        'exportreadyname',
+        'exportproductname',
+        'productname',
+        'product',
         'speciesname',
         'species',
         'fish',
-        'productname',
-        'product',
         'item',
         'variety',
         'name'
       ]);
       const name = String(rawName || '').trim();
       if (!name) {
-        errors.push(`Row ${idx + 1}: Species name is required.`);
+        errors.push(`Row ${idx + 1}: Product / Species name is required.`);
         return;
       }
+      const rawPurchaseSpecies = getFlexibleValue(row, [
+        'purchasespeciesname',
+        'purchasespecies',
+        'rawspeciesname',
+        'rawspecies',
+        'speciesfrompurchase',
+        'origincatchspecies',
+        'speciesorigin'
+      ]);
+      const rawSpeciesName = rawPurchaseSpecies ? String(rawPurchaseSpecies).trim() : undefined;
       const rawCode = getFlexibleValue(row, ['speciescode', 'code', 'productcode', 'itemcode']);
       const code = rawCode ? String(rawCode).trim() : name.slice(0, 3).toUpperCase();
       const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
@@ -2493,6 +2506,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentList[existingIdx] = {
           ...currentList[existingIdx],
           name,
+          rawSpeciesName: rawSpeciesName || currentList[existingIdx].rawSpeciesName,
           scientificName: scientificName || currentList[existingIdx].scientificName,
           category: category || currentList[existingIdx].category,
           hsCode: rawHsCode || currentList[existingIdx].hsCode,
@@ -2505,6 +2519,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `sp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
           code,
           name,
+          rawSpeciesName,
           scientificName,
           category,
           hsCode: rawHsCode,
@@ -4019,7 +4034,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const lineItems: SalesInvoiceLine[] = [];
 
       rows.forEach(({ row, rowNum }) => {
-        const rawSpec = String(getFlexibleValue(row, ['product', 'species', 'speciesname', 'item', 'description']) || '').trim();
+        const rawSpec = String(
+          getFlexibleValue(row, [
+            'productnameexportreadyname',
+            'productname',
+            'product',
+            'exportproduct',
+            'species',
+            'speciesname',
+            'item',
+            'description'
+          ]) || ''
+        ).trim();
+        const rawPurchaseSpec = String(
+          getFlexibleValue(row, ['purchasespecies', 'purchasespeciesname', 'rawspecies', 'rawspeciesname']) || ''
+        ).trim();
         let matchedSpec = mutableSpecies.find(
           (sp) => sp.code.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase().includes(rawSpec.toLowerCase())
         );
@@ -4028,6 +4057,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: `sp-${Date.now()}-${mutableSpecies.length + 1}`,
             code: rawSpec.substring(0, 3).toUpperCase(),
             name: rawSpec,
+            rawSpeciesName: rawPurchaseSpec || undefined,
             scientificName: '',
             category: 'Export Finish',
             hsCode: String(getFlexibleValue(row, ['hscode', 'hs']) || '03061790'),
