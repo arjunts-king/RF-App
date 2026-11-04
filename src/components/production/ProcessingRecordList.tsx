@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { DailyProcessingEntry } from '../../types';
 import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
@@ -34,6 +35,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
     deleteProcessingEntryPermanently
   } = useData();
   const { permissions } = useAuth();
+  const { showToast } = useToast();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +44,12 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
   const [shiftFilter, setShiftFilter] = useState('');
   const [varianceOnlyFilter, setVarianceOnlyFilter] = useState(false);
   const [showVoided, setShowVoided] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkVoidModalOpen, setIsBulkVoidModalOpen] = useState(false);
+  const [bulkVoidReason, setBulkVoidReason] = useState('');
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   // Modals
   const [selectedEntry, setSelectedEntry] = useState<DailyProcessingEntry | null>(null);
@@ -162,6 +170,119 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
     if (res.success) {
       setDeleteModalTarget(null);
     }
+  };
+
+  // Bulk Selection Helpers & Actions
+  const allFilteredSelected =
+    filteredEntries.length > 0 &&
+    filteredEntries.every((p) => selectedIds.includes(p.id));
+  const someFilteredSelected =
+    filteredEntries.some((p) => selectedIds.includes(p.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIdSet = new Set(filteredEntries.map((p) => p.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const combined = new Set([...selectedIds, ...filteredEntries.map((p) => p.id)]);
+      setSelectedIds(Array.from(combined));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedEntries = filteredEntries.filter((p) => selectedIds.includes(p.id));
+    if (selectedEntries.length === 0) return;
+    const exportData = selectedEntries.map((p) => {
+      const supp = supplierMap.get(p.supplierId);
+      const spec = speciesMap.get(p.speciesId);
+      const grd = gradeMap.get(p.gradeId);
+      const sz = sizeMap.get(p.sizeId);
+      const cnt = countMap.get(p.countId || '');
+      const slb = slabTypeMap.get(p.slabTypeId);
+
+      return {
+        EntryNo: p.entryNo,
+        Date: p.processingDate,
+        Shift: p.shift,
+        Supplier: supp?.name || 'N/A',
+        BoxID: p.supplierBoxId || 'None',
+        Species: spec?.name || 'N/A',
+        Grade: grd?.name || 'N/A',
+        Size: sz?.name || 'N/A',
+        Count: cnt?.name || 'N/A',
+        SlabType: slb?.name || 'N/A',
+        StdSlabWeight: p.standardSlabWeightKg,
+        SlabsCount: p.slabsCount,
+        ExpectedWeightKg: p.expectedWeightKg,
+        ProcessedWeightKg: p.processedWeightKg,
+        RejectionWeightKg: p.rejectionWeightKg,
+        VarianceKg: p.varianceWeightKg,
+        VariancePct: p.variancePct,
+        HasVariance: p.hasSlabVariance ? 'Yes' : 'No',
+        Operator: p.operator,
+        Remarks: p.remarks || '',
+        Voided: p.isVoided ? 'Yes' : 'No',
+        VoidReason: p.voidReason || ''
+      };
+    });
+
+    const csvStr = convertToCSV(exportData, [
+      { key: 'EntryNo', label: 'Entry #' },
+      { key: 'Date', label: 'Date' },
+      { key: 'Shift', label: 'Shift' },
+      { key: 'Supplier', label: 'Supplier' },
+      { key: 'BoxID', label: 'Box ID' },
+      { key: 'Species', label: 'Species' },
+      { key: 'Grade', label: 'Grade' },
+      { key: 'Size', label: 'Size' },
+      { key: 'Count', label: 'Count' },
+      { key: 'SlabType', label: 'Slab Type' },
+      { key: 'StdSlabWeight', label: 'Std Slab Wt (Kg)' },
+      { key: 'SlabsCount', label: 'Slabs Count' },
+      { key: 'ExpectedWeightKg', label: 'Expected Wt (Kg)' },
+      { key: 'ProcessedWeightKg', label: 'Actual Processed Wt (Kg)' },
+      { key: 'RejectionWeightKg', label: 'Rejection Wt (Kg)' },
+      { key: 'VarianceKg', label: 'Variance (Kg)' },
+      { key: 'VariancePct', label: 'Variance %' },
+      { key: 'HasVariance', label: 'Variance Alert' },
+      { key: 'Operator', label: 'Operator' },
+      { key: 'Remarks', label: 'Remarks' },
+      { key: 'Voided', label: 'Voided' },
+      { key: 'VoidReason', label: 'Void Reason' }
+    ]);
+
+    downloadFile(csvStr, `Daily_Processing_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleBulkConfirmVoid = () => {
+    if (!bulkVoidReason.trim()) return;
+    const targetEntries = processingEntries.filter((p) => selectedIds.includes(p.id) && !p.isVoided);
+    let count = 0;
+    for (const p of targetEntries) {
+      const res = voidProcessingEntry(p.id, bulkVoidReason.trim());
+      if (res.success) count++;
+    }
+    showToast(`Successfully voided ${count} daily processing records.`, 'success');
+    setIsBulkVoidModalOpen(false);
+    setBulkVoidReason('');
+    setSelectedIds([]);
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      const res = deleteProcessingEntryPermanently(id);
+      if (res.success) count++;
+    }
+    showToast(`Permanently deleted ${count} daily processing records.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
   };
 
   const handleExportCSV = () => {
@@ -361,6 +482,18 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-bold text-ink-500 uppercase tracking-wider">
+                <th className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someFilteredSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    title={allFilteredSelected ? 'Deselect all visible' : 'Select all visible'}
+                  />
+                </th>
                 <th className="py-3 px-4">Entry # &amp; Shift</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Supplier &amp; Box ID</th>
@@ -375,7 +508,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
             <tbody className="divide-y divide-gray-100 text-xs font-medium text-ink-900">
               {filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-ink-500">
+                  <td colSpan={10} className="py-12 text-center text-ink-500">
                     No production entries match the selected filters.
                   </td>
                 </tr>
@@ -387,14 +520,23 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                   const sz = sizeMap.get(p.sizeId);
                   const cnt = countMap.get(p.countId || '');
                   const slb = slabTypeMap.get(p.slabTypeId);
+                  const isSelected = selectedIds.includes(p.id);
 
                   return (
                     <tr
                       key={p.id}
                       className={`hover:bg-rose-50/40 transition-colors ${
-                        p.isVoided ? 'bg-gray-50/60 opacity-60' : ''
-                      }`}
+                        isSelected ? 'bg-rose-50/70 font-medium' : ''
+                      } ${p.isVoided ? 'bg-gray-50/60 opacity-60' : ''}`}
                     >
+                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(p.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-bold text-rose-700 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           {p.entryNo}
@@ -515,6 +657,56 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
           </table>
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {permissions.canVoid && (
+            <button
+              onClick={() => {
+                setBulkVoidReason('');
+                setIsBulkVoidModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span>Bulk Void</span>
+            </button>
+          )}
+
+          {permissions.canPermanentlyDelete && (
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bulk Delete</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* DETAIL INSPECTION MODAL */}
       <Modal
@@ -870,6 +1062,74 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-full font-bold transition"
             >
               Permanently Purge Record
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* BULK VOID MODAL */}
+      <Modal
+        isOpen={isBulkVoidModalOpen}
+        onClose={() => setIsBulkVoidModalOpen(false)}
+        title={`Bulk Void: ${selectedIds.length} Processing Records`}
+        subtitle="Deactivate yield calculations for selected entries with recorded reason"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700">
+            You are about to void <strong>{selectedIds.length}</strong> selected production records. Their weighment will be excluded from production dashboards while preserved in audit logs.
+          </p>
+          <div>
+            <label className="block font-bold text-ink-700 mb-1">
+              Reason for Bulk Voiding <span className="text-rose-600">*</span>
+            </label>
+            <textarea
+              rows={2}
+              value={bulkVoidReason}
+              onChange={(e) => setBulkVoidReason(e.target.value)}
+              placeholder="e.g. Bulk shift correction, duplicate imports..."
+              className="w-full p-2.5 bg-gray-50 border rounded-xl outline-none text-xs"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setIsBulkVoidModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmVoid}
+              disabled={!bulkVoidReason.trim()}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-full font-bold transition"
+            >
+              Confirm Bulk Void
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK DELETE MODAL (OWNER / ADMIN ONLY) */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`Permanent Purge: ${selectedIds.length} Records`}
+        subtitle="Exclusive Owner / Admin permanent deletion authority"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently purge <strong>{selectedIds.length}</strong> production records. This action cannot be undone.
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmDelete}
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-full font-bold transition"
+            >
+              Permanently Purge Selected
             </button>
           </div>
         </div>

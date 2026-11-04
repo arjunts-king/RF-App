@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
 import { StatusBadge } from '../common/StatusBadge';
@@ -26,12 +27,17 @@ export const CustomerManager: React.FC = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer, toggleCustomerActive, bulkImportCustomers } =
     useData();
   const { permissions } = useAuth();
+  const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   // Form State
   const [code, setCode] = useState('');
@@ -127,6 +133,72 @@ export const CustomerManager: React.FC = () => {
     if (!deleteTarget) return;
     deleteCustomer(deleteTarget.id);
     setDeleteTarget(null);
+  };
+
+  // Bulk Selection Helpers & Actions
+  const allFilteredSelected =
+    filteredCustomers.length > 0 &&
+    filteredCustomers.every((c) => selectedIds.includes(c.id));
+  const someFilteredSelected =
+    filteredCustomers.some((c) => selectedIds.includes(c.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIdSet = new Set(filteredCustomers.map((c) => c.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const combined = new Set([...selectedIds, ...filteredCustomers.map((c) => c.id)]);
+      setSelectedIds(Array.from(combined));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedCusts = filteredCustomers.filter((c) => selectedIds.includes(c.id));
+    if (selectedCusts.length === 0) return;
+    const data = selectedCusts.map((c) => ({
+      Code: c.code,
+      Name: c.name,
+      Country: c.country,
+      Address: c.address,
+      ContactPerson: c.contactPerson,
+      Phone: c.phone,
+      Email: c.email,
+      TaxID: c.taxId,
+      BankDetails: c.bankDetails,
+      Active: c.active ? 'Yes' : 'No'
+    }));
+
+    const csv = convertToCSV(data, [
+      { key: 'Code', label: 'Customer Code' },
+      { key: 'Name', label: 'Customer Name' },
+      { key: 'Country', label: 'Country' },
+      { key: 'Address', label: 'Address' },
+      { key: 'ContactPerson', label: 'Contact Person' },
+      { key: 'Phone', label: 'Phone' },
+      { key: 'Email', label: 'Email' },
+      { key: 'TaxID', label: 'Tax ID / GSTIN' },
+      { key: 'BankDetails', label: 'Realization Bank Details' },
+      { key: 'Active', label: 'Active Status' }
+    ]);
+
+    downloadFile(csv, `Customers_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      deleteCustomer(id);
+      count++;
+    }
+    showToast(`Deleted ${count} customers.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
   };
 
   const handleExportCSV = () => {
@@ -241,6 +313,21 @@ export const CustomerManager: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {filteredCustomers.length > 0 && (
+            <label className="flex items-center gap-2 text-xs font-semibold text-ink-700 cursor-pointer px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition shadow-xs">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = someFilteredSelected;
+                }}
+                onChange={handleToggleSelectAll}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+              />
+              <span>Select All</span>
+            </label>
+          )}
+
           {permissions.canManageSalesMasterData && (
             <label className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-xs">
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
@@ -257,28 +344,40 @@ export const CustomerManager: React.FC = () => {
 
       {/* Customer Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredCustomers.map((c) => (
-          <div
-            key={c.id}
-            className={`p-6 rounded-2xl border transition-all ${
-              c.active
-                ? 'bg-white border-gray-100 shadow-xs hover:border-rose-300'
-                : 'bg-gray-50/70 border-gray-200 opacity-60'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-                    {c.code}
-                  </span>
-                  <span className="text-[11px] font-semibold text-ink-500 flex items-center gap-1">
-                    <Globe className="w-3 h-3 text-ink-400" />
-                    {c.country}
-                  </span>
+        {filteredCustomers.map((c) => {
+          const isSelected = selectedIds.includes(c.id);
+          return (
+            <div
+              key={c.id}
+              className={`p-6 rounded-2xl border transition-all ${
+                isSelected
+                  ? 'bg-rose-50/40 border-rose-400 ring-2 ring-rose-400/50 shadow-sm'
+                  : c.active
+                  ? 'bg-white border-gray-100 shadow-xs hover:border-rose-300'
+                  : 'bg-gray-50/70 border-gray-200 opacity-60'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => handleToggleSelectRow(c.id)}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                        {c.code}
+                      </span>
+                      <span className="text-[11px] font-semibold text-ink-500 flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-ink-400" />
+                        {c.country}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-ink-900 mt-2 leading-snug">{c.name}</h3>
+                  </div>
                 </div>
-                <h3 className="text-sm font-bold text-ink-900 mt-2 leading-snug">{c.name}</h3>
-              </div>
 
               {permissions.canManageSalesMasterData && (
                 <div className="flex items-center gap-1">
@@ -350,7 +449,8 @@ export const CustomerManager: React.FC = () => {
               )}
             </div>
           </div>
-        ))}
+        );
+      })}
 
         {filteredCustomers.length === 0 && (
           <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-gray-200 space-y-3">
@@ -362,6 +462,43 @@ export const CustomerManager: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {permissions.canPermanentlyDelete && (
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bulk Delete</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* Add / Edit Customer Modal */}
       <Modal
@@ -525,6 +662,33 @@ export const CustomerManager: React.FC = () => {
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Permanently Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* Bulk Delete Modal */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`Delete ${selectedIds.length} Customers`}
+        subtitle="Permanent purge from customer master"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently delete <strong>{selectedIds.length}</strong> selected customers. This will permanently remove their records from active lookups.
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmDelete}
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
+            >
+              Permanently Delete Selected
             </button>
           </div>
         </div>

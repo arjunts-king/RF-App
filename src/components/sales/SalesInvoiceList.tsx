@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
@@ -37,6 +38,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     deleteSalesInvoicePermanently
   } = useData();
   const { permissions } = useAuth();
+  const { showToast } = useToast();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,6 +46,12 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
   const [podFilter, setPodFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showVoided, setShowVoided] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkVoidModalOpen, setIsBulkVoidModalOpen] = useState(false);
+  const [bulkVoidReason, setBulkVoidReason] = useState('');
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   // Modals
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
@@ -141,6 +149,107 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     if (!deleteTarget) return;
     deleteSalesInvoicePermanently(deleteTarget.id);
     setDeleteTarget(null);
+  };
+
+  // Bulk Selection Helpers & Actions
+  const allFilteredSelected =
+    filteredInvoices.length > 0 &&
+    filteredInvoices.every((inv) => selectedIds.includes(inv.id));
+  const someFilteredSelected =
+    filteredInvoices.some((inv) => selectedIds.includes(inv.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIdSet = new Set(filteredInvoices.map((inv) => inv.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const combined = new Set([...selectedIds, ...filteredInvoices.map((inv) => inv.id)]);
+      setSelectedIds(Array.from(combined));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedInvoices = filteredInvoices.filter((inv) => selectedIds.includes(inv.id));
+    if (selectedInvoices.length === 0) return;
+    const exportData = selectedInvoices.map((inv) => {
+      const consignee = customerMap.get(inv.consigneeId);
+      const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
+      const pod = portMap.get(inv.portOfDischargeId);
+      const pol = portMap.get(inv.portOfLoadingId);
+
+      return {
+        InvoiceNo: inv.invoiceNo,
+        Date: inv.invoiceDate,
+        Consignee: consignee?.name || '',
+        Buyer: buyer?.name || '',
+        Country: consignee?.country || '',
+        POL: pol?.name || '',
+        POD: pod?.name || '',
+        Currency: inv.currency,
+        TotalWeightKg: inv.totalWeightKg,
+        TotalAmount: inv.totalAmountCurrency,
+        FOBValue: inv.totalFobValueCurrency,
+        EstimatedINR: inv.estimatedAmountINR,
+        RealizedAmount: inv.totalRealizedCurrency,
+        BalanceUSD: inv.balanceRealizationCurrency,
+        RealizedINR: inv.totalRealizedINR,
+        Status: inv.realizationStatus,
+        Voided: inv.isVoided ? 'Yes' : 'No'
+      };
+    });
+
+    const csvStr = convertToCSV(exportData, [
+      { key: 'InvoiceNo', label: 'Invoice No' },
+      { key: 'Date', label: 'Invoice Date' },
+      { key: 'Consignee', label: 'Consignee / Customer' },
+      { key: 'Buyer', label: 'Buyer' },
+      { key: 'Country', label: 'Country' },
+      { key: 'POL', label: 'Port of Loading' },
+      { key: 'POD', label: 'Port of Discharge' },
+      { key: 'Currency', label: 'Currency' },
+      { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
+      { key: 'TotalAmount', label: 'Total Invoice Value' },
+      { key: 'FOBValue', label: 'FOB Value' },
+      { key: 'EstimatedINR', label: 'Estimated INR Value' },
+      { key: 'RealizedAmount', label: 'Realized Value' },
+      { key: 'BalanceUSD', label: 'Balance Realization' },
+      { key: 'RealizedINR', label: 'Realized INR' },
+      { key: 'Status', label: 'Realization Status' },
+      { key: 'Voided', label: 'Voided' }
+    ]);
+
+    downloadFile(csvStr, `Export_Invoices_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleBulkConfirmVoid = () => {
+    if (!bulkVoidReason.trim()) return;
+    const targetInvoices = salesInvoices.filter((inv) => selectedIds.includes(inv.id) && !inv.isVoided);
+    let count = 0;
+    for (const inv of targetInvoices) {
+      voidSalesInvoice(inv.id, bulkVoidReason.trim());
+      count++;
+    }
+    showToast(`Successfully voided ${count} export invoices.`, 'success');
+    setIsBulkVoidModalOpen(false);
+    setBulkVoidReason('');
+    setSelectedIds([]);
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      deleteSalesInvoicePermanently(id);
+      count++;
+    }
+    showToast(`Permanently deleted ${count} export invoices.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
   };
 
   const handleExportCSV = () => {
@@ -346,6 +455,18 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                <th className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someFilteredSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    title={allFilteredSelected ? 'Deselect all visible' : 'Select all visible'}
+                  />
+                </th>
                 <th className="py-3 px-3">Invoice #</th>
                 <th className="py-3 px-3">Date</th>
                 <th className="py-3 px-3 min-w-[170px]">Consignee &amp; Destination</th>
@@ -360,7 +481,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-ink-500">
+                  <td colSpan={10} className="py-12 text-center text-ink-500">
                     <FileText className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     No commercial export invoices found.
                   </td>
@@ -369,14 +490,23 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                 filteredInvoices.map((inv) => {
                   const consignee = customerMap.get(inv.consigneeId);
                   const pod = portMap.get(inv.portOfDischargeId);
+                  const isSelected = selectedIds.includes(inv.id);
 
                   return (
                     <tr
                       key={inv.id}
                       className={`hover:bg-rose-50/25 transition-colors ${
-                        inv.isVoided ? 'bg-rose-50/40 text-ink-400' : ''
-                      }`}
+                        isSelected ? 'bg-rose-50/70 font-medium' : ''
+                      } ${inv.isVoided ? 'bg-rose-50/40 text-ink-400' : ''}`}
                     >
+                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(inv.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        />
+                      </td>
                       {/* Invoice No */}
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5">
@@ -520,6 +650,56 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
           </table>
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {permissions.canVoid && (
+            <button
+              onClick={() => {
+                setBulkVoidReason('');
+                setIsBulkVoidModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span>Bulk Void</span>
+            </button>
+          )}
+
+          {permissions.canPermanentlyDelete && (
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bulk Delete</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* Realization Modal */}
       <RealizationModal
@@ -685,6 +865,74 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Permanently Purge Record
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* BULK VOID MODAL */}
+      <Modal
+        isOpen={isBulkVoidModalOpen}
+        onClose={() => setIsBulkVoidModalOpen(false)}
+        title={`Bulk Void: ${selectedIds.length} Sales Invoices`}
+        subtitle="Soft-delete selected export invoices with full audit tracking"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700 leading-relaxed">
+            Voiding <strong>{selectedIds.length}</strong> export invoices will deactivate them from commercial reports and dashboards while preserving an immutable surveillance trail.
+          </p>
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">
+              Reason for Bulk Voiding <span className="text-rose-600">*</span>
+            </label>
+            <textarea
+              rows={2}
+              value={bulkVoidReason}
+              onChange={(e) => setBulkVoidReason(e.target.value)}
+              placeholder="e.g. Shipment schedule cancellations across container booking..."
+              className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs outline-none focus:border-rose-400"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsBulkVoidModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmVoid}
+              disabled={!bulkVoidReason.trim()}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold rounded-xl transition"
+            >
+              Confirm Bulk Void
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK DELETE CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`Permanent Bulk Purge — ${selectedIds.length} Invoices`}
+        subtitle="Exclusive Owner / Admin permanent deletion authority"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
+            <strong>Warning:</strong> You are about to permanently purge <strong>{selectedIds.length}</strong> export invoices from the database. This action cannot be undone.
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmDelete}
+              className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
+            >
+              Permanently Purge Selected
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { PurchaseReturn, PurchaseReturnReason, Purchase } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
@@ -58,6 +59,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
   } = useData();
 
   const { permissions } = useAuth();
+  const { showToast } = useToast();
 
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +68,12 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showVoided, setShowVoided] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkVoidModalOpen, setIsBulkVoidModalOpen] = useState(false);
+  const [bulkVoidReason, setBulkVoidReason] = useState('');
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   // Modals state
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -396,6 +404,112 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     return true;
   });
 
+  // Bulk Selection Helpers & Actions
+  const allFilteredSelected =
+    filteredReturns.length > 0 &&
+    filteredReturns.every((r) => selectedIds.includes(r.id));
+  const someFilteredSelected =
+    filteredReturns.some((r) => selectedIds.includes(r.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIdSet = new Set(filteredReturns.map((r) => r.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const combined = new Set([...selectedIds, ...filteredReturns.map((r) => r.id)]);
+      setSelectedIds(Array.from(combined));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedReturns = filteredReturns.filter((r) => selectedIds.includes(r.id));
+    if (selectedReturns.length === 0) return;
+    const csvData = selectedReturns.map((r) => ({
+      returnNo: r.returnNo,
+      returnDate: r.returnDate,
+      financialYear: r.financialYear,
+      supplierCode: r.supplierId ? supplierMap.get(r.supplierId)?.code || '' : '',
+      supplierName: r.supplierId ? supplierMap.get(r.supplierId)?.name || '' : '',
+      purchaseRefNo: r.purchaseRefNo || 'Unlinked',
+      invoiceNo: r.invoiceNo || 'N/A',
+      species: r.speciesId ? speciesMap.get(r.speciesId)?.name || '' : '',
+      grade: gradeMap.get(r.gradeId || '')?.name || 'N/A',
+      size: sizeMap.get(r.sizeId || '')?.name || 'N/A',
+      dualSize: r.isDualSize && r.secondarySizeId ? sizeMap.get(r.secondarySizeId)?.name || '' : '',
+      count: countMap.get(r.countId || '')?.name || 'N/A',
+      returnedWeightKg: r.returnedWeightKg,
+      ratePerKg: r.ratePerKg,
+      returnedValue: r.returnedValue,
+      boxesCount: r.boxesCount || 0,
+      reason: r.reason || '',
+      detailedReason: r.detailedReason || '',
+      adjustSupplierPayable: r.adjustSupplierPayable ? 'YES' : 'NO',
+      status: r.isVoided ? 'VOIDED' : 'ACTIVE',
+      voidReason: r.voidReason || '',
+      createdBy: r.createdBy,
+      createdAt: r.createdAt
+    }));
+
+    const csvStr = convertToCSV(csvData, [
+      { key: 'returnNo', label: 'Debit Note / Return No' },
+      { key: 'returnDate', label: 'Date' },
+      { key: 'financialYear', label: 'FY' },
+      { key: 'supplierCode', label: 'Supplier Code' },
+      { key: 'supplierName', label: 'Supplier Name' },
+      { key: 'purchaseRefNo', label: 'Purchase Ref #' },
+      { key: 'invoiceNo', label: 'Invoice No' },
+      { key: 'species', label: 'Species' },
+      { key: 'grade', label: 'Grade' },
+      { key: 'size', label: 'Physical Size' },
+      { key: 'dualSize', label: 'Secondary Size' },
+      { key: 'count', label: 'Piece Count' },
+      { key: 'returnedWeightKg', label: 'Returned Weight (Kg)' },
+      { key: 'ratePerKg', label: 'Return Rate / Kg (INR)' },
+      { key: 'returnedValue', label: 'Debit Note Amount (INR)' },
+      { key: 'boxesCount', label: 'Boxes' },
+      { key: 'reason', label: 'Reason' },
+      { key: 'detailedReason', label: 'Specific Note' },
+      { key: 'adjustSupplierPayable', label: 'Payable Adjusted' },
+      { key: 'status', label: 'Status' },
+      { key: 'voidReason', label: 'Void Reason' },
+      { key: 'createdBy', label: 'Created By' },
+      { key: 'createdAt', label: 'Timestamp' }
+    ]);
+
+    downloadFile(csvStr, `Purchase_Returns_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleBulkConfirmVoid = () => {
+    if (!bulkVoidReason.trim()) return;
+    const targetReturns = purchaseReturns.filter((r) => selectedIds.includes(r.id) && !r.isVoided);
+    let count = 0;
+    for (const r of targetReturns) {
+      voidPurchaseReturn(r.id, bulkVoidReason.trim());
+      count++;
+    }
+    showToast(`Successfully voided ${count} purchase return records.`, 'success');
+    setIsBulkVoidModalOpen(false);
+    setBulkVoidReason('');
+    setSelectedIds([]);
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      deletePurchaseReturnPermanently(id);
+      count++;
+    }
+    showToast(`Permanently deleted ${count} purchase return records.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
+  };
+
   // KPI Calculations
   const activeReturns = (purchaseReturns || []).filter((r) => !r.isVoided);
   const totalReturnNotes = activeReturns.length;
@@ -605,6 +719,18 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-bold text-ink-500 uppercase tracking-wider">
+                <th className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someFilteredSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    title={allFilteredSelected ? 'Deselect all visible' : 'Select all visible'}
+                  />
+                </th>
                 <th className="py-3 px-4">Return / Debit Note</th>
                 <th className="py-3 px-4">Date &amp; FY</th>
                 <th className="py-3 px-4">Supplier</th>
@@ -620,7 +746,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
             <tbody className="divide-y divide-gray-100 text-xs font-medium text-ink-900">
               {filteredReturns.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-ink-500">
+                  <td colSpan={11} className="py-12 text-center text-ink-500">
                     No purchase return records match the criteria.
                   </td>
                 </tr>
@@ -630,14 +756,23 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                   const spec = r.speciesId ? speciesMap.get(r.speciesId) : undefined;
                   const sz = sizeMap.get(r.sizeId || '');
                   const cnt = countMap.get(r.countId || '');
+                  const isSelected = selectedIds.includes(r.id);
 
                   return (
                     <tr
                       key={r.id}
                       className={`hover:bg-rose-50/40 transition-colors ${
-                        r.isVoided ? 'bg-gray-50/60 opacity-60' : ''
-                      }`}
+                        isSelected ? 'bg-rose-50/70 font-medium' : ''
+                      } ${r.isVoided ? 'bg-gray-50/60 opacity-60' : ''}`}
                     >
+                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(r.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-bold text-rose-700 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span className="text-rose-800">{r.returnNo}</span>
@@ -758,6 +893,56 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {permissions.canVoid && (
+            <button
+              onClick={() => {
+                setBulkVoidReason('');
+                setIsBulkVoidModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span>Bulk Void</span>
+            </button>
+          )}
+
+          {permissions.canPermanentlyDelete && (
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bulk Delete</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* RECORD / EDIT PURCHASE RETURN MODAL */}
       <Modal
@@ -1330,6 +1515,84 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
               className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold transition shadow-xs"
             >
               Permanently Purge Record
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* BULK VOID MODAL */}
+      <Modal
+        isOpen={isBulkVoidModalOpen}
+        onClose={() => setIsBulkVoidModalOpen(false)}
+        title={`Bulk Void: ${selectedIds.length} Returns / Debit Notes`}
+        subtitle="Soft delete all selected return notes with audit reason"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700">
+            You are about to void <strong>{selectedIds.length}</strong> selected return vouchers. The supplier ledger entries will be reversed, and these records will be marked voided.
+          </p>
+
+          <div>
+            <label className="block font-semibold text-ink-900 mb-1">
+              Reason for Bulk Voiding <span className="text-rose-600">*</span>
+            </label>
+            <textarea
+              rows={3}
+              value={bulkVoidReason}
+              onChange={(e) => setBulkVoidReason(e.target.value)}
+              placeholder="e.g. Bulk cancellation, clerical error across return entries"
+              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-2">
+            <button
+              onClick={() => setIsBulkVoidModalOpen(false)}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-ink-700 font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!bulkVoidReason.trim()}
+              onClick={handleBulkConfirmVoid}
+              className="px-5 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl font-bold transition"
+            >
+              Confirm Bulk Void
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK DELETE MODAL */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`Permanently Purge ${selectedIds.length} Return Records`}
+        subtitle="Owner / Admin exclusive action"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Permanent Bulk Deletion Warning:</p>
+              <p className="mt-0.5">
+                Are you sure you want to permanently purge <strong>{selectedIds.length}</strong> selected return records?
+                This action is irreversible and recorded in the surveillance audit log.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-ink-700 font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmDelete}
+              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold transition shadow-xs"
+            >
+              Permanently Purge Selected
             </button>
           </div>
         </div>

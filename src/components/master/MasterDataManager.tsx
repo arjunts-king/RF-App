@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
+import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
 import { formatINR } from '../../utils/calculations';
+import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
   PlusCircle,
   Truck,
@@ -17,7 +19,8 @@ import {
   Inbox,
   FileSpreadsheet,
   Hash,
-  Boxes
+  Boxes,
+  Download
 } from 'lucide-react';
 import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType, SlabType } from '../../types';
 
@@ -84,6 +87,178 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  const { showToast } = useToast();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab]);
+
+  const currentTabItems: Array<{ id: string }> = React.useMemo(() => {
+    switch (activeTab) {
+      case 'suppliers': return suppliers;
+      case 'species': return species;
+      case 'grades': return grades;
+      case 'sizes': return sizes;
+      case 'counts': return counts;
+      case 'locations': return locations;
+      case 'accounts': return bankAccounts;
+      case 'expenses': return expenseTypes;
+      case 'slabs': return slabTypes;
+      default: return [];
+    }
+  }, [activeTab, suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes, slabTypes]);
+
+  const allCurrentSelected =
+    currentTabItems.length > 0 &&
+    currentTabItems.every((item) => selectedIds.includes(item.id));
+  const someCurrentSelected =
+    currentTabItems.some((item) => selectedIds.includes(item.id)) && !allCurrentSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allCurrentSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(currentTabItems.map((item) => item.id));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      if (activeTab === 'suppliers') deleteSupplier(id);
+      else if (activeTab === 'species') deleteSpecies(id);
+      else if (activeTab === 'grades') deleteGrade(id);
+      else if (activeTab === 'sizes') deleteSize(id);
+      else if (activeTab === 'counts') deleteCount(id);
+      else if (activeTab === 'locations') deleteLocation(id);
+      else if (activeTab === 'accounts') deleteBankAccount(id);
+      else if (activeTab === 'expenses') deleteExpenseType(id);
+      else if (activeTab === 'slabs') deleteSlabType(id);
+      count++;
+    }
+    showToast(`Deleted ${count} ${activeTab} records.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
+  };
+
+  const hasStatusToggle = ['suppliers', 'species', 'grades', 'locations', 'expenses', 'slabs'].includes(activeTab);
+
+  const handleBulkToggleActive = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      if (activeTab === 'suppliers') toggleSupplierActive(id);
+      else if (activeTab === 'species') toggleSpeciesActive(id);
+      else if (activeTab === 'grades') toggleGradeActive(id);
+      else if (activeTab === 'locations') toggleLocationActive(id);
+      else if (activeTab === 'expenses') toggleExpenseTypeActive(id);
+      else if (activeTab === 'slabs') toggleSlabTypeActive(id);
+      count++;
+    }
+    showToast(`Updated status for ${count} records.`, 'success');
+    setSelectedIds([]);
+  };
+
+  const handleBulkExportCSV = () => {
+    if (selectedIds.length === 0) return;
+    if (activeTab === 'suppliers') {
+      const selected = suppliers.filter((s) => selectedIds.includes(s.id));
+      const csv = convertToCSV(
+        selected.map((s) => ({
+          Code: s.code,
+          Name: s.name,
+          Type: s.type,
+          Contact: s.contactPerson,
+          Phone: s.phone,
+          Email: s.email,
+          Address: s.address,
+          Active: s.active ? 'Yes' : 'No'
+        })),
+        [
+          { key: 'Code', label: 'Supplier Code' },
+          { key: 'Name', label: 'Supplier Name' },
+          { key: 'Type', label: 'Type' },
+          { key: 'Contact', label: 'Contact Person' },
+          { key: 'Phone', label: 'Phone' },
+          { key: 'Email', label: 'Email' },
+          { key: 'Address', label: 'Address' },
+          { key: 'Active', label: 'Active' }
+        ]
+      );
+      downloadFile(csv, `Suppliers_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    } else if (activeTab === 'species') {
+      const selected = species.filter((sp) => selectedIds.includes(sp.id));
+      const csv = convertToCSV(
+        selected.map((sp) => ({
+          Code: sp.code,
+          Name: sp.name,
+          ScientificName: sp.scientificName,
+          Category: sp.category,
+          Form: sp.productForm || '',
+          Processing: sp.processingType || '',
+          HSCode: sp.hsCode || '',
+          Active: sp.active ? 'Yes' : 'No'
+        })),
+        [
+          { key: 'Code', label: 'Species Code' },
+          { key: 'Name', label: 'Commercial Name' },
+          { key: 'ScientificName', label: 'Scientific Name' },
+          { key: 'Category', label: 'Category' },
+          { key: 'Form', label: 'Product Form' },
+          { key: 'Processing', label: 'Processing Type' },
+          { key: 'HSCode', label: 'HSN Code' },
+          { key: 'Active', label: 'Active' }
+        ]
+      );
+      downloadFile(csv, `Species_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    } else if (activeTab === 'expenses') {
+      const selected = expenseTypes.filter((e) => selectedIds.includes(e.id));
+      const csv = convertToCSV(
+        selected.map((e) => ({
+          Code: e.code,
+          Name: e.name,
+          Category: e.category,
+          Active: e.active ? 'Yes' : 'No'
+        })),
+        [
+          { key: 'Code', label: 'Expense Code' },
+          { key: 'Name', label: 'Expense Name' },
+          { key: 'Category', label: 'Category' },
+          { key: 'Active', label: 'Active' }
+        ]
+      );
+      downloadFile(csv, `Expenses_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    } else {
+      const currentList: any[] =
+        activeTab === 'grades' ? grades :
+        activeTab === 'sizes' ? sizes :
+        activeTab === 'counts' ? counts :
+        activeTab === 'locations' ? locations :
+        activeTab === 'accounts' ? bankAccounts : slabTypes;
+      const selected = currentList.filter((item) => selectedIds.includes(item.id));
+      const csv = convertToCSV(
+        selected.map((item) => ({
+          Code: item.code || '',
+          Name: item.name || '',
+          Description: item.description || ''
+        })),
+        [
+          { key: 'Code', label: 'Code' },
+          { key: 'Name', label: 'Name' },
+          { key: 'Description', label: 'Description' }
+        ]
+      );
+      downloadFile(csv, `${activeTab}_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    }
+  };
 
   const confirmDelete = () => {
     if (!deleteTarget) return;
@@ -472,6 +647,18 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allCurrentSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someCurrentSelected;
+                        }}
+                        onChange={handleToggleSelectAll}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        title={allCurrentSelected ? 'Deselect all' : 'Select all'}
+                      />
+                    </th>
                     <th className="py-2.5 px-3">Code</th>
                     <th className="py-2.5 px-3">Supplier Name</th>
                     <th className="py-2.5 px-3">Type</th>
@@ -484,9 +671,24 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {suppliers.map((s) => (
-                    <tr key={s.id} className="hover:bg-rose-50/30">
-                      <td className="py-3 px-3 font-bold text-rose-700">{s.code}</td>
+                  {suppliers.map((s) => {
+                    const isSelected = selectedIds.includes(s.id);
+                    return (
+                      <tr
+                        key={s.id}
+                        className={`hover:bg-rose-50/30 transition-colors ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(s.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                        </td>
+                        <td className="py-3 px-3 font-bold text-rose-700">{s.code}</td>
                       <td className="py-3 px-3 font-bold text-ink-900">{s.name}</td>
                       <td className="py-3 px-3 capitalize">{s.type.replace('_', ' ')}</td>
                       <td className="py-3 px-3">
@@ -533,7 +735,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             )}
@@ -555,6 +758,18 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allCurrentSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someCurrentSelected;
+                        }}
+                        onChange={handleToggleSelectAll}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        title={allCurrentSelected ? 'Deselect all' : 'Select all'}
+                      />
+                    </th>
                     <th className="py-2.5 px-3">Code</th>
                     <th className="py-2.5 px-3">Commercial Name</th>
                     <th className="py-2.5 px-3">Scientific Name</th>
@@ -567,9 +782,24 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {species.map((sp) => (
-                    <tr key={sp.id} className="hover:bg-rose-50/30">
-                      <td className="py-3 px-3 font-bold text-rose-700">{sp.code}</td>
+                  {species.map((sp) => {
+                    const isSelected = selectedIds.includes(sp.id);
+                    return (
+                      <tr
+                        key={sp.id}
+                        className={`hover:bg-rose-50/30 transition-colors ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(sp.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                        </td>
+                        <td className="py-3 px-3 font-bold text-rose-700">{sp.code}</td>
                       <td className="py-3 px-3 font-bold text-ink-900">{sp.name}</td>
                       <td className="py-3 px-3 italic text-ink-500">{sp.scientificName}</td>
                       <td className="py-3 px-3">{sp.category}</td>
@@ -613,7 +843,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             )}
@@ -635,6 +866,18 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allCurrentSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someCurrentSelected;
+                        }}
+                        onChange={handleToggleSelectAll}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        title={allCurrentSelected ? 'Deselect all' : 'Select all'}
+                      />
+                    </th>
                     <th className="py-2.5 px-3">Code</th>
                     <th className="py-2.5 px-3">Expense Head Name</th>
                     <th className="py-2.5 px-3">Accounting Category</th>
@@ -643,9 +886,24 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {expenseTypes.map((e) => (
-                    <tr key={e.id} className="hover:bg-rose-50/30">
-                      <td className="py-3 px-3 font-bold text-rose-700">{e.code}</td>
+                  {expenseTypes.map((e) => {
+                    const isSelected = selectedIds.includes(e.id);
+                    return (
+                      <tr
+                        key={e.id}
+                        className={`hover:bg-rose-50/30 transition-colors ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(e.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                        </td>
+                        <td className="py-3 px-3 font-bold text-rose-700">{e.code}</td>
                       <td className="py-3 px-3 font-bold text-ink-900">{e.name}</td>
                       <td className="py-3 px-3 text-ink-500">{e.category}</td>
                       <td className="py-3 px-3 text-center">
@@ -669,7 +927,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             )}
@@ -679,31 +938,64 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         {/* GRADES, SIZES, COUNTS, SLABS, LOCATIONS, ACCOUNTS TABLES */}
         {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'slabs' || activeTab === 'locations' || activeTab === 'accounts') && (
           <div className="p-4 text-xs">
+            {currentTabItems.length > 0 && (
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                <label className="flex items-center gap-2 text-xs font-semibold text-ink-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allCurrentSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someCurrentSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                  />
+                  <span>Select All {tabs.find((t) => t.id === activeTab)?.label} ({currentTabItems.length})</span>
+                </label>
+              </div>
+            )}
+
             {activeTab === 'grades' && (
               grades.length === 0 ? (
                 <div className="py-12 text-center text-ink-500">No grades registered yet. Add Grade A, B, Live, or Rejects.</div>
               ) : (
                 <ul className="divide-y divide-gray-100">
-                  {grades.map((g) => (
-                    <li key={g.id} className="py-2.5 flex justify-between items-center">
-                      <div>
-                        <strong className="text-ink-900">{g.name}</strong> ({g.code})
-                        <p className="text-[11px] text-ink-500">{g.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleOpenEdit(g)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'grade', id: g.id, name: g.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
-                        <button
-                          onClick={() => toggleGradeActive(g.id)}
-                          className={`px-2.5 py-0.5 rounded-full font-semibold border ${
-                            g.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {g.active ? 'Active' : 'Inactive'}
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                  {grades.map((g) => {
+                    const isSelected = selectedIds.includes(g.id);
+                    return (
+                      <li
+                        key={g.id}
+                        className={`py-2.5 px-2 rounded-xl flex justify-between items-center transition ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(g.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                          <div>
+                            <strong className="text-ink-900">{g.name}</strong> ({g.code})
+                            <p className="text-[11px] text-ink-500">{g.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleOpenEdit(g)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'grade', id: g.id, name: g.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button
+                            onClick={() => toggleGradeActive(g.id)}
+                            className={`px-2.5 py-0.5 rounded-full font-semibold border ${
+                              g.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {g.active ? 'Active' : 'Inactive'}
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )
             )}
@@ -713,18 +1005,34 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                 <div className="py-12 text-center text-ink-500">No physical sizes configured yet. Add Small, Medium, Large, Extra Large, etc.</div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {sizes.map((sz) => (
-                    <div key={sz.id} className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-ink-900 block">{sz.name}</span>
-                        <span className="text-[10px] text-ink-500 block">{sz.description || sz.code}</span>
+                  {sizes.map((sz) => {
+                    const isSelected = selectedIds.includes(sz.id);
+                    return (
+                      <div
+                        key={sz.id}
+                        className={`p-3 rounded-xl border flex justify-between items-center transition ${
+                          isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(sz.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-ink-900 block">{sz.name}</span>
+                            <span className="text-[10px] text-ink-500 block">{sz.description || sz.code}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleOpenEdit(sz)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleOpenEdit(sz)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             )}
@@ -734,18 +1042,34 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                 <div className="py-12 text-center text-ink-500">No piece counts configured yet. Add 10/20, 20/30, 31/40, 41/50, 71/90, 100+, etc.</div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {counts.map((cnt) => (
-                    <div key={cnt.id} className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-ink-900 block">{cnt.name}</span>
-                        <span className="text-[10px] text-ink-500 block">{cnt.description || cnt.code}</span>
+                  {counts.map((cnt) => {
+                    const isSelected = selectedIds.includes(cnt.id);
+                    return (
+                      <div
+                        key={cnt.id}
+                        className={`p-3 rounded-xl border flex justify-between items-center transition ${
+                          isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(cnt.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-bold text-ink-900 block">{cnt.name}</span>
+                            <span className="text-[10px] text-ink-500 block">{cnt.description || cnt.code}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleOpenEdit(cnt)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'count', id: cnt.id, name: cnt.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleOpenEdit(cnt)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'count', id: cnt.id, name: cnt.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             )}
@@ -755,31 +1079,47 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                 <div className="py-12 text-center text-ink-500">No production slab types configured yet. Add 2.0 Kg Standard Block, 1.8 Kg Export Slab, etc.</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {slabTypes.map((sl) => (
-                    <div key={sl.id} className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-ink-900 block">{sl.name}</span>
-                          <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">
-                            {sl.standardWeightKg} {sl.unit}
-                          </span>
+                  {slabTypes.map((sl) => {
+                    const isSelected = selectedIds.includes(sl.id);
+                    return (
+                      <div
+                        key={sl.id}
+                        className={`p-3.5 rounded-xl border flex justify-between items-start transition ${
+                          isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(sl.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-ink-900 block">{sl.name}</span>
+                              <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">
+                                {sl.standardWeightKg} {sl.unit}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-ink-500 block mt-1">Applicable: {sl.productApplicability} · ({sl.code})</span>
+                          </div>
                         </div>
-                        <span className="text-[11px] text-ink-500 block mt-1">Applicable: {sl.productApplicability} · ({sl.code})</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => handleOpenEdit(sl)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'slab', id: sl.id, name: sl.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button
+                            onClick={() => toggleSlabTypeActive(sl.id)}
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                              sl.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {sl.active ? 'Active' : 'Inactive'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => handleOpenEdit(sl)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'slab', id: sl.id, name: sl.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
-                        <button
-                          onClick={() => toggleSlabTypeActive(sl.id)}
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                            sl.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {sl.active ? 'Active' : 'Inactive'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             )}
@@ -789,26 +1129,42 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                 <div className="py-12 text-center text-ink-500">No landing harbour locations added yet.</div>
               ) : (
                 <ul className="divide-y divide-gray-100">
-                  {locations.map((loc) => (
-                    <li key={loc.id} className="py-2.5 flex justify-between items-center">
-                      <div>
-                        <strong className="text-ink-900">{loc.name}</strong> ({loc.code})
-                        <p className="text-[11px] text-ink-500">{loc.harbourCentre} · {loc.district}, {loc.state}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleOpenEdit(loc)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'location', id: loc.id, name: loc.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
-                        <button
-                          onClick={() => toggleLocationActive(loc.id)}
-                          className={`px-2.5 py-0.5 rounded-full font-semibold border ${
-                            loc.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {loc.active ? 'Active' : 'Inactive'}
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                  {locations.map((loc) => {
+                    const isSelected = selectedIds.includes(loc.id);
+                    return (
+                      <li
+                        key={loc.id}
+                        className={`py-2.5 px-2 rounded-xl flex justify-between items-center transition ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(loc.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                          <div>
+                            <strong className="text-ink-900">{loc.name}</strong> ({loc.code})
+                            <p className="text-[11px] text-ink-500">{loc.harbourCentre} · {loc.district}, {loc.state}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleOpenEdit(loc)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'location', id: loc.id, name: loc.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button
+                            onClick={() => toggleLocationActive(loc.id)}
+                            className={`px-2.5 py-0.5 rounded-full font-semibold border ${
+                              loc.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {loc.active ? 'Active' : 'Inactive'}
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )
             )}
@@ -818,24 +1174,84 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                 <div className="py-12 text-center text-ink-500">No bank or cash accounts configured yet.</div>
               ) : (
                 <ul className="divide-y divide-gray-100">
-                  {bankAccounts.map((acc) => (
-                    <li key={acc.id} className="py-2.5 flex justify-between items-center">
-                      <div>
-                        <strong className="text-ink-900">{acc.name}</strong> ({acc.bank} · {acc.accountType})
-                        <p className="text-[11px] text-ink-500">Opening Balance: {formatINR(acc.openingBalance)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleOpenEdit(acc)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteTarget({ type: 'account', id: acc.id, name: acc.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </li>
-                  ))}
+                  {bankAccounts.map((acc) => {
+                    const isSelected = selectedIds.includes(acc.id);
+                    return (
+                      <li
+                        key={acc.id}
+                        className={`py-2.5 px-2 rounded-xl flex justify-between items-center transition ${
+                          isSelected ? 'bg-rose-50/70 font-medium' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(acc.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          />
+                          <div>
+                            <strong className="text-ink-900">{acc.name}</strong> ({acc.bank} · {acc.accountType})
+                            <p className="text-[11px] text-ink-500">Opening Balance: {formatINR(acc.openingBalance)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleOpenEdit(acc)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteTarget({ type: 'account', id: acc.id, name: acc.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )
             )}
           </div>
         )}
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {hasStatusToggle && (
+            <button
+              onClick={handleBulkToggleActive}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 transition"
+            >
+              <span>Toggle Status</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsBulkDeleteModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Bulk Delete</span>
+          </button>
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* ADD / EDIT MODAL */}
       <Modal
@@ -1190,6 +1606,39 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-xs"
             >
               Confirm Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* Bulk Delete Confirmation Modal */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`Delete ${selectedIds.length} ${tabs.find((t) => t.id === activeTab)?.label} Records`}
+        subtitle="This action cannot be undone for unreferenced records"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700">
+            Are you sure you want to delete <strong>{selectedIds.length}</strong> selected {tabs.find((t) => t.id === activeTab)?.label.toLowerCase()} records?
+          </p>
+          <p className="text-ink-500 text-[11px] bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900">
+            Note: Records with existing purchase or accounting transaction history cannot be deleted and should be marked as "Archived" / "Inactive" instead.
+          </p>
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkConfirmDelete}
+              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-xs"
+            >
+              Confirm Delete Selected
             </button>
           </div>
         </div>

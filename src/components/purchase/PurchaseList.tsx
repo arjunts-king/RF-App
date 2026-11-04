@@ -56,6 +56,12 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
   const [statusFilter, setStatusFilter] = useState('');
   const [showVoided, setShowVoided] = useState(false);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkVoidModalOpen, setIsBulkVoidModalOpen] = useState(false);
+  const [bulkVoidReason, setBulkVoidReason] = useState('');
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
   // Modals
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [voidModalTarget, setVoidModalTarget] = useState<Purchase | null>(null);
@@ -134,6 +140,120 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     if (res.success) {
       setDeleteModalTarget(null);
     }
+  };
+
+  // Bulk Selection Helpers & Actions
+  const allFilteredSelected =
+    filteredPurchases.length > 0 &&
+    filteredPurchases.every((p) => selectedIds.includes(p.id));
+  const someFilteredSelected =
+    filteredPurchases.some((p) => selectedIds.includes(p.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIdSet = new Set(filteredPurchases.map((p) => p.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
+    } else {
+      const combined = new Set([...selectedIds, ...filteredPurchases.map((p) => p.id)]);
+      setSelectedIds(Array.from(combined));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedPurchases = filteredPurchases.filter((p) => selectedIds.includes(p.id));
+    if (selectedPurchases.length === 0) return;
+    const exportData = selectedPurchases.map((p) => ({
+      PurchaseID: p.purchaseId,
+      Date: p.purchaseDate,
+      FY: p.financialYear,
+      Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
+      HarbourLocation: locationMap.get(p.locationId)?.name || 'N/A',
+      InvoiceNo: p.invoiceNo || 'N/A',
+      BatchNo: p.batchNo || 'None',
+      Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+      Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
+      Size: p.isDualSize && p.secondarySizeId
+        ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
+        : (sizeMap.get(p.sizeId)?.name || 'N/A'),
+      Count: countMap.get(p.countId)?.name || 'N/A',
+      WeightKg: p.weightKg,
+      YieldWeightKg: p.yieldWeightKg !== undefined ? p.yieldWeightKg : '',
+      YieldPct: p.yieldPct !== undefined ? `${p.yieldPct}%` : '',
+      RatePerKg: p.ratePerKg,
+      PurchaseValue: p.purchaseValue,
+      DamageAmount: p.damageAmount,
+      TotalExpenses: p.totalExpenses,
+      TotalCost: p.totalCost,
+      EffectiveRate: p.effectiveRatePerKg,
+      AmountPaid: p.amountPaid,
+      BalancePayable: p.balancePayable,
+      DueDate: p.dueDate,
+      PaymentStatus: p.paymentStatus,
+      IsVoided: p.isVoided ? 'Yes' : 'No',
+      CreatedBy: p.createdBy
+    }));
+
+    const csvStr = convertToCSV(exportData, [
+      { key: 'PurchaseID', label: 'Purchase ID' },
+      { key: 'Date', label: 'Purchase Date' },
+      { key: 'FY', label: 'Financial Year' },
+      { key: 'Supplier', label: 'Supplier Name' },
+      { key: 'HarbourLocation', label: 'Landing Centre' },
+      { key: 'InvoiceNo', label: 'Invoice No' },
+      { key: 'BatchNo', label: 'Batch No' },
+      { key: 'Species', label: 'Species' },
+      { key: 'Grade', label: 'Grade' },
+      { key: 'Size', label: 'Physical Size' },
+      { key: 'Count', label: 'Piece Count' },
+      { key: 'WeightKg', label: 'Weight (Kg)' },
+      { key: 'YieldWeightKg', label: 'Yield Weight (Kg)' },
+      { key: 'YieldPct', label: 'Yield %' },
+      { key: 'RatePerKg', label: 'Rate (INR/Kg)' },
+      { key: 'PurchaseValue', label: 'Purchase Value' },
+      { key: 'DamageAmount', label: 'Damage Deductions' },
+      { key: 'TotalExpenses', label: 'Total Expenses' },
+      { key: 'TotalCost', label: 'Final Total Cost' },
+      { key: 'EffectiveRate', label: 'Effective Rate/Kg' },
+      { key: 'AmountPaid', label: 'Amount Paid' },
+      { key: 'BalancePayable', label: 'Balance Payable' },
+      { key: 'DueDate', label: 'Due Date' },
+      { key: 'PaymentStatus', label: 'Payment Status' },
+      { key: 'IsVoided', label: 'Voided' },
+      { key: 'CreatedBy', label: 'Entered By' }
+    ]);
+
+    downloadFile(csvStr, `Seafood_Purchases_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleBulkConfirmVoid = () => {
+    if (!bulkVoidReason.trim()) return;
+    const targetPurchases = purchases.filter((p) => selectedIds.includes(p.id) && !p.isVoided);
+    let count = 0;
+    for (const p of targetPurchases) {
+      const res = voidPurchase(p.id, bulkVoidReason.trim());
+      if (res.success) count++;
+    }
+    showToast(`Successfully voided ${count} purchase records.`, 'success');
+    setIsBulkVoidModalOpen(false);
+    setBulkVoidReason('');
+    setSelectedIds([]);
+  };
+
+  const handleBulkConfirmDelete = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      const res = deletePurchasePermanently(id);
+      if (res.success) count++;
+    }
+    showToast(`Permanently deleted ${count} purchase records.`, 'success');
+    setIsBulkDeleteModalOpen(false);
+    setSelectedIds([]);
   };
 
   const handleStartEdit = (p: Purchase) => {
@@ -478,6 +598,18 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-bold text-ink-500 uppercase tracking-wider">
+                <th className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someFilteredSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    title={allFilteredSelected ? 'Deselect all visible' : 'Select all visible'}
+                  />
+                </th>
                 <th className="py-3 px-4">Purchase ID</th>
                 <th className="py-3 px-4">Date &amp; FY</th>
                 <th className="py-3 px-4">Supplier</th>
@@ -494,7 +626,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
             <tbody className="divide-y divide-gray-100 text-xs font-medium text-ink-900">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-ink-500">
+                  <td colSpan={12} className="py-12 text-center text-ink-500">
                     No transactions match the selected filters.
                   </td>
                 </tr>
@@ -506,12 +638,23 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                   const cnt = countMap.get(p.countId);
                   const lotReturns = (purchaseReturns || []).filter((r) => !r.isVoided && r.purchaseId === p.id);
                   const totalReturnedKg = lotReturns.reduce((s, r) => s + r.returnedWeightKg, 0);
+                  const isSelected = selectedIds.includes(p.id);
 
                   return (
                     <tr
                       key={p.id}
-                      className={`hover:bg-rose-50/40 transition-colors ${p.isVoided ? 'bg-gray-50/60 opacity-60' : ''}`}
+                      className={`hover:bg-rose-50/40 transition-colors ${
+                        isSelected ? 'bg-rose-50/70 font-medium' : ''
+                      } ${p.isVoided ? 'bg-gray-50/60 opacity-60' : ''}`}
                     >
+                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(p.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-bold text-rose-700 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           {p.purchaseId}
@@ -681,6 +824,56 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
           </table>
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold">
+          <span className="flex items-center gap-2 pr-3 border-r border-white/20 font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[11px] font-bold">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </span>
+
+          <button
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
+          {permissions.canVoid && (
+            <button
+              onClick={() => {
+                setBulkVoidReason('');
+                setIsBulkVoidModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span>Bulk Void</span>
+            </button>
+          )}
+
+          {permissions.canPermanentlyDelete && (
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bulk Delete</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
 
       {/* DETAIL MODAL */}
       <Modal
@@ -1044,6 +1237,82 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold transition"
             >
               Permanently Purge Record
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK VOID MODAL */}
+      <Modal
+        isOpen={isBulkVoidModalOpen}
+        onClose={() => setIsBulkVoidModalOpen(false)}
+        title={`Bulk Void: ${selectedIds.length} Purchases`}
+        subtitle="Soft delete all selected records with a recorded audit reason"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700">
+            You are about to void <strong>{selectedIds.length}</strong> selected purchase transactions. They will be marked inactive and deducted from supplier payables while preserved in audit logs.
+          </p>
+
+          <div>
+            <label className="block font-semibold text-ink-900 mb-1">
+              Reason for Bulk Voiding <span className="text-rose-600">*</span>
+            </label>
+            <textarea
+              rows={3}
+              placeholder="e.g. Batch entry error, harbour lot cancellations"
+              value={bulkVoidReason}
+              onChange={(e) => setBulkVoidReason(e.target.value)}
+              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none transition"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsBulkVoidModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkConfirmVoid}
+              disabled={!bulkVoidReason.trim()}
+              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-50 transition"
+            >
+              Confirm Bulk Void
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK DELETE CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        title={`CRITICAL: Permanent Bulk Purge (${selectedIds.length} Records)`}
+        subtitle="Owner / Admin Exclusive Authority"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-950 flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+            <div>
+              <strong>Irreversible Action:</strong> This will completely remove{' '}
+              <strong>{selectedIds.length}</strong> purchase records permanently from the database.
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50"
+            >
+              Abort
+            </button>
+            <button
+              onClick={handleBulkConfirmDelete}
+              className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold transition"
+            >
+              Permanently Purge Selected
             </button>
           </div>
         </div>
