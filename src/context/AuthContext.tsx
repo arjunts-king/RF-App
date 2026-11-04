@@ -26,6 +26,11 @@ interface AuthContextType {
     canCreateEditSales: boolean;
     canManageSalesRealization: boolean;
     canManageSalesMasterData: boolean;
+    canManageInventoryAdjustments: boolean;
+    canRecordStockCounts: boolean;
+    canPeriodClose: boolean;
+    canRebuildInventory: boolean;
+    canManageInventoryItems: boolean;
   };
 }
 
@@ -233,7 +238,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     canManageStaff: currentUser.role === 'admin',
     canCreateEditSales: currentUser.role !== 'viewer',
     canManageSalesRealization: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
-    canManageSalesMasterData: currentUser.role === 'admin' || currentUser.role === 'master_accountant'
+    canManageSalesMasterData: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canManageInventoryAdjustments: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canRecordStockCounts: currentUser.role === 'admin' || currentUser.role === 'master_accountant' || currentUser.role === 'junior_accountant',
+    canPeriodClose: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canRebuildInventory: currentUser.role === 'admin',
+    canManageInventoryItems: currentUser.role === 'admin' || currentUser.role === 'master_accountant'
   };
 
   return (

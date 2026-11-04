@@ -36,6 +36,17 @@ import { CustomerManager } from './components/sales/CustomerManager';
 import { PortManager } from './components/sales/PortManager';
 import { CommercialSpeciesManager } from './components/sales/CommercialSpeciesManager';
 import { SalesReportsHub } from './components/sales/SalesReportsHub';
+import { InventorySidebar, InventoryNavTab } from './components/inventory/InventorySidebar';
+import { InventoryDashboard } from './components/inventory/InventoryDashboard';
+import { InventoryLedgerView } from './components/inventory/InventoryLedgerView';
+import { InventoryPositionView } from './components/inventory/InventoryPositionView';
+import { InventoryItemManager } from './components/inventory/InventoryItemManager';
+import { StockAdjustmentView } from './components/inventory/StockAdjustmentView';
+import { PhysicalStockCountView } from './components/inventory/PhysicalStockCountView';
+import { PeriodCloseView } from './components/inventory/PeriodCloseView';
+import { InventoryReportsHub } from './components/inventory/InventoryReportsHub';
+import { InventoryAuditView } from './components/inventory/InventoryAuditView';
+
 import {
   LayoutDashboard,
   PlusCircle,
@@ -49,7 +60,8 @@ import {
   TrendingUp,
   FileText,
   Home,
-  ShoppingBag
+  ShoppingBag,
+  Boxes
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -58,6 +70,7 @@ const MainLayout: React.FC = () => {
   const [returnPurchaseId, setReturnPurchaseId] = useState<string | undefined>();
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
+  const [inventoryTab, setInventoryTab] = useState<InventoryNavTab>('inv-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { permissions } = useAuth();
@@ -75,7 +88,7 @@ const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'home', tab: string) => {
+  const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'home', tab: string) => {
     if (module === 'home') {
       setActiveModule('home');
       return;
@@ -87,6 +100,8 @@ const MainLayout: React.FC = () => {
       setProductionTab(tab as ProductionNavTab);
     } else if (module === 'sales') {
       setSalesTab(tab as SalesNavTab);
+    } else if (module === 'inventory') {
+      setInventoryTab(tab as InventoryNavTab);
     }
     setIsMobileMenuOpen(false);
   };
@@ -128,8 +143,10 @@ const MainLayout: React.FC = () => {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             ) : activeModule === 'production' ? (
               <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
-            ) : (
+            ) : activeModule === 'sales' ? (
               <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
+            ) : (
+              <InventorySidebar activeTab={inventoryTab} onTabChange={setInventoryTab} />
             )}
           </div>
         )}
@@ -162,7 +179,7 @@ const MainLayout: React.FC = () => {
               </div>
 
               {/* Module Switcher in mobile drawer */}
-              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-4 gap-1 text-[11px] font-bold text-center">
+              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-5 gap-1 text-[10px] font-bold text-center">
                 <button
                   onClick={() => {
                     setActiveModule('home');
@@ -196,6 +213,15 @@ const MainLayout: React.FC = () => {
                 >
                   Sales
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveModule('inventory');
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'inventory' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Stock
+                </button>
+
               </div>
 
               <div className="flex-1 overflow-y-auto">
@@ -220,6 +246,14 @@ const MainLayout: React.FC = () => {
                     activeTab={salesTab}
                     onTabChange={(tab) => {
                       setSalesTab(tab);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  />
+                ) : activeModule === 'inventory' ? (
+                  <InventorySidebar
+                    activeTab={inventoryTab}
+                    onTabChange={(tab) => {
+                      setInventoryTab(tab);
                       setIsMobileMenuOpen(false);
                     }}
                   />
@@ -333,7 +367,7 @@ const MainLayout: React.FC = () => {
                 <ExcelImportView defaultModule="production" onNavigate={(tab) => setProductionTab(tab as ProductionNavTab)} />
               )}
             </>
-          ) : (
+          ) : activeModule === 'sales' ? (
             <>
               {salesTab === 'sales-dashboard' && (
                 <SalesDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
@@ -356,6 +390,22 @@ const MainLayout: React.FC = () => {
               {salesTab === 'sales-excel-import' && (
                 <ExcelImportView defaultModule="sales" onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
               )}
+            </>
+          ) : (
+            <>
+              {inventoryTab === 'inv-dashboard' && (
+                <InventoryDashboard onNavigateTab={(tab) => setInventoryTab(tab as InventoryNavTab)} />
+              )}
+              {inventoryTab === 'stock-card' && <InventoryLedgerView />}
+              {inventoryTab === 'stock-position' && <InventoryPositionView />}
+              {inventoryTab === 'item-master' && <InventoryItemManager />}
+              {inventoryTab === 'stock-adjustments' && <StockAdjustmentView />}
+              {inventoryTab === 'physical-count' && <PhysicalStockCountView />}
+              {inventoryTab === 'reports-hub' && (
+                <InventoryReportsHub onNavigateTab={(tab) => setInventoryTab(tab as InventoryNavTab)} />
+              )}
+              {inventoryTab === 'period-close' && <PeriodCloseView />}
+              {inventoryTab === 'audit-log' && <InventoryAuditView />}
             </>
           )}
         </main>
@@ -514,6 +564,17 @@ const MainLayout: React.FC = () => {
             <span>Procurement</span>
           </button>
         )}
+
+
+        <button
+          onClick={() => setActiveModule('inventory')}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+            activeModule === 'inventory' ? 'text-rose-600' : 'text-ink-500'
+          }`}
+        >
+          <Boxes className="w-4 h-4" />
+          <span>Stock</span>
+        </button>
 
         <button
           onClick={() => setIsMobileMenuOpen(true)}

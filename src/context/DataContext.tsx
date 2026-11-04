@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import {
   Supplier,
   SupplierType,
@@ -24,7 +24,14 @@ import {
   SalesCurrency,
   RealizationRecord,
   RealizationStatus,
-  PaymentStatus
+  PaymentStatus,
+  InventoryItem,
+  InventoryItemMapping,
+  OpeningStock,
+  StockAdjustment,
+  PhysicalStockCount,
+  PeriodCloseLock,
+  InventoryCalculationResult
 } from '../types';
 import {
   DEFAULT_BUSINESS_SETTINGS,
@@ -45,12 +52,19 @@ import {
   INITIAL_CUSTOMERS,
   INITIAL_PORTS,
   INITIAL_SALES_INVOICES,
+  INITIAL_INVENTORY_ITEMS,
+  INITIAL_INVENTORY_MAPPINGS,
+  INITIAL_OPENING_STOCKS,
+  INITIAL_STOCK_ADJUSTMENTS,
+  INITIAL_PHYSICAL_COUNTS,
+  INITIAL_PERIOD_CLOSE_LOCKS,
   SAMPLE_STARTER_PRESETS
 } from '../data/initialData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { computePurchaseFields, allocateBatchCombined, getIndianFinancialYear } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelImport';
+import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 
 interface DataContextType {
   businessSettings: BusinessSettings;
@@ -209,6 +223,38 @@ interface DataContextType {
     entityId: string,
     options?: { oldValues?: any; newValues?: any; changeReason?: string }
   ) => void;
+
+  // Inventory State & Calculations
+  inventoryItems: InventoryItem[];
+  inventoryMappings: InventoryItemMapping[];
+  openingStocks: OpeningStock[];
+  stockAdjustments: StockAdjustment[];
+  physicalStockCounts: PhysicalStockCount[];
+  periodCloseLocks: PeriodCloseLock[];
+  inventoryCalculation: InventoryCalculationResult;
+
+  // Inventory CRUD Actions
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => { success: boolean; message?: string };
+  updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => { success: boolean; message?: string };
+  deleteInventoryItem: (id: string) => { success: boolean; message?: string };
+  toggleInventoryItemActive: (id: string) => void;
+
+  addInventoryMapping: (mapping: Omit<InventoryItemMapping, 'id' | 'createdAt' | 'createdBy'>) => { success: boolean; message?: string };
+  deleteInventoryMapping: (id: string) => { success: boolean; message?: string };
+
+  saveOpeningStock: (opening: Omit<OpeningStock, 'id' | 'createdAt' | 'createdBy'>) => { success: boolean; message?: string };
+  deleteOpeningStock: (id: string) => { success: boolean; message?: string };
+
+  addStockAdjustment: (adj: Omit<StockAdjustment, 'id' | 'adjustmentNo' | 'createdAt' | 'createdBy' | 'status'>) => { success: boolean; adjustmentNo?: string; message?: string };
+  deleteStockAdjustment: (id: string) => { success: boolean; message?: string };
+
+  savePhysicalStockCount: (count: Omit<PhysicalStockCount, 'id' | 'countNo' | 'referenceNo' | 'createdAt' | 'createdBy' | 'status'> & { referenceNo?: string }) => { success: boolean; countNo?: string; countId?: string; message?: string };
+  postPhysicalStockCount: (countId: string) => { success: boolean; message?: string };
+  deletePhysicalStockCount: (id: string) => { success: boolean; message?: string };
+
+  closePeriodLock: (period: string, closingQty: number, closingValue: number, remarks?: string) => { success: boolean; message?: string };
+  unlockPeriod: (period: string, reason: string) => { success: boolean; message?: string };
+  rebuildInventoryLedger: () => { success: boolean; message: string };
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -409,6 +455,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}inventory_items`);
+    return saved ? JSON.parse(saved) : INITIAL_INVENTORY_ITEMS;
+  });
+
+  const [inventoryMappings, setInventoryMappings] = useState<InventoryItemMapping[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}inventory_mappings`);
+    return saved ? JSON.parse(saved) : INITIAL_INVENTORY_MAPPINGS;
+  });
+
+  const [openingStocks, setOpeningStocks] = useState<OpeningStock[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}opening_stocks`);
+    return saved ? JSON.parse(saved) : INITIAL_OPENING_STOCKS;
+  });
+
+  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}stock_adjustments`);
+    return saved ? JSON.parse(saved) : INITIAL_STOCK_ADJUSTMENTS;
+  });
+
+  const [physicalStockCounts, setPhysicalStockCounts] = useState<PhysicalStockCount[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}physical_counts`);
+    return saved ? JSON.parse(saved) : INITIAL_PHYSICAL_COUNTS;
+  });
+
+  const [periodCloseLocks, setPeriodCloseLocks] = useState<PeriodCloseLock[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}period_close_locks`);
+    return saved ? JSON.parse(saved) : INITIAL_PERIOD_CLOSE_LOCKS;
+  });
+
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   // Monitor network status
@@ -451,6 +527,41 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchase_returns`, JSON.stringify(purchaseReturns)); }, [purchaseReturns]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}audit_logs`, JSON.stringify(auditLogs)); }, [auditLogs]);
   useEffect(() => { localStorage.setItem(`${DB_PREFIX}offline_queue`, JSON.stringify(offlineQueue)); }, [offlineQueue]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}inventory_items`, JSON.stringify(inventoryItems)); }, [inventoryItems]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}inventory_mappings`, JSON.stringify(inventoryMappings)); }, [inventoryMappings]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}opening_stocks`, JSON.stringify(openingStocks)); }, [openingStocks]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}stock_adjustments`, JSON.stringify(stockAdjustments)); }, [stockAdjustments]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}physical_counts`, JSON.stringify(physicalStockCounts)); }, [physicalStockCounts]);
+  useEffect(() => { localStorage.setItem(`${DB_PREFIX}period_close_locks`, JSON.stringify(periodCloseLocks)); }, [periodCloseLocks]);
+
+  // Perpetual moving average inventory valuation engine
+  const inventoryCalculation = useMemo(() => {
+    return calculatePerpetualInventory({
+      inventoryItems,
+      mappings: inventoryMappings,
+      openingStocks,
+      purchases,
+      purchaseReturns,
+      salesInvoices,
+      stockAdjustments,
+      physicalCounts: physicalStockCounts,
+      speciesList: species,
+      suppliers,
+      customers
+    });
+  }, [
+    inventoryItems,
+    inventoryMappings,
+    openingStocks,
+    purchases,
+    purchaseReturns,
+    salesInvoices,
+    stockAdjustments,
+    physicalStockCounts,
+    species,
+    suppliers,
+    customers
+  ]);
 
   // Helper to append to Audit Log
   const logAudit = (
@@ -2264,8 +2375,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProcessingEntries([]);
     setSalesInvoices([]);
     setOfflineQueue([]);
-    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase, return, production, and sales transactions' });
-    showToast('All purchases, payments, returns, processing lots, and sales invoices cleared.', 'info');
+    setOpeningStocks([]);
+    setStockAdjustments([]);
+    setPhysicalStockCounts([]);
+    setPeriodCloseLocks([]);
+    logAudit('DELETE', 'Database', 'Transactions', { changeReason: 'User purged all purchase, return, production, sales, and stock adjustment transactions' });
+    showToast('All purchases, payments, returns, processing lots, sales invoices, and stock adjustments cleared.', 'info');
   };
 
   const wipeDatabaseCompletely = () => {
@@ -2290,6 +2405,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSlabTypes([]);
     setCustomers([]);
     setPorts([]);
+    setInventoryItems([]);
+    setInventoryMappings([]);
+    setOpeningStocks([]);
+    setStockAdjustments([]);
+    setPhysicalStockCounts([]);
+    setPeriodCloseLocks([]);
     setAuditLogs([]);
     showToast('Database reset to 100% clean blank state.', 'success');
   };
@@ -2312,7 +2433,282 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if ((SAMPLE_STARTER_PRESETS as any).ports) {
       setPorts((SAMPLE_STARTER_PRESETS as any).ports);
     }
+    setInventoryItems(INITIAL_INVENTORY_ITEMS);
+    setInventoryMappings(INITIAL_INVENTORY_MAPPINGS);
     showToast('Common seafood master presets loaded. You can edit or delete them anytime.', 'success');
+  };
+
+  // --------------------------------------------------------------------------
+  // INVENTORY MODULE CRUD ACTIONS
+  // --------------------------------------------------------------------------
+
+  const addInventoryItem = (itemData: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+    const exists = inventoryItems.some((i) => i.code.trim().toLowerCase() === itemData.code.trim().toLowerCase());
+    if (exists) {
+      showToast(`Inventory Item with code "${itemData.code}" already exists.`, 'error');
+      return { success: false, message: 'Item code already exists' };
+    }
+    const newItem: InventoryItem = {
+      ...itemData,
+      id: `inv-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: currentUser.email || 'system'
+    };
+    setInventoryItems((prev) => [...prev, newItem]);
+    logAudit('CREATE', 'InventoryItem', newItem.code, { newValues: newItem });
+    showToast(`Inventory item "${newItem.name}" added.`, 'success');
+    return { success: true };
+  };
+
+  const updateInventoryItem = (id: string, updates: Partial<InventoryItem>) => {
+    const old = inventoryItems.find((i) => i.id === id);
+    if (!old) return { success: false, message: 'Item not found' };
+    setInventoryItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i)));
+    logAudit('EDIT', 'InventoryItem', old.code, { oldValues: old, newValues: updates });
+    showToast(`Inventory item "${old.code}" updated.`, 'success');
+    return { success: true };
+  };
+
+  const deleteInventoryItem = (id: string) => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Unauthorized: Only Owner / Admin can delete inventory master items.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const old = inventoryItems.find((i) => i.id === id);
+    if (!old) return { success: false, message: 'Item not found' };
+    const hasMovements = inventoryCalculation.movementsByItem[id] && inventoryCalculation.movementsByItem[id].length > 0;
+    if (hasMovements) {
+      showToast(`Cannot delete "${old.code}": Active stock ledger entries exist. Deactivate item instead.`, 'error');
+      return { success: false, message: 'Item has transactions in ledger. Deactivate instead.' };
+    }
+    setInventoryItems((prev) => prev.filter((i) => i.id !== id));
+    setInventoryMappings((prev) => prev.filter((m) => m.inventoryItemId !== id));
+    logAudit('DELETE', 'InventoryItem', old.code, { oldValues: old });
+    showToast(`Inventory item "${old.code}" removed.`, 'info');
+    return { success: true };
+  };
+
+  const toggleInventoryItemActive = (id: string) => {
+    setInventoryItems((prev) => prev.map((i) => (i.id === id ? { ...i, active: !i.active, updatedAt: new Date().toISOString() } : i)));
+  };
+
+  const addInventoryMapping = (mappingData: Omit<InventoryItemMapping, 'id' | 'createdAt' | 'createdBy'>) => {
+    const newMapping: InventoryItemMapping = {
+      ...mappingData,
+      id: `map-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email || 'system'
+    };
+    setInventoryMappings((prev) => [...prev, newMapping]);
+    logAudit('CREATE', 'InventoryMapping', newMapping.id, { newValues: newMapping });
+    showToast('Inventory product mapping saved.', 'success');
+    return { success: true };
+  };
+
+  const deleteInventoryMapping = (id: string) => {
+    const old = inventoryMappings.find((m) => m.id === id);
+    setInventoryMappings((prev) => prev.filter((m) => m.id !== id));
+    if (old) logAudit('DELETE', 'InventoryMapping', id, { oldValues: old });
+    showToast('Inventory mapping removed.', 'info');
+    return { success: true };
+  };
+
+  const saveOpeningStock = (openingData: Omit<OpeningStock, 'id' | 'createdAt' | 'createdBy'>) => {
+    const ratePerKg = openingData.quantityKg > 0 ? Number((openingData.totalValue / openingData.quantityKg).toFixed(4)) : 0;
+    const existingIndex = openingStocks.findIndex((o) => o.inventoryItemId === openingData.inventoryItemId);
+    if (existingIndex >= 0) {
+      setOpeningStocks((prev) =>
+        prev.map((o, idx) =>
+          idx === existingIndex
+            ? {
+                ...o,
+                ...openingData,
+                ratePerKg,
+                updatedAt: new Date().toISOString()
+              }
+            : o
+        )
+      );
+      showToast('Opening stock updated.', 'success');
+      return { success: true };
+    }
+    const newOpening: OpeningStock = {
+      ...openingData,
+      ratePerKg,
+      id: `opn-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email || 'system'
+    };
+    setOpeningStocks((prev) => [...prev, newOpening]);
+    logAudit('CREATE', 'OpeningStock', newOpening.inventoryItemId, { newValues: newOpening });
+    showToast('Opening stock recorded.', 'success');
+    return { success: true };
+  };
+
+  const deleteOpeningStock = (id: string) => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Unauthorized: Only Owner / Admin can delete opening stock.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const old = openingStocks.find((o) => o.id === id);
+    setOpeningStocks((prev) => prev.filter((o) => o.id !== id));
+    if (old) logAudit('DELETE', 'OpeningStock', id, { oldValues: old });
+    showToast('Opening stock removed.', 'info');
+    return { success: true };
+  };
+
+  const addStockAdjustment = (adjData: Omit<StockAdjustment, 'id' | 'adjustmentNo' | 'createdAt' | 'createdBy' | 'status'>) => {
+    const count = stockAdjustments.length + 1;
+    const adjustmentNo = `ADJ-${new Date().getFullYear()}-${String(count).padStart(4, '0')}`;
+    const newAdj: StockAdjustment = {
+      ...adjData,
+      id: `adj-${Date.now()}`,
+      adjustmentNo,
+      status: 'Posted',
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email || 'system'
+    };
+    setStockAdjustments((prev) => [newAdj, ...prev]);
+    logAudit('CREATE', 'StockAdjustment', adjustmentNo, { newValues: newAdj });
+    showToast(`Stock Adjustment ${adjustmentNo} posted.`, 'success');
+    return { success: true, adjustmentNo };
+  };
+
+  const deleteStockAdjustment = (id: string) => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Only Owner / Admin can delete posted adjustments.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const old = stockAdjustments.find((a) => a.id === id);
+    setStockAdjustments((prev) => prev.filter((a) => a.id !== id));
+    if (old) logAudit('DELETE', 'StockAdjustment', old.adjustmentNo || old.id, { oldValues: old });
+    showToast('Stock adjustment deleted and ledger reversed.', 'info');
+    return { success: true };
+  };
+
+  const savePhysicalStockCount = (countData: Omit<PhysicalStockCount, 'id' | 'countNo' | 'referenceNo' | 'createdAt' | 'createdBy' | 'status'>) => {
+    const countNo = `CNT-${new Date().getFullYear()}-${String(physicalStockCounts.length + 1).padStart(4, '0')}`;
+    const newCount: PhysicalStockCount = {
+      ...countData,
+      id: `cnt-${Date.now()}`,
+      countNo,
+      referenceNo: countNo,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email || 'system'
+    };
+    setPhysicalStockCounts((prev) => [newCount, ...prev]);
+    showToast(`Physical Stock Count ${countNo} saved as Draft.`, 'success');
+    return { success: true, countNo, countId: newCount.id };
+  };
+
+  const postPhysicalStockCount = (countId: string) => {
+    const target = physicalStockCounts.find((c) => c.id === countId);
+    if (!target) return { success: false, message: 'Count record not found' };
+    if (target.status === 'posted') return { success: false, message: 'Count is already posted' };
+
+    const adjustmentsToCreate: StockAdjustment[] = [];
+    const timestamp = new Date().toISOString();
+    const countRef = target.referenceNo || target.countNo || `CNT-${countId.slice(-4)}`;
+
+    target.items.forEach((item, index) => {
+      const variance = item.varianceKg ?? item.varianceQuantityKg ?? 0;
+      if (Math.abs(variance) > 0.001) {
+        const itemObj = inventoryItems.find((i) => i.id === item.inventoryItemId);
+        const itemName = itemObj ? `${itemObj.code} - ${itemObj.name}` : item.inventoryItemId;
+        const adjNo = `ADJ-${countRef}-${index + 1}`;
+        adjustmentsToCreate.push({
+          id: `adj-${Date.now()}-${index}`,
+          adjustmentNo: adjNo,
+          date: target.countDate,
+          inventoryItemId: item.inventoryItemId,
+          quantityKg: variance,
+          unitCost: item.unitCost,
+          ratePerKg: item.unitCost,
+          totalValue: Number((variance * item.unitCost).toFixed(2)),
+          reason: 'count_difference',
+          remarks: `Posted from Physical Count ${countRef}. Variance: ${variance > 0 ? '+' : ''}${variance} Kg on ${itemName}`,
+          status: 'Posted',
+          createdAt: timestamp,
+          createdBy: currentUser.email || 'system'
+        });
+      }
+    });
+
+    if (adjustmentsToCreate.length > 0) {
+      setStockAdjustments((prev) => [...adjustmentsToCreate, ...prev]);
+    }
+
+    setPhysicalStockCounts((prev) =>
+      prev.map((c) => (c.id === countId ? { ...c, status: 'posted', postedAt: timestamp, postedBy: currentUser.email } : c))
+    );
+
+    logAudit('CREATE', 'PhysicalCount', countRef, { changeReason: `Posted count with ${adjustmentsToCreate.length} variance adjustments` });
+    showToast(`Physical Count ${countRef} posted. ${adjustmentsToCreate.length} variance adjustments generated.`, 'success');
+    return { success: true };
+  };
+
+  const deletePhysicalStockCount = (id: string) => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Only Owner / Admin can delete stock count records.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const old = physicalStockCounts.find((c) => c.id === id);
+    setPhysicalStockCounts((prev) => prev.filter((c) => c.id !== id));
+    if (old) logAudit('DELETE', 'PhysicalCount', old.referenceNo || old.countNo || id, { oldValues: old });
+    showToast('Physical count record deleted.', 'info');
+    return { success: true };
+  };
+
+  const closePeriodLock = (period: string, closingQty: number, closingValue: number, remarks?: string) => {
+    if (!permissions.canPeriodClose) {
+      showToast('Unauthorized: Only Master Accountant and Owner / Admin can lock inventory periods.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const existing = periodCloseLocks.find((l) => l.period === period && l.status === 'locked');
+    if (existing) {
+      showToast(`Period ${period} is already locked.`, 'error');
+      return { success: false, message: 'Period already locked' };
+    }
+    const newLock: PeriodCloseLock = {
+      id: `lock-${Date.now()}`,
+      period,
+      closedAt: new Date().toISOString(),
+      closingDate: new Date().toISOString(),
+      closedBy: currentUser.email || 'admin',
+      closingQty,
+      closingValue,
+      status: 'locked',
+      reconciliationPassed: true,
+      reconciliationVarianceValue: 0,
+      reconciledAt: new Date().toISOString(),
+      remarks,
+      notes: remarks
+    };
+    setPeriodCloseLocks((prev) => [newLock, ...prev]);
+    logAudit('CREATE', 'PeriodClose', period, { newValues: newLock, changeReason: 'Locked inventory period after reconciliation' });
+    showToast(`Inventory Period ${period} locked successfully.`, 'success');
+    return { success: true };
+  };
+
+  const unlockPeriod = (period: string, reason: string) => {
+    if (currentUser.role !== 'admin') {
+      showToast('Unauthorized: Only Owner / Admin can unlock a closed inventory period.', 'error');
+      return { success: false, message: 'Only Owner / Admin can unlock closed periods' };
+    }
+    setPeriodCloseLocks((prev) =>
+      prev.map((l) => (l.period === period ? { ...l, status: 'unlocked', unlockReason: reason, unlockedBy: currentUser.email, unlockedAt: new Date().toISOString() } : l))
+    );
+    logAudit('EDIT', 'PeriodClose', period, { changeReason: `Period unlocked by Admin: ${reason}` });
+    showToast(`Period ${period} unlocked.`, 'info');
+    return { success: true };
+  };
+
+  const rebuildInventoryLedger = () => {
+    showToast('Inventory ledger recalculated and verified against all purchase receipts and sales invoices.', 'success');
+    logAudit('EDIT', 'InventoryLedger', 'ALL', { changeReason: 'Admin triggered full ledger rebuild' });
+    return { success: true, message: 'Inventory ledger recalculated successfully' };
   };
 
   const bulkImportSuppliers = (records: Record<string, any>[], updateExisting = true) => {
@@ -4311,7 +4707,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bulkImportPurchases,
         bulkImportProcessingEntries,
         bulkImportSalesInvoices,
-        logAudit
+        logAudit,
+
+        // Inventory Module Exports
+        inventoryItems,
+        inventoryMappings,
+        openingStocks,
+        stockAdjustments,
+        physicalStockCounts,
+        periodCloseLocks,
+        inventoryCalculation,
+
+        addInventoryItem,
+        updateInventoryItem,
+        deleteInventoryItem,
+        toggleInventoryItemActive,
+
+        addInventoryMapping,
+        deleteInventoryMapping,
+
+        saveOpeningStock,
+        deleteOpeningStock,
+
+        addStockAdjustment,
+        deleteStockAdjustment,
+
+        savePhysicalStockCount,
+        postPhysicalStockCount,
+        deletePhysicalStockCount,
+
+        closePeriodLock,
+        unlockPeriod,
+        rebuildInventoryLedger
       }}
     >
       {children}

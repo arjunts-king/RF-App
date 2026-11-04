@@ -62,6 +62,8 @@ export interface Species {
   hsCode?: string; // Harmonized System Code, e.g. "03061790" for Shrimps, "03038990" for Marine Fish
   rawSpeciesName?: string; // Origin purchase raw species name e.g. "Vannamei Shrimp", "Yellowfin Tuna"
   rawSpeciesId?: string; // Foreign key linking to purchase raw material species
+  inventoryQuantityBasis?: InventoryQuantityBasis; // Optional basis: 'purchase_weight' | 'yield'
+  inventoryItemId?: string; // Linked Inventory Item
   active: boolean;
 }
 
@@ -470,4 +472,282 @@ export interface SalesInvoice {
   updatedBy?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+
+// ==========================================
+// INVENTORY MODULE DATA TYPES & MODELS
+// ==========================================
+
+export type InventoryQuantityBasis = 'purchase_weight' | 'yield';
+
+export interface InventoryItem {
+  id: string;
+  code: string; // e.g. "INV-VAN-001"
+  name: string; // e.g. "Frozen Vannamei Shrimp (Yield Stock)"
+  unit: 'Kg';
+  quantityBasis: InventoryQuantityBasis; // 'purchase_weight' | 'yield'
+  minimumStockQuantity: number; // Low stock threshold (e.g. 500 Kg)
+  description?: string;
+  category: string;
+  active: boolean;
+  createdAt: string;
+  createdBy?: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
+  deletionReason?: string;
+}
+
+export interface InventoryItemMapping {
+  id: string;
+  inventoryItemId: string; // foreign key to InventoryItem
+  module: 'purchase' | 'sales';
+  // Purchase matching
+  speciesId?: string;
+  gradeId?: string;
+  sizeId?: string;
+  // Sales matching
+  salesProductId?: string; // speciesId / product in sales invoice
+  salesSizeId?: string;
+  notes?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export interface OpeningStock {
+  id: string;
+  inventoryItemId: string;
+  effectiveDate: string; // YYYY-MM-DD
+  quantityKg: number;
+  unitCost: number; // rate in INR/Kg
+  ratePerKg?: number; // alias for unitCost
+  totalValue: number; // quantityKg * unitCost
+  remarks?: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string;
+}
+
+export type StockAdjustmentReason =
+  | 'wastage'
+  | 'shrinkage'
+  | 'spoilage'
+  | 'count_difference'
+  | 'processing_loss'
+  | 'glazing_variance'
+  | 'damage_writeoff'
+  | 'other';
+
+export interface StockAdjustment {
+  id: string;
+  adjustmentNo?: string; // Sequential: ADJ-2026-0001
+  inventoryItemId: string;
+  date: string; // YYYY-MM-DD
+  quantityKg: number; // positive (+) or negative (-)
+  unitCost: number; // Valued at current weighted average cost at that moment
+  ratePerKg?: number; // alias for unitCost
+  totalValue: number; // quantityKg * unitCost
+  reason: StockAdjustmentReason;
+  status?: 'Draft' | 'Posted';
+  remarks?: string;
+  createdAt: string;
+  createdBy: string;
+  isDeleted?: boolean;
+  deletionReason?: string;
+}
+
+export interface PhysicalStockCountItem {
+  inventoryItemId: string;
+  bookQuantityKg: number;
+  countedQuantityKg: number;
+  varianceQuantityKg: number; // counted - book
+  varianceKg?: number; // alias for varianceQuantityKg
+  unitCost: number;
+  varianceValue: number; // variance * unitCost
+  remarks?: string;
+}
+
+export interface PhysicalStockCount {
+  id: string;
+  countNo?: string; // alias for referenceNo
+  countDate: string; // YYYY-MM-DD
+  referenceNo: string; // e.g. "CNT-2026-11-01"
+  items: PhysicalStockCountItem[];
+  totalVarianceQtyKg: number;
+  totalVarianceValue: number;
+  status: 'draft' | 'posted';
+  postedAt?: string;
+  postedBy?: string;
+  remarks?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface PeriodCloseLock {
+  id: string;
+  period: string; // YYYY-MM (e.g. "2026-10")
+  closedAt: string;
+  closingDate?: string;
+  closedBy: string;
+  closingQty?: number;
+  closingValue?: number;
+  status?: 'locked' | 'unlocked';
+  reconciliationPassed: boolean;
+  reconciliationVarianceValue: number;
+  reconciledAt?: string;
+  remarks?: string;
+  notes?: string;
+  unlockedAt?: string;
+  unlockedBy?: string;
+  unlockReason?: string;
+}
+
+export type InventoryMovementType =
+  | 'opening_stock'
+  | 'purchase_receipt'
+  | 'sales_issue'
+  | 'purchase_return'
+  | 'sales_return'
+  | 'stock_adjustment'
+  | 'physical_count_variance';
+
+export interface InventoryMovement {
+  id: string;
+  inventoryItemId: string;
+  date: string; // YYYY-MM-DD
+  timestamp: number; // sequence tie breaker
+  movementType: InventoryMovementType;
+  referenceId: string; // Purchase ID, Invoice No, Return ID, Adjustment ID, Count Ref
+  referenceDescription: string;
+  
+  // Movement details
+  quantityIn: number; // >= 0
+  quantityOut: number; // >= 0
+  rate: number; // movement unit rate (4 decimals)
+  movementValue: number; // total movement value (2 decimals)
+  
+  // Running Balance after this movement (perpetual moving weighted average)
+  balanceQuantity: number; // 3 decimals
+  balanceValue: number; // 2 decimals
+  averageCost: number; // 4 decimals
+  
+  // Warnings / Metadata
+  isNegativeStock?: boolean;
+  isBackdatedRecalculation?: boolean;
+  notes?: string;
+}
+
+export interface StockPositionItem {
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  category: string;
+  unit: string;
+  quantityBasis: InventoryQuantityBasis;
+  quantityOnHand: number;
+  averageCostPerKg: number;
+  totalStockValue: number;
+  minimumStockQuantity: number;
+  stockStatus: 'Normal' | 'Low Stock' | 'Out of Stock' | 'Negative Stock';
+  averageDailySalesKg: number;
+  daysOfCover: number;
+  lastMovementDate?: string;
+}
+
+export interface MovementSummaryItem {
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  unit: string;
+  openingQty: number;
+  openingValue: number;
+  receiptsQty: number;
+  receiptsValue: number;
+  issuesQty: number;
+  issuesValue: number;
+  adjustmentsQty: number;
+  adjustmentsValue: number;
+  closingQty: number;
+  closingValue: number;
+  closingAverageCost: number;
+}
+
+export interface CogsReportItem {
+  invoiceId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  customerId: string;
+  customerName: string;
+  productId: string;
+  productName: string;
+  inventoryItemId: string;
+  inventoryItemName: string;
+  quantityKg: number;
+  inventoryUnitCost: number; // moving average cost at time of issue
+  totalCogsINR: number; // quantityKg * inventoryUnitCost
+  saleValueCurrency: number; // In foreign currency (e.g. USD)
+  saleValueINR: number; // In INR (realized INR if settled, else Amount USD * exchange rate)
+  grossProfitINR: number; // saleValueINR - totalCogsINR
+  grossMarginPct: number; // (grossProfitINR / saleValueINR) * 100
+}
+
+export interface NrvCheckItem {
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  quantityOnHand: number;
+  averageCostPerKg: number;
+  latestSalePricePerKgINR: number;
+  nrvImpaired: boolean; // averageCostPerKg > latestSalePricePerKgINR
+  variancePerKg: number; // averageCost - latestSalePrice
+  totalPotentialImpairment: number;
+}
+
+export interface InventoryReconciliation {
+  period: string; // e.g. "All Time" or "FY 2026-27"
+  openingValue: number;
+  receiptsValue: number;
+  issuesValue: number;
+  adjustmentsValue: number;
+  closingValue: number;
+  formulaCheck: boolean; // opening + receipts - issues + adjustments === closing
+  
+  // Tie-outs with Purchase and Sales modules
+  purchaseModuleTotalCost: number;
+  purchaseModuleAgreed: boolean;
+  purchaseVariance: number;
+  
+  salesModuleTotalWeightKg: number;
+  salesModuleAgreed: boolean;
+  salesVarianceKg: number;
+  
+  status: 'Passed' | 'Variance Detected';
+}
+
+export interface InventoryException {
+  id: string;
+  type: 'unmapped_purchase' | 'unmapped_sale' | 'missing_yield_vannamei' | 'negative_stock' | 'count_variance' | 'period_close_locked';
+  severity: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  referenceId: string;
+  date: string;
+  affectedItem?: string;
+  suggestedAction: string;
+}
+
+export interface InventoryCalculationResult {
+  movementsByItem: Record<string, InventoryMovement[]>;
+  allMovements: InventoryMovement[];
+  stockPositions: StockPositionItem[];
+  movementSummary: MovementSummaryItem[];
+  cogsReport: CogsReportItem[];
+  nrvChecks: NrvCheckItem[];
+  reconciliation: InventoryReconciliation;
+  exceptions: InventoryException[];
+  totalClosingValue: number;
+  totalClosingQty: number;
+  totalCogsValue: number;
+  totalSalesValueINR: number;
+  overallGrossMarginPct: number;
 }

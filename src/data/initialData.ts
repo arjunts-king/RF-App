@@ -17,7 +17,13 @@ import {
   DailyProcessingEntry,
   Customer,
   PortMaster,
-  SalesInvoice
+  SalesInvoice,
+  InventoryItem,
+  InventoryItemMapping,
+  OpeningStock,
+  StockAdjustment,
+  PhysicalStockCount,
+  PeriodCloseLock
 } from '../types';
 
 export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
@@ -88,6 +94,63 @@ export const INITIAL_CUSTOMERS: Customer[] = [];
 export const INITIAL_PORTS: PortMaster[] = [];
 export const INITIAL_SALES_INVOICES: SalesInvoice[] = [];
 
+export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
+  {
+    id: 'inv-item-van',
+    code: 'INV-VAN-001',
+    name: 'Frozen Vannamei Shrimp (Yield Stock)',
+    unit: 'Kg',
+    quantityBasis: 'yield',
+    minimumStockQuantity: 1000,
+    category: 'Shrimp / Prawns',
+    description: 'Finished yield of processed and block-frozen Vannamei export shrimp.',
+    active: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'inv-item-bt',
+    code: 'INV-BT-001',
+    name: 'Frozen Black Tiger Shrimp',
+    unit: 'Kg',
+    quantityBasis: 'purchase_weight',
+    minimumStockQuantity: 500,
+    category: 'Shrimp / Prawns',
+    description: 'Black Tiger whole and HLSO export inventory.',
+    active: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'inv-item-yft',
+    code: 'INV-YFT-001',
+    name: 'Yellowfin Tuna Whole & Loins',
+    unit: 'Kg',
+    quantityBasis: 'purchase_weight',
+    minimumStockQuantity: 800,
+    category: 'Fish',
+    description: 'Sashimi grade & steak grade blast frozen Yellowfin Tuna stock.',
+    active: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'inv-item-sqd',
+    code: 'INV-SQD-001',
+    name: 'Indian Squid Tubes & Rings',
+    unit: 'Kg',
+    quantityBasis: 'purchase_weight',
+    minimumStockQuantity: 400,
+    category: 'Cephalopods (Squid / Cuttlefish / Octopus)',
+    description: 'Cleaned tubes, rings, and whole round Indian Squid inventory.',
+    active: true,
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const INITIAL_INVENTORY_MAPPINGS: InventoryItemMapping[] = [];
+export const INITIAL_OPENING_STOCKS: OpeningStock[] = [];
+export const INITIAL_STOCK_ADJUSTMENTS: StockAdjustment[] = [];
+export const INITIAL_PHYSICAL_COUNTS: PhysicalStockCount[] = [];
+export const INITIAL_PERIOD_CLOSE_LOCKS: PeriodCloseLock[] = [];
+
 // Optional starter templates that the user can import with 1 click if they want standard presets
 export const SAMPLE_STARTER_PRESETS = {
   suppliers: [
@@ -137,7 +200,7 @@ export const SAMPLE_STARTER_PRESETS = {
     }
   ],
   species: [
-    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', productForm: 'Headless Shell-On (HLSO)', processingType: 'Block Frozen', hsCode: '03061790', active: true },
+    { id: 'spe-1', code: 'SPE-001', name: 'Penaeus Vannamei (White Shrimp)', scientificName: 'Litopenaeus vannamei', category: 'Shrimp / Prawns', productForm: 'Headless Shell-On (HLSO)', processingType: 'Block Frozen', hsCode: '03061790', inventoryQuantityBasis: 'yield' as const, inventoryItemId: 'inv-item-van', active: true },
     { id: 'spe-2', code: 'SPE-002', name: 'Penaeus Monodon (Black Tiger Shrimp)', scientificName: 'Penaeus monodon', category: 'Shrimp / Prawns', productForm: 'Peeled & Deveined (PD)', processingType: 'Individual Quick Frozen (IQF)', hsCode: '03061790', active: true },
     { id: 'spe-3', code: 'SPE-003', name: 'Indian Squid (Kalamari)', scientificName: 'Loligo duvaucelii', category: 'Cephalopods', productForm: 'Cleaned Tubes & Rings', processingType: 'Blast Frozen', hsCode: '03074310', active: true },
     { id: 'spe-4', code: 'SPE-004', name: 'Yellowfin Tuna', scientificName: 'Thunnus albacares', category: 'Pelagic Finfish', productForm: 'Loins & Steaks', processingType: 'Plate Frozen', hsCode: '03038990', active: true }

@@ -91,6 +91,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
   const numWeight = parseFloat(weightKg) || 0;
   const numYield = parseFloat(yieldWeightKg) || 0;
+  const selectedSpecies = species.find((s) => s.id === speciesId);
+  const isYieldBasis = selectedSpecies?.inventoryQuantityBasis === 'yield' || selectedSpecies?.name?.toLowerCase().includes('vannamei');
   const liveYieldPct = numWeight > 0 && numYield > 0 ? Number(((numYield / numWeight) * 100).toFixed(2)) : undefined;
   const liveProcessingLoss = numWeight > 0 && numYield > 0 ? Number((numWeight - numYield).toFixed(2)) : undefined;
   const liveFinishedYieldCostPerKg = numYield > 0 && liveDerived.totalCost > 0 ? Number((liveDerived.totalCost / numYield).toFixed(2)) : undefined;
@@ -186,6 +188,11 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
     if (isNaN(numericRate) || numericRate < 0) {
       showToast('Rate per Kg must be >= 0.', 'error');
+      return;
+    }
+
+    if (isYieldBasis && (!yieldWeightKg || parseFloat(yieldWeightKg) <= 0)) {
+      showToast('Finished Yield Weight (Kg) is required for Vannamei / Yield-basis products for perpetual inventory moving-average valuation.', 'error');
       return;
     }
 
@@ -553,9 +560,15 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                     <span className="text-xs font-bold text-ink-900 uppercase tracking-wide">
                       Processed Yield / Finished Output (Kg)
                     </span>
-                    <span className="text-[11px] font-normal text-gray-500 ml-2">
-                      (Optional — e.g. for 5,000 Kg raw Vannamei, yield is 2,400 Kg)
-                    </span>
+                    {isYieldBasis ? (
+                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 ml-2">
+                        Basis: Yield Stock (Required for Inventory Perpetual Valuation)
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-normal text-gray-500 ml-2">
+                        (Optional — e.g. for 5,000 Kg raw Vannamei, yield is 2,400 Kg)
+                      </span>
+                    )}
                   </div>
                 </div>
 

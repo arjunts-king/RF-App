@@ -33,6 +33,7 @@ import {
   FileSpreadsheet,
   Settings,
   Boxes,
+  Package,
   FileText,
   BadgeDollarSign,
   Users,
@@ -41,12 +42,12 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales';
+export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales' | 'inventory';
 
 interface NavbarProps {
   activeModule: ActiveModuleType;
   onModuleChange: (module: ActiveModuleType) => void;
-  onNavigateTab: (module: 'purchase' | 'production' | 'sales', tab: string) => void;
+  onNavigateTab: (module: 'purchase' | 'production' | 'sales' | 'inventory', tab: string) => void;
   onOpenMobileMenu?: () => void;
   onOpenCommandPalette: () => void;
 }
@@ -63,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { reduceTransparency, setReduceTransparency, reduceMotion, setReduceMotion, ambientGlow, setAmbientGlow } = useLiquidGlass();
   const [showProfile, setShowProfile] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<'purchase' | 'production' | 'sales' | null>(null);
+  const [activeMegaMenu, setActiveMegaMenu] = useState<'purchase' | 'production' | 'sales' | 'inventory' | null>(null);
 
   const megaMenuRef = useRef<HTMLDivElement>(null);
 
@@ -179,7 +180,35 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   ];
 
-  const handleMenuSelect = (module: 'purchase' | 'production' | 'sales', tabId: string) => {
+  
+  const inventoryGroups = [
+    {
+      title: 'CORE INVENTORY',
+      items: [
+        { id: 'inv-dashboard', label: 'Inventory Dashboard', icon: BarChart3, desc: 'Weighted average stock value, COGS & margin KPIs' },
+        { id: 'stock-card', label: 'Valuation Ledger (Stock Card)', icon: BookOpen, desc: 'Perpetual moving average running ledger with PDF/Excel export' },
+        { id: 'stock-position', label: 'Stock Position as on Date', icon: Boxes, desc: 'Real-time closing stock balance, unit rates & low stock alerts' }
+      ]
+    },
+    {
+      title: 'INVENTORY OPERATIONS',
+      items: [
+        { id: 'item-master', label: 'Inventory Item & Product Mapping', icon: Database, desc: 'Items, unit basis (Purchase/Yield), and Purchase/Sales links', show: permissions.canManageInventoryItems },
+        { id: 'stock-adjustments', label: 'Stock Adjustments & Wastage', icon: RotateCcw, desc: 'Wastage, shrinkage, and write-offs at moving average cost', show: permissions.canManageInventoryAdjustments },
+        { id: 'physical-count', label: 'Physical Stock Count', icon: CheckCircle2, desc: 'Audit physical count variance and post adjusting entries', show: permissions.canRecordStockCounts }
+      ]
+    },
+    {
+      title: 'ANALYTICS & CONTROL',
+      items: [
+        { id: 'reports-hub', label: 'Inventory Reports Hub', icon: FileSpreadsheet, desc: 'COGS & margins, NRV check, stock days & exception reports' },
+        { id: 'period-close', label: 'Period Close & Lock', icon: Layers, desc: 'Month-end reconciliation seal (Unlocked by Owner/Admin only)', show: permissions.canPeriodClose },
+        { id: 'audit-log', label: 'Surveillance Audit Trail', icon: ShieldAlert, desc: 'Inventory audit log & full ledger recalculation engine', show: permissions.canViewAuditLog }
+      ]
+    }
+  ];
+
+  const handleMenuSelect = (module: 'purchase' | 'production' | 'sales' | 'inventory', tabId: string) => {
     setActiveMegaMenu(null);
     onNavigateTab(module, tabId);
   };
@@ -304,6 +333,29 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
+            
+            {/* Inventory Pill with Dropdown indicator */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  onModuleChange('inventory');
+                  setActiveMegaMenu(activeMegaMenu === 'inventory' ? null : 'inventory');
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
+                  activeModule === 'inventory'
+                    ? 'bg-rose-600 text-white shadow-2xs font-bold'
+                    : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                }`}
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Inventory</span>
+                <span className={`text-[9px] uppercase px-1 py-0.2 rounded font-extrabold ${activeModule === 'inventory' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
+                  Live
+                </span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${activeMegaMenu === 'inventory' ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
             {/* GROUPED MEGA-MENU POPOVER FOR ACTIVE MODULE */}
             {activeMegaMenu && (
               <div className="absolute left-0 top-full mt-2 w-[720px] glass-surface-thick rounded-2xl border border-white/90 p-6 z-50 animate-liquid-pop text-left">
@@ -329,7 +381,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? purchaseGroups
                     : activeMegaMenu === 'production'
                     ? productionGroups
-                    : salesGroups
+                    : activeMegaMenu === 'sales'
+                    ? salesGroups
+                    : inventoryGroups
                   ).map((grp) => {
                     const visibleItems = grp.items.filter((i) => i.show === undefined || i.show);
                     if (visibleItems.length === 0) return null;
