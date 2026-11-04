@@ -5,7 +5,6 @@ import {
   PlusCircle,
   Layers,
   Boxes,
-  Database,
   BarChart3,
   ShieldAlert,
   FileSpreadsheet
@@ -17,7 +16,6 @@ export type ProductionNavTab =
   | 'processing-log'
   | 'slab-types'
   | 'prod-reports'
-  | 'master-data'
   | 'audit-log'
   | 'prod-excel-import';
 
@@ -54,7 +52,7 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
       ]
     },
     {
-      title: 'PACKAGING & MASTERS',
+      title: 'PRODUCTION MASTERS',
       items: [
         {
           id: 'slab-types',
@@ -62,12 +60,6 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
           icon: Boxes,
           show: permissions.canManageMasterData,
           badge: 'Standard'
-        },
-        {
-          id: 'master-data',
-          label: 'Shared Master Data',
-          icon: Database,
-          show: permissions.canManageMasterData
         }
       ]
     },

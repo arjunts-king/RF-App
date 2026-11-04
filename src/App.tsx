@@ -34,6 +34,7 @@ import { SalesInvoiceEntryForm } from './components/sales/SalesInvoiceEntryForm'
 import { SalesInvoiceList } from './components/sales/SalesInvoiceList';
 import { CustomerManager } from './components/sales/CustomerManager';
 import { PortManager } from './components/sales/PortManager';
+import { CommercialSpeciesManager } from './components/sales/CommercialSpeciesManager';
 import { SalesReportsHub } from './components/sales/SalesReportsHub';
 import {
   LayoutDashboard,
@@ -326,7 +327,7 @@ const MainLayout: React.FC = () => {
               )}
               {productionTab === 'slab-types' && <SlabTypeManager />}
               {productionTab === 'prod-reports' && <ProductionReportsHub />}
-              {productionTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
+
               {productionTab === 'audit-log' && <AuditLogView />}
               {productionTab === 'prod-excel-import' && (
                 <ExcelImportView defaultModule="production" onNavigate={(tab) => setProductionTab(tab as ProductionNavTab)} />
@@ -348,8 +349,8 @@ const MainLayout: React.FC = () => {
               )}
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
-              {salesTab === 'species' && <MasterDataManager initialTab="species" onNavigate={setActiveTab} />}
-              {salesTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
+              {salesTab === 'species' && <CommercialSpeciesManager />}
+
               {salesTab === 'sales-reports' && <SalesReportsHub />}
               {salesTab === 'audit-log' && <AuditLogView />}
               {salesTab === 'sales-excel-import' && (

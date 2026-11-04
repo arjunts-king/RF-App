@@ -112,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     {
       title: 'CONFIGURATION & ADMIN',
       items: [
-        { id: 'master-data', label: 'Master Reference Data', icon: Database, desc: 'Suppliers, species, grades, sizes & heads', show: permissions.canManageMasterData },
+        { id: 'master-data', label: 'Procurement Master Data', icon: Database, desc: 'Suppliers, raw species, grades, sizes & wharf heads', show: permissions.canManageMasterData },
         { id: 'user-mgmt', label: 'Staff & User Management', icon: UserPlus, desc: 'Invite staff & role assignments', show: permissions.canInviteUsers || permissions.canManageStaff },
         { id: 'audit-log', label: 'Surveillance Audit Trail', icon: ShieldAlert, desc: 'Owner surveillance log', show: permissions.canViewAuditLog },
         { id: 'excel-import', label: 'Excel Import & Migration', icon: FileSpreadsheet, desc: 'Bulk purchase data import' },
@@ -131,10 +131,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       ]
     },
     {
-      title: 'PACKAGING & MASTERS',
+      title: 'PRODUCTION MASTERS',
       items: [
         { id: 'slab-types', label: 'Slab Types Master', icon: Boxes, desc: 'Block freezing standard weight (2.0 Kg)', show: permissions.canManageMasterData },
-        { id: 'master-data', label: 'Shared Master Data', icon: Database, desc: 'Species, grades & supplier lookups', show: permissions.canManageMasterData },
         { id: 'prod-excel-import', label: 'Production Import & Migration', icon: FileSpreadsheet, desc: 'Bulk processing entries, slabs & lot migration' }
       ]
     },
@@ -168,7 +167,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         { id: 'customers', label: 'Consignees & Buyers', icon: Users, desc: 'Foreign buyers & export credit terms', show: permissions.canManageSalesMasterData },
         { id: 'ports', label: 'Port Master', icon: Anchor, desc: 'Loading & destination ports', show: permissions.canManageSalesMasterData },
         { id: 'species', label: 'Species / Product Master', icon: Fish, desc: 'Product forms, processing types & HSN codes', show: permissions.canManageSalesMasterData || permissions.canManageMasterData },
-        { id: 'master-data', label: 'All Master Lists', icon: Database, desc: 'Suppliers, grades, accounts & expense heads', show: permissions.canManageMasterData },
         { id: 'sales-excel-import', label: 'Sales Import & Migration', icon: FileSpreadsheet, desc: 'Bulk export invoices, buyers & port migration' }
       ]
     },

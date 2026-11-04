@@ -7,7 +7,6 @@ import {
   BadgeDollarSign,
   Users,
   Anchor,
-  Database,
   BarChart3,
   ShieldAlert,
   FileSpreadsheet,
@@ -22,7 +21,6 @@ export type SalesNavTab =
   | 'customers'
   | 'ports'
   | 'species'
-  | 'master-data'
   | 'sales-reports'
   | 'audit-log'
   | 'sales-excel-import';
@@ -94,12 +92,6 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           icon: Fish,
           show: permissions.canManageSalesMasterData || permissions.canManageMasterData,
           badge: 'HSN'
-        },
-        {
-          id: 'master-data',
-          label: 'All Master Lists',
-          icon: Database,
-          show: permissions.canManageMasterData
         }
       ]
     },

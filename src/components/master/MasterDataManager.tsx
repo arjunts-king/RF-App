@@ -19,12 +19,11 @@ import {
   Inbox,
   FileSpreadsheet,
   Hash,
-  Boxes,
   Download
 } from 'lucide-react';
-import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType, SlabType } from '../../types';
+import { Supplier, Species, Grade, Size, Count, PurchaseLocation, BankAccount, ExpenseType } from '../../types';
 
-type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses' | 'slabs';
+type MasterTab = 'suppliers' | 'species' | 'grades' | 'sizes' | 'counts' | 'locations' | 'accounts' | 'expenses';
 
 export interface MasterDataManagerProps {
   onNavigate?: (tab: any) => void;
@@ -41,7 +40,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     locations,
     bankAccounts,
     expenseTypes,
-    slabTypes,
     addSupplier,
     updateSupplier,
     deleteSupplier,
@@ -70,11 +68,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     addExpenseType,
     updateExpenseType,
     deleteExpenseType,
-    toggleExpenseTypeActive,
-    addSlabType,
-    updateSlabType,
-    deleteSlabType,
-    toggleSlabTypeActive
+    toggleExpenseTypeActive
   } = useData();
 
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
@@ -106,10 +100,9 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       case 'locations': return locations;
       case 'accounts': return bankAccounts;
       case 'expenses': return expenseTypes;
-      case 'slabs': return slabTypes;
       default: return [];
     }
-  }, [activeTab, suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes, slabTypes]);
+  }, [activeTab, suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes]);
 
   const allCurrentSelected =
     currentTabItems.length > 0 &&
@@ -142,7 +135,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       else if (activeTab === 'locations') deleteLocation(id);
       else if (activeTab === 'accounts') deleteBankAccount(id);
       else if (activeTab === 'expenses') deleteExpenseType(id);
-      else if (activeTab === 'slabs') deleteSlabType(id);
       count++;
     }
     showToast(`Deleted ${count} ${activeTab} records.`, 'success');
@@ -150,7 +142,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     setSelectedIds([]);
   };
 
-  const hasStatusToggle = ['suppliers', 'species', 'grades', 'locations', 'expenses', 'slabs'].includes(activeTab);
+  const hasStatusToggle = ['suppliers', 'species', 'grades', 'locations', 'expenses'].includes(activeTab);
 
   const handleBulkToggleActive = () => {
     let count = 0;
@@ -160,7 +152,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       else if (activeTab === 'grades') toggleGradeActive(id);
       else if (activeTab === 'locations') toggleLocationActive(id);
       else if (activeTab === 'expenses') toggleExpenseTypeActive(id);
-      else if (activeTab === 'slabs') toggleSlabTypeActive(id);
       count++;
     }
     showToast(`Updated status for ${count} records.`, 'success');
@@ -241,8 +232,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         activeTab === 'grades' ? grades :
         activeTab === 'sizes' ? sizes :
         activeTab === 'counts' ? counts :
-        activeTab === 'locations' ? locations :
-        activeTab === 'accounts' ? bankAccounts : slabTypes;
+        activeTab === 'locations' ? locations : bankAccounts;
       const selected = currentList.filter((item) => selectedIds.includes(item.id));
       const csv = convertToCSV(
         selected.map((item) => ({
@@ -270,7 +260,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     else if (deleteTarget.type === 'location') deleteLocation(deleteTarget.id);
     else if (deleteTarget.type === 'account') deleteBankAccount(deleteTarget.id);
     else if (deleteTarget.type === 'expense') deleteExpenseType(deleteTarget.id);
-    else if (deleteTarget.type === 'slab') deleteSlabType(deleteTarget.id);
     setDeleteTarget(null);
   };
 
@@ -336,20 +325,12 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
   const [expName, setExpName] = useState('');
   const [expCat, setExpCat] = useState('Landing Expense');
 
-  // Slab Type form state (Production)
-  const [slbCode, setSlbCode] = useState('');
-  const [slbName, setSlbName] = useState('');
-  const [slbWeight, setSlbWeight] = useState('2.0');
-  const [slbUnit, setSlbUnit] = useState('Kg');
-  const [slbApp, setSlbApp] = useState('All Products');
-
   const tabs: { id: MasterTab; label: string; icon: any; count: number }[] = [
     { id: 'suppliers', label: 'Suppliers', icon: Truck, count: suppliers.length },
     { id: 'species', label: 'Species / Product', icon: Fish, count: species.length },
     { id: 'grades', label: 'Grades', icon: Grid, count: grades.length },
     { id: 'sizes', label: 'Sizes', icon: Scale, count: sizes.length },
     { id: 'counts', label: 'Counts / Pcs', icon: Hash, count: counts.length },
-    { id: 'slabs', label: 'Slab Types', icon: Boxes, count: slabTypes.length },
     { id: 'locations', label: 'Harbour Locations', icon: Building, count: locations.length },
     { id: 'accounts', label: 'Bank / Cash Accounts', icon: CreditCard, count: bankAccounts.length },
     { id: 'expenses', label: 'Dynamic Expense Heads', icon: Layers, count: expenseTypes.length }
@@ -410,12 +391,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       setExpCode(`EXP-${String(expenseTypes.length + 1).padStart(3, '0')}`);
       setExpName('');
       setExpCat('Direct Purchase Expense');
-    } else if (activeTab === 'slabs') {
-      setSlbCode(`SLB-${String(slabTypes.length + 1).padStart(3, '0')}`);
-      setSlbName('');
-      setSlbWeight('2.0');
-      setSlbUnit('Kg');
-      setSlbApp('All Products');
     }
     setIsModalOpen(true);
   };
@@ -484,13 +459,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       setExpCode(e.code);
       setExpName(e.name);
       setExpCat(e.category);
-    } else if (activeTab === 'slabs') {
-      const sl = item as SlabType;
-      setSlbCode(sl.code);
-      setSlbName(sl.name);
-      setSlbWeight(String(sl.standardWeightKg));
-      setSlbUnit(sl.unit);
-      setSlbApp(sl.productApplicability);
     }
     setIsModalOpen(true);
   };
@@ -558,17 +526,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       const payload = { code: expCode, name: expName, category: expCat, active: true };
       if (editingId) updateExpenseType(editingId, payload);
       else addExpenseType(payload);
-    } else if (activeTab === 'slabs') {
-      const payload = {
-        code: slbCode,
-        name: slbName,
-        standardWeightKg: parseFloat(slbWeight) || 2.0,
-        unit: slbUnit,
-        productApplicability: slbApp,
-        active: true
-      };
-      if (editingId) updateSlabType(editingId, payload);
-      else addSlabType(payload);
     }
 
     setIsModalOpen(false);
@@ -578,9 +535,9 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Figma Header Block */}
       <PageHeader
-        title="Master reference data repository"
-        subtitle="Fully customizable master lists with referential integrity. Add, edit, or archive your actual suppliers, species, sizes, and harbours."
-        breadcrumbs={['Settings', 'Master Reference Data']}
+        title="Procurement master reference data"
+        subtitle="Customizable procurement master lists with referential integrity. Add, edit, or archive your suppliers, raw material species, grades, sizes, wharf locations, and accounts."
+        breadcrumbs={['Procurement', 'Master Reference Data']}
         primaryAction={{
           label: `Add ${tabs.find((t) => t.id === activeTab)?.label.replace(/s$/, '')}`,
           onClick: handleOpenAdd,
@@ -935,8 +892,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
           </div>
         )}
 
-        {/* GRADES, SIZES, COUNTS, SLABS, LOCATIONS, ACCOUNTS TABLES */}
-        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'slabs' || activeTab === 'locations' || activeTab === 'accounts') && (
+        {/* GRADES, SIZES, COUNTS, LOCATIONS, ACCOUNTS TABLES */}
+        {(activeTab === 'grades' || activeTab === 'sizes' || activeTab === 'counts' || activeTab === 'locations' || activeTab === 'accounts') && (
           <div className="p-4 text-xs">
             {currentTabItems.length > 0 && (
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
@@ -1066,56 +1023,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                         <div className="flex items-center gap-1">
                           <button onClick={() => handleOpenEdit(cnt)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
                           <button onClick={() => setDeleteTarget({ type: 'count', id: cnt.id, name: cnt.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            )}
-
-            {activeTab === 'slabs' && (
-              slabTypes.length === 0 ? (
-                <div className="py-12 text-center text-ink-500">No production slab types configured yet. Add 2.0 Kg Standard Block, 1.8 Kg Export Slab, etc.</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {slabTypes.map((sl) => {
-                    const isSelected = selectedIds.includes(sl.id);
-                    return (
-                      <div
-                        key={sl.id}
-                        className={`p-3.5 rounded-xl border flex justify-between items-start transition ${
-                          isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRow(sl.id)}
-                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-ink-900 block">{sl.name}</span>
-                              <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">
-                                {sl.standardWeightKg} {sl.unit}
-                              </span>
-                            </div>
-                            <span className="text-[11px] text-ink-500 block mt-1">Applicable: {sl.productApplicability} · ({sl.code})</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button onClick={() => handleOpenEdit(sl)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => setDeleteTarget({ type: 'slab', id: sl.id, name: sl.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
-                          <button
-                            onClick={() => toggleSlabTypeActive(sl.id)}
-                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                              sl.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
-                            }`}
-                          >
-                            {sl.active ? 'Active' : 'Inactive'}
-                          </button>
                         </div>
                       </div>
                     );
@@ -1462,50 +1369,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               <div>
                 <label className="block font-semibold mb-1">Description</label>
                 <input type="text" placeholder="e.g. 20 to 30 pcs per Kg" value={cntDesc} onChange={(e) => setCntDesc(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg" />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'slabs' && (
-            <div className="space-y-3">
-              <div>
-                <label className="block font-semibold mb-1">Slab ID / Code</label>
-                <input type="text" value={slbCode} onChange={(e) => setSlbCode(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Slab Type Name</label>
-                <input type="text" placeholder="e.g. 2.0 Kg Standard Export Block" value={slbName} onChange={(e) => setSlbName(e.target.value)} required className="w-full p-2 bg-gray-50 border rounded-lg" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Standard Weight</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={slbWeight}
-                    onChange={(e) => setSlbWeight(e.target.value)}
-                    required
-                    className="w-full p-2 bg-gray-50 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Unit</label>
-                  <select value={slbUnit} onChange={(e) => setSlbUnit(e.target.value)} className="w-full p-2 bg-gray-50 border rounded-lg">
-                    <option value="Kg">Kg</option>
-                    <option value="Lbs">Lbs</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Product Applicability</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Shrimp / Prawns, Tuna, All Products"
-                  value={slbApp}
-                  onChange={(e) => setSlbApp(e.target.value)}
-                  className="w-full p-2 bg-gray-50 border rounded-lg"
-                />
               </div>
             </div>
           )}
