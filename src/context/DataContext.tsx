@@ -1430,7 +1430,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fy = getIndianFinancialYear(returnDate);
     const weight = typeof returnData.returnedWeightKg === 'number' ? returnData.returnedWeightKg : (Number(returnData.returnedWeightKg) || 0);
     const rate = typeof returnData.ratePerKg === 'number' ? returnData.ratePerKg : (Number(returnData.ratePerKg) || 0);
-    const returnedValue = Number((weight * rate).toFixed(2));
+    const returnedValue = returnData.returnedValue !== undefined && returnData.returnedValue !== null && !isNaN(Number(returnData.returnedValue)) && Number(returnData.returnedValue) > 0
+      ? Number(Number(returnData.returnedValue).toFixed(2))
+      : Number((weight * rate).toFixed(2));
 
     let linkedPurchase: Purchase | undefined;
     if (returnData.purchaseId) {
@@ -1490,7 +1492,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const weight = updates.returnedWeightKg !== undefined ? (Number(updates.returnedWeightKg) || 0) : existing.returnedWeightKg;
     const rate = updates.ratePerKg !== undefined ? (Number(updates.ratePerKg) || 0) : existing.ratePerKg;
-    const returnedValue = Number((weight * rate).toFixed(2));
+    const returnedValue = updates.returnedValue !== undefined && updates.returnedValue !== null && !isNaN(Number(updates.returnedValue)) && Number(updates.returnedValue) > 0
+      ? Number(Number(updates.returnedValue).toFixed(2))
+      : Number((weight * rate).toFixed(2));
     const returnDate = updates.returnDate || existing.returnDate || new Date().toISOString().split('T')[0];
     const fy = getIndianFinancialYear(returnDate);
 

@@ -88,6 +88,8 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
   const [formBoxesCount, setFormBoxesCount] = useState<number | ''>('');
   const [formWeightKg, setFormWeightKg] = useState<number | ''>('');
   const [formRatePerKg, setFormRatePerKg] = useState<number | ''>('');
+  const [formReturnedValue, setFormReturnedValue] = useState<number | ''>('');
+  const [isManualAmount, setIsManualAmount] = useState(false);
   const [formReason, setFormReason] = useState<PurchaseReturnReason | string>(RETURN_REASONS[0]);
   const [formDetailedReason, setFormDetailedReason] = useState('');
   const [formAdjustPayable, setFormAdjustPayable] = useState(true);
@@ -137,7 +139,14 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     setFormCountId(p.countId || '');
     setFormRatePerKg(p.ratePerKg);
     const maxKg = getRemainingReturnableKg(p);
-    setFormWeightKg(maxKg > 0 ? maxKg : '');
+    const initialKg = maxKg > 0 ? maxKg : '';
+    setFormWeightKg(initialKg);
+    if (typeof initialKg === 'number' && typeof p.ratePerKg === 'number' && initialKg > 0 && p.ratePerKg >= 0) {
+      setFormReturnedValue(Number((initialKg * p.ratePerKg).toFixed(2)));
+    } else {
+      setFormReturnedValue('');
+    }
+    setIsManualAmount(false);
     setFormBoxesCount('');
     setFormReason(RETURN_REASONS[0]);
     setFormDetailedReason('');
@@ -160,6 +169,8 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     setFormBoxesCount('');
     setFormWeightKg('');
     setFormRatePerKg('');
+    setFormReturnedValue('');
+    setIsManualAmount(false);
     setFormReason(RETURN_REASONS[0]);
     setFormDetailedReason('');
     setFormAdjustPayable(true);
@@ -193,7 +204,56 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
       setFormCountId(target.countId || '');
       setFormRatePerKg(target.ratePerKg);
       const remainingKg = getRemainingReturnableKg(target);
-      setFormWeightKg(remainingKg > 0 ? remainingKg : '');
+      const initialKg = remainingKg > 0 ? remainingKg : '';
+      setFormWeightKg(initialKg);
+      if (typeof initialKg === 'number' && typeof target.ratePerKg === 'number' && initialKg > 0 && target.ratePerKg >= 0) {
+        setFormReturnedValue(Number((initialKg * target.ratePerKg).toFixed(2)));
+      } else {
+        setFormReturnedValue('');
+      }
+      setIsManualAmount(false);
+    }
+  };
+
+  const handleWeightChange = (val: number | '') => {
+    setFormWeightKg(val);
+    if (!isManualAmount) {
+      if (typeof val === 'number' && typeof formRatePerKg === 'number' && val > 0 && formRatePerKg >= 0) {
+        setFormReturnedValue(Number((val * formRatePerKg).toFixed(2)));
+      } else if (val === '' || val === 0) {
+        setFormReturnedValue('');
+      }
+    } else if (typeof val === 'number' && val > 0 && typeof formReturnedValue === 'number' && formReturnedValue > 0) {
+      setFormRatePerKg(Number((formReturnedValue / val).toFixed(2)));
+    }
+  };
+
+  const handleRateChange = (val: number | '') => {
+    setFormRatePerKg(val);
+    setIsManualAmount(false);
+    if (typeof formWeightKg === 'number' && typeof val === 'number' && formWeightKg > 0 && val >= 0) {
+      setFormReturnedValue(Number((formWeightKg * val).toFixed(2)));
+    } else if (val === '') {
+      setFormReturnedValue('');
+    }
+  };
+
+  const handleReturnedValueChange = (val: number | '') => {
+    setFormReturnedValue(val);
+    setIsManualAmount(true);
+    if (typeof val === 'number' && typeof formWeightKg === 'number' && formWeightKg > 0 && val >= 0) {
+      setFormRatePerKg(Number((val / formWeightKg).toFixed(2)));
+    }
+  };
+
+  const handleResetToAutoAmount = () => {
+    setIsManualAmount(false);
+    const weight = typeof formWeightKg === 'number' ? formWeightKg : (Number(formWeightKg) || 0);
+    const rate = typeof formRatePerKg === 'number' ? formRatePerKg : (Number(formRatePerKg) || 0);
+    if (weight > 0 && rate >= 0) {
+      setFormReturnedValue(Number((weight * rate).toFixed(2)));
+    } else {
+      setFormReturnedValue('');
     }
   };
 
@@ -202,6 +262,15 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
 
     const weight = typeof formWeightKg === 'number' ? formWeightKg : (Number(formWeightKg) || 0);
     const rate = typeof formRatePerKg === 'number' ? formRatePerKg : (Number(formRatePerKg) || 0);
+    const returnedValue = typeof formReturnedValue === 'number'
+      ? formReturnedValue
+      : (formReturnedValue !== '' && !isNaN(Number(formReturnedValue))
+          ? Number(Number(formReturnedValue).toFixed(2))
+          : Number((weight * rate).toFixed(2)));
+
+    if (returnedValue <= 0 && weight <= 0) {
+      return;
+    }
 
     if (editingReturn) {
       const res = updatePurchaseReturn(
@@ -221,6 +290,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           boxesCount: formBoxesCount ? Number(formBoxesCount) : undefined,
           returnedWeightKg: weight,
           ratePerKg: rate,
+          returnedValue: returnedValue,
           reason: formReason || 'General Return',
           detailedReason: formDetailedReason || undefined,
           adjustSupplierPayable: formAdjustPayable
@@ -248,7 +318,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
         boxesCount: formBoxesCount ? Number(formBoxesCount) : undefined,
         returnedWeightKg: weight,
         ratePerKg: rate,
-        returnedValue: 0,
+        returnedValue: returnedValue,
         reason: formReason || 'General Return',
         detailedReason: formDetailedReason || undefined,
         adjustSupplierPayable: formAdjustPayable
@@ -275,6 +345,9 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     setFormBoxesCount(ret.boxesCount || '');
     setFormWeightKg(ret.returnedWeightKg);
     setFormRatePerKg(ret.ratePerKg);
+    setFormReturnedValue(ret.returnedValue);
+    const autoVal = Number((ret.returnedWeightKg * ret.ratePerKg).toFixed(2));
+    setIsManualAmount(Math.abs(ret.returnedValue - autoVal) > 0.01);
     setFormReason(ret.reason || RETURN_REASONS[0]);
     setFormDetailedReason(ret.detailedReason || '');
     setFormAdjustPayable(ret.adjustSupplierPayable !== false);
@@ -343,10 +416,12 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     ? getRemainingReturnableKg(selectedPurchaseForModal)
     : undefined;
 
-  const calculatedFormTotal =
-    typeof formWeightKg === 'number' && typeof formRatePerKg === 'number' && formWeightKg > 0 && formRatePerKg >= 0
-      ? Number((formWeightKg * formRatePerKg).toFixed(2))
-      : 0;
+  const effectiveFormTotal =
+    typeof formReturnedValue === 'number'
+      ? formReturnedValue
+      : (typeof formWeightKg === 'number' && typeof formRatePerKg === 'number' && formWeightKg > 0 && formRatePerKg >= 0
+          ? Number((formWeightKg * formRatePerKg).toFixed(2))
+          : 0);
 
   const handleExportCSV = () => {
     const csvData = filteredReturns.map((r) => ({
@@ -536,7 +611,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 <th className="py-3 px-4">Species &amp; Specs</th>
                 <th className="py-3 px-4 text-right">Returned Weight</th>
                 <th className="py-3 px-4 text-right">Return Rate</th>
-                <th className="py-3 px-4 text-right">Debit Note Value</th>
+                <th className="py-3 px-4 text-right">Return Amount (₹)</th>
                 <th className="py-3 px-4">Reason &amp; Linked Ref</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-4 text-center">Actions</th>
@@ -859,8 +934,8 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
             )}
           </div>
 
-          {/* Quantities, Rate, Date, Boxes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Quantities, Rate, Return Amount, Date, Boxes */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
                 Returned Weight (Kg)
@@ -870,7 +945,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 step="0.01"
                 min="0"
                 value={formWeightKg}
-                onChange={(e) => setFormWeightKg(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) => handleWeightChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0.00"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:border-rose-600 outline-none"
               />
@@ -885,10 +960,40 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 step="0.01"
                 min="0"
                 value={formRatePerKg}
-                onChange={(e) => setFormRatePerKg(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) => handleRateChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0.00"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-ink-900 focus:border-rose-600 outline-none"
               />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-emerald-800 uppercase">
+                  Return Amount (₹) <span className="text-rose-600">*</span>
+                </label>
+                {isManualAmount && (
+                  <button
+                    type="button"
+                    onClick={handleResetToAutoAmount}
+                    className="text-[10px] font-bold text-rose-600 hover:text-rose-800 hover:underline"
+                    title="Recalculate as Weight × Rate"
+                  >
+                    Reset (Wt × Rate)
+                  </button>
+                )}
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formReturnedValue}
+                onChange={(e) => handleReturnedValueChange(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="0.00"
+                className="w-full p-2 bg-emerald-50/60 border border-emerald-300 rounded-xl font-black text-emerald-900 focus:border-emerald-600 outline-none"
+              />
+              <span className="text-[10px] text-ink-500 mt-0.5 block">
+                {isManualAmount ? '✍️ Custom amount specified' : '⚡ Auto-computed (Weight × Rate)'}
+              </span>
             </div>
 
             <div>
@@ -914,27 +1019,6 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               />
             </div>
-          </div>
-
-          {/* Reason and Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
-                Return Reason
-              </label>
-              <select
-                value={formReason}
-                onChange={(e) => setFormReason(e.target.value)}
-                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
-              >
-                <option value="">None / Unspecified (Optional)</option>
-                {RETURN_REASONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <div>
               <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
@@ -948,6 +1032,25 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               />
             </div>
+          </div>
+
+          {/* Reason and Details */}
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 uppercase mb-1">
+              Return Reason
+            </label>
+            <select
+              value={formReason}
+              onChange={(e) => setFormReason(e.target.value)}
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
+            >
+              <option value="">None / Unspecified (Optional)</option>
+              {RETURN_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -967,10 +1070,10 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
           <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="text-[10px] font-bold text-emerald-800 uppercase block tracking-wider">
-                Total Debit Note Value (Credit to Buyer / Reduction from Supplier Payable)
+                Total Return Amount / Debit Note Value (Credit to Buyer / Reduction from Supplier Payable)
               </span>
               <div className="text-xl font-extrabold text-emerald-800 mt-0.5">
-                {formatINR(calculatedFormTotal)}
+                {formatINR(effectiveFormTotal)}
               </div>
             </div>
 
