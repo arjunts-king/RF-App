@@ -371,14 +371,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       />
 
       {/* Navigation View Switcher */}
-      <div className="flex flex-wrap items-center justify-between border-b border-gray-200 pb-2 gap-3">
-        <div className="flex items-center gap-2">
+      <div className="glass-surface-thin p-1.5 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setActiveTab('register')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'register'
                 ? 'bg-rose-600 text-white shadow-xs'
-                : 'bg-white text-ink-700 hover:bg-gray-50 border border-gray-200'
+                : 'text-ink-700 hover:bg-rose-50 hover:text-rose-800'
             }`}
           >
             <BadgeDollarSign className="w-4 h-4" />
@@ -394,10 +394,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
           <button
             onClick={() => setActiveTab('collection-analysis')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'collection-analysis'
                 ? 'bg-rose-600 text-white shadow-xs'
-                : 'bg-white text-ink-700 hover:bg-gray-50 border border-gray-200'
+                : 'text-ink-700 hover:bg-blue-50 hover:text-blue-800'
             }`}
           >
             <Clock className="w-4 h-4 text-blue-500" />
@@ -417,7 +417,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         {activeTab === 'collection-analysis' && (
           <button
             onClick={handleExportCollectionAnalysisCSV}
-            className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+            className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs mr-1"
           >
             <Download className="w-3.5 h-3.5 text-blue-600" />
             <span>Export Collection Analysis CSV</span>
@@ -428,7 +428,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       {activeTab === 'register' && (
         <div className="space-y-6">
           {/* Bento Settlement KPI Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
             <BentoCard
               label="Total Invoiced (USD)"
               value={`$${totalInvoicedUSD.toLocaleString()}`}
@@ -442,9 +442,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
               variant="default"
             />
             <BentoCard
-              label="Direct Outstanding After Advance"
+              label="Outstanding Post-Adv"
               value={`$${totalOutstandingAfterAdvanceUSD.toLocaleString()}`}
-              caption={`₹${(totalOutstandingAfterAdvanceINR / 100000).toFixed(2)} L balance`}
+              caption={`₹${(totalOutstandingAfterAdvanceINR / 100000).toFixed(2)} L remaining`}
               variant="default"
             />
             <BentoCard
@@ -460,9 +460,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
               variant="success"
             />
             <BentoCard
-              label="Net Unrealized Balance"
+              label="Unrealized Balance"
               value={`$${totalUnrealizedUSD.toLocaleString()}`}
-              caption={totalUnrealizedUSD > 0 ? 'Pending foreign remittance' : 'All invoices fully settled'}
+              caption={totalUnrealizedUSD > 0 ? 'Pending foreign wire' : 'All invoices settled'}
               variant={totalUnrealizedUSD > 0 ? 'warning' : 'success'}
             />
           </div>
@@ -562,24 +562,24 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       {/* Realization & Settlement Schedule Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse min-w-[1360px]">
             <thead>
-              <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
-                <th className="py-3 px-3">Invoice # &amp; Date</th>
-                <th className="py-3 px-3">Consignee &amp; Buyer</th>
-                <th className="py-3 px-3 text-right">Invoice Value</th>
-                <th className="py-3 px-3 text-center bg-rose-50/40">Bank Rate</th>
-                <th className="py-3 px-3 text-right bg-blue-50/40">Advance Received</th>
-                <th className="py-3 px-3 bg-blue-50/40">Date of Advance</th>
-                <th className="py-3 px-3 text-right bg-indigo-50/40">Outstanding After Advance</th>
-                <th className="py-3 px-3 text-right bg-emerald-50/40">Balance Payment</th>
-                <th className="py-3 px-3 bg-emerald-50/40">Date of Balance</th>
-                <th className="py-3 px-3 text-right">Unrealized</th>
-                <th className="py-3 px-3 text-center">Status</th>
-                <th className="py-3 px-3 text-center">Actions</th>
+              <tr className="bg-gray-50/90 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
+                <th className="py-3 px-3 w-[140px] whitespace-nowrap">Invoice # &amp; Date</th>
+                <th className="py-3 px-3 min-w-[180px] max-w-[220px]">Consignee &amp; Buyer</th>
+                <th className="py-3 px-3 w-[125px] text-right whitespace-nowrap">Invoice Value</th>
+                <th className="py-3 px-3 w-[100px] text-center whitespace-nowrap bg-rose-50/40">Bank Rate</th>
+                <th className="py-3 px-3 w-[130px] text-right whitespace-nowrap bg-blue-50/40">Advance Received</th>
+                <th className="py-3 px-3 w-[125px] text-center whitespace-nowrap bg-blue-50/40">Date of Advance</th>
+                <th className="py-3 px-3 w-[140px] text-right whitespace-nowrap bg-indigo-50/40">Outstanding Balance</th>
+                <th className="py-3 px-3 w-[130px] text-right whitespace-nowrap bg-emerald-50/40">Balance Payment</th>
+                <th className="py-3 px-3 w-[125px] text-center whitespace-nowrap bg-emerald-50/40">Date of Balance</th>
+                <th className="py-3 px-3 w-[120px] text-right whitespace-nowrap">Net Unrealized</th>
+                <th className="py-3 px-3 w-[110px] text-center whitespace-nowrap">Status</th>
+                <th className="py-3 px-3 w-[115px] text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 font-medium">
               {filteredInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="py-12 text-center text-ink-500">
@@ -611,7 +611,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       }`}
                     >
                       {/* Invoice No & Date */}
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-bold text-rose-700">{inv.invoiceNo}</span>
                           {inv.isVoided && <StatusBadge status="Voided" />}
@@ -625,11 +625,11 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Consignee */}
-                      <td className="py-3 px-3 max-w-[200px]">
-                        <div className="font-bold text-ink-900 truncate">
+                      <td className="py-3 px-3 align-middle max-w-[220px]">
+                        <div className="font-bold text-ink-900 truncate" title={consignee?.name}>
                           {consignee?.name || 'Unknown Consignee'}
                         </div>
-                        <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5">
+                        <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5 truncate">
                           <Globe className="w-3 h-3 text-ink-400 shrink-0" />
                           <span>{consignee?.country || 'Export'}</span>
                           {buyer && buyer.id !== consignee?.id && (
@@ -639,7 +639,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Total Invoiced Value */}
-                      <td className="py-3 px-3 text-right">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div className="font-black text-ink-950 tabular-nums">
                           {inv.currency} {inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
@@ -649,7 +649,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Pre-determined Bank Exchange Rate */}
-                      <td className="py-3 px-3 text-center bg-rose-50/30">
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-rose-50/30">
                         <span className="inline-block px-2.5 py-1 bg-white border border-rose-300 rounded-lg font-mono font-extrabold text-rose-800 text-xs shadow-2xs">
                           ₹{bankRate.toFixed(2)}
                         </span>
@@ -659,7 +659,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Advance Received */}
-                      <td className="py-3 px-3 text-right bg-blue-50/30">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
                         {advUSD > 0 ? (
                           <div>
                             <div className="font-extrabold text-blue-800 tabular-nums">
@@ -675,9 +675,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Date of Receiving Advance */}
-                      <td className="py-3 px-3 bg-blue-50/30 whitespace-nowrap">
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-blue-50/30">
                         {inv.advanceReceivedDate ? (
-                          <div className="flex items-center gap-1 text-ink-800 font-semibold">
+                          <div className="inline-flex items-center justify-center gap-1 text-ink-800 font-semibold text-xs">
                             <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                             <span>{inv.advanceReceivedDate}</span>
                           </div>
@@ -687,14 +687,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                           <span className="text-[11px] text-ink-400">—</span>
                         )}
                         {inv.advanceBankRef && (
-                          <div className="text-[9px] text-blue-600 font-mono truncate max-w-[110px]" title={inv.advanceBankRef}>
+                          <div className="text-[9px] text-blue-600 font-mono truncate max-w-[120px] mx-auto" title={inv.advanceBankRef}>
                             {inv.advanceBankRef}
                           </div>
                         )}
                       </td>
 
                       {/* Outstanding After Advance (Direct Calculation) */}
-                      <td className="py-3 px-3 text-right bg-indigo-50/25">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-indigo-50/25">
                         <div className="font-extrabold text-ink-950 tabular-nums">
                           {inv.currency} {outstandingAfterAdv.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
@@ -704,7 +704,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Balance Payment Amount */}
-                      <td className="py-3 px-3 text-right bg-emerald-50/30">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
                         {balUSD > 0 ? (
                           <div>
                             <div className="font-extrabold text-emerald-800 tabular-nums">
@@ -722,9 +722,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Date of Receiving Balance Payment */}
-                      <td className="py-3 px-3 bg-emerald-50/30 whitespace-nowrap">
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-emerald-50/30">
                         {inv.balancePaymentDate ? (
-                          <div className="flex items-center gap-1 text-ink-800 font-semibold">
+                          <div className="inline-flex items-center justify-center gap-1 text-ink-800 font-semibold text-xs">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                             <span>{inv.balancePaymentDate}</span>
                           </div>
@@ -734,14 +734,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                           </span>
                         )}
                         {inv.balanceBankRef && (
-                          <div className="text-[9px] text-emerald-700 font-mono truncate max-w-[110px]" title={inv.balanceBankRef}>
+                          <div className="text-[9px] text-emerald-700 font-mono truncate max-w-[120px] mx-auto" title={inv.balanceBankRef}>
                             {inv.balanceBankRef}
                           </div>
                         )}
                       </td>
 
                       {/* Unrealized Balance */}
-                      <td className="py-3 px-3 text-right">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div
                           className={`font-black tabular-nums ${
                             inv.balanceRealizationCurrency > 0.05 ? 'text-rose-700' : 'text-emerald-700'
@@ -755,7 +755,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Status */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
                         <StatusBadge
                           status={
                             inv.realizationStatus === 'Fully Realized'
@@ -768,7 +768,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       {/* Action */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           {!inv.isVoided && (
                             <button
@@ -813,9 +813,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   {activeTab === 'collection-analysis' && (
     <div className="space-y-6">
       {/* Executive Collection Period KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
         <BentoCard
-          label="Avg Collection Period (DSO)"
+          label="Avg Collection (DSO)"
           value={collectionAnalysis.averageCollectionPeriodDays !== null ? `${collectionAnalysis.averageCollectionPeriodDays} Days` : 'N/A'}
           caption={`Unweighted DSO (${collectionAnalysis.totalRealizedInvoices} realized)`}
           variant={
@@ -831,29 +831,29 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         <BentoCard
           label="Weighted DSO"
           value={collectionAnalysis.weightedCollectionPeriodDays !== null ? `${collectionAnalysis.weightedCollectionPeriodDays} Days` : 'N/A'}
-          caption="Weighted by USD transaction volume"
+          caption="Weighted by USD volume"
           variant="highlight"
         />
         <BentoCard
-          label="Avg Advance Receipt Lag"
+          label="Advance Receipt Lag"
           value={collectionAnalysis.averageDaysToAdvance !== null ? `${collectionAnalysis.averageDaysToAdvance} Days` : 'N/A'}
-          caption="Invoice date to advance receipt"
+          caption="Invoice to advance receipt"
           variant="default"
         />
         <BentoCard
-          label="Advance &rarr; Balance Lag"
+          label="Advance to Balance Lag"
           value={collectionAnalysis.averageDaysAdvanceToBalance !== null ? `${collectionAnalysis.averageDaysAdvanceToBalance} Days` : 'N/A'}
-          caption="Advance receipt to balance clearance"
+          caption="Advance to balance clearance"
           variant="default"
         />
         <BentoCard
-          label="Collection Efficiency Index"
+          label="Collection Efficiency"
           value={`${collectionAnalysis.collectionEfficiencyIndex}%`}
           caption={`$${collectionAnalysis.totalCollectedUSD.toLocaleString()} of $${collectionAnalysis.totalInvoicedUSD.toLocaleString()}`}
           variant={collectionAnalysis.collectionEfficiencyIndex >= 80 ? 'success' : 'default'}
         />
         <BentoCard
-          label="Total Receivables Outstanding"
+          label="Outstanding Receivables"
           value={`$${collectionAnalysis.totalOutstandingUSD.toLocaleString()}`}
           caption={`${formatINR(collectionAnalysis.totalOutstandingINR)} pending`}
           variant={collectionAnalysis.totalOutstandingUSD > 0 ? 'warning' : 'success'}
@@ -1013,19 +1013,19 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse min-w-[1180px]">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
-                <th className="py-2.5 px-3">Consignee &amp; Buyer</th>
-                <th className="py-2.5 px-3">Country</th>
-                <th className="py-2.5 px-3 text-center">Invoices</th>
-                <th className="py-2.5 px-3 text-right">Invoiced (USD)</th>
-                <th className="py-2.5 px-3 text-right">Collected (USD)</th>
-                <th className="py-2.5 px-3 text-right">Outstanding (USD)</th>
-                <th className="py-2.5 px-3 text-center bg-blue-50/50">Avg Days to Advance</th>
-                <th className="py-2.5 px-3 text-center bg-indigo-50/50">Advance &rarr; Balance Lag</th>
-                <th className="py-2.5 px-3 text-center bg-rose-50/50">Avg Collection Period (DSO)</th>
-                <th className="py-2.5 px-3 text-center">Health Status</th>
+                <th className="py-2.5 px-3 w-[180px] whitespace-nowrap">Consignee &amp; Buyer</th>
+                <th className="py-2.5 px-3 w-[110px] whitespace-nowrap">Country</th>
+                <th className="py-2.5 px-3 w-[110px] text-center whitespace-nowrap">Invoices</th>
+                <th className="py-2.5 px-3 w-[130px] text-right whitespace-nowrap">Invoiced (USD)</th>
+                <th className="py-2.5 px-3 w-[130px] text-right whitespace-nowrap">Collected (USD)</th>
+                <th className="py-2.5 px-3 w-[140px] text-right whitespace-nowrap">Outstanding (USD)</th>
+                <th className="py-2.5 px-3 w-[130px] text-center whitespace-nowrap bg-blue-50/50">Avg Days to Advance</th>
+                <th className="py-2.5 px-3 w-[140px] text-center whitespace-nowrap bg-indigo-50/50">Advance &rarr; Balance Lag</th>
+                <th className="py-2.5 px-3 w-[150px] text-center whitespace-nowrap bg-rose-50/50">Avg Collection (DSO)</th>
+                <th className="py-2.5 px-3 w-[110px] text-center whitespace-nowrap">Health Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -1038,22 +1038,22 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
               ) : (
                 filteredConsignees.map((c) => (
                   <tr key={c.consigneeId} className="hover:bg-gray-50/60 transition">
-                    <td className="py-3 px-3 font-bold text-ink-900">{c.consigneeName}</td>
-                    <td className="py-3 px-3 text-ink-600 font-medium">{c.country}</td>
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-3 px-3 font-bold text-ink-900 align-middle whitespace-nowrap">{c.consigneeName}</td>
+                    <td className="py-3 px-3 text-ink-600 font-medium align-middle whitespace-nowrap">{c.country}</td>
+                    <td className="py-3 px-3 text-center align-middle whitespace-nowrap">
                       <span className="font-semibold text-ink-800">{c.totalInvoicesCount}</span>
                       <span className="text-[10px] text-ink-500 block">
                         {c.realizedInvoicesCount} settled / {c.outstandingInvoicesCount} open
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right font-extrabold text-ink-950 tabular-nums">
+                    <td className="py-3 px-3 text-right font-extrabold text-ink-950 tabular-nums align-middle whitespace-nowrap">
                       ${c.totalInvoicedUSD.toLocaleString()}
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-800 tabular-nums">
+                    <td className="py-3 px-3 text-right font-bold text-emerald-800 tabular-nums align-middle whitespace-nowrap">
                       <div>${c.totalCollectedUSD.toLocaleString()}</div>
                       <div className="text-[10px] text-emerald-600 font-semibold">{c.collectionEfficiencyPct}%</div>
                     </td>
-                    <td className="py-3 px-3 text-right font-black tabular-nums">
+                    <td className="py-3 px-3 text-right font-black tabular-nums align-middle whitespace-nowrap">
                       <div className={c.totalOutstandingUSD > 0.05 ? 'text-rose-700' : 'text-emerald-700'}>
                         ${c.totalOutstandingUSD.toLocaleString()}
                       </div>
@@ -1061,21 +1061,21 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         {formatINR(c.totalOutstandingINR)}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-center bg-blue-50/30">
+                    <td className="py-3 px-3 text-center bg-blue-50/30 align-middle whitespace-nowrap">
                       {c.avgDaysToAdvance !== null ? (
                         <span className="font-bold text-blue-900">{c.avgDaysToAdvance} Days</span>
                       ) : (
                         <span className="text-ink-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center bg-indigo-50/30">
+                    <td className="py-3 px-3 text-center bg-indigo-50/30 align-middle whitespace-nowrap">
                       {c.avgDaysAdvanceToBalance !== null ? (
                         <span className="font-bold text-indigo-900">{c.avgDaysAdvanceToBalance} Days</span>
                       ) : (
                         <span className="text-ink-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center bg-rose-50/30">
+                    <td className="py-3 px-3 text-center bg-rose-50/30 align-middle whitespace-nowrap">
                       {c.avgCollectionDays !== null ? (
                         <div className="font-black text-rose-900">
                           {c.avgCollectionDays} Days
@@ -1089,7 +1089,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         <span className="text-ink-400 italic">Pending collection</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-3 px-3 text-center align-middle whitespace-nowrap">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           c.collectionHealth === 'Prompt'
@@ -1138,19 +1138,19 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse min-w-[1260px]">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
-                <th className="py-2.5 px-3">Invoice # &amp; Date</th>
-                <th className="py-2.5 px-3">Consignee</th>
-                <th className="py-2.5 px-3 text-right">Invoice Value</th>
-                <th className="py-2.5 px-3 text-right bg-blue-50/40">Advance Received</th>
-                <th className="py-2.5 px-3 text-center bg-blue-50/40">Days to Advance</th>
-                <th className="py-2.5 px-3 text-right bg-indigo-50/40">Outstanding After Advance</th>
-                <th className="py-2.5 px-3 text-right bg-emerald-50/40">Balance Payment</th>
-                <th className="py-2.5 px-3 text-center bg-emerald-50/40">Turnaround (Adv &rarr; Bal)</th>
-                <th className="py-2.5 px-3 text-center bg-rose-50/40">Total Collection Turn</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 w-[140px] whitespace-nowrap">Invoice # &amp; Date</th>
+                <th className="py-2.5 px-3 w-[160px] whitespace-nowrap">Consignee</th>
+                <th className="py-2.5 px-3 w-[130px] text-right whitespace-nowrap">Invoice Value</th>
+                <th className="py-2.5 px-3 w-[140px] text-right whitespace-nowrap bg-blue-50/40">Advance Received</th>
+                <th className="py-2.5 px-3 w-[110px] text-center whitespace-nowrap bg-blue-50/40">Days to Advance</th>
+                <th className="py-2.5 px-3 w-[140px] text-right whitespace-nowrap bg-indigo-50/40">Outstanding Post-Adv</th>
+                <th className="py-2.5 px-3 w-[140px] text-right whitespace-nowrap bg-emerald-50/40">Balance Payment</th>
+                <th className="py-2.5 px-3 w-[130px] text-center whitespace-nowrap bg-emerald-50/40">Adv &rarr; Bal Turn</th>
+                <th className="py-2.5 px-3 w-[130px] text-center whitespace-nowrap bg-rose-50/40">Total DSO Turn</th>
+                <th className="py-2.5 px-3 w-[120px] text-center whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -1163,18 +1163,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
               ) : (
                 filteredInvoiceMetrics.map((m) => (
                   <tr key={m.invoiceId} className="hover:bg-gray-50/60 transition">
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-3 align-middle whitespace-nowrap">
                       <div className="font-mono font-bold text-rose-700">{m.invoiceNo}</div>
                       <div className="text-[11px] text-ink-500">{m.invoiceDate}</div>
                     </td>
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-3 align-middle whitespace-nowrap">
                       <div className="font-bold text-ink-900">{m.consigneeName}</div>
                       <div className="text-[10px] text-ink-500">{m.country}</div>
                     </td>
-                    <td className="py-3 px-3 text-right font-black tabular-nums">
+                    <td className="py-3 px-3 text-right font-black tabular-nums align-middle whitespace-nowrap">
                       {m.currency} {m.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="py-3 px-3 text-right bg-blue-50/20">
+                    <td className="py-3 px-3 text-right bg-blue-50/20 align-middle whitespace-nowrap">
                       {m.advanceReceivedCurrency > 0 ? (
                         <div>
                           <div className="font-bold text-blue-800 tabular-nums">
@@ -1186,14 +1186,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         <span className="text-ink-400 italic">None</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center bg-blue-50/20 font-bold">
+                    <td className="py-3 px-3 text-center bg-blue-50/20 font-bold align-middle whitespace-nowrap">
                       {m.daysToAdvance !== null ? (
                         <span className="text-blue-900">{m.daysToAdvance} Days</span>
                       ) : (
                         <span className="text-ink-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-right bg-indigo-50/20 font-bold tabular-nums">
+                    <td className="py-3 px-3 text-right bg-indigo-50/20 font-bold tabular-nums align-middle whitespace-nowrap">
                       <div className="text-ink-900">
                         {m.currency} {m.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </div>
@@ -1201,7 +1201,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         {m.outstandingAfterAdvancePct}% remaining
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right bg-emerald-50/20">
+                    <td className="py-3 px-3 text-right bg-emerald-50/20 align-middle whitespace-nowrap">
                       {m.balancePaymentAmountCurrency > 0 ? (
                         <div>
                           <div className="font-bold text-emerald-800 tabular-nums">
@@ -1213,21 +1213,21 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         <span className="text-amber-700 italic font-semibold">Unsettled</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center bg-emerald-50/20 font-bold">
+                    <td className="py-3 px-3 text-center bg-emerald-50/20 font-bold align-middle whitespace-nowrap">
                       {m.daysAdvanceToBalance !== null ? (
                         <span className="text-emerald-900">{m.daysAdvanceToBalance} Days</span>
                       ) : (
                         <span className="text-ink-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center bg-rose-50/20 font-black">
+                    <td className="py-3 px-3 text-center bg-rose-50/20 font-black align-middle whitespace-nowrap">
                       {m.totalCollectionDays !== null ? (
                         <span className="text-rose-900">{m.totalCollectionDays} Days DSO</span>
                       ) : (
                         <span className="text-amber-700 font-semibold">{m.ageDays}d Ageing</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-3 px-3 text-center align-middle whitespace-nowrap">
                       <StatusBadge
                         status={
                           m.realizationStatus === 'Fully Realized'
