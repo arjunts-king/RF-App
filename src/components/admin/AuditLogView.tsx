@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { RoleBadge } from '../common/RoleBadge';
 import { PageHeader } from '../common/PageHeader';
+import { PaginationControls } from '../common/PaginationControls';
 import { Search, Lock } from 'lucide-react';
 
 export const AuditLogView: React.FC = () => {
@@ -40,6 +41,19 @@ export const AuditLogView: React.FC = () => {
     }
     return true;
   });
+
+  // Client-side pagination state for audit logs
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, actionFilter]);
+
+  const paginatedLogs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLogs.slice(start, start + pageSize);
+  }, [filteredLogs, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
@@ -103,7 +117,7 @@ export const AuditLogView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => {
+                paginatedLogs.map((log) => {
                   return (
                     <tr key={log.id} className="hover:bg-rose-50/20 transition">
                       <td className="py-3 px-4 whitespace-nowrap text-ink-500 font-mono text-[11px]">
@@ -165,6 +179,16 @@ export const AuditLogView: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Responsive Pagination Controls */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filteredLogs.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[25, 50, 100, 200]}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -10,6 +10,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
+import { PaginationControls } from '../common/PaginationControls';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
 import {
@@ -103,6 +104,19 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
 
     return true;
   });
+
+  // Client-side pagination state for smooth DOM performance
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, customerFilter, podFilter, statusFilter, showVoided]);
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredInvoices.slice(start, start + pageSize);
+  }, [filteredInvoices, currentPage, pageSize]);
 
   // Top Metrics
   const activeInvoices = salesInvoices.filter((inv) => !inv.isVoided);
@@ -511,7 +525,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((inv) => {
+                paginatedInvoices.map((inv) => {
                   const consignee = customerMap.get(inv.consigneeId);
                   const pod = portMap.get(inv.portOfDischargeId);
                   const isSelected = selectedIds.includes(inv.id);
@@ -692,6 +706,15 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             </tbody>
           </table>
         </div>
+
+        {/* Responsive Pagination Controls */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filteredInvoices.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Floating Bulk Action Bar */}

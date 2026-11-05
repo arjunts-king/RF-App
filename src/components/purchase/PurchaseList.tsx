@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -6,6 +6,7 @@ import { Purchase } from '../../types';
 import { formatINR, formatKg, computePurchaseFields } from '../../utils/calculations';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
+import { PaginationControls } from '../common/PaginationControls';
 import { generateTallyPurchaseXML } from '../../utils/tallyExport';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -135,6 +136,19 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
 
     return true;
   });
+
+  // Client-side pagination state for smooth DOM performance
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, supplierFilter, speciesFilter, statusFilter, showVoided]);
+
+  const paginatedPurchases = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPurchases.slice(start, start + pageSize);
+  }, [filteredPurchases, currentPage, pageSize]);
 
   const handleVoidConfirm = () => {
     if (!voidModalTarget || !voidReason.trim()) return;
@@ -642,7 +656,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                   </td>
                 </tr>
               ) : (
-                filteredPurchases.map((p) => {
+                paginatedPurchases.map((p) => {
                   const supp = supplierMap.get(p.supplierId);
                   const spec = speciesMap.get(p.speciesId);
                   const sz = sizeMap.get(p.sizeId);
@@ -833,6 +847,15 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
             </tbody>
           </table>
         </div>
+
+        {/* Responsive Pagination Controls */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filteredPurchases.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Floating Bulk Action Bar */}

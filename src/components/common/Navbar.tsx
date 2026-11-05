@@ -154,7 +154,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       title: 'CORE COMMERCIAL',
       items: [
         { id: 'sales-dashboard', label: 'Commercial Dashboard', icon: TrendingUp, desc: 'Export value in USD & FOB analytics' },
-        { id: 'fob-dashboard', label: 'FOB Performance Dashboard', icon: BadgeDollarSign, desc: 'FOB valuations & turnover in USD and INR' },
+        { id: 'fob-dashboard', label: 'FOB Performance Dashboard', icon: BadgeDollarSign, desc: 'FOB valuations & turnover in USD and INR' }
+      ]
+    },
+    {
+      title: 'INVOICING & SHIPMENTS',
+      items: [
         { id: 'invoice-entry', label: 'Commercial Invoice Entry', icon: PlusCircle, desc: 'Export shipping bills & container lines', show: permissions.canCreateEditSales },
         { id: 'invoices', label: 'Invoices & Shipments', icon: FileText, desc: 'Audit invoices & export status' }
       ]

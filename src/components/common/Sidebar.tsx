@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { FlyoutSidebar, NavSubHeading } from './FlyoutSidebar';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -41,148 +42,155 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const { currentUser, permissions } = useAuth();
 
-  const navGroups: {
-    title: string;
-    items: {
-      id: NavTab;
-      label: string;
-      icon: any;
-      show: boolean;
-      badge?: string;
-    }[];
-  }[] = [
+  const subHeadings: NavSubHeading<NavTab>[] = [
     {
-      title: 'CORE PROCUREMENT',
+      id: 'core-procurement',
+      title: 'Core Procurement',
+      icon: Receipt,
+      badge: 'Landing',
       items: [
-        { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard, show: true },
+        {
+          id: 'dashboard',
+          label: 'Executive Dashboard',
+          icon: LayoutDashboard,
+          desc: 'Procurement volume, landed cost & variance KPIs'
+        },
         {
           id: 'purchase-entry',
           label: 'Harbour Purchase Entry',
           icon: PlusCircle,
-          show: permissions.canCreateEditPurchases,
-          badge: 'Field Form'
+          badge: 'Field Form',
+          isQuickAction: true,
+          desc: 'Single-action landing purchase entry form',
+          show: permissions.canCreateEditPurchases
         },
-        { id: 'purchases', label: 'Purchase Transactions', icon: Receipt, show: true },
-        { id: 'purchase-returns', label: 'Purchase Returns (Debit Notes)', icon: RotateCcw, show: true },
-        { id: 'batch-expenses', label: 'Batch Expenses & Yields', icon: Layers, show: true }
+        {
+          id: 'purchases',
+          label: 'Purchase Transactions',
+          icon: Receipt,
+          badge: 'Register',
+          desc: 'Sortable landing register & payment tracking'
+        },
+        {
+          id: 'purchase-returns',
+          label: 'Purchase Returns (Debit Notes)',
+          icon: RotateCcw,
+          badge: 'Debit Note',
+          desc: 'Rejection deductions, supplier credits & debit notes'
+        },
+        {
+          id: 'batch-expenses',
+          label: 'Batch Expenses & Yields',
+          icon: Layers,
+          badge: 'Yield Engine',
+          desc: 'Landing expense allocation & lot yield distribution'
+        }
       ]
     },
     {
-      title: 'ACCOUNTING & LEDGERS',
+      id: 'accounting-ledgers',
+      title: 'Accounting & Ledgers',
+      icon: BookOpen,
+      badge: 'Ledgers',
       items: [
-        { id: 'payments', label: 'Supplier Ledger & Payments', icon: BookOpen, show: true },
-        { id: 'outstanding', label: 'Outstanding & Ageing (180+d)', icon: Clock, show: true }
+        {
+          id: 'payments',
+          label: 'Supplier Ledger & Payments',
+          icon: BookOpen,
+          desc: 'Running debits/credits & printable A4 statement'
+        },
+        {
+          id: 'outstanding',
+          label: 'Outstanding & Ageing (180+d)',
+          icon: Clock,
+          badge: 'Ageing',
+          desc: 'Bucket analysis, overdue tags & payment planning'
+        }
       ]
     },
     {
-      title: 'ANALYTICS & CONTROL',
-      items: [
-        { id: 'reports', label: 'Operational Reports (8 Views)', icon: BarChart3, show: true },
-        { id: 'data-quality', label: 'Data Quality & Reconciliation', icon: CheckCircle2, show: true }
-      ]
-    },
-    {
-      title: 'CONFIGURATION & ADMIN',
+      id: 'procurement-masters',
+      title: 'Procurement Masters',
+      icon: Database,
+      badge: 'Masters',
       items: [
         {
           id: 'master-data',
           label: 'Master Reference Data',
           icon: Database,
-          show: permissions.canManageMasterData // Hidden from Junior Accountant & Viewer
-        },
-        {
-          id: 'user-mgmt',
-          label: 'Staff & User Management',
-          icon: UserPlus,
-          show: permissions.canInviteUsers || permissions.canManageStaff // Exclusive to Owner/Admin
-        },
-        {
-          id: 'audit-log',
-          label: 'Surveillance Audit Trail',
-          icon: ShieldAlert,
-          show: permissions.canViewAuditLog, // EXCLUSIVE to Owner/Admin as specified
-          badge: 'Admin Only'
+          desc: 'Suppliers, species, grades, sizes & landing centres',
+          show: permissions.canManageMasterData
         },
         {
           id: 'excel-import',
           label: 'Excel Import & Migration',
           icon: FileSpreadsheet,
-          show: true,
-          badge: 'Import'
+          badge: 'Migration',
+          desc: 'Bulk purchase data, supplier & species migration'
+        }
+      ]
+    },
+    {
+      id: 'analytics-control',
+      title: 'Analytics & Control',
+      icon: BarChart3,
+      items: [
+        {
+          id: 'reports',
+          label: 'Operational Reports (8 Views)',
+          icon: BarChart3,
+          badge: '8 Views',
+          desc: 'Harbour, supplier, species & batch analytics'
+        },
+        {
+          id: 'data-quality',
+          label: 'Data Quality & Reconciliation',
+          icon: CheckCircle2,
+          badge: 'Audit',
+          desc: 'Transaction sum vs ledger verification'
+        }
+      ]
+    },
+    {
+      id: 'configuration-admin',
+      title: 'Configuration & Admin',
+      icon: Settings,
+      badge: 'Admin',
+      items: [
+        {
+          id: 'user-mgmt',
+          label: 'Staff & User Management',
+          icon: UserPlus,
+          desc: 'Role permissions & user credentials',
+          show: permissions.canInviteUsers || permissions.canManageStaff
+        },
+        {
+          id: 'audit-log',
+          label: 'Surveillance Audit Trail',
+          icon: ShieldAlert,
+          badge: 'Admin Only',
+          desc: 'Forensic audit trail & action logs',
+          show: permissions.canViewAuditLog
         },
         {
           id: 'settings',
           label: 'Business Settings & Data Reset',
           icon: Settings,
-          show: true
+          desc: 'Company profile, FY configuration & data reset'
         }
       ]
     }
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-white md:border-r border-gray-100 flex flex-col shrink-0 h-full">
-      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
-        {navGroups.map((group) => {
-          const visibleItems = group.items.filter((item) => item.show);
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div key={group.title}>
-              <div className="text-[11px] font-bold tracking-wider text-ink-500 uppercase px-3 mb-2">
-                {group.title}
-              </div>
-              <div className="space-y-1">
-                {visibleItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => onTabChange(item.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? 'bg-rose-600 text-white shadow-xs font-bold'
-                          : 'text-ink-700 hover:bg-rose-50 hover:text-rose-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-ink-500 group-hover:text-rose-600'}`} />
-                        <span>{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight ${
-                            isActive
-                              ? 'bg-white/20 text-white'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer Info */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50 text-xs">
-        <div className="flex items-center justify-between text-ink-500">
-          <span>Active Role:</span>
-          <span className="font-semibold text-rose-700 capitalize">
-            {currentUser.role.replace('_', ' ')}
-          </span>
-        </div>
-        <div className="text-[10px] text-ink-500 mt-1">
-          Indian FY 2026-27 · Coastal Trading Suite
-        </div>
-      </div>
-    </aside>
+    <FlyoutSidebar<NavTab>
+      moduleTitle="Purchase & Procurement"
+      moduleBadge="Procure Suite"
+      subHeadings={subHeadings}
+      activeTab={activeTab}
+      onTabChange={onTabChange}
+      activeRole={currentUser.role}
+      footerSubtitle="Harbour Procurement & Landings"
+    />
   );
 };

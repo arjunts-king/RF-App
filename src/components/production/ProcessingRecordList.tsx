@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -7,6 +7,7 @@ import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
+import { PaginationControls } from '../common/PaginationControls';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
   Search,
@@ -104,6 +105,19 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
 
     return true;
   });
+
+  // Client-side pagination state for processing records
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, supplierFilter, speciesFilter, shiftFilter, varianceOnlyFilter, showVoided]);
+
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEntries.slice(start, start + pageSize);
+  }, [filteredEntries, currentPage, pageSize]);
 
   const handleStartEdit = (entry: DailyProcessingEntry) => {
     setEditingEntry(entry);
@@ -513,7 +527,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                   </td>
                 </tr>
               ) : (
-                filteredEntries.map((p) => {
+                paginatedEntries.map((p) => {
                   const supp = supplierMap.get(p.supplierId);
                   const spec = speciesMap.get(p.speciesId);
                   const grd = gradeMap.get(p.gradeId);
@@ -656,6 +670,15 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
             </tbody>
           </table>
         </div>
+
+        {/* Responsive Pagination Controls */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filteredEntries.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Floating Bulk Action Bar */}

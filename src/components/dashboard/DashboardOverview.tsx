@@ -77,36 +77,52 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     activeSupplierCount
   } = kpis;
 
-  // Chart 1: Species Volume & Value Split (Memoized)
-  const speciesData = useMemo(() => {
-    return species.map((sp) => {
-      const list = filteredPurchases.filter((p) => p.speciesId === sp.id);
-      const weight = list.reduce((s, p) => s + p.weightKg, 0);
-      const cost = list.reduce((s, p) => s + p.totalCost, 0);
-      return { name: sp.name, weight, cost };
-    }).filter((d) => d.weight > 0);
-  }, [species, filteredPurchases]);
+  // Charts 1, 2, 3: Single-pass O(P) grouping accumulator instead of repeated O(N * M) filtering
+  const { speciesData, expenseBreakdownData, supplierOutstandingData } = useMemo(() => {
+    const spMap = new Map<string, { weight: number; cost: number }>();
+    const expMap = new Map<string, number>();
+    const suppMap = new Map<string, number>();
 
-  // Chart 2: Expense Breakdown (Memoized)
-  const expenseBreakdownData = useMemo(() => {
-    return expenseTypes.map((exp) => {
-      const total = filteredPurchases.reduce(
-        (s, p) => s + (p.expenseBreakdown?.[exp.id] || 0),
-        0
-      );
-      return { name: exp.name, total };
-    }).filter((d) => d.total > 0);
-  }, [expenseTypes, filteredPurchases]);
+    for (const p of filteredPurchases) {
+      if (p.speciesId) {
+        const cur = spMap.get(p.speciesId) || { weight: 0, cost: 0 };
+        cur.weight += p.weightKg || 0;
+        cur.cost += p.totalCost || 0;
+        spMap.set(p.speciesId, cur);
+      }
+      if (p.expenseBreakdown) {
+        for (const [expId, amt] of Object.entries(p.expenseBreakdown)) {
+          if (amt) {
+            expMap.set(expId, (expMap.get(expId) || 0) + amt);
+          }
+        }
+      }
+      if (p.supplierId && (p.balancePayable || 0) > 0) {
+        suppMap.set(p.supplierId, (suppMap.get(p.supplierId) || 0) + (p.balancePayable || 0));
+      }
+    }
 
-  // Chart 3: Outstanding Payables by Supplier (Memoized)
-  const supplierOutstandingData = useMemo(() => {
-    return suppliers.map((supp) => {
-      const outstanding = filteredPurchases
-        .filter((p) => p.supplierId === supp.id)
-        .reduce((s, p) => s + (p.balancePayable || 0), 0);
-      return { name: supp.name, outstanding };
-    }).filter((d) => d.outstanding > 0);
-  }, [suppliers, filteredPurchases]);
+    const speciesList = species
+      .map((sp) => {
+        const data = spMap.get(sp.id);
+        return { name: sp.name, weight: data?.weight || 0, cost: data?.cost || 0 };
+      })
+      .filter((d) => d.weight > 0);
+
+    const expenseList = expenseTypes
+      .map((exp) => ({ name: exp.name, total: expMap.get(exp.id) || 0 }))
+      .filter((d) => d.total > 0);
+
+    const supplierList = suppliers
+      .map((supp) => ({ name: supp.name, outstanding: suppMap.get(supp.id) || 0 }))
+      .filter((d) => d.outstanding > 0);
+
+    return {
+      speciesData: speciesList,
+      expenseBreakdownData: expenseList,
+      supplierOutstandingData: supplierList
+    };
+  }, [species, expenseTypes, suppliers, filteredPurchases]);
 
   // Helpers for active filter label lookups
   const selectedSupplierObj = suppliers.find((s) => s.id === supplierFilter);

@@ -65,6 +65,7 @@ import { useToast } from './ToastContext';
 import { computePurchaseFields, allocateBatchCombined, getIndianFinancialYear } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
+import { safeSet } from '../utils/storage';
 
 interface DataContextType {
   businessSettings: BusinessSettings;
@@ -523,33 +524,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [showToast]);
 
-  // Persist state to localStorage
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}settings`, JSON.stringify(businessSettings)); }, [businessSettings]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}suppliers`, JSON.stringify(suppliers)); }, [suppliers]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(species)); }, [species]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}grades`, JSON.stringify(grades)); }, [grades]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}sizes`, JSON.stringify(sizes)); }, [sizes]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}counts`, JSON.stringify(counts)); }, [counts]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}locations`, JSON.stringify(locations)); }, [locations]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}bank_accounts`, JSON.stringify(bankAccounts)); }, [bankAccounts]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}expense_types`, JSON.stringify(expenseTypes)); }, [expenseTypes]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_types`, JSON.stringify(slabTypes)); }, [slabTypes]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(customers)); }, [customers]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}ports`, JSON.stringify(ports)); }, [ports]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}processing_entries`, JSON.stringify(processingEntries)); }, [processingEntries]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}sales_invoices`, JSON.stringify(salesInvoices)); }, [salesInvoices]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchases`, JSON.stringify(purchases)); }, [purchases]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}payments`, JSON.stringify(payments)); }, [payments]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}purchase_returns`, JSON.stringify(purchaseReturns)); }, [purchaseReturns]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}audit_logs`, JSON.stringify(auditLogs)); }, [auditLogs]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}offline_queue`, JSON.stringify(offlineQueue)); }, [offlineQueue]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}inventory_items`, JSON.stringify(inventoryItems)); }, [inventoryItems]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}inventory_mappings`, JSON.stringify(inventoryMappings)); }, [inventoryMappings]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}opening_stocks`, JSON.stringify(openingStocks)); }, [openingStocks]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}stock_adjustments`, JSON.stringify(stockAdjustments)); }, [stockAdjustments]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}physical_counts`, JSON.stringify(physicalStockCounts)); }, [physicalStockCounts]);
-  useEffect(() => { localStorage.setItem(`${DB_PREFIX}period_close_locks`, JSON.stringify(periodCloseLocks)); }, [periodCloseLocks]);
+  // Persist state safely to localStorage with asynchronous IndexedDB backup (prevents QuotaExceededError)
+  useEffect(() => { safeSet(`${DB_PREFIX}settings`, businessSettings); }, [businessSettings]);
+  useEffect(() => { safeSet(`${DB_PREFIX}suppliers`, suppliers); }, [suppliers]);
+  useEffect(() => { safeSet(`${DB_PREFIX}species`, species); }, [species]);
+  useEffect(() => { safeSet(`${DB_PREFIX}grades`, grades); }, [grades]);
+  useEffect(() => { safeSet(`${DB_PREFIX}sizes`, sizes); }, [sizes]);
+  useEffect(() => { safeSet(`${DB_PREFIX}counts`, counts); }, [counts]);
+  useEffect(() => { safeSet(`${DB_PREFIX}locations`, locations); }, [locations]);
+  useEffect(() => { safeSet(`${DB_PREFIX}bank_accounts`, bankAccounts); }, [bankAccounts]);
+  useEffect(() => { safeSet(`${DB_PREFIX}expense_types`, expenseTypes); }, [expenseTypes]);
+  useEffect(() => { safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes]);
+  useEffect(() => { safeSet(`${DB_PREFIX}customers`, customers); }, [customers]);
+  useEffect(() => { safeSet(`${DB_PREFIX}ports`, ports); }, [ports]);
+  useEffect(() => { safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries]);
+  useEffect(() => { safeSet(`${DB_PREFIX}sales_invoices`, salesInvoices); }, [salesInvoices]);
+  useEffect(() => { safeSet(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
+  useEffect(() => { safeSet(`${DB_PREFIX}purchases`, purchases); }, [purchases]);
+  useEffect(() => { safeSet(`${DB_PREFIX}payments`, payments); }, [payments]);
+  useEffect(() => { safeSet(`${DB_PREFIX}purchase_returns`, purchaseReturns); }, [purchaseReturns]);
+  useEffect(() => { safeSet(`${DB_PREFIX}audit_logs`, auditLogs); }, [auditLogs]);
+  useEffect(() => { safeSet(`${DB_PREFIX}offline_queue`, offlineQueue); }, [offlineQueue]);
+  useEffect(() => { safeSet(`${DB_PREFIX}inventory_items`, inventoryItems); }, [inventoryItems]);
+  useEffect(() => { safeSet(`${DB_PREFIX}inventory_mappings`, inventoryMappings); }, [inventoryMappings]);
+  useEffect(() => { safeSet(`${DB_PREFIX}opening_stocks`, openingStocks); }, [openingStocks]);
+  useEffect(() => { safeSet(`${DB_PREFIX}stock_adjustments`, stockAdjustments); }, [stockAdjustments]);
+  useEffect(() => { safeSet(`${DB_PREFIX}physical_counts`, physicalStockCounts); }, [physicalStockCounts]);
+  useEffect(() => { safeSet(`${DB_PREFIX}period_close_locks`, periodCloseLocks); }, [periodCloseLocks]);
 
   // Perpetual moving average inventory valuation engine
   const inventoryCalculation = useMemo(() => {
