@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
+import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import {
   TrendingUp,
   Anchor,
@@ -13,7 +14,11 @@ import {
   Layers,
   ArrowUpRight,
   X,
-  FileText
+  FileText,
+  Fish,
+  Ship,
+  DollarSign,
+  CheckCircle2
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -22,39 +27,95 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   // Multi-Filter States (all combinable)
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [selectedSpeciesId, setSelectedSpeciesId] = useState('');
-  const [selectedPolId, setSelectedPolId] = useState('');
-  const [selectedPodId, setSelectedPodId] = useState('');
-  const [selectedDestId, setSelectedDestId] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
+  const [selectedPolIds, setSelectedPolIds] = useState<string[]>([]);
+  const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   // Lookups
-  const customerMap = new Map(customers.map((c) => [c.id, c]));
-  const portMap = new Map(ports.map((p) => [p.id, p]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
+  const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
+  const portMap = useMemo(() => new Map(ports.map((p) => [p.id, p])), [ports]);
+  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
 
-  // Combinable Filtering
-  const filteredInvoices = salesInvoices.filter((inv) => {
-    if (inv.isVoided) return false;
+  // Options for MultiSelectFilter
+  const customerOptions = useMemo(
+    () => customers.map((c) => ({ id: c.id, label: c.name, subLabel: c.country })),
+    [customers]
+  );
 
-    if (startDate && inv.invoiceDate < startDate) return false;
-    if (endDate && inv.invoiceDate > endDate) return false;
-    if (selectedCustomerId && inv.consigneeId !== selectedCustomerId && inv.buyerId !== selectedCustomerId) return false;
-    if (selectedPolId && inv.portOfLoadingId !== selectedPolId) return false;
-    if (selectedPodId && inv.portOfDischargeId !== selectedPodId) return false;
-    if (selectedDestId && inv.finalDestinationId !== selectedDestId) return false;
-    if (selectedCurrency && inv.currency !== selectedCurrency) return false;
-    if (selectedStatus && inv.realizationStatus !== selectedStatus) return false;
+  const speciesOptions = useMemo(
+    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
+    [species]
+  );
 
-    if (selectedSpeciesId) {
-      const hasSpecies = inv.lineItems.some((l) => l.speciesId === selectedSpeciesId);
-      if (!hasSpecies) return false;
-    }
+  const polOptions = useMemo(
+    () => ports.map((p) => ({ id: p.id, label: `${p.code} - ${p.name}`, subLabel: p.country })),
+    [ports]
+  );
 
-    return true;
-  });
+  const podOptions = useMemo(
+    () => ports.map((p) => ({ id: p.id, label: `${p.code} - ${p.name}`, subLabel: p.country })),
+    [ports]
+  );
+
+  const currencyOptions = useMemo(
+    () => [
+      { id: 'USD', label: 'USD ($)', subLabel: 'US Dollar' },
+      { id: 'EUR', label: 'EUR (€)', subLabel: 'Euro' },
+      { id: 'GBP', label: 'GBP (£)', subLabel: 'British Pound' },
+      { id: 'JPY', label: 'JPY (¥)', subLabel: 'Japanese Yen' }
+    ],
+    []
+  );
+
+  const statusOptions = useMemo(
+    () => [
+      { id: 'Not Realized', label: 'Not Realized', subLabel: 'Awaiting remittance' },
+      { id: 'Partially Realized', label: 'Partially Realized', subLabel: 'Advance credited' },
+      { id: 'Fully Realized', label: 'Fully Realized', subLabel: '100% settled' }
+    ],
+    []
+  );
+
+  // Combinable Multi-Filtering
+  const filteredInvoices = useMemo(() => {
+    return salesInvoices.filter((inv) => {
+      if (inv.isVoided) return false;
+
+      if (startDate && inv.invoiceDate < startDate) return false;
+      if (endDate && inv.invoiceDate > endDate) return false;
+      if (
+        selectedCustomerIds.length > 0 &&
+        !selectedCustomerIds.includes(inv.consigneeId) &&
+        !(inv.buyerId && selectedCustomerIds.includes(inv.buyerId))
+      ) {
+        return false;
+      }
+      if (selectedPolIds.length > 0 && !selectedPolIds.includes(inv.portOfLoadingId)) return false;
+      if (selectedPodIds.length > 0 && !selectedPodIds.includes(inv.portOfDischargeId)) return false;
+      if (selectedCurrencies.length > 0 && !selectedCurrencies.includes(inv.currency)) return false;
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes(inv.realizationStatus)) return false;
+
+      if (selectedSpeciesIds.length > 0) {
+        const hasSpecies = inv.lineItems.some((l) => selectedSpeciesIds.includes(l.speciesId));
+        if (!hasSpecies) return false;
+      }
+
+      return true;
+    });
+  }, [
+    salesInvoices,
+    startDate,
+    endDate,
+    selectedCustomerIds,
+    selectedSpeciesIds,
+    selectedPolIds,
+    selectedPodIds,
+    selectedCurrencies,
+    selectedStatuses
+  ]);
 
   // KPI Calculations
   const totalInvoices = filteredInvoices.length;
@@ -162,17 +223,24 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const clearAllFilters = () => {
     setStartDate('');
     setEndDate('');
-    setSelectedCustomerId('');
-    setSelectedSpeciesId('');
-    setSelectedPolId('');
-    setSelectedPodId('');
-    setSelectedDestId('');
-    setSelectedCurrency('');
-    setSelectedStatus('');
+    setSelectedCustomerIds([]);
+    setSelectedSpeciesIds([]);
+    setSelectedPolIds([]);
+    setSelectedPodIds([]);
+    setSelectedCurrencies([]);
+    setSelectedStatuses([]);
   };
 
-  const hasActiveFilter =
-    Boolean(startDate || endDate || selectedCustomerId || selectedSpeciesId || selectedPolId || selectedPodId || selectedDestId || selectedCurrency || selectedStatus);
+  const hasActiveFilter = Boolean(
+    startDate ||
+    endDate ||
+    selectedCustomerIds.length > 0 ||
+    selectedSpeciesIds.length > 0 ||
+    selectedPolIds.length > 0 ||
+    selectedPodIds.length > 0 ||
+    selectedCurrencies.length > 0 ||
+    selectedStatuses.length > 0
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
@@ -255,7 +323,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-ink-900 flex items-center gap-1.5 uppercase tracking-wider">
             <Filter className="w-3.5 h-3.5 text-rose-700" />
-            Combinable Filter Matrix
+            Sales Multi-Filter Matrix
           </span>
           {hasActiveFilter && (
             <button
@@ -267,127 +335,94 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Date From */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">From Date</label>
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-medium">
+            <span className="text-[10px] font-bold text-ink-500 uppercase">From:</span>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
+              className="bg-transparent text-xs outline-none font-semibold cursor-pointer"
             />
           </div>
 
           {/* Date To */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">To Date</label>
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-medium">
+            <span className="text-[10px] font-bold text-ink-500 uppercase">To:</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
+              className="bg-transparent text-xs outline-none font-semibold cursor-pointer"
             />
           </div>
 
-          {/* Customer */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Customer</label>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Clients</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Multi-select Customers */}
+          <MultiSelectFilter
+            label="Customers"
+            options={customerOptions}
+            selectedIds={selectedCustomerIds}
+            onChange={setSelectedCustomerIds}
+            icon={Users}
+            badgeColor="rose"
+            placeholder="Search customers..."
+          />
 
-          {/* Product */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Product</label>
-            <select
-              value={selectedSpeciesId}
-              onChange={(e) => setSelectedSpeciesId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Products</option>
-              {species.map((sp) => (
-                <option key={sp.id} value={sp.id}>
-                  {sp.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Multi-select Species / Products */}
+          <MultiSelectFilter
+            label="Species"
+            options={speciesOptions}
+            selectedIds={selectedSpeciesIds}
+            onChange={setSelectedSpeciesIds}
+            icon={Fish}
+            badgeColor="blue"
+            placeholder="Search species..."
+          />
 
-          {/* POL */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Port of Loading</label>
-            <select
-              value={selectedPolId}
-              onChange={(e) => setSelectedPolId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All POLs</option>
-              {ports.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.code}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Multi-select Port of Loading */}
+          <MultiSelectFilter
+            label="Loading Port"
+            options={polOptions}
+            selectedIds={selectedPolIds}
+            onChange={setSelectedPolIds}
+            icon={Ship}
+            badgeColor="indigo"
+            placeholder="Search loading ports..."
+          />
 
-          {/* POD */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Discharge Port</label>
-            <select
-              value={selectedPodId}
-              onChange={(e) => setSelectedPodId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All PODs</option>
-              {ports.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.code} - {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Multi-select Port of Discharge */}
+          <MultiSelectFilter
+            label="Discharge Port"
+            options={podOptions}
+            selectedIds={selectedPodIds}
+            onChange={setSelectedPodIds}
+            icon={Anchor}
+            badgeColor="emerald"
+            placeholder="Search discharge ports..."
+          />
 
-          {/* Currency */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Currency</label>
-            <select
-              value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Currencies</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="JPY">JPY</option>
-            </select>
-          </div>
+          {/* Multi-select Currency */}
+          <MultiSelectFilter
+            label="Currency"
+            options={currencyOptions}
+            selectedIds={selectedCurrencies}
+            onChange={setSelectedCurrencies}
+            icon={DollarSign}
+            badgeColor="amber"
+            placeholder="Search currency..."
+          />
 
-          {/* Realization Status */}
-          <div>
-            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Realization</label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All</option>
-              <option value="Not Realized">Not Realized</option>
-              <option value="Partially Realized">Partially</option>
-              <option value="Fully Realized">Fully</option>
-            </select>
-          </div>
+          {/* Multi-select Realization Status */}
+          <MultiSelectFilter
+            label="Status"
+            options={statusOptions}
+            selectedIds={selectedStatuses}
+            onChange={setSelectedStatuses}
+            icon={CheckCircle2}
+            badgeColor="purple"
+            placeholder="Search status..."
+          />
         </div>
 
         {/* Removable Filter Chips */}
@@ -395,69 +430,103 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
             <span className="text-[10px] uppercase font-bold text-ink-400">Active filters:</span>
             {startDate && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-ink-800 rounded-full text-xs font-semibold border border-gray-200">
                 From: {startDate}
-                <button onClick={() => setStartDate('')} className="hover:text-rose-950">
+                <button onClick={() => setStartDate('')} className="hover:text-rose-700">
                   <X className="w-3 h-3" />
                 </button>
               </span>
             )}
             {endDate && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-ink-800 rounded-full text-xs font-semibold border border-gray-200">
                 To: {endDate}
-                <button onClick={() => setEndDate('')} className="hover:text-rose-950">
+                <button onClick={() => setEndDate('')} className="hover:text-rose-700">
                   <X className="w-3 h-3" />
                 </button>
               </span>
             )}
-            {selectedCustomerId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                Client: {customerMap.get(selectedCustomerId)?.name || selectedCustomerId}
-                <button onClick={() => setSelectedCustomerId('')} className="hover:text-rose-950">
+            {selectedCustomerIds.map((id) => {
+              const c = customerMap.get(id);
+              if (!c) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold border border-rose-200"
+                >
+                  Client: {c.name}
+                  <button onClick={() => setSelectedCustomerIds(selectedCustomerIds.filter((item) => item !== id))} className="hover:text-rose-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {selectedSpeciesIds.map((id) => {
+              const sp = speciesMap.get(id);
+              if (!sp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-800 rounded-full text-xs font-semibold border border-blue-200"
+                >
+                  Species: {sp.name}
+                  <button onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))} className="hover:text-blue-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {selectedPolIds.map((id) => {
+              const p = portMap.get(id);
+              if (!p) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-indigo-50 text-indigo-800 rounded-full text-xs font-semibold border border-indigo-200"
+                >
+                  POL: {p.code}
+                  <button onClick={() => setSelectedPolIds(selectedPolIds.filter((item) => item !== id))} className="hover:text-indigo-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {selectedPodIds.map((id) => {
+              const p = portMap.get(id);
+              if (!p) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-full text-xs font-semibold border border-emerald-200"
+                >
+                  POD: {p.code}
+                  <button onClick={() => setSelectedPodIds(selectedPodIds.filter((item) => item !== id))} className="hover:text-emerald-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {selectedCurrencies.map((curr) => (
+              <span
+                key={curr}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-50 text-amber-800 rounded-full text-xs font-semibold border border-amber-200"
+              >
+                Currency: {curr}
+                <button onClick={() => setSelectedCurrencies(selectedCurrencies.filter((item) => item !== curr))} className="hover:text-amber-950">
                   <X className="w-3 h-3" />
                 </button>
               </span>
-            )}
-            {selectedSpeciesId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                Product: {speciesMap.get(selectedSpeciesId)?.name || selectedSpeciesId}
-                <button onClick={() => setSelectedSpeciesId('')} className="hover:text-rose-950">
+            ))}
+            {selectedStatuses.map((st) => (
+              <span
+                key={st}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-800 rounded-full text-xs font-semibold border border-purple-200"
+              >
+                Status: {st}
+                <button onClick={() => setSelectedStatuses(selectedStatuses.filter((item) => item !== st))} className="hover:text-purple-950">
                   <X className="w-3 h-3" />
                 </button>
               </span>
-            )}
-            {selectedPolId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                POL: {portMap.get(selectedPolId)?.code || selectedPolId}
-                <button onClick={() => setSelectedPolId('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {selectedPodId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                POD: {portMap.get(selectedPodId)?.code || selectedPodId}
-                <button onClick={() => setSelectedPodId('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {selectedCurrency && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                Currency: {selectedCurrency}
-                <button onClick={() => setSelectedCurrency('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {selectedStatus && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold">
-                Status: {selectedStatus}
-                <button onClick={() => setSelectedStatus('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
+            ))}
           </div>
         )}
       </div>

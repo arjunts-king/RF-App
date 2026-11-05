@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
+import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import {
-  Factory,
   Calendar,
   AlertTriangle,
-  PlusCircle
+  PlusCircle,
+  Fish,
+  Users,
+  Layers,
+  Filter,
+  X
 } from 'lucide-react';
 
 export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -15,10 +20,48 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
 
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
+  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
+  const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>([]);
 
-  const activeEntries = processingEntries.filter(
-    (p) => !p.isVoided && p.processingDate.startsWith(selectedMonth)
+  const activeEntries = useMemo(() => {
+    return processingEntries.filter((p) => {
+      if (p.isVoided) return false;
+      if (selectedMonth && !p.processingDate.startsWith(selectedMonth)) return false;
+      if (selectedSpeciesIds.length > 0 && !selectedSpeciesIds.includes(p.speciesId)) return false;
+      if (selectedSupplierIds.length > 0 && !selectedSupplierIds.includes(p.supplierId)) return false;
+      if (selectedGradeIds.length > 0 && !selectedGradeIds.includes(p.gradeId)) return false;
+      return true;
+    });
+  }, [processingEntries, selectedMonth, selectedSpeciesIds, selectedSupplierIds, selectedGradeIds]);
+
+  // Options for MultiSelectFilter
+  const speciesOptions = useMemo(
+    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
+    [species]
   );
+
+  const supplierOptions = useMemo(
+    () => suppliers.map((s) => ({ id: s.id, label: s.name, subLabel: s.district ? `${s.district}, ${s.state}` : s.state || s.code || undefined })),
+    [suppliers]
+  );
+
+  const gradeOptions = useMemo(
+    () => grades.map((g) => ({ id: g.id, label: g.name, subLabel: g.code || undefined })),
+    [grades]
+  );
+
+  const hasActiveFilters = Boolean(
+    selectedSpeciesIds.length > 0 ||
+    selectedSupplierIds.length > 0 ||
+    selectedGradeIds.length > 0
+  );
+
+  const clearAllFilters = () => {
+    setSelectedSpeciesIds([]);
+    setSelectedSupplierIds([]);
+    setSelectedGradeIds([]);
+  };
 
   // Lookups
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
@@ -146,32 +189,130 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         }
       />
 
-      {/* STICKY MONTH SELECTOR & SUMMARY BAR (Liquid Glass Surface) */}
-      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 font-bold text-ink-900">
-          <Factory className="w-4 h-4 text-rose-600" />
-          <span>Plant Floor Calendar:</span>
-          <span className="font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-            {selectedMonth}
-          </span>
-        </div>
+      {/* STICKY MULTI-FILTER & MONTH SELECTOR BAR (Liquid Glass Surface) */}
+      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 font-bold text-ink-900">
+            <Filter className="w-4 h-4 text-rose-600" />
+            <span>Production Multi-Filters</span>
+          </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-semibold">
-            <Calendar className="w-3.5 h-3.5 text-rose-600" />
-            <span>Select Month:</span>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent font-bold text-ink-900 outline-none cursor-pointer"
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-semibold">
+              <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-transparent font-bold text-ink-900 outline-none cursor-pointer text-xs"
+                title="Filter by Production Month"
+              />
+            </div>
+
+            <MultiSelectFilter
+              label="Species"
+              options={speciesOptions}
+              selectedIds={selectedSpeciesIds}
+              onChange={setSelectedSpeciesIds}
+              icon={Fish}
+              badgeColor="blue"
+              placeholder="Search species..."
             />
-          </div>
 
-          <div className="text-[11px] font-semibold text-ink-500 hidden sm:block">
-            Prior month: <strong className="font-mono">{priorMonthStr}</strong> ({formatKg(priorMonthTotalKg)})
+            <MultiSelectFilter
+              label="Suppliers"
+              options={supplierOptions}
+              selectedIds={selectedSupplierIds}
+              onChange={setSelectedSupplierIds}
+              icon={Users}
+              badgeColor="rose"
+              placeholder="Search suppliers..."
+            />
+
+            <MultiSelectFilter
+              label="Grades"
+              options={gradeOptions}
+              selectedIds={selectedGradeIds}
+              onChange={setSelectedGradeIds}
+              icon={Layers}
+              badgeColor="emerald"
+              placeholder="Search grades..."
+            />
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition"
+              >
+                Clear All
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Removable Active Filter Chips Strip */}
+        {hasActiveFilters && (
+          <div className="pt-2 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-ink-500">Active filters:</span>
+
+            {selectedSpeciesIds.map((id) => {
+              const sp = species.find((s) => s.id === id);
+              if (!sp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200"
+                >
+                  <span>Species: {sp.name}</span>
+                  <button
+                    onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))}
+                    className="hover:text-blue-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedSupplierIds.map((id) => {
+              const supp = suppliers.find((s) => s.id === id);
+              if (!supp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200"
+                >
+                  <span>Supplier: {supp.name}</span>
+                  <button
+                    onClick={() => setSelectedSupplierIds(selectedSupplierIds.filter((item) => item !== id))}
+                    className="hover:text-rose-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedGradeIds.map((id) => {
+              const grd = grades.find((g) => g.id === id);
+              if (!grd) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                >
+                  <span>Grade: {grd.name}</span>
+                  <button
+                    onClick={() => setSelectedGradeIds(selectedGradeIds.filter((item) => item !== id))}
+                    className="hover:text-emerald-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* BENTO-STYLE KPI CARDS WITH CAPTIONS & LINKS */}

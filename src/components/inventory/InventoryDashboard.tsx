@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
+import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import {
   Boxes,
   TrendingUp,
@@ -8,10 +9,14 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
-      CheckCircle2,
+  CheckCircle2,
   DollarSign,
   PackageCheck,
-  Scale
+  Scale,
+  Filter,
+  X,
+  Layers,
+  Fish
 } from 'lucide-react';
 import { InventoryNavTab } from './InventorySidebar';
 
@@ -23,8 +28,6 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
   const { inventoryCalculation, periodCloseLocks } = useData();
   
   const {
-    totalClosingQty,
-    totalClosingValue,
     totalCogsValue,
     totalSalesValueINR,
     overallGrossMarginPct,
@@ -33,9 +36,57 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
     exceptions
   } = inventoryCalculation;
 
-  const avgCostPerKg = totalClosingQty > 0 ? totalClosingValue / totalClosingQty : 0;
-  const lowStockItems = stockPositions.filter((p) => p.stockStatus === 'Low Stock' || p.stockStatus === 'Out of Stock');
-  const negativeStockItems = stockPositions.filter((p) => p.stockStatus === 'Negative Stock');
+  // Multi-Filter States
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedStockStatuses, setSelectedStockStatuses] = useState<string[]>([]);
+
+  // Filtered Stock Positions
+  const filteredStockPositions = useMemo(() => {
+    return stockPositions.filter((pos) => {
+      if (selectedItemIds.length > 0 && !selectedItemIds.includes(pos.inventoryItemId)) return false;
+      if (selectedCategories.length > 0 && !selectedCategories.includes(pos.category)) return false;
+      if (selectedStockStatuses.length > 0 && !selectedStockStatuses.includes(pos.stockStatus)) return false;
+      return true;
+    });
+  }, [stockPositions, selectedItemIds, selectedCategories, selectedStockStatuses]);
+
+  const filteredClosingQty = filteredStockPositions.reduce((s, p) => s + p.quantityOnHand, 0);
+  const filteredClosingValue = filteredStockPositions.reduce((s, p) => s + p.totalStockValue, 0);
+  const avgCostPerKg = filteredClosingQty > 0 ? filteredClosingValue / filteredClosingQty : 0;
+  const lowStockItems = filteredStockPositions.filter((p) => p.stockStatus === 'Low Stock' || p.stockStatus === 'Out of Stock');
+  const negativeStockItems = filteredStockPositions.filter((p) => p.stockStatus === 'Negative Stock');
+
+  // Options for MultiSelectFilter
+  const itemOptions = useMemo(
+    () => stockPositions.map((p) => ({ id: p.inventoryItemId, label: p.itemName, subLabel: `${p.itemCode} • ${p.category}` })),
+    [stockPositions]
+  );
+
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(stockPositions.map((p) => p.category))).filter(Boolean);
+    return cats.map((c) => ({ id: c, label: c }));
+  }, [stockPositions]);
+
+  const statusOptions = useMemo(
+    () => [
+      { id: 'Normal', label: 'Optimal / Normal' },
+      { id: 'Low Stock', label: 'Low Stock' },
+      { id: 'Negative Stock', label: 'Negative Stock' },
+      { id: 'Out of Stock', label: 'Out of Stock' }
+    ],
+    []
+  );
+
+  const hasActiveFilters = Boolean(
+    selectedItemIds.length > 0 || selectedCategories.length > 0 || selectedStockStatuses.length > 0
+  );
+
+  const clearAllFilters = () => {
+    setSelectedItemIds([]);
+    setSelectedCategories([]);
+    setSelectedStockStatuses([]);
+  };
 
   // Formatters
   const formatCurrency = (val: number) => {
@@ -119,6 +170,113 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
         </div>
       )}
 
+      {/* STICKY INVENTORY MULTI-FILTER BAR (Liquid Glass Surface) */}
+      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 font-bold text-ink-900">
+            <Filter className="w-4 h-4 text-rose-600" />
+            <span>Inventory Multi-Filters</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <MultiSelectFilter
+              label="Items & Species"
+              options={itemOptions}
+              selectedIds={selectedItemIds}
+              onChange={setSelectedItemIds}
+              icon={Fish}
+              badgeColor="blue"
+              placeholder="Search items..."
+            />
+
+            <MultiSelectFilter
+              label="Categories"
+              options={categoryOptions}
+              selectedIds={selectedCategories}
+              onChange={setSelectedCategories}
+              icon={Layers}
+              badgeColor="rose"
+              placeholder="Search categories..."
+            />
+
+            <MultiSelectFilter
+              label="Stock Health"
+              options={statusOptions}
+              selectedIds={selectedStockStatuses}
+              onChange={setSelectedStockStatuses}
+              icon={PackageCheck}
+              badgeColor="emerald"
+              placeholder="Search status..."
+            />
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Removable Active Filter Chips Strip */}
+        {hasActiveFilters && (
+          <div className="pt-2 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-ink-500">Active filters:</span>
+
+            {selectedItemIds.map((id) => {
+              const pos = stockPositions.find((p) => p.inventoryItemId === id);
+              if (!pos) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200"
+                >
+                  <span>Item: {pos.itemName}</span>
+                  <button
+                    onClick={() => setSelectedItemIds(selectedItemIds.filter((item) => item !== id))}
+                    className="hover:text-blue-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedCategories.map((cat) => (
+              <span
+                key={cat}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200"
+              >
+                <span>Category: {cat}</span>
+                <button
+                  onClick={() => setSelectedCategories(selectedCategories.filter((item) => item !== cat))}
+                  className="hover:text-rose-950"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+
+            {selectedStockStatuses.map((st) => (
+              <span
+                key={st}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+              >
+                <span>Health: {st}</span>
+                <button
+                  onClick={() => setSelectedStockStatuses(selectedStockStatuses.filter((item) => item !== st))}
+                  className="hover:text-emerald-950"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* KPI Stats Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* 1. Total Closing Value */}
@@ -130,10 +288,10 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
             </div>
           </div>
           <div className="text-xl font-black text-emerald-700 tracking-tight">
-            {formatCurrency(totalClosingValue)}
+            {formatCurrency(filteredClosingValue)}
           </div>
           <div className="text-[10px] text-ink-500 flex items-center gap-1">
-            <span className="font-semibold text-ink-700">{stockPositions.length}</span> active inventory items
+            <span className="font-semibold text-ink-700">{filteredStockPositions.length}</span> active inventory items
           </div>
         </div>
 
@@ -146,7 +304,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
             </div>
           </div>
           <div className="text-xl font-black text-ink-900 tracking-tight">
-            {formatKg(totalClosingQty)}
+            {formatKg(filteredClosingQty)}
           </div>
           <div className="text-[10px] text-ink-500">
             Finished export & processing weight
@@ -165,7 +323,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
             ₹{avgCostPerKg.toFixed(2)} <span className="text-xs font-semibold text-ink-500">/ Kg</span>
           </div>
           <div className="text-[10px] text-ink-500">
-            Weighted moving average across all items
+            Weighted moving average across filtered items
           </div>
         </div>
 
@@ -260,49 +418,57 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-medium text-ink-700">
-                {stockPositions.map((pos) => {
-                  const pctOfTotal = totalClosingValue > 0 ? (pos.totalStockValue / totalClosingValue) * 100 : 0;
-                  return (
-                    <tr key={pos.inventoryItemId} className="hover:bg-rose-50/40 transition">
-                      <td className="py-3 px-3">
-                        <div className="font-bold text-ink-900">{pos.itemName}</div>
-                        <div className="text-[10px] text-ink-400 font-mono">{pos.itemCode} &middot; {pos.category}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                          pos.quantityBasis === 'yield' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {pos.quantityBasis === 'yield' ? 'Yield Output' : 'Purchase Weight'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold text-ink-900">
-                        {formatKg(pos.quantityOnHand)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono">
-                        ₹{pos.averageCostPerKg.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="font-black text-ink-900">{formatCurrency(pos.totalStockValue)}</div>
-                        <div className="text-[10px] text-ink-400 font-semibold">{pctOfTotal.toFixed(1)}% of pool</div>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${
-                            pos.stockStatus === 'Normal'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : pos.stockStatus === 'Low Stock'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : pos.stockStatus === 'Negative Stock'
-                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {pos.stockStatus}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredStockPositions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-ink-400">
+                      No inventory items match the selected filter criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStockPositions.map((pos) => {
+                    const pctOfTotal = filteredClosingValue > 0 ? (pos.totalStockValue / filteredClosingValue) * 100 : 0;
+                    return (
+                      <tr key={pos.inventoryItemId} className="hover:bg-rose-50/40 transition">
+                        <td className="py-3 px-3">
+                          <div className="font-bold text-ink-900">{pos.itemName}</div>
+                          <div className="text-[10px] text-ink-400 font-mono">{pos.itemCode} &middot; {pos.category}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            pos.quantityBasis === 'yield' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {pos.quantityBasis === 'yield' ? 'Yield Output' : 'Purchase Weight'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-bold text-ink-900">
+                          {formatKg(pos.quantityOnHand)}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono">
+                          ₹{pos.averageCostPerKg.toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="font-black text-ink-900">{formatCurrency(pos.totalStockValue)}</div>
+                          <div className="text-[10px] text-ink-400 font-semibold">{pctOfTotal.toFixed(1)}% of pool</div>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${
+                              pos.stockStatus === 'Normal'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : pos.stockStatus === 'Low Stock'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : pos.stockStatus === 'Negative Stock'
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {pos.stockStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

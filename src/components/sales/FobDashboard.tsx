@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
+import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
 import {
   TrendingUp,
@@ -21,7 +22,8 @@ import {
   Scale,
   Users,
   Fish,
-  Anchor
+  Anchor,
+  X
 } from 'lucide-react';
 
 export type CurrencyViewMode = 'dual' | 'usd' | 'inr';
@@ -43,10 +45,10 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [selectedSpeciesId, setSelectedSpeciesId] = useState('');
-  const [selectedPodId, setSelectedPodId] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
+  const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   // Invoice Preview Modal State
   const [previewInvoice, setPreviewInvoice] = useState<SalesInvoice | null>(null);
@@ -58,6 +60,31 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
   const portMap = useMemo(() => new Map(ports.map((p) => [p.id, p])), [ports]);
   const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+
+  // Options for MultiSelectFilter
+  const customerOptions = useMemo(
+    () => customers.map((c) => ({ id: c.id, label: c.name, subLabel: c.country })),
+    [customers]
+  );
+
+  const speciesOptions = useMemo(
+    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
+    [species]
+  );
+
+  const podOptions = useMemo(
+    () => ports.map((p) => ({ id: p.id, label: `${p.code} - ${p.name}`, subLabel: p.country })),
+    [ports]
+  );
+
+  const statusOptions = useMemo(
+    () => [
+      { id: 'Fully Realized', label: 'Fully Realized', subLabel: '100% settled' },
+      { id: 'Partially Realized', label: 'Partially Realized', subLabel: 'Advance credited' },
+      { id: 'Not Realized', label: 'Not Realized', subLabel: 'Awaiting remittance' }
+    ],
+    []
+  );
 
   // Handle Preset Changes
   const handlePresetChange = (preset: DatePreset) => {
@@ -100,12 +127,18 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
       if (startDate && inv.invoiceDate < startDate) return false;
       if (endDate && inv.invoiceDate > endDate) return false;
-      if (selectedCustomerId && inv.consigneeId !== selectedCustomerId && inv.buyerId !== selectedCustomerId) return false;
-      if (selectedPodId && inv.portOfDischargeId !== selectedPodId) return false;
-      if (selectedStatus && inv.realizationStatus !== selectedStatus) return false;
+      if (
+        selectedCustomerIds.length > 0 &&
+        !selectedCustomerIds.includes(inv.consigneeId) &&
+        !(inv.buyerId && selectedCustomerIds.includes(inv.buyerId))
+      ) {
+        return false;
+      }
+      if (selectedPodIds.length > 0 && !selectedPodIds.includes(inv.portOfDischargeId)) return false;
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes(inv.realizationStatus)) return false;
 
-      if (selectedSpeciesId) {
-        const hasSpecies = inv.lineItems.some((l) => l.speciesId === selectedSpeciesId);
+      if (selectedSpeciesIds.length > 0) {
+        const hasSpecies = inv.lineItems.some((l) => selectedSpeciesIds.includes(l.speciesId));
         if (!hasSpecies) return false;
       }
 
@@ -127,7 +160,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
       return true;
     });
-  }, [salesInvoices, startDate, endDate, selectedCustomerId, selectedPodId, selectedStatus, selectedSpeciesId, searchQuery, customerMap, portMap, speciesMap]);
+  }, [salesInvoices, startDate, endDate, selectedCustomerIds, selectedPodIds, selectedStatuses, selectedSpeciesIds, searchQuery, customerMap, portMap, speciesMap]);
 
   // Aggregated KPI Calculations
   const stats = useMemo(() => {
@@ -424,14 +457,20 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     setStartDate('');
     setEndDate('');
     setSearchQuery('');
-    setSelectedCustomerId('');
-    setSelectedSpeciesId('');
-    setSelectedPodId('');
-    setSelectedStatus('');
+    setSelectedCustomerIds([]);
+    setSelectedSpeciesIds([]);
+    setSelectedPodIds([]);
+    setSelectedStatuses([]);
   };
 
   const hasActiveFilter = Boolean(
-    startDate || endDate || searchQuery || selectedCustomerId || selectedSpeciesId || selectedPodId || selectedStatus
+    startDate ||
+    endDate ||
+    searchQuery ||
+    selectedCustomerIds.length > 0 ||
+    selectedSpeciesIds.length > 0 ||
+    selectedPodIds.length > 0 ||
+    selectedStatuses.length > 0
   );
 
   return (
@@ -603,55 +642,160 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
             />
           </div>
 
-          {/* Customer / Consignee */}
-          <div>
+          {/* Multi-select Customer / Consignee */}
+          <div className="flex flex-col justify-end">
             <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Consignee / Buyer</label>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Overseas Buyers</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.country})
-                </option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              label="Buyers"
+              options={customerOptions}
+              selectedIds={selectedCustomerIds}
+              onChange={setSelectedCustomerIds}
+              icon={Users}
+              badgeColor="rose"
+              placeholder="Search buyers..."
+              className="w-full"
+            />
           </div>
 
-          {/* Product / Species */}
-          <div>
+          {/* Multi-select Product / Species */}
+          <div className="flex flex-col justify-end">
             <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Product / Species</label>
-            <select
-              value={selectedSpeciesId}
-              onChange={(e) => setSelectedSpeciesId(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Commercial Products</option>
-              {species.map((sp) => (
-                <option key={sp.id} value={sp.id}>
-                  {sp.name}
-                </option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              label="Species"
+              options={speciesOptions}
+              selectedIds={selectedSpeciesIds}
+              onChange={setSelectedSpeciesIds}
+              icon={Fish}
+              badgeColor="blue"
+              placeholder="Search species..."
+              className="w-full"
+            />
           </div>
 
-          {/* Realization Status */}
-          <div>
+          {/* Multi-select Discharge Port (POD) */}
+          <div className="flex flex-col justify-end">
+            <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Discharge Port</label>
+            <MultiSelectFilter
+              label="Discharge Ports"
+              options={podOptions}
+              selectedIds={selectedPodIds}
+              onChange={setSelectedPodIds}
+              icon={Anchor}
+              badgeColor="emerald"
+              placeholder="Search ports..."
+              className="w-full"
+            />
+          </div>
+
+          {/* Multi-select Realization Status */}
+          <div className="flex flex-col justify-end">
             <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Realization Status</label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:bg-white focus:border-rose-400 transition"
-            >
-              <option value="">All Settlement Statuses</option>
-              <option value="Fully Realized">Fully Realized</option>
-              <option value="Partially Realized">Partially Realized</option>
-              <option value="Not Realized">Not Realized / Pending</option>
-            </select>
+            <MultiSelectFilter
+              label="Status"
+              options={statusOptions}
+              selectedIds={selectedStatuses}
+              onChange={setSelectedStatuses}
+              icon={CheckCircle2}
+              badgeColor="purple"
+              placeholder="Search status..."
+              className="w-full"
+            />
           </div>
         </div>
+
+        {/* Removable Filter Chips */}
+        {hasActiveFilter && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
+            <span className="text-[10px] uppercase font-bold text-ink-400">Active filters:</span>
+
+            {searchQuery && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-ink-800 rounded-full text-xs font-semibold border border-gray-200">
+                Search: "{searchQuery}"
+                <button onClick={() => setSearchQuery('')} className="hover:text-rose-700">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {startDate && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-ink-800 rounded-full text-xs font-semibold border border-gray-200">
+                From: {startDate}
+                <button onClick={() => setStartDate('')} className="hover:text-rose-700">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {endDate && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-ink-800 rounded-full text-xs font-semibold border border-gray-200">
+                To: {endDate}
+                <button onClick={() => setEndDate('')} className="hover:text-rose-700">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {selectedCustomerIds.map((id) => {
+              const c = customerMap.get(id);
+              if (!c) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold border border-rose-200"
+                >
+                  Buyer: {c.name}
+                  <button onClick={() => setSelectedCustomerIds(selectedCustomerIds.filter((item) => item !== id))} className="hover:text-rose-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedSpeciesIds.map((id) => {
+              const sp = speciesMap.get(id);
+              if (!sp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-800 rounded-full text-xs font-semibold border border-blue-200"
+                >
+                  Species: {sp.name}
+                  <button onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))} className="hover:text-blue-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedPodIds.map((id) => {
+              const p = portMap.get(id);
+              if (!p) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-full text-xs font-semibold border border-emerald-200"
+                >
+                  POD: {p.code}
+                  <button onClick={() => setSelectedPodIds(selectedPodIds.filter((item) => item !== id))} className="hover:text-emerald-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedStatuses.map((st) => (
+              <span
+                key={st}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-800 rounded-full text-xs font-semibold border border-purple-200"
+              >
+                Status: {st}
+                <button onClick={() => setSelectedStatuses(selectedStatuses.filter((item) => item !== st))} className="hover:text-purple-950">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 6 High-Impact Dual-Currency Financial KPI Cards */}

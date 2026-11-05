@@ -998,6 +998,97 @@ test('Realization Shortfall & Contract Terms Tracking: Advance & Balance USD dis
   assert.equal(parsedTotalShortfall, 260);
 });
 
+test('Dashboard Multi-Filters: Multi-species, multi-supplier, and multi-criteria selection logic', () => {
+  // Test dataset simulating purchase and sales entries across multiple suppliers and species
+  const purchases = [
+    { id: 'p1', supplierId: 's1', speciesId: 'sp1', locationId: 'loc1', weightKg: 1000, isVoided: false },
+    { id: 'p2', supplierId: 's2', speciesId: 'sp2', locationId: 'loc1', weightKg: 1500, isVoided: false },
+    { id: 'p3', supplierId: 's3', speciesId: 'sp1', locationId: 'loc2', weightKg: 2000, isVoided: false },
+    { id: 'p4', supplierId: 's1', speciesId: 'sp3', locationId: 'loc2', weightKg: 800, isVoided: false },
+    { id: 'p5', supplierId: 's2', speciesId: 'sp1', locationId: 'loc1', weightKg: 1200, isVoided: true } // Voided
+  ];
+
+  // 1. Filter by selecting 2 species ('sp1' and 'sp2')
+  const selectedSpecies = ['sp1', 'sp2'];
+  const multiSpeciesResult = purchases.filter((p) => {
+    if (p.isVoided) return false;
+    if (selectedSpecies.length > 0 && !selectedSpecies.includes(p.speciesId)) return false;
+    return true;
+  });
+  assert.equal(multiSpeciesResult.length, 3); // p1, p2, p3
+  assert.deepEqual(multiSpeciesResult.map((p) => p.id), ['p1', 'p2', 'p3']);
+
+  // 2. Filter by selecting 2 suppliers ('s1' and 's3')
+  const selectedSuppliers = ['s1', 's3'];
+  const multiSupplierResult = purchases.filter((p) => {
+    if (p.isVoided) return false;
+    if (selectedSuppliers.length > 0 && !selectedSuppliers.includes(p.supplierId)) return false;
+    return true;
+  });
+  assert.equal(multiSupplierResult.length, 3); // p1, p3, p4
+  assert.deepEqual(multiSupplierResult.map((p) => p.id), ['p1', 'p3', 'p4']);
+
+  // 3. Combinable: Selecting 2 species ('sp1', 'sp3') AND 1 supplier ('s1')
+  const comboResult = purchases.filter((p) => {
+    if (p.isVoided) return false;
+    if (['s1'].length > 0 && !['s1'].includes(p.supplierId)) return false;
+    if (['sp1', 'sp3'].length > 0 && !['sp1', 'sp3'].includes(p.speciesId)) return false;
+    return true;
+  });
+  assert.equal(comboResult.length, 2); // p1 and p4
+  assert.deepEqual(comboResult.map((p) => p.id), ['p1', 'p4']);
+
+  // 4. Sales invoice multi-item species matching: invoice containing multiple line items
+  const salesInvoices = [
+    {
+      id: 'inv1',
+      consigneeId: 'c1',
+      buyerId: 'b1',
+      lineItems: [{ speciesId: 'sp1' }, { speciesId: 'sp2' }],
+      isVoided: false
+    },
+    {
+      id: 'inv2',
+      consigneeId: 'c2',
+      buyerId: 'b2',
+      lineItems: [{ speciesId: 'sp3' }],
+      isVoided: false
+    },
+    {
+      id: 'inv3',
+      consigneeId: 'c1',
+      buyerId: 'b2',
+      lineItems: [{ speciesId: 'sp2' }, { speciesId: 'sp3' }],
+      isVoided: false
+    }
+  ];
+
+  // Invoices matching ANY of the selected species ('sp1', 'sp3')
+  const targetSpecies = ['sp1', 'sp3'];
+  const matchedInvoices = salesInvoices.filter((inv) => {
+    if (inv.isVoided) return false;
+    if (targetSpecies.length > 0 && !inv.lineItems.some((l) => targetSpecies.includes(l.speciesId))) return false;
+    return true;
+  });
+  assert.equal(matchedInvoices.length, 3); // inv1 has sp1, inv2 has sp3, inv3 has sp3
+
+  // Invoices matching 2 selected customers ('c2', 'c99')
+  const targetCustomers = ['c2', 'c99'];
+  const matchedCustomers = salesInvoices.filter((inv) => {
+    if (inv.isVoided) return false;
+    if (
+      targetCustomers.length > 0 &&
+      !targetCustomers.includes(inv.consigneeId) &&
+      !(inv.buyerId && targetCustomers.includes(inv.buyerId))
+    ) {
+      return false;
+    }
+    return true;
+  });
+  assert.equal(matchedCustomers.length, 1);
+  assert.equal(matchedCustomers[0].id, 'inv2');
+});
+
 
 
 

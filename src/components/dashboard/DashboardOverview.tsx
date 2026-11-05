@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
+import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import { NavTab } from '../common/Sidebar';
 import {
   Scale,
@@ -15,7 +16,9 @@ import {
   BarChart3,
   X,
   ArrowRight,
-  PlusCircle
+  PlusCircle,
+  Fish,
+  Anchor
 } from 'lucide-react';
 
 interface DashboardOverviewProps {
@@ -25,22 +28,22 @@ interface DashboardOverviewProps {
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigateTab }) => {
   const { purchases, suppliers, species, locations, expenseTypes } = useData();
 
-  // Dashboard Filters
-  const [supplierFilter, setSupplierFilter] = useState('');
-  const [speciesFilter, setSpeciesFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  // Dashboard Multiple Filters (all combinable)
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
+  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState('');
 
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
       if (p.isVoided) return false;
-      if (supplierFilter && p.supplierId !== supplierFilter) return false;
-      if (speciesFilter && p.speciesId !== speciesFilter) return false;
-      if (locationFilter && p.locationId !== locationFilter) return false;
+      if (selectedSupplierIds.length > 0 && !selectedSupplierIds.includes(p.supplierId)) return false;
+      if (selectedSpeciesIds.length > 0 && !selectedSpeciesIds.includes(p.speciesId)) return false;
+      if (selectedLocationIds.length > 0 && !selectedLocationIds.includes(p.locationId)) return false;
       if (dateFilter && p.purchaseDate !== dateFilter) return false;
       return true;
     });
-  }, [purchases, supplierFilter, speciesFilter, locationFilter, dateFilter]);
+  }, [purchases, selectedSupplierIds, selectedSpeciesIds, selectedLocationIds, dateFilter]);
 
   // Memoized KPI Calculations
   const kpis = useMemo(() => {
@@ -124,18 +127,35 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     };
   }, [species, expenseTypes, suppliers, filteredPurchases]);
 
-  // Helpers for active filter label lookups
-  const selectedSupplierObj = suppliers.find((s) => s.id === supplierFilter);
-  const selectedSpeciesObj = species.find((sp) => sp.id === speciesFilter);
-  const selectedLocationObj = locations.find((l) => l.id === locationFilter);
-  const hasActiveFilters = Boolean(dateFilter || supplierFilter || speciesFilter || locationFilter);
+  const hasActiveFilters = Boolean(
+    dateFilter ||
+    selectedSupplierIds.length > 0 ||
+    selectedSpeciesIds.length > 0 ||
+    selectedLocationIds.length > 0
+  );
 
   const clearAllFilters = () => {
     setDateFilter('');
-    setSupplierFilter('');
-    setSpeciesFilter('');
-    setLocationFilter('');
+    setSelectedSupplierIds([]);
+    setSelectedSpeciesIds([]);
+    setSelectedLocationIds([]);
   };
+
+  // Options for MultiSelectFilter
+  const supplierOptions = useMemo(
+    () => suppliers.map((s) => ({ id: s.id, label: s.name, subLabel: s.district ? `${s.district}, ${s.state}` : s.state || s.code || undefined })),
+    [suppliers]
+  );
+
+  const speciesOptions = useMemo(
+    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
+    [species]
+  );
+
+  const locationOptions = useMemo(
+    () => locations.map((l) => ({ id: l.id, label: l.name, subLabel: l.state || undefined })),
+    [locations]
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -165,12 +185,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         ]}
       />
 
-      {/* 2. CLEAN STICKY FILTER BAR WITH REMOVABLE FILTER CHIPS (Liquid Glass Surface) */}
+      {/* 2. CLEAN STICKY FILTER BAR WITH MULTI-SELECT FILTERS & REMOVABLE FILTER CHIPS (Liquid Glass Surface) */}
       <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-ink-900 font-bold">
             <Filter className="w-4 h-4 text-rose-600" />
-            <span>Dashboard Filters</span>
+            <span>Dashboard Multi-Filters</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -182,38 +202,35 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               title="Filter by Purchase Date"
             />
 
-            <select
-              value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
-              className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600 transition"
-            >
-              <option value="">All Suppliers</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              label="Suppliers"
+              options={supplierOptions}
+              selectedIds={selectedSupplierIds}
+              onChange={setSelectedSupplierIds}
+              icon={Users}
+              badgeColor="rose"
+              placeholder="Search suppliers..."
+            />
 
-            <select
-              value={speciesFilter}
-              onChange={(e) => setSpeciesFilter(e.target.value)}
-              className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600 transition"
-            >
-              <option value="">All Species</option>
-              {species.map((sp) => (
-                <option key={sp.id} value={sp.id}>{sp.name}</option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              label="Species"
+              options={speciesOptions}
+              selectedIds={selectedSpeciesIds}
+              onChange={setSelectedSpeciesIds}
+              icon={Fish}
+              badgeColor="blue"
+              placeholder="Search species..."
+            />
 
-            <select
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600 transition"
-            >
-              <option value="">All Harbours</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              label="Harbours"
+              options={locationOptions}
+              selectedIds={selectedLocationIds}
+              onChange={setSelectedLocationIds}
+              icon={Anchor}
+              badgeColor="emerald"
+              placeholder="Search harbours..."
+            />
 
             {hasActiveFilters && (
               <button
@@ -230,38 +247,72 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         {hasActiveFilters && (
           <div className="pt-2 border-t border-gray-100 flex items-center gap-2 flex-wrap">
             <span className="text-[11px] font-semibold text-ink-500">Active filters:</span>
+
             {dateFilter && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-ink-800 border border-gray-200">
                 <span>Date: {dateFilter}</span>
-                <button onClick={() => setDateFilter('')} className="hover:text-rose-950">
+                <button onClick={() => setDateFilter('')} className="hover:text-rose-700">
                   <X className="w-3 h-3" />
                 </button>
               </span>
             )}
-            {selectedSupplierObj && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                <span>Supplier: {selectedSupplierObj.name}</span>
-                <button onClick={() => setSupplierFilter('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {selectedSpeciesObj && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                <span>Species: {selectedSpeciesObj.name}</span>
-                <button onClick={() => setSpeciesFilter('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {selectedLocationObj && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                <span>Harbour: {selectedLocationObj.name}</span>
-                <button onClick={() => setLocationFilter('')} className="hover:text-rose-950">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
+
+            {selectedSupplierIds.map((id) => {
+              const supp = suppliers.find((s) => s.id === id);
+              if (!supp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200"
+                >
+                  <span>Supplier: {supp.name}</span>
+                  <button
+                    onClick={() => setSelectedSupplierIds(selectedSupplierIds.filter((item) => item !== id))}
+                    className="hover:text-rose-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedSpeciesIds.map((id) => {
+              const sp = species.find((s) => s.id === id);
+              if (!sp) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200"
+                >
+                  <span>Species: {sp.name}</span>
+                  <button
+                    onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))}
+                    className="hover:text-blue-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {selectedLocationIds.map((id) => {
+              const loc = locations.find((l) => l.id === id);
+              if (!loc) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                >
+                  <span>Harbour: {loc.name}</span>
+                  <button
+                    onClick={() => setSelectedLocationIds(selectedLocationIds.filter((item) => item !== id))}
+                    className="hover:text-emerald-950"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
