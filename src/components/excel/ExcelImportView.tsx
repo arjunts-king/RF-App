@@ -27,7 +27,8 @@ import {
   Boxes,
   TrendingUp,
   FileText,
-  Anchor
+  Anchor,
+  BadgeDollarSign
 } from 'lucide-react';
 
 interface ImportSummary {
@@ -75,7 +76,8 @@ export const ExcelImportView: React.FC<{
     bulkImportCustomers,
     bulkImportPorts,
     bulkImportProcessingEntries,
-    bulkImportSalesInvoices
+    bulkImportSalesInvoices,
+    bulkImportSalesRealizations
   } = useData();
   const { showToast } = useToast();
 
@@ -230,6 +232,12 @@ export const ExcelImportView: React.FC<{
       label: 'Export Performance & Invoices',
       icon: FileText,
       desc: 'Export performance register, total sales value in USD, and FOB values in both USD and Indian rupees'
+    },
+    {
+      id: 'sales-realizations',
+      label: 'Realization & Settlement',
+      icon: BadgeDollarSign,
+      desc: 'Bulk update invoice settlements: advance received, date of advance, balance payment, date of balance, and pre-determined bank rate'
     },
     {
       id: 'customers',
@@ -514,6 +522,10 @@ export const ExcelImportView: React.FC<{
             const res = bulkImportSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
+          } else if (sheetNameNorm.includes('realiz') || sheetNameNorm.includes('settle')) {
+            const res = bulkImportSalesRealizations(sheet.rows);
+            totalInvoicesAdded += res.updated;
+            allErrors.push(...res.errors);
           }
         });
 
@@ -557,6 +569,13 @@ export const ExcelImportView: React.FC<{
           createdCustomers: res.createdCustomers,
           createdPorts: res.createdPorts,
           createdSpecies: res.createdSpecies
+        });
+      } else if (selectedEntity === 'sales-realizations') {
+        const res = bulkImportSalesRealizations(activeRows);
+        setImportSummary({
+          added: res.updated,
+          updated: res.updated,
+          errors: res.errors
         });
       } else if (selectedEntity === 'customers') {
         const res = bulkImportCustomers(activeRows);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { SalesInvoice } from '../../types';
@@ -6,23 +6,37 @@ import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
+import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
 import {
+  downloadExcelTemplate,
+  downloadActiveInvoicesSettlementTemplate,
+  parseExcelWorkbook,
+  getFlexibleValue,
+  formatExcelDate
+} from '../../utils/excelImport';
+import {
   Search,
   Download,
+  Upload,
   BadgeDollarSign,
   Calendar,
   CheckCircle2,
+  AlertCircle,
   FileDown,
   Globe,
   Plus,
-  ArrowRight
+  ArrowRight,
+  FileSpreadsheet,
+  RefreshCw,
+  Sparkles,
+  FileCheck
 } from 'lucide-react';
 
 export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
-  const { salesInvoices, customers, ports, businessSettings } = useData();
+  const { salesInvoices, customers, ports, businessSettings, bulkImportSalesRealizations } = useData();
   const { permissions } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +45,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const [showVoided, setShowVoided] = useState(false);
 
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
+
+  // Bulk Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [parsedRows, setParsedRows] = useState<Record<string, any>[]>([]);
+  const [importSummary, setImportSummary] = useState<{ updated: number; errors: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Lookups
   const customerMap = new Map(customers.map((c) => [c.id, c]));
@@ -146,6 +168,47 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     downloadFile(csvStr, `Export_Realization_Settlement_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
+  // Handle File Selection for Settlement Import
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setIsParsingFile(true);
+    setImportSummary(null);
+
+    try {
+      const parsed = await parseExcelWorkbook(file);
+      if (parsed.sheets && parsed.sheets.length > 0) {
+        // Pick sheet with rows
+        const targetSheet = parsed.sheets.find((s) => s.rows && s.rows.length > 0) || parsed.sheets[0];
+        setParsedRows(targetSheet.rows || []);
+      } else {
+        alert('Could not find any data rows in the uploaded spreadsheet.');
+        setParsedRows([]);
+      }
+    } catch (err: any) {
+      alert(`Failed to parse Excel file: ${err.message || 'Unknown error'}`);
+      setParsedRows([]);
+    } finally {
+      setIsParsingFile(false);
+    }
+  };
+
+  // Apply Bulk Settlement Import
+  const handleApplySettlementImport = () => {
+    if (parsedRows.length === 0) return;
+    const res = bulkImportSalesRealizations(parsedRows);
+    setImportSummary(res);
+  };
+
+  const handleResetImportModal = () => {
+    setSelectedFile(null);
+    setParsedRows([]);
+    setImportSummary(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Figma Header Block */}
@@ -154,7 +217,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         subtitle="Manage advance payments received, balance remittances, bank receipt dates, and pre-determined bank exchange rates for all commercial invoices."
         breadcrumbs={['Sales', 'Settlement & Banking', 'Realization & Settlement']}
         primaryAction={
-          permissions.canCreateEditSales && onNavigate
+          permissions.canManageSalesRealization
+            ? {
+                label: 'Import Settlement Excel',
+                onClick: () => {
+                  handleResetImportModal();
+                  setIsImportModalOpen(true);
+                },
+                icon: Upload
+              }
+            : permissions.canCreateEditSales && onNavigate
             ? {
                 label: 'New commercial invoice',
                 onClick: () => onNavigate('invoice-entry'),
@@ -163,6 +235,21 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             : undefined
         }
         secondaryActions={[
+          {
+            label: 'Download Invoices Sheet',
+            onClick: () => downloadActiveInvoicesSettlementTemplate(activeInvoices, customers),
+            icon: FileSpreadsheet
+          },
+          {
+            label: 'Download Blank Template',
+            onClick: () => downloadExcelTemplate('sales-realizations'),
+            icon: Download
+          },
+          {
+            label: 'Export Settlement CSV',
+            onClick: handleExportCSV,
+            icon: Download
+          },
           ...(onNavigate
             ? [
                 {
@@ -171,12 +258,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                   icon: ArrowRight
                 }
               ]
-            : []),
-          {
-            label: 'Export Settlement CSV',
-            onClick: handleExportCSV,
-            icon: Download
-          }
+            : [])
         ]}
       />
 
@@ -214,22 +296,44 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         />
       </div>
 
-      {/* Realization Guide Pill Banner */}
-      <div className="p-3 bg-rose-50/70 border border-rose-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-rose-900">
-          <BadgeDollarSign className="w-4 h-4 text-rose-700 shrink-0" />
-          <span className="font-semibold">
-            Track five critical settlement variables for each invoice:
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-800">
-            <span className="px-1.5 py-0.5 bg-white rounded border border-rose-200">1. Advance Received</span>
-            <span className="px-1.5 py-0.5 bg-white rounded border border-rose-200">2. Date of Advance</span>
-            <span className="px-1.5 py-0.5 bg-white rounded border border-rose-200">3. Balance Payment</span>
-            <span className="px-1.5 py-0.5 bg-white rounded border border-rose-200">4. Date of Balance</span>
-            <span className="px-1.5 py-0.5 bg-white rounded border border-rose-200">5. Pre-determined Bank Rate</span>
-          </span>
+      {/* Import Realization Callout Banner */}
+      <div className="p-4 bg-gradient-to-r from-rose-50 via-white to-blue-50 border border-rose-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-rose-950 font-bold text-xs uppercase tracking-wider">
+            <Upload className="w-4 h-4 text-rose-600" />
+            <span>Bulk Import Realization &amp; Settlement from Excel</span>
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">
+              Automated Matching
+            </span>
+          </div>
+          <p className="text-xs text-ink-600">
+            Import advance received, date of advance, balance payment amount, date of balance payment, and pre-determined bank exchange rates for all invoices at once.
+          </p>
         </div>
-        <span className="text-[11px] text-rose-700 font-medium">Click the settlement button on any row to update.</span>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => downloadActiveInvoicesSettlementTemplate(activeInvoices, customers)}
+            className="px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+            title="Download Excel spreadsheet pre-filled with current invoice numbers"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Download Active Sheet</span>
+          </button>
+
+          {permissions.canManageSalesRealization && (
+            <button
+              onClick={() => {
+                handleResetImportModal();
+                setIsImportModalOpen(true);
+              }}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import Settlement Excel</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Sticky Search & Multi-Filter Bar */}
@@ -310,7 +414,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                     <BadgeDollarSign className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     <p className="font-semibold text-sm text-ink-700">No export invoices match the selected criteria</p>
                     <p className="text-xs text-ink-500 mt-1">
-                      Create a new commercial invoice or adjust your search filter above.
+                      Create a new commercial invoice or import realization details using the buttons above.
                     </p>
                   </td>
                 </tr>
@@ -518,13 +622,274 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         </div>
       </div>
 
-      {/* Realization & Settlement Modal */}
+      {/* Manual Realization & Settlement Modal */}
       {realizationTarget && (
         <RealizationModal
           isOpen={!!realizationTarget}
           onClose={() => setRealizationTarget(null)}
           invoice={realizationTarget}
         />
+      )}
+
+      {/* ============================================================== */}
+      {/* BULK EXCEL IMPORT REALIZATION & SETTLEMENT MODAL */}
+      {/* ============================================================== */}
+      {isImportModalOpen && (
+        <Modal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          title="Import Realization & Settlement of Invoices"
+          subtitle="Upload an Excel spreadsheet (.xlsx, .xls, .csv) to bulk-update advance received, balance payments, receipt dates, and bank exchange rates"
+          maxWidth="max-w-4xl"
+        >
+          <div className="space-y-6">
+            {/* Step 1: Download Template Helpers */}
+            <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  Step 1: Download Template or Active Invoices Sheet
+                </span>
+                <span className="text-[11px] font-semibold text-ink-500">Formats: .xlsx, .xls, .csv</span>
+              </div>
+              <p className="text-xs text-ink-600">
+                You can download an Excel sheet with your current active invoices already pre-filled with Invoice # and Consignee, or download a clean blank template with sample rows.
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => downloadActiveInvoicesSettlementTemplate(activeInvoices, customers)}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Download Active Invoices Sheet ({activeInvoices.length} Invoices)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => downloadExcelTemplate('sales-realizations')}
+                  className="px-3.5 py-2 bg-white hover:bg-gray-100 border border-gray-300 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4 text-ink-600" />
+                  <span>Download Blank Sample Template</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Step 2: Upload Dropzone */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+                <Upload className="w-4 h-4 text-rose-600" />
+                Step 2: Choose Completed File to Upload
+              </span>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-6 border-2 border-dashed rounded-2xl text-center cursor-pointer transition ${
+                  selectedFile
+                    ? 'border-emerald-300 bg-emerald-50/40'
+                    : 'border-gray-300 hover:border-rose-400 bg-gray-50/50 hover:bg-rose-50/30'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                {isParsingFile ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <RefreshCw className="w-6 h-6 animate-spin text-rose-600" />
+                    <span className="text-xs font-bold text-ink-700">Reading and analyzing spreadsheet...</span>
+                  </div>
+                ) : selectedFile ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <FileCheck className="w-8 h-8 text-emerald-600" />
+                    <span className="text-xs font-bold text-ink-900">{selectedFile.name}</span>
+                    <span className="text-[11px] text-ink-500">
+                      {(selectedFile.size / 1024).toFixed(1)} KB · {parsedRows.length} rows loaded
+                    </span>
+                    <span className="text-[11px] text-rose-600 underline font-semibold mt-1">
+                      Click to choose another file
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-8 h-8 text-ink-400" />
+                    <div>
+                      <span className="text-xs font-bold text-ink-900 block">
+                        Click or drag and drop your completed settlement file here
+                      </span>
+                      <span className="text-[11px] text-ink-500 mt-0.5 block">
+                        Supports Excel Workbooks (.xlsx, .xls) and CSV files
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3: Live Verification & Match Preview Table */}
+            {parsedRows.length > 0 && !importSummary && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    Step 3: Verification Preview ({parsedRows.length} Rows)
+                  </span>
+                  <span className="text-[11px] text-ink-500">Previewing first 10 rows</span>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="sticky top-0 bg-gray-100 text-[10px] font-bold text-ink-600 uppercase border-b border-gray-200">
+                      <tr>
+                        <th className="py-2 px-2.5">Row</th>
+                        <th className="py-2 px-2.5">Invoice #</th>
+                        <th className="py-2 px-2.5">Match Status</th>
+                        <th className="py-2 px-2.5 text-right">Bank Rate</th>
+                        <th className="py-2 px-2.5 text-right">Advance (USD)</th>
+                        <th className="py-2 px-2.5">Advance Date</th>
+                        <th className="py-2 px-2.5 text-right">Balance (USD)</th>
+                        <th className="py-2 px-2.5">Balance Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-medium">
+                      {parsedRows.slice(0, 10).map((row, idx) => {
+                        const rawInvNo = String(
+                          getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'invoicenumber']) || ''
+                        ).trim();
+
+                        const matched = salesInvoices.find(
+                          (inv) => !inv.isVoided && inv.invoiceNo.toLowerCase() === rawInvNo.toLowerCase()
+                        );
+
+                        const rawBankRate = parseFloat(
+                          getFlexibleValue(row, [
+                            'predeterminedexchangerate',
+                            'bankexchangerate',
+                            'predeterminedrate',
+                            'bankrate',
+                            'exchangerate'
+                          ]) || ''
+                        );
+                        const bankRate = !isNaN(rawBankRate) && rawBankRate > 0 ? rawBankRate : (matched?.bankPreDeterminedExchangeRate || matched?.exchangeRate || 84.5);
+
+                        const rawAdvUSD = parseFloat(
+                          getFlexibleValue(row, ['advancereceivedusd', 'advancereceived', 'advanceamount', 'advance']) || ''
+                        );
+                        const advDate = formatExcelDate(
+                          getFlexibleValue(row, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate'])
+                        );
+
+                        const rawBalUSD = parseFloat(
+                          getFlexibleValue(row, ['balancepaymentamountusd', 'balancepaymentamount', 'balanceamount', 'balance']) || ''
+                        );
+                        const balDate = formatExcelDate(
+                          getFlexibleValue(row, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate'])
+                        );
+
+                        return (
+                          <tr key={idx} className={matched ? 'hover:bg-gray-50' : 'bg-rose-50/40 text-rose-900'}>
+                            <td className="py-1.5 px-2.5 text-ink-400 font-mono text-[10px]">{idx + 1}</td>
+                            <td className="py-1.5 px-2.5 font-bold font-mono text-ink-900">
+                              {rawInvNo || <span className="text-rose-600 italic">Empty</span>}
+                            </td>
+                            <td className="py-1.5 px-2.5">
+                              {matched ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  Matched
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md">
+                                  <AlertCircle className="w-3 h-3 text-rose-600" />
+                                  Not Found
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-right font-mono font-bold text-rose-800">
+                              ₹{bankRate.toFixed(2)}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-right font-bold text-blue-800">
+                              {!isNaN(rawAdvUSD) && rawAdvUSD > 0 ? `$${rawAdvUSD.toLocaleString()}` : '—'}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-ink-600 whitespace-nowrap text-[10px]">
+                              {advDate || '—'}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-right font-bold text-emerald-800">
+                              {!isNaN(rawBalUSD) && rawBalUSD > 0 ? `$${rawBalUSD.toLocaleString()}` : '—'}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-ink-600 whitespace-nowrap text-[10px]">
+                              {balDate || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Import Summary Result Banner */}
+            {importSummary && (
+              <div
+                className={`p-4 rounded-2xl border space-y-2 ${
+                  importSummary.updated > 0
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                    : 'bg-rose-50 border-rose-200 text-rose-950'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  {importSummary.updated > 0 ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-rose-600" />
+                  )}
+                  <span>
+                    Import Complete: {importSummary.updated} invoices successfully updated with realization and settlement details!
+                  </span>
+                </div>
+
+                {importSummary.errors.length > 0 && (
+                  <div className="mt-2 p-2.5 bg-white/80 rounded-xl border border-rose-200 text-[11px] space-y-1">
+                    <span className="font-bold text-rose-800 block">Notice / Unmatched Rows ({importSummary.errors.length}):</span>
+                    <ul className="list-disc pl-4 space-y-0.5 text-rose-700 max-h-32 overflow-y-auto">
+                      {importSummary.errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 rounded-xl text-xs font-bold transition"
+              >
+                {importSummary ? 'Close' : 'Cancel'}
+              </button>
+
+              {!importSummary && parsedRows.length > 0 && permissions.canManageSalesRealization && (
+                <button
+                  type="button"
+                  onClick={handleApplySettlementImport}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Apply Settlements to {parsedRows.length} Invoices</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

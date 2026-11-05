@@ -230,6 +230,9 @@ interface DataContextType {
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
   ) => { added: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number };
+  bulkImportSalesRealizations: (
+    rawRows: Record<string, any>[]
+  ) => { updated: number; errors: string[] };
 
   logAudit: (
     action: AuditAction,
@@ -5117,6 +5120,252 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
+  const bulkImportSalesRealizations = (
+    rawRows: Record<string, any>[]
+  ): { updated: number; errors: string[] } => {
+    if (!permissions.canManageSalesRealization) {
+      return {
+        updated: 0,
+        errors: ['Unauthorized: Only Master Accountant and Owner/Admin can import realizations.']
+      };
+    }
+
+    if (!rawRows || rawRows.length === 0) {
+      return { updated: 0, errors: ['No data rows found in the imported file.'] };
+    }
+
+    let updatedCount = 0;
+    const errors: string[] = [];
+    const updatedInvoicesMap = new Map<string, SalesInvoice>();
+
+    const currentInvoices = [...salesInvoices];
+
+    rawRows.forEach((row, idx) => {
+      const rowNum = idx + 1;
+      const rawInvNo = String(
+        getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'invoicenumber', 'invoicenum']) || ''
+      ).trim();
+
+      if (!rawInvNo) {
+        errors.push(`Row ${rowNum}: Missing Invoice No. Unable to match settlement.`);
+        return;
+      }
+
+      const targetInv = currentInvoices.find(
+        (inv) => !inv.isVoided && inv.invoiceNo.toLowerCase() === rawInvNo.toLowerCase()
+      );
+
+      if (!targetInv) {
+        errors.push(`Row ${rowNum}: Invoice "${rawInvNo}" not found or is voided.`);
+        return;
+      }
+
+      const baseInv = updatedInvoicesMap.get(targetInv.id) || targetInv;
+
+      const rawBankRate = parseFloat(
+        getFlexibleValue(row, [
+          'predeterminedexchangerate',
+          'bankexchangerate',
+          'predeterminedrate',
+          'bankrate',
+          'predeterminedbankrate',
+          'bankpredeterminedexchangerate',
+          'exchangerate',
+          'forexrate',
+          'rate'
+        ]) || ''
+      );
+      const bankRate =
+        !isNaN(rawBankRate) && rawBankRate > 0
+          ? Number(rawBankRate.toFixed(4))
+          : baseInv.bankPreDeterminedExchangeRate || baseInv.exchangeRate || 84.50;
+
+      const rawAdvUSD = parseFloat(
+        getFlexibleValue(row, [
+          'advancereceivedusd',
+          'advancereceived',
+          'advancereceivedcurrency',
+          'advanceamount',
+          'advanceusd',
+          'advance'
+        ]) || ''
+      );
+      const advUSD =
+        !isNaN(rawAdvUSD) && rawAdvUSD >= 0
+          ? Number(rawAdvUSD.toFixed(2))
+          : baseInv.advanceReceivedCurrency || 0;
+
+      const rawAdvDate = getFlexibleValue(row, [
+        'dateofreceivingtheadvance',
+        'dateofreceivingadvance',
+        'advancedate',
+        'dateadvance',
+        'advdate',
+        'advancereceiveddate'
+      ]);
+      const advDate = rawAdvDate
+        ? formatExcelDate(rawAdvDate)
+        : advUSD > 0
+        ? baseInv.advanceReceivedDate || baseInv.invoiceDate
+        : undefined;
+
+      const advRef =
+        String(
+          getFlexibleValue(row, ['advancebankref', 'advancefirc', 'advanceref', 'advancewire', 'advancerefno']) || ''
+        ).trim() || baseInv.advanceBankRef;
+
+      const rawBalUSD = parseFloat(
+        getFlexibleValue(row, [
+          'balancepaymentamountusd',
+          'balanacepaymentamount',
+          'balancepaymentamount',
+          'balancepaymentamountcurrency',
+          'balancepayment',
+          'balanceamount',
+          'balanceusd',
+          'balance'
+        ]) || ''
+      );
+      const balUSD =
+        !isNaN(rawBalUSD) && rawBalUSD >= 0
+          ? Number(rawBalUSD.toFixed(2))
+          : baseInv.balancePaymentAmountCurrency || 0;
+
+      const rawBalDate = getFlexibleValue(row, [
+        'dateofreceivingbalanacepayment',
+        'dateofreceivingbalancepayment',
+        'balancedate',
+        'datebalance',
+        'baldate',
+        'balancepaymentdate'
+      ]);
+      const balDate = rawBalDate
+        ? formatExcelDate(rawBalDate)
+        : balUSD > 0
+        ? baseInv.balancePaymentDate || new Date().toISOString().split('T')[0]
+        : undefined;
+
+      const balRef =
+        String(
+          getFlexibleValue(row, ['balancebankref', 'balancefirc', 'balanceref', 'balancewire', 'balancerefno']) || ''
+        ).trim() || baseInv.balanceBankRef;
+
+      const rawBankAccName = String(
+        getFlexibleValue(row, ['receivingbankaccount', 'bankaccount', 'bank']) || ''
+      ).trim().toLowerCase();
+      const matchedBankAcc = rawBankAccName
+        ? bankAccounts.find(
+            (b) =>
+              b.name.toLowerCase().includes(rawBankAccName) ||
+              b.bank.toLowerCase().includes(rawBankAccName)
+          )
+        : undefined;
+      const bankAccountId =
+        matchedBankAcc?.id || baseInv.realizations[0]?.bankAccountId || bankAccounts[0]?.id;
+
+      const rawNotes = String(
+        getFlexibleValue(row, ['settlementnotes', 'notes', 'remarks', 'comments']) || ''
+      ).trim();
+
+      const advINR = Number((advUSD * bankRate).toFixed(2));
+      const balINR = Number((balUSD * bankRate).toFixed(2));
+      const totalRealizedCurrency = Number((advUSD + balUSD).toFixed(2));
+      const totalRealizedINR = Number((advINR + balINR).toFixed(2));
+      const balanceRealizationCurrency = Math.max(
+        0,
+        Number((baseInv.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
+      );
+
+      let realizationStatus: RealizationStatus = 'Not Realized';
+      if (totalRealizedCurrency > 0) {
+        if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= baseInv.totalAmountCurrency) {
+          realizationStatus = 'Fully Realized';
+        } else {
+          realizationStatus = 'Partially Realized';
+        }
+      }
+
+      const updatedRealizations: RealizationRecord[] = [];
+      if (advUSD > 0 && advDate) {
+        updatedRealizations.push({
+          id: `real-adv-${baseInv.id}`,
+          settlementDate: advDate,
+          realizedAmountCurrency: advUSD,
+          exchangeRateRealized: bankRate,
+          amountINR: advINR,
+          bankRefNo: advRef || `ADV-${baseInv.invoiceNo}`,
+          bankAccountId,
+          notes: rawNotes ? `Advance: ${rawNotes}` : 'Advance received (imported)',
+          paymentType: 'Advance',
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email || 'import@system'
+        });
+      }
+      if (balUSD > 0 && balDate) {
+        updatedRealizations.push({
+          id: `real-bal-${baseInv.id}`,
+          settlementDate: balDate,
+          realizedAmountCurrency: balUSD,
+          exchangeRateRealized: bankRate,
+          amountINR: balINR,
+          bankRefNo: balRef || `BAL-${baseInv.invoiceNo}`,
+          bankAccountId,
+          notes: rawNotes ? `Balance: ${rawNotes}` : 'Balance received (imported)',
+          paymentType: 'Balance',
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email || 'import@system'
+        });
+      }
+
+      const updatedInvoice: SalesInvoice = {
+        ...baseInv,
+        bankPreDeterminedExchangeRate: bankRate,
+        advanceReceivedCurrency: advUSD > 0 ? advUSD : undefined,
+        advanceReceivedDate: advUSD > 0 ? advDate : undefined,
+        advanceReceivedINR: advUSD > 0 ? advINR : undefined,
+        advanceBankRef: advUSD > 0 ? advRef : undefined,
+        balancePaymentAmountCurrency: balUSD > 0 ? balUSD : undefined,
+        balancePaymentDate: balUSD > 0 ? balDate : undefined,
+        balancePaymentINR: balUSD > 0 ? balINR : undefined,
+        balanceBankRef: balUSD > 0 ? balRef : undefined,
+        realizations: updatedRealizations,
+        totalRealizedCurrency,
+        balanceRealizationCurrency,
+        totalRealizedINR,
+        realizationStatus,
+        lastRealizationDate: balDate || advDate || baseInv.lastRealizationDate,
+        averageRealizedExchangeRate: bankRate,
+        updatedBy: currentUser.email || 'import@system',
+        updatedAt: new Date().toISOString()
+      };
+
+      updatedInvoicesMap.set(baseInv.id, updatedInvoice);
+      updatedCount++;
+    });
+
+    if (updatedCount > 0) {
+      setSalesInvoices((prev) =>
+        prev.map((inv) => updatedInvoicesMap.get(inv.id) || inv)
+      );
+
+      logAudit(
+        'EDIT',
+        'SALES_REALIZATION',
+        `Bulk import: Updated settlement for ${updatedCount} sales invoices`,
+        {
+          newValues: {
+            updatedCount,
+            invoiceIds: Array.from(updatedInvoicesMap.keys())
+          }
+        }
+      );
+
+      showToast(`Successfully imported and updated settlement for ${updatedCount} sales invoices.`, 'success');
+    }
+
+    return { updated: updatedCount, errors };
+  };
+
   const contextValue = useMemo(() => ({
     businessSettings,
     updateBusinessSettings,
@@ -5246,6 +5495,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     bulkImportPurchases,
     bulkImportProcessingEntries,
     bulkImportSalesInvoices,
+    bulkImportSalesRealizations,
     logAudit,
 
     // Inventory Module Exports
