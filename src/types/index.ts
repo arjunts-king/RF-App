@@ -475,13 +475,15 @@ export interface SalesInvoice {
   // Realization & Settlement Schedule Fields (Invoice Settlement)
   advanceReceivedCurrency?: number; // Advance received in invoice foreign currency (e.g. USD)
   advanceReceivedDate?: string; // Date of receiving the advance (YYYY-MM-DD)
-  advanceReceivedINR?: number; // Advance received in INR (advanceReceivedCurrency * bankPreDeterminedExchangeRate)
+  advanceReceivedINR?: number; // Advance received in INR (advanceReceivedCurrency * advanceExchangeRate)
   advanceBankRef?: string; // Advance Bank Reference / FIRC / Wire Advice
+  advanceExchangeRate?: number; // Forward exchange rate for advance payment (pre-determined with bank)
   balancePaymentAmountCurrency?: number; // Balance payment amount in foreign currency (e.g. USD)
   balancePaymentDate?: string; // Date of receiving balance payment (YYYY-MM-DD)
-  balancePaymentINR?: number; // Balance payment in INR (balancePaymentAmountCurrency * bankPreDeterminedExchangeRate)
+  balancePaymentINR?: number; // Balance payment in INR (balancePaymentAmountCurrency * balanceExchangeRate)
   balanceBankRef?: string; // Balance Bank Reference / FIRC / Wire Advice
-  bankPreDeterminedExchangeRate?: number; // Exchange rate of that invoice (pre determined with bank)
+  balanceExchangeRate?: number; // Forward exchange rate for balance payment (pre-determined with bank)
+  bankPreDeterminedExchangeRate?: number; // Primary/legacy exchange rate of that invoice (pre determined with bank)
 
   // Soft-delete / Void
   isVoided: boolean;

@@ -858,5 +858,67 @@ test('Receivables Collection Period Analysis: calculates DSO, advance lag, turna
   assert.equal(c1Summary.collectionHealth, 'Prompt');
 });
 
+test('Dual Forward Rates: Independent advance & balance forward rates, weighted average, and import key recognition', () => {
+  // Scenario: Export invoice of $50,000
+  // Advance 30% ($15,000) booked under forward contract @ 84.50
+  // Balance 70% ($35,000) booked under subsequent forward contract @ 84.85
+  const invoiceTotalUSD = 50000;
+  const advanceUSD = 15000;
+  const advanceForwardRate = 84.50;
+  const balanceUSD = 35000;
+  const balanceForwardRate = 84.85;
+
+  const advanceINR = Number((advanceUSD * advanceForwardRate).toFixed(2));
+  assert.equal(advanceINR, 1267500.00);
+
+  const balanceINR = Number((balanceUSD * balanceForwardRate).toFixed(2));
+  assert.equal(balanceINR, 2969750.00);
+
+  const totalRealizedUSD = advanceUSD + balanceUSD;
+  const totalRealizedINR = advanceINR + balanceINR;
+  assert.equal(totalRealizedUSD, 50000);
+  assert.equal(totalRealizedINR, 4237250.00);
+
+  // Weighted average realized forward rate: 4237250 / 50000 = 84.745
+  const weightedAvgRate = Number((totalRealizedINR / totalRealizedUSD).toFixed(4));
+  assert.equal(weightedAvgRate, 84.745);
+
+  // Direct outstanding calculation evaluating remaining balance at the balance forward rate
+  const outstandingAfterAdv = computeOutstandingFromAdvance(invoiceTotalUSD, advanceUSD, balanceForwardRate);
+  assert.equal(outstandingAfterAdv.outstandingAfterAdvanceCurrency, 35000);
+  assert.equal(outstandingAfterAdv.outstandingAfterAdvanceINR, 2969750.00);
+  assert.equal(outstandingAfterAdv.advancePercentage, 30.0);
+  assert.equal(outstandingAfterAdv.outstandingPercentage, 70.0);
+
+  // Verify flexible key normalization for import headers
+  assert.equal(normalizeKey('Advance Forward Rate (Bank)'), 'advanceforwardratebank');
+  assert.equal(normalizeKey('Balance Forward Rate (Bank)'), 'balanceforwardratebank');
+
+  const row = {
+    'Invoice No': 'EXP-2026-099',
+    'Advance Forward Rate (Bank)': 84.50,
+    'Balance Forward Rate (Bank)': 84.85,
+    'Advance Received (USD)': 15000,
+    'Balance Payment Amount (USD)': 35000
+  };
+
+  const matchedAdvRate = getFlexibleValue(row, [
+    'advanceforwardratebank',
+    'advanceforwardrate',
+    'advanceexchangerate',
+    'advancerate'
+  ]);
+  const matchedBalRate = getFlexibleValue(row, [
+    'balanceforwardratebank',
+    'balanceforwardrate',
+    'balanceexchangerate',
+    'balancerate'
+  ]);
+
+  assert.equal(matchedAdvRate, 84.50);
+  assert.equal(matchedBalRate, 84.85);
+});
+
+
 
 

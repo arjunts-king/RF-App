@@ -11,6 +11,8 @@ export interface InvoiceCollectionMetric {
   currency: string;
   totalAmountCurrency: number;
   bankPreDeterminedExchangeRate: number;
+  advanceExchangeRate: number;
+  balanceExchangeRate: number;
   
   // Advance specifics
   advanceReceivedCurrency: number;
@@ -195,11 +197,13 @@ export function calculateReceivablesCollectionAnalysis(
     const cust = customerMap.get(inv.consigneeId);
     const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : undefined;
     const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
+    const advanceRate = inv.advanceExchangeRate || rate;
+    const balanceRate = inv.balanceExchangeRate || rate;
     const advUSD = inv.advanceReceivedCurrency || 0;
     const balUSD = inv.balancePaymentAmountCurrency || 0;
     const totalCollected = inv.totalRealizedCurrency || (advUSD + balUSD);
     const outstandingUSD = inv.balanceRealizationCurrency;
-    const outstandingINR = Number((outstandingUSD * rate).toFixed(2));
+    const outstandingINR = Number((outstandingUSD * balanceRate).toFixed(2));
 
     totalInvoicedUSD += inv.totalAmountCurrency;
     totalAdvanceUSD += advUSD;
@@ -270,6 +274,8 @@ export function calculateReceivablesCollectionAnalysis(
       currency: inv.currency,
       totalAmountCurrency: inv.totalAmountCurrency,
       bankPreDeterminedExchangeRate: rate,
+      advanceExchangeRate: advanceRate,
+      balanceExchangeRate: balanceRate,
       advanceReceivedCurrency: advUSD,
       advanceReceivedDate: inv.advanceReceivedDate,
       advanceBankRef: inv.advanceBankRef,

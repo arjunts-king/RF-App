@@ -502,22 +502,24 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const data = [
       {
         'Invoice No': 'EXP-2026-001',
-        'Pre-determined Bank Exchange Rate': 84.75,
+        'Advance Forward Rate (Bank)': 84.50,
         'Advance Received (USD)': 7830.0,
         'Date of Receiving Advance': '15-10-2026',
         'Advance Bank Ref / FIRC': 'FIRC-HDFC-ADV-8821',
+        'Balance Forward Rate (Bank)': 84.75,
         'Balance Payment Amount (USD)': 18270.0,
         'Date of Receiving Balance Payment': '28-10-2026',
         'Balance Bank Ref / FIRC': 'FIRC-HDFC-BAL-9934',
         'Receiving Bank Account': 'HDFC Current Account',
-        'Settlement Notes': '30% advance received on booking; balance received against BL surrender'
+        'Settlement Notes': '30% advance received at 84.50 forward rate; balance at 84.75'
       },
       {
         'Invoice No': 'EXP-2026-002',
-        'Pre-determined Bank Exchange Rate': 84.50,
+        'Advance Forward Rate (Bank)': 84.50,
         'Advance Received (USD)': 15000.0,
         'Date of Receiving Advance': '20-10-2026',
         'Advance Bank Ref / FIRC': 'WIRE-SBI-ADV-1022',
+        'Balance Forward Rate (Bank)': 84.75,
         'Balance Payment Amount (USD)': '',
         'Date of Receiving Balance Payment': '',
         'Balance Bank Ref / FIRC': '',
@@ -992,6 +994,8 @@ export function downloadActiveInvoicesSettlementTemplate(
     consigneeId: string;
     totalAmountCurrency: number;
     currency: string;
+    advanceExchangeRate?: number;
+    balanceExchangeRate?: number;
     bankPreDeterminedExchangeRate?: number;
     exchangeRate: number;
     advanceReceivedCurrency?: number;
@@ -1013,10 +1017,11 @@ export function downloadActiveInvoicesSettlementTemplate(
     'Consignee / Customer': customerMap.get(inv.consigneeId) || 'Export Buyer',
     'Currency': inv.currency,
     'Total Invoiced Value': inv.totalAmountCurrency,
-    'Pre-determined Bank Exchange Rate': inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
+    'Advance Forward Rate (Bank)': inv.advanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
     'Advance Received': inv.advanceReceivedCurrency || '',
     'Date of Receiving Advance': inv.advanceReceivedDate || '',
     'Advance Bank Ref / FIRC': inv.advanceBankRef || '',
+    'Balance Forward Rate (Bank)': inv.balanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
     'Balance Payment Amount': inv.balancePaymentAmountCurrency || '',
     'Date of Receiving Balance Payment': inv.balancePaymentDate || '',
     'Balance Bank Ref / FIRC': inv.balanceBankRef || '',
@@ -1032,15 +1037,16 @@ export function downloadActiveInvoicesSettlementTemplate(
       'Consignee / Customer': 'Tokyo Seafood Trading Co.',
       'Currency': 'USD',
       'Total Invoiced Value': 26100,
-      'Pre-determined Bank Exchange Rate': 84.75,
+      'Advance Forward Rate (Bank)': 84.50,
       'Advance Received': 7830,
       'Date of Receiving Advance': '15-10-2026',
       'Advance Bank Ref / FIRC': 'FIRC-HDFC-ADV-8821',
+      'Balance Forward Rate (Bank)': 84.75,
       'Balance Payment Amount': 18270,
       'Date of Receiving Balance Payment': '28-10-2026',
       'Balance Bank Ref / FIRC': 'FIRC-HDFC-BAL-9934',
       'Receiving Bank Account': 'HDFC Current Account',
-      'Settlement Notes': '30% advance received, balance cleared'
+      'Settlement Notes': '30% advance received at 84.50, balance at 84.75 forward rate'
     }
   ]);
 

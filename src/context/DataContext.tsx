@@ -175,9 +175,11 @@ interface DataContextType {
       advanceReceivedCurrency?: number;
       advanceReceivedDate?: string;
       advanceBankRef?: string;
+      advanceExchangeRate?: number;
       balancePaymentAmountCurrency?: number;
       balancePaymentDate?: string;
       balanceBankRef?: string;
+      balanceExchangeRate?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
       notes?: string;
@@ -2096,17 +2098,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       totalFobValueCurrency,
       estimatedAmountINR,
 
+      advanceExchangeRate: invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
+      balanceExchangeRate: invoiceData.balanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
       bankPreDeterminedExchangeRate: invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
       advanceReceivedCurrency: invoiceData.advanceReceivedCurrency,
       advanceReceivedDate: invoiceData.advanceReceivedDate,
       advanceReceivedINR: invoiceData.advanceReceivedCurrency
-        ? Number((invoiceData.advanceReceivedCurrency * (invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
+        ? Number((invoiceData.advanceReceivedCurrency * (invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
         : undefined,
       advanceBankRef: invoiceData.advanceBankRef,
       balancePaymentAmountCurrency: invoiceData.balancePaymentAmountCurrency,
       balancePaymentDate: invoiceData.balancePaymentDate,
       balancePaymentINR: invoiceData.balancePaymentAmountCurrency
-        ? Number((invoiceData.balancePaymentAmountCurrency * (invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
+        ? Number((invoiceData.balancePaymentAmountCurrency * (invoiceData.balanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
         : undefined,
       balanceBankRef: invoiceData.balanceBankRef,
 
@@ -2313,9 +2317,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       advanceReceivedCurrency?: number;
       advanceReceivedDate?: string;
       advanceBankRef?: string;
+      advanceExchangeRate?: number;
       balancePaymentAmountCurrency?: number;
       balancePaymentDate?: string;
       balanceBankRef?: string;
+      balanceExchangeRate?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
       notes?: string;
@@ -2335,6 +2341,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? Number(Number(settlementData.bankPreDeterminedExchangeRate).toFixed(4))
       : invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 84.50;
 
+    const advanceRate = Number(settlementData.advanceExchangeRate) > 0
+      ? Number(Number(settlementData.advanceExchangeRate).toFixed(4))
+      : invoice.advanceExchangeRate || bankRate;
+
+    const balanceRate = Number(settlementData.balanceExchangeRate) > 0
+      ? Number(Number(settlementData.balanceExchangeRate).toFixed(4))
+      : invoice.balanceExchangeRate || bankRate;
+
     const advanceUSD = Number(settlementData.advanceReceivedCurrency) || 0;
     const advanceDate = advanceUSD > 0
       ? (settlementData.advanceReceivedDate || invoice.advanceReceivedDate || new Date().toISOString().split('T')[0])
@@ -2351,8 +2365,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? (settlementData.balanceBankRef?.trim() || invoice.balanceBankRef || `BAL-${invoice.invoiceNo}`)
       : undefined;
 
-    const advanceINR = Number((advanceUSD * bankRate).toFixed(2));
-    const balanceINR = Number((balanceUSD * bankRate).toFixed(2));
+    const advanceINR = Number((advanceUSD * advanceRate).toFixed(2));
+    const balanceINR = Number((balanceUSD * balanceRate).toFixed(2));
 
     const totalRealizedCurrency = Number((advanceUSD + balanceUSD).toFixed(2));
     const totalRealizedINR = Number((advanceINR + balanceINR).toFixed(2));
@@ -2370,14 +2384,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Build synchronized realization records
+    // Build synchronized realization records with independent forward rates
     const updatedRealizations: RealizationRecord[] = [];
     if (advanceUSD > 0 && advanceDate) {
       updatedRealizations.push({
         id: `real-adv-${invoice.id}`,
         settlementDate: advanceDate,
         realizedAmountCurrency: advanceUSD,
-        exchangeRateRealized: bankRate,
+        exchangeRateRealized: advanceRate,
         amountINR: advanceINR,
         bankRefNo: advanceBankRef || `ADV-${invoice.invoiceNo}`,
         bankAccountId: settlementData.bankAccountId,
@@ -2392,7 +2406,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         id: `real-bal-${invoice.id}`,
         settlementDate: balanceDate,
         realizedAmountCurrency: balanceUSD,
-        exchangeRateRealized: bankRate,
+        exchangeRateRealized: balanceRate,
         amountINR: balanceINR,
         bankRefNo: balanceBankRef || `BAL-${invoice.invoiceNo}`,
         bankAccountId: settlementData.bankAccountId,
@@ -2404,10 +2418,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     const lastRealizationDate = balanceDate || advanceDate || invoice.lastRealizationDate;
-    const averageRealizedExchangeRate = bankRate;
+    const averageRealizedExchangeRate = totalRealizedCurrency > 0
+      ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4))
+      : bankRate;
 
     const updatedInvoice: SalesInvoice = {
       ...invoice,
+      advanceExchangeRate: advanceRate,
+      balanceExchangeRate: balanceRate,
       bankPreDeterminedExchangeRate: bankRate,
       advanceReceivedCurrency: advanceUSD > 0 ? advanceUSD : undefined,
       advanceReceivedDate: advanceUSD > 0 ? advanceDate : undefined,
@@ -2432,18 +2450,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logAudit(
       'EDIT',
       'SALES_REALIZATION',
-      `Settlement recorded for invoice ${invoice.invoiceNo}: Advance ${invoice.currency} ${advanceUSD} (${advanceDate || 'N/A'}), Balance ${invoice.currency} ${balanceUSD} (${balanceDate || 'N/A'}), Bank Rate ₹${bankRate}`,
+      `Settlement recorded for invoice ${invoice.invoiceNo}: Advance ${invoice.currency} ${advanceUSD} @ ₹${advanceRate} (${advanceDate || 'N/A'}), Balance ${invoice.currency} ${balanceUSD} @ ₹${balanceRate} (${balanceDate || 'N/A'})`,
       {
         oldValues: {
           advanceUSD: invoice.advanceReceivedCurrency,
+          advanceRate: invoice.advanceExchangeRate,
           balanceUSD: invoice.balancePaymentAmountCurrency,
+          balanceRate: invoice.balanceExchangeRate,
           bankRate: invoice.bankPreDeterminedExchangeRate,
           status: invoice.realizationStatus
         },
         newValues: {
           advanceUSD,
+          advanceRate,
           advanceDate,
           balanceUSD,
+          balanceRate,
           balanceDate,
           bankRate,
           status: realizationStatus
@@ -2452,7 +2474,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
 
     showToast(
-      `Settlement updated for ${invoice.invoiceNo}: Adv ${invoice.currency} ${advanceUSD.toLocaleString()}, Bal ${invoice.currency} ${balanceUSD.toLocaleString()} @ ₹${bankRate}.`,
+      `Settlement updated for ${invoice.invoiceNo}: Adv ${invoice.currency} ${advanceUSD.toLocaleString()} @ ₹${advanceRate}, Bal ${invoice.currency} ${balanceUSD.toLocaleString()} @ ₹${balanceRate}.`,
       'success'
     );
 
@@ -4988,17 +5010,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rawBankExRate = parseFloat(getFlexibleValue(headerRow, ['predeterminedexchangerate', 'bankexchangerate', 'predeterminedrate', 'bankrate', 'predeterminedbankrate', 'bankpredeterminedexchangerate']) || '');
       const bankPreDeterminedExchangeRate = !isNaN(rawBankExRate) && rawBankExRate > 0 ? Number(rawBankExRate.toFixed(4)) : exchangeRate;
 
+      const rawAdvRate = parseFloat(getFlexibleValue(headerRow, ['advanceforwardratebank', 'advanceforwardrate', 'advanceexchangerate', 'advancerate', 'forwardrateadvance', 'advrate', 'predeterminedexchangerateadvance']) || '');
+      const advanceExchangeRate = !isNaN(rawAdvRate) && rawAdvRate > 0 ? Number(rawAdvRate.toFixed(4)) : bankPreDeterminedExchangeRate;
+
+      const rawBalRate = parseFloat(getFlexibleValue(headerRow, ['balanceforwardratebank', 'balanceforwardrate', 'balanceexchangerate', 'balancerate', 'forwardratebalance', 'balrate', 'predeterminedexchangeratebalance']) || '');
+      const balanceExchangeRate = !isNaN(rawBalRate) && rawBalRate > 0 ? Number(rawBalRate.toFixed(4)) : bankPreDeterminedExchangeRate;
+
       const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
       const advanceReceivedCurrency = !isNaN(rawAdvUSD) && rawAdvUSD > 0 ? Number(rawAdvUSD.toFixed(2)) : undefined;
       const rawAdvDate = getFlexibleValue(headerRow, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate', 'dateadvance', 'advdate', 'advancereceiveddate']);
       const advanceReceivedDate = rawAdvDate ? formatExcelDate(rawAdvDate) : (advanceReceivedCurrency ? invoiceDate : undefined);
-      const advanceReceivedINR = advanceReceivedCurrency ? Number((advanceReceivedCurrency * bankPreDeterminedExchangeRate).toFixed(2)) : undefined;
+      const advanceReceivedINR = advanceReceivedCurrency ? Number((advanceReceivedCurrency * advanceExchangeRate).toFixed(2)) : undefined;
 
       const rawBalUSD = parseFloat(getFlexibleValue(headerRow, ['balanacepaymentamount', 'balancepaymentamount', 'balancepaymentamountcurrency', 'balancepayment', 'balanceamount', 'balanceusd', 'balance']) || '0');
       const balancePaymentAmountCurrency = !isNaN(rawBalUSD) && rawBalUSD > 0 ? Number(rawBalUSD.toFixed(2)) : undefined;
       const rawBalDate = getFlexibleValue(headerRow, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate', 'datebalance', 'baldate', 'balancepaymentdate']);
       const balancePaymentDate = rawBalDate ? formatExcelDate(rawBalDate) : undefined;
-      const balancePaymentINR = balancePaymentAmountCurrency ? Number((balancePaymentAmountCurrency * bankPreDeterminedExchangeRate).toFixed(2)) : undefined;
+      const balancePaymentINR = balancePaymentAmountCurrency ? Number((balancePaymentAmountCurrency * balanceExchangeRate).toFixed(2)) : undefined;
 
       const totalRealizedCurrency = Number(((advanceReceivedCurrency || 0) + (balancePaymentAmountCurrency || 0)).toFixed(2));
       const totalRealizedINR = Number(((advanceReceivedINR || 0) + (balancePaymentINR || 0)).toFixed(2));
@@ -5019,8 +5047,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `real-adv-${invNoKey}`,
           settlementDate: advanceReceivedDate,
           realizedAmountCurrency: advanceReceivedCurrency,
-          exchangeRateRealized: bankPreDeterminedExchangeRate,
-          amountINR: advanceReceivedINR || Number((advanceReceivedCurrency * bankPreDeterminedExchangeRate).toFixed(2)),
+          exchangeRateRealized: advanceExchangeRate,
+          amountINR: advanceReceivedINR || Number((advanceReceivedCurrency * advanceExchangeRate).toFixed(2)),
           bankRefNo: `ADV-${invNoKey}`,
           notes: 'Advance received',
           paymentType: 'Advance',
@@ -5033,8 +5061,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `real-bal-${invNoKey}`,
           settlementDate: balancePaymentDate,
           realizedAmountCurrency: balancePaymentAmountCurrency,
-          exchangeRateRealized: bankPreDeterminedExchangeRate,
-          amountINR: balancePaymentINR || Number((balancePaymentAmountCurrency * bankPreDeterminedExchangeRate).toFixed(2)),
+          exchangeRateRealized: balanceExchangeRate,
+          amountINR: balancePaymentINR || Number((balancePaymentAmountCurrency * balanceExchangeRate).toFixed(2)),
           bankRefNo: `BAL-${invNoKey}`,
           notes: 'Balance payment received',
           paymentType: 'Balance',
@@ -5069,6 +5097,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         grossProfitINR,
         profitMarginPct,
         estimatedAmountINR,
+        advanceExchangeRate,
+        balanceExchangeRate,
         bankPreDeterminedExchangeRate,
         advanceReceivedCurrency,
         advanceReceivedDate,
@@ -5084,7 +5114,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         totalRealizedINR,
         realizationStatus,
         lastRealizationDate: balancePaymentDate || advanceReceivedDate,
-        averageRealizedExchangeRate: bankPreDeterminedExchangeRate,
+        averageRealizedExchangeRate: totalRealizedCurrency > 0
+          ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4))
+          : bankPreDeterminedExchangeRate,
         isVoided: false,
         createdBy: currentUser.email || 'import@system',
         createdAt: new Date().toISOString(),
@@ -5173,13 +5205,50 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'bankpredeterminedexchangerate',
           'exchangerate',
           'forexrate',
-          'rate'
+          'rate',
+          'forwardrate'
         ]) || ''
       );
       const bankRate =
         !isNaN(rawBankRate) && rawBankRate > 0
           ? Number(rawBankRate.toFixed(4))
           : baseInv.bankPreDeterminedExchangeRate || baseInv.exchangeRate || 84.50;
+
+      const rawAdvRate = parseFloat(
+        getFlexibleValue(row, [
+          'advanceforwardratebank',
+          'advanceforwardrate',
+          'advanceexchangerate',
+          'advancerate',
+          'bankadvancerate',
+          'advancebankrate',
+          'forwardrateadvance',
+          'advanceforexrate',
+          'predeterminedexchangerateadvance'
+        ]) || ''
+      );
+      const advanceRate =
+        !isNaN(rawAdvRate) && rawAdvRate > 0
+          ? Number(rawAdvRate.toFixed(4))
+          : baseInv.advanceExchangeRate || bankRate;
+
+      const rawBalRate = parseFloat(
+        getFlexibleValue(row, [
+          'balanceforwardratebank',
+          'balanceforwardrate',
+          'balanceexchangerate',
+          'balancerate',
+          'bankbalancerate',
+          'balancebankrate',
+          'forwardratebalance',
+          'balanceforexrate',
+          'predeterminedexchangeratebalance'
+        ]) || ''
+      );
+      const balanceRate =
+        !isNaN(rawBalRate) && rawBalRate > 0
+          ? Number(rawBalRate.toFixed(4))
+          : baseInv.balanceExchangeRate || bankRate;
 
       const rawAdvUSD = parseFloat(
         getFlexibleValue(row, [
@@ -5268,8 +5337,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         getFlexibleValue(row, ['settlementnotes', 'notes', 'remarks', 'comments']) || ''
       ).trim();
 
-      const advINR = Number((advUSD * bankRate).toFixed(2));
-      const balINR = Number((balUSD * bankRate).toFixed(2));
+      const advINR = Number((advUSD * advanceRate).toFixed(2));
+      const balINR = Number((balUSD * balanceRate).toFixed(2));
       const totalRealizedCurrency = Number((advUSD + balUSD).toFixed(2));
       const totalRealizedINR = Number((advINR + balINR).toFixed(2));
       const balanceRealizationCurrency = Math.max(
@@ -5292,7 +5361,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `real-adv-${baseInv.id}`,
           settlementDate: advDate,
           realizedAmountCurrency: advUSD,
-          exchangeRateRealized: bankRate,
+          exchangeRateRealized: advanceRate,
           amountINR: advINR,
           bankRefNo: advRef || `ADV-${baseInv.invoiceNo}`,
           bankAccountId,
@@ -5307,7 +5376,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `real-bal-${baseInv.id}`,
           settlementDate: balDate,
           realizedAmountCurrency: balUSD,
-          exchangeRateRealized: bankRate,
+          exchangeRateRealized: balanceRate,
           amountINR: balINR,
           bankRefNo: balRef || `BAL-${baseInv.invoiceNo}`,
           bankAccountId,
@@ -5320,6 +5389,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const updatedInvoice: SalesInvoice = {
         ...baseInv,
+        advanceExchangeRate: advanceRate,
+        balanceExchangeRate: balanceRate,
         bankPreDeterminedExchangeRate: bankRate,
         advanceReceivedCurrency: advUSD > 0 ? advUSD : undefined,
         advanceReceivedDate: advUSD > 0 ? advDate : undefined,
@@ -5335,7 +5406,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         totalRealizedINR,
         realizationStatus,
         lastRealizationDate: balDate || advDate || baseInv.lastRealizationDate,
-        averageRealizedExchangeRate: bankRate,
+        averageRealizedExchangeRate: totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4)) : bankRate,
         updatedBy: currentUser.email || 'import@system',
         updatedAt: new Date().toISOString()
       };
