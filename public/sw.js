@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V3 Optimized - FOB & Inventory)
-const CACHE_VERSION = 'seafood-pwa-v3';
+// Seafood Purchase App - Offline PWA Service Worker (V4 - Sales Realization & Settlement)
+const CACHE_VERSION = 'seafood-pwa-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',

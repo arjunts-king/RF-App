@@ -168,6 +168,20 @@ interface DataContextType {
   addSalesInvoice: (invoiceData: Partial<SalesInvoice>) => { success: boolean; invoiceNo?: string; warnings?: string[] };
   updateSalesInvoice: (id: string, updates: Partial<SalesInvoice>, editReason?: string) => { success: boolean; message?: string };
   addInvoiceRealization: (invoiceId: string, realization: Omit<RealizationRecord, 'id' | 'createdAt' | 'createdBy'>) => { success: boolean; message?: string };
+  updateInvoiceSettlement: (
+    invoiceId: string,
+    settlementData: {
+      advanceReceivedCurrency?: number;
+      advanceReceivedDate?: string;
+      advanceBankRef?: string;
+      balancePaymentAmountCurrency?: number;
+      balancePaymentDate?: string;
+      balanceBankRef?: string;
+      bankPreDeterminedExchangeRate?: number;
+      bankAccountId?: string;
+      notes?: string;
+    }
+  ) => { success: boolean; message?: string };
   deleteInvoiceRealization: (invoiceId: string, realizationId: string) => { success: boolean; message?: string };
   voidSalesInvoice: (id: string, voidReason: string) => { success: boolean; message?: string };
   deleteSalesInvoicePermanently: (id: string) => { success: boolean; message?: string };
@@ -2078,11 +2092,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       totalFobValueCurrency,
       estimatedAmountINR,
 
-      realizations: [],
-      totalRealizedCurrency: 0,
-      balanceRealizationCurrency: totalAmountCurrency,
-      totalRealizedINR: 0,
-      realizationStatus: 'Not Realized',
+      bankPreDeterminedExchangeRate: invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
+      advanceReceivedCurrency: invoiceData.advanceReceivedCurrency,
+      advanceReceivedDate: invoiceData.advanceReceivedDate,
+      advanceReceivedINR: invoiceData.advanceReceivedCurrency
+        ? Number((invoiceData.advanceReceivedCurrency * (invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
+        : undefined,
+      advanceBankRef: invoiceData.advanceBankRef,
+      balancePaymentAmountCurrency: invoiceData.balancePaymentAmountCurrency,
+      balancePaymentDate: invoiceData.balancePaymentDate,
+      balancePaymentINR: invoiceData.balancePaymentAmountCurrency
+        ? Number((invoiceData.balancePaymentAmountCurrency * (invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
+        : undefined,
+      balanceBankRef: invoiceData.balanceBankRef,
+
+      realizations: invoiceData.realizations || [],
+      totalRealizedCurrency: invoiceData.totalRealizedCurrency || (invoiceData.advanceReceivedCurrency ? Number(invoiceData.advanceReceivedCurrency) : 0),
+      balanceRealizationCurrency: invoiceData.balanceRealizationCurrency !== undefined
+        ? invoiceData.balanceRealizationCurrency
+        : Math.max(0, Number((totalAmountCurrency - (invoiceData.advanceReceivedCurrency || 0)).toFixed(2))),
+      totalRealizedINR: invoiceData.totalRealizedINR || (invoiceData.advanceReceivedCurrency ? Number(((invoiceData.advanceReceivedCurrency || 0) * (invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2)) : 0),
+      realizationStatus: (invoiceData.advanceReceivedCurrency || 0) >= totalAmountCurrency
+        ? 'Fully Realized'
+        : (invoiceData.advanceReceivedCurrency || 0) > 0
+        ? 'Partially Realized'
+        : 'Not Realized',
 
       isVoided: false,
       createdBy: currentUser.email,
@@ -2263,6 +2297,158 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     showToast(
       `Realization of ${invoice.currency} ${realizedUSD.toLocaleString()} (₹${amountINR.toLocaleString()}) recorded for ${invoice.invoiceNo}.`,
+      'success'
+    );
+
+    return { success: true };
+  };
+
+  const updateInvoiceSettlement = (
+    invoiceId: string,
+    settlementData: {
+      advanceReceivedCurrency?: number;
+      advanceReceivedDate?: string;
+      advanceBankRef?: string;
+      balancePaymentAmountCurrency?: number;
+      balancePaymentDate?: string;
+      balanceBankRef?: string;
+      bankPreDeterminedExchangeRate?: number;
+      bankAccountId?: string;
+      notes?: string;
+    }
+  ): { success: boolean; message?: string } => {
+    if (!permissions.canManageSalesRealization) {
+      return {
+        success: false,
+        message: 'Unauthorized: Only Master Accountant and Owner/Admin can record realizations.'
+      };
+    }
+
+    const invoice = salesInvoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return { success: false, message: 'Invoice not found.' };
+
+    const bankRate = Number(settlementData.bankPreDeterminedExchangeRate) > 0
+      ? Number(Number(settlementData.bankPreDeterminedExchangeRate).toFixed(4))
+      : invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 84.50;
+
+    const advanceUSD = Number(settlementData.advanceReceivedCurrency) || 0;
+    const advanceDate = advanceUSD > 0
+      ? (settlementData.advanceReceivedDate || invoice.advanceReceivedDate || new Date().toISOString().split('T')[0])
+      : undefined;
+    const advanceBankRef = advanceUSD > 0
+      ? (settlementData.advanceBankRef?.trim() || invoice.advanceBankRef || `ADV-${invoice.invoiceNo}`)
+      : undefined;
+
+    const balanceUSD = Number(settlementData.balancePaymentAmountCurrency) || 0;
+    const balanceDate = balanceUSD > 0
+      ? (settlementData.balancePaymentDate || invoice.balancePaymentDate || new Date().toISOString().split('T')[0])
+      : undefined;
+    const balanceBankRef = balanceUSD > 0
+      ? (settlementData.balanceBankRef?.trim() || invoice.balanceBankRef || `BAL-${invoice.invoiceNo}`)
+      : undefined;
+
+    const advanceINR = Number((advanceUSD * bankRate).toFixed(2));
+    const balanceINR = Number((balanceUSD * bankRate).toFixed(2));
+
+    const totalRealizedCurrency = Number((advanceUSD + balanceUSD).toFixed(2));
+    const totalRealizedINR = Number((advanceINR + balanceINR).toFixed(2));
+    const balanceRealizationCurrency = Math.max(
+      0,
+      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
+    );
+
+    let realizationStatus: RealizationStatus = 'Not Realized';
+    if (totalRealizedCurrency > 0) {
+      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+        realizationStatus = 'Fully Realized';
+      } else {
+        realizationStatus = 'Partially Realized';
+      }
+    }
+
+    // Build synchronized realization records
+    const updatedRealizations: RealizationRecord[] = [];
+    if (advanceUSD > 0 && advanceDate) {
+      updatedRealizations.push({
+        id: `real-adv-${invoice.id}`,
+        settlementDate: advanceDate,
+        realizedAmountCurrency: advanceUSD,
+        exchangeRateRealized: bankRate,
+        amountINR: advanceINR,
+        bankRefNo: advanceBankRef || `ADV-${invoice.invoiceNo}`,
+        bankAccountId: settlementData.bankAccountId,
+        notes: settlementData.notes ? `Advance payment: ${settlementData.notes}` : 'Advance received',
+        paymentType: 'Advance',
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.email
+      });
+    }
+    if (balanceUSD > 0 && balanceDate) {
+      updatedRealizations.push({
+        id: `real-bal-${invoice.id}`,
+        settlementDate: balanceDate,
+        realizedAmountCurrency: balanceUSD,
+        exchangeRateRealized: bankRate,
+        amountINR: balanceINR,
+        bankRefNo: balanceBankRef || `BAL-${invoice.invoiceNo}`,
+        bankAccountId: settlementData.bankAccountId,
+        notes: settlementData.notes ? `Balance payment: ${settlementData.notes}` : 'Balance settlement received',
+        paymentType: 'Balance',
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.email
+      });
+    }
+
+    const lastRealizationDate = balanceDate || advanceDate || invoice.lastRealizationDate;
+    const averageRealizedExchangeRate = bankRate;
+
+    const updatedInvoice: SalesInvoice = {
+      ...invoice,
+      bankPreDeterminedExchangeRate: bankRate,
+      advanceReceivedCurrency: advanceUSD > 0 ? advanceUSD : undefined,
+      advanceReceivedDate: advanceUSD > 0 ? advanceDate : undefined,
+      advanceReceivedINR: advanceUSD > 0 ? advanceINR : undefined,
+      advanceBankRef: advanceUSD > 0 ? advanceBankRef : undefined,
+      balancePaymentAmountCurrency: balanceUSD > 0 ? balanceUSD : undefined,
+      balancePaymentDate: balanceUSD > 0 ? balanceDate : undefined,
+      balancePaymentINR: balanceUSD > 0 ? balanceINR : undefined,
+      balanceBankRef: balanceUSD > 0 ? balanceBankRef : undefined,
+      realizations: updatedRealizations,
+      totalRealizedCurrency,
+      balanceRealizationCurrency,
+      totalRealizedINR,
+      realizationStatus,
+      lastRealizationDate,
+      averageRealizedExchangeRate,
+      updatedBy: currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+
+    setSalesInvoices((prev) => prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv)));
+    logAudit(
+      'EDIT',
+      'SALES_REALIZATION',
+      `Settlement recorded for invoice ${invoice.invoiceNo}: Advance ${invoice.currency} ${advanceUSD} (${advanceDate || 'N/A'}), Balance ${invoice.currency} ${balanceUSD} (${balanceDate || 'N/A'}), Bank Rate ₹${bankRate}`,
+      {
+        oldValues: {
+          advanceUSD: invoice.advanceReceivedCurrency,
+          balanceUSD: invoice.balancePaymentAmountCurrency,
+          bankRate: invoice.bankPreDeterminedExchangeRate,
+          status: invoice.realizationStatus
+        },
+        newValues: {
+          advanceUSD,
+          advanceDate,
+          balanceUSD,
+          balanceDate,
+          bankRate,
+          status: realizationStatus
+        }
+      }
+    );
+
+    showToast(
+      `Settlement updated for ${invoice.invoiceNo}: Adv ${invoice.currency} ${advanceUSD.toLocaleString()}, Bal ${invoice.currency} ${balanceUSD.toLocaleString()} @ ₹${bankRate}.`,
       'success'
     );
 
@@ -4795,6 +4981,64 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const lineItems: SalesInvoiceLine[] = candidates.map((c) => c.line);
       const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
+      const rawBankExRate = parseFloat(getFlexibleValue(headerRow, ['predeterminedexchangerate', 'bankexchangerate', 'predeterminedrate', 'bankrate', 'predeterminedbankrate', 'bankpredeterminedexchangerate']) || '');
+      const bankPreDeterminedExchangeRate = !isNaN(rawBankExRate) && rawBankExRate > 0 ? Number(rawBankExRate.toFixed(4)) : exchangeRate;
+
+      const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
+      const advanceReceivedCurrency = !isNaN(rawAdvUSD) && rawAdvUSD > 0 ? Number(rawAdvUSD.toFixed(2)) : undefined;
+      const rawAdvDate = getFlexibleValue(headerRow, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate', 'dateadvance', 'advdate', 'advancereceiveddate']);
+      const advanceReceivedDate = rawAdvDate ? formatExcelDate(rawAdvDate) : (advanceReceivedCurrency ? invoiceDate : undefined);
+      const advanceReceivedINR = advanceReceivedCurrency ? Number((advanceReceivedCurrency * bankPreDeterminedExchangeRate).toFixed(2)) : undefined;
+
+      const rawBalUSD = parseFloat(getFlexibleValue(headerRow, ['balanacepaymentamount', 'balancepaymentamount', 'balancepaymentamountcurrency', 'balancepayment', 'balanceamount', 'balanceusd', 'balance']) || '0');
+      const balancePaymentAmountCurrency = !isNaN(rawBalUSD) && rawBalUSD > 0 ? Number(rawBalUSD.toFixed(2)) : undefined;
+      const rawBalDate = getFlexibleValue(headerRow, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate', 'datebalance', 'baldate', 'balancepaymentdate']);
+      const balancePaymentDate = rawBalDate ? formatExcelDate(rawBalDate) : undefined;
+      const balancePaymentINR = balancePaymentAmountCurrency ? Number((balancePaymentAmountCurrency * bankPreDeterminedExchangeRate).toFixed(2)) : undefined;
+
+      const totalRealizedCurrency = Number(((advanceReceivedCurrency || 0) + (balancePaymentAmountCurrency || 0)).toFixed(2));
+      const totalRealizedINR = Number(((advanceReceivedINR || 0) + (balancePaymentINR || 0)).toFixed(2));
+      const balanceRealizationCurrency = Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
+
+      let realizationStatus: RealizationStatus = 'Not Realized';
+      if (totalRealizedCurrency > 0) {
+        if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= totalAmountCurrency) {
+          realizationStatus = 'Fully Realized';
+        } else {
+          realizationStatus = 'Partially Realized';
+        }
+      }
+
+      const initialRealizations: RealizationRecord[] = [];
+      if (advanceReceivedCurrency && advanceReceivedDate) {
+        initialRealizations.push({
+          id: `real-adv-${invNoKey}`,
+          settlementDate: advanceReceivedDate,
+          realizedAmountCurrency: advanceReceivedCurrency,
+          exchangeRateRealized: bankPreDeterminedExchangeRate,
+          amountINR: advanceReceivedINR || Number((advanceReceivedCurrency * bankPreDeterminedExchangeRate).toFixed(2)),
+          bankRefNo: `ADV-${invNoKey}`,
+          notes: 'Advance received',
+          paymentType: 'Advance',
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email || 'import@system'
+        });
+      }
+      if (balancePaymentAmountCurrency && balancePaymentDate) {
+        initialRealizations.push({
+          id: `real-bal-${invNoKey}`,
+          settlementDate: balancePaymentDate,
+          realizedAmountCurrency: balancePaymentAmountCurrency,
+          exchangeRateRealized: bankPreDeterminedExchangeRate,
+          amountINR: balancePaymentINR || Number((balancePaymentAmountCurrency * bankPreDeterminedExchangeRate).toFixed(2)),
+          bankRefNo: `BAL-${invNoKey}`,
+          notes: 'Balance payment received',
+          paymentType: 'Balance',
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email || 'import@system'
+        });
+      }
+
       const invRecord: SalesInvoice = {
         id: `inv-${Date.now()}-${newInvoices.length}-${Math.random().toString(36).substr(2, 5)}`,
         invoiceNo: String(getFlexibleValue(headerRow, ['invoiceno', 'invoice', 'billno']) || invNoKey).trim(),
@@ -4821,11 +5065,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         grossProfitINR,
         profitMarginPct,
         estimatedAmountINR,
-        realizations: [],
-        totalRealizedCurrency: 0,
-        balanceRealizationCurrency: totalAmountCurrency,
-        totalRealizedINR: 0,
-        realizationStatus: 'Not Realized',
+        bankPreDeterminedExchangeRate,
+        advanceReceivedCurrency,
+        advanceReceivedDate,
+        advanceReceivedINR,
+        advanceBankRef: advanceReceivedCurrency ? `ADV-${invNoKey}` : undefined,
+        balancePaymentAmountCurrency,
+        balancePaymentDate,
+        balancePaymentINR,
+        balanceBankRef: balancePaymentAmountCurrency ? `BAL-${invNoKey}` : undefined,
+        realizations: initialRealizations,
+        totalRealizedCurrency,
+        balanceRealizationCurrency,
+        totalRealizedINR,
+        realizationStatus,
+        lastRealizationDate: balancePaymentDate || advanceReceivedDate,
+        averageRealizedExchangeRate: bankPreDeterminedExchangeRate,
         isVoided: false,
         createdBy: currentUser.email || 'import@system',
         createdAt: new Date().toISOString(),
@@ -4958,6 +5213,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addSalesInvoice,
     updateSalesInvoice,
     addInvoiceRealization,
+    updateInvoiceSettlement,
     deleteInvoiceRealization,
     voidSalesInvoice,
     deleteSalesInvoicePermanently,

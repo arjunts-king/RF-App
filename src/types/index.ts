@@ -388,6 +388,7 @@ export interface RealizationRecord {
   bankAccountId?: string; // Foreign key to BankAccount where funds were realized
   bankChargesCurrency?: number; // Deductions / Foreign bank charges in foreign currency
   notes?: string;
+  paymentType?: 'Advance' | 'Balance' | 'Full' | 'Other';
   createdAt: string;
   createdBy: string;
 }
@@ -470,6 +471,17 @@ export interface SalesInvoice {
   realizationStatus: RealizationStatus; // Derived: Not Realized / Partially Realized / Fully Realized
   lastRealizationDate?: string;
   averageRealizedExchangeRate?: number; // totalRealizedINR / totalRealizedCurrency
+
+  // Realization & Settlement Schedule Fields (Invoice Settlement)
+  advanceReceivedCurrency?: number; // Advance received in invoice foreign currency (e.g. USD)
+  advanceReceivedDate?: string; // Date of receiving the advance (YYYY-MM-DD)
+  advanceReceivedINR?: number; // Advance received in INR (advanceReceivedCurrency * bankPreDeterminedExchangeRate)
+  advanceBankRef?: string; // Advance Bank Reference / FIRC / Wire Advice
+  balancePaymentAmountCurrency?: number; // Balance payment amount in foreign currency (e.g. USD)
+  balancePaymentDate?: string; // Date of receiving balance payment (YYYY-MM-DD)
+  balancePaymentINR?: number; // Balance payment in INR (balancePaymentAmountCurrency * bankPreDeterminedExchangeRate)
+  balanceBankRef?: string; // Balance Bank Reference / FIRC / Wire Advice
+  bankPreDeterminedExchangeRate?: number; // Exchange rate of that invoice (pre determined with bank)
 
   // Soft-delete / Void
   isVoided: boolean;

@@ -716,3 +716,44 @@ test('calculatePerpetualInventory: Purchase returns with fluctuating purchase ra
   assert.equal(pos.averageCostPerKg, 133.3333);
 });
 
+test('Sales Realization & Settlement: computes advance received, balance payment, bank rate and realization status', () => {
+  const invoice = {
+    id: 'inv-test-1',
+    invoiceNo: 'EXP-2026-901',
+    invoiceDate: '2026-10-15',
+    totalAmountCurrency: 50000, // $50,000 USD
+    bankPreDeterminedExchangeRate: 84.75, // Pre-determined bank rate
+    exchangeRate: 84.50
+  };
+
+  // Case 1: Advance received only (30% = $15,000) on 2026-10-18
+  const advanceReceivedUSD = 15000;
+  const advanceReceivedDate = '2026-10-18';
+  const bankRate = invoice.bankPreDeterminedExchangeRate;
+  const advanceINR = Number((advanceReceivedUSD * bankRate).toFixed(2));
+  assert.equal(advanceINR, 1271250); // 15000 * 84.75 = 1,271,250
+
+  let totalRealized = advanceReceivedUSD;
+  let remainingBalance = invoice.totalAmountCurrency - totalRealized;
+  let status = totalRealized <= 0 ? 'Not Realized' : remainingBalance <= 0.05 ? 'Fully Realized' : 'Partially Realized';
+  assert.equal(status, 'Partially Realized');
+  assert.equal(remainingBalance, 35000);
+
+  // Case 2: Balance payment received ($35,000) on 2026-11-02
+  const balancePaymentUSD = 35000;
+  const balancePaymentDate = '2026-11-02';
+  const balanceINR = Number((balancePaymentUSD * bankRate).toFixed(2));
+  assert.equal(balanceINR, 2966250); // 35000 * 84.75 = 2,966,250
+
+  totalRealized = advanceReceivedUSD + balancePaymentUSD;
+  const totalRealizedINR = advanceINR + balanceINR;
+  remainingBalance = invoice.totalAmountCurrency - totalRealized;
+  status = totalRealized <= 0 ? 'Not Realized' : remainingBalance <= 0.05 ? 'Fully Realized' : 'Partially Realized';
+
+  assert.equal(totalRealized, 50000);
+  assert.equal(totalRealizedINR, 4237500); // 50000 * 84.75 = 4,237,500
+  assert.equal(remainingBalance, 0);
+  assert.equal(status, 'Fully Realized');
+});
+
+

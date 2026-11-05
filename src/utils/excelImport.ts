@@ -386,6 +386,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'Total FOB Value (USD)': 26100,
         'Total FOB Value (INR)': 2205450,
         'Total Purchase Value (INR)': 1563250,
+        'Pre-determined Bank Exchange Rate': 84.50,
+        'Advance Received': 7830,
+        'Date of Receiving Advance': '15-10-2026',
+        'Balance Payment Amount': 18270,
+        'Date of Receiving Balance Payment': '28-10-2026',
         'Remarks': 'Reefer 40ft container #CRXU-89214 (Total Sales Value & FOB values in 1st row cover full invoice)'
       },
       {

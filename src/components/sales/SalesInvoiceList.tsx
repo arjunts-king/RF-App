@@ -200,6 +200,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
         RealizedINR: inv.totalRealizedINR,
+        BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
+        AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
+        AdvanceReceivedDate: inv.advanceReceivedDate || '',
+        BalancePaymentUSD: inv.balancePaymentAmountCurrency || 0,
+        BalancePaymentDate: inv.balancePaymentDate || '',
         Status: inv.realizationStatus,
         Voided: inv.isVoided ? 'Yes' : 'No'
       };
@@ -219,6 +224,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'FOBValueUSD', label: 'FOB Value (USD)' },
       { key: 'FOBValueINR', label: 'FOB Value (INR)' },
       { key: 'EstimatedINR', label: 'Estimated INR Value' },
+      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
+      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
+      { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
+      { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
+      { key: 'BalancePaymentDate', label: 'Date of Receiving Balance Payment' },
       { key: 'RealizedAmount', label: 'Realized Value' },
       { key: 'BalanceUSD', label: 'Balance Realization' },
       { key: 'RealizedINR', label: 'Realized INR' },
@@ -278,6 +288,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
         RealizedINR: inv.totalRealizedINR,
+        BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
+        AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
+        AdvanceReceivedDate: inv.advanceReceivedDate || '',
+        BalancePaymentUSD: inv.balancePaymentAmountCurrency || 0,
+        BalancePaymentDate: inv.balancePaymentDate || '',
         Status: inv.realizationStatus,
         Voided: inv.isVoided ? 'Yes' : 'No'
       };
@@ -297,6 +312,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'FOBValueUSD', label: 'Total FOB Value (USD)' },
       { key: 'FOBValueINR', label: 'Total FOB Value (INR)' },
       { key: 'EstimatedINR', label: 'Estimated INR' },
+      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
+      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
+      { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
+      { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
+      { key: 'BalancePaymentDate', label: 'Date of Receiving Balance Payment' },
       { key: 'RealizedAmount', label: 'Realized Foreign Currency' },
       { key: 'BalanceUSD', label: 'Balance Outstanding' },
       { key: 'RealizedINR', label: 'Realized INR' },
@@ -578,6 +598,25 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                         <div className="text-[10px] text-ink-500 tabular-nums">
                           Bal: {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}
                         </div>
+                        {(inv.advanceReceivedCurrency || inv.balancePaymentAmountCurrency) && (
+                          <div className="text-[9px] text-ink-500 font-mono mt-0.5 space-x-1">
+                            {inv.advanceReceivedCurrency && (
+                              <span className="text-blue-700 bg-blue-50 px-1 py-0.2 rounded" title={`Advance received on ${inv.advanceReceivedDate || 'N/A'}`}>
+                                Adv: ${inv.advanceReceivedCurrency.toLocaleString()}
+                              </span>
+                            )}
+                            {inv.balancePaymentAmountCurrency && (
+                              <span className="text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded" title={`Balance received on ${inv.balancePaymentDate || 'N/A'}`}>
+                                Bal: ${inv.balancePaymentAmountCurrency.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {inv.bankPreDeterminedExchangeRate && (
+                          <div className="text-[9px] text-rose-700 font-medium mt-0.5">
+                            Bank Rate: ₹{inv.bankPreDeterminedExchangeRate.toFixed(2)}
+                          </div>
+                        )}
                       </td>
 
                       {/* Action Buttons */}

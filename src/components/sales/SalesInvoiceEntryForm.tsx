@@ -82,6 +82,8 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [finalDestination, setFinalDestination] = useState('LAT KRABANG, THAILAND');
   const [currency, setCurrency] = useState<SalesCurrency>('USD');
   const [exchangeRate, setExchangeRate] = useState('84.50');
+  const [advanceReceived, setAdvanceReceived] = useState('');
+  const [advanceReceivedDate, setAdvanceReceivedDate] = useState('');
   const [remarks, setRemarks] = useState('');
 
   // --- Section 4: Cargo & Packaging Summary ---
@@ -375,6 +377,9 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       finalDestination: finalDestination.trim(),
       currency,
       exchangeRate: currentRate,
+      bankPreDeterminedExchangeRate: currentRate,
+      advanceReceivedCurrency: parseFloat(advanceReceived) > 0 ? parseFloat(advanceReceived) : undefined,
+      advanceReceivedDate: parseFloat(advanceReceived) > 0 ? (advanceReceivedDate || invoiceDate) : undefined,
       remarks: remarks.trim() || undefined,
       commodityDescription: commodityDescription.trim(),
       packingDescription: packingDescription.trim(),
@@ -972,7 +977,9 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Booking Exchange Rate (INR / {currency})</label>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">
+              Pre-determined Bank Exchange Rate (INR / {currency}) <span className="text-rose-600">*</span>
+            </label>
             <input
               type="number"
               step="0.0001"
@@ -981,6 +988,30 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               placeholder="e.g. 84.50"
               required
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
+            />
+            <span className="text-[10px] text-ink-500 mt-1 block">Agreed rate booked with bank for this invoice</span>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Advance Received ({currency})</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={advanceReceived}
+              onChange={(e) => setAdvanceReceived(e.target.value)}
+              placeholder="Optional upfront deposit"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Date of Receiving Advance</label>
+            <input
+              type="date"
+              value={advanceReceivedDate}
+              onChange={(e) => setAdvanceReceivedDate(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-medium text-xs outline-none focus:bg-white focus:border-rose-400"
             />
           </div>
 

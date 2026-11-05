@@ -907,8 +907,9 @@ export const SalesReportsHub: React.FC = () => {
                   <th className="py-2.5 px-3">Invoice Date</th>
                   <th className="py-2.5 px-3">Customer</th>
                   <th className="py-2.5 px-3 text-right">Invoice Value</th>
-                  <th className="py-2.5 px-3 text-right">Realized Foreign</th>
-                  <th className="py-2.5 px-3 text-right">Realized INR</th>
+                  <th className="py-2.5 px-3 text-center">Bank Rate</th>
+                  <th className="py-2.5 px-3 text-right">Advance Recd</th>
+                  <th className="py-2.5 px-3 text-right">Balance Payment</th>
                   <th className="py-2.5 px-3 text-right">Outstanding (USD)</th>
                   <th className="py-2.5 px-3 text-right">Age (Days)</th>
                   <th className="py-2.5 px-3 text-center">Bucket</th>
@@ -917,7 +918,7 @@ export const SalesReportsHub: React.FC = () => {
               <tbody className="divide-y divide-gray-100 font-medium">
                 {outstandingInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-ink-500">
+                    <td colSpan={10} className="py-8 text-center text-ink-500">
                       All export invoices are 100% fully realized! Zero outstanding receivables.
                     </td>
                   </tr>
@@ -932,11 +933,28 @@ export const SalesReportsHub: React.FC = () => {
                       <td className="py-2.5 px-3 text-right font-extrabold text-ink-900">
                         ${inv.totalAmountCurrency.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-right text-emerald-700 font-bold">
-                        ${inv.totalRealizedCurrency.toLocaleString()}
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-rose-800">
+                        ₹{(inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5).toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-right text-emerald-800 font-bold">
-                        {formatINR(inv.totalRealizedINR)}
+                      <td className="py-2.5 px-3 text-right text-blue-700 font-bold">
+                        {inv.advanceReceivedCurrency ? (
+                          <div>
+                            <div>${inv.advanceReceivedCurrency.toLocaleString()}</div>
+                            <div className="text-[10px] text-ink-500">{inv.advanceReceivedDate || ''}</div>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-emerald-700 font-bold">
+                        {inv.balancePaymentAmountCurrency ? (
+                          <div>
+                            <div>${inv.balancePaymentAmountCurrency.toLocaleString()}</div>
+                            <div className="text-[10px] text-ink-500">{inv.balancePaymentDate || ''}</div>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-amber-700">Pending</span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-black text-rose-700">
                         ${inv.balanceRealizationCurrency.toLocaleString()}

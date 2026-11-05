@@ -35,6 +35,7 @@ const SalesDashboard = lazy(() => import('./components/sales/SalesDashboard').th
 const FobDashboard = lazy(() => import('./components/sales/FobDashboard').then(m => ({ default: m.FobDashboard })));
 const SalesInvoiceEntryForm = lazy(() => import('./components/sales/SalesInvoiceEntryForm').then(m => ({ default: m.SalesInvoiceEntryForm })));
 const SalesInvoiceList = lazy(() => import('./components/sales/SalesInvoiceList').then(m => ({ default: m.SalesInvoiceList })));
+const SalesRealizationView = lazy(() => import('./components/sales/SalesRealizationView').then(m => ({ default: m.SalesRealizationView })));
 const CustomerManager = lazy(() => import('./components/sales/CustomerManager').then(m => ({ default: m.CustomerManager })));
 const PortManager = lazy(() => import('./components/sales/PortManager').then(m => ({ default: m.PortManager })));
 const CommercialSpeciesManager = lazy(() => import('./components/sales/CommercialSpeciesManager').then(m => ({ default: m.CommercialSpeciesManager })));
@@ -394,7 +395,7 @@ const MainLayout: React.FC = () => {
                 <SalesInvoiceList onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'realizations' && (
-                <SalesInvoiceList onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <SalesRealizationView onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
