@@ -502,29 +502,41 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     const data = [
       {
         'Invoice No': 'EXP-2026-001',
-        'Advance Forward Rate (Bank)': 84.50,
-        'Advance Received (USD)': 7830.0,
+        'Total Invoiced Value (USD)': 26100.0,
+        'Advance as per Contract Terms (USD)': 8000.0,
+        'Actual Advance Received (USD)': 7830.0,
+        'Advance Shortfall (USD)': 170.0,
         'Date of Receiving Advance': '15-10-2026',
+        'Advance Forward Rate (Bank)': 84.50,
         'Advance Bank Ref / FIRC': 'FIRC-HDFC-ADV-8821',
-        'Balance Forward Rate (Bank)': 84.75,
-        'Balance Payment Amount (USD)': 18270.0,
+        'Balance as per Actual Price (USD)': 18100.0,
+        'Actual Balance Received (USD)': 18000.0,
+        'Balance Shortfall (USD)': 100.0,
+        'Total Shortfall (USD)': 270.0,
         'Date of Receiving Balance Payment': '28-10-2026',
+        'Balance Forward Rate (Bank)': 84.75,
         'Balance Bank Ref / FIRC': 'FIRC-HDFC-BAL-9934',
         'Receiving Bank Account': 'HDFC Current Account',
-        'Settlement Notes': '30% advance received at 84.50 forward rate; balance at 84.75'
+        'Settlement Notes': 'Shortfall of $270 due to intermediary correspondent bank deductions'
       },
       {
         'Invoice No': 'EXP-2026-002',
-        'Advance Forward Rate (Bank)': 84.50,
-        'Advance Received (USD)': 15000.0,
+        'Total Invoiced Value (USD)': 50000.0,
+        'Advance as per Contract Terms (USD)': 15000.0,
+        'Actual Advance Received (USD)': 14950.0,
+        'Advance Shortfall (USD)': 50.0,
         'Date of Receiving Advance': '20-10-2026',
+        'Advance Forward Rate (Bank)': 84.50,
         'Advance Bank Ref / FIRC': 'WIRE-SBI-ADV-1022',
-        'Balance Forward Rate (Bank)': 84.75,
-        'Balance Payment Amount (USD)': '',
+        'Balance as per Actual Price (USD)': 35000.0,
+        'Actual Balance Received (USD)': '',
+        'Balance Shortfall (USD)': '',
+        'Total Shortfall (USD)': '',
         'Date of Receiving Balance Payment': '',
+        'Balance Forward Rate (Bank)': 84.75,
         'Balance Bank Ref / FIRC': '',
         'Receiving Bank Account': 'SBI Fisheries Account',
-        'Settlement Notes': 'Partially realized: advance received, awaiting container arrival'
+        'Settlement Notes': 'Awaiting balance remittance upon container discharge'
       }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
@@ -994,16 +1006,21 @@ export function downloadActiveInvoicesSettlementTemplate(
     consigneeId: string;
     totalAmountCurrency: number;
     currency: string;
-    advanceExchangeRate?: number;
-    balanceExchangeRate?: number;
-    bankPreDeterminedExchangeRate?: number;
-    exchangeRate: number;
+    advanceTermsUSD?: number;
     advanceReceivedCurrency?: number;
+    advanceShortfallUSD?: number;
+    advanceExchangeRate?: number;
     advanceReceivedDate?: string;
     advanceBankRef?: string;
+    balanceActualPriceUSD?: number;
     balancePaymentAmountCurrency?: number;
+    balanceShortfallUSD?: number;
+    balanceExchangeRate?: number;
     balancePaymentDate?: string;
     balanceBankRef?: string;
+    totalShortfallUSD?: number;
+    bankPreDeterminedExchangeRate?: number;
+    exchangeRate: number;
     realizationStatus: string;
   }[],
   customers: { id: string; name: string }[]
@@ -1011,24 +1028,40 @@ export function downloadActiveInvoicesSettlementTemplate(
   const customerMap = new Map(customers.map((c) => [c.id, c.name]));
   const wb = XLSX.utils.book_new();
 
-  const data = invoices.map((inv) => ({
-    'Invoice No': inv.invoiceNo,
-    'Invoice Date': inv.invoiceDate,
-    'Consignee / Customer': customerMap.get(inv.consigneeId) || 'Export Buyer',
-    'Currency': inv.currency,
-    'Total Invoiced Value': inv.totalAmountCurrency,
-    'Advance Forward Rate (Bank)': inv.advanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
-    'Advance Received': inv.advanceReceivedCurrency || '',
-    'Date of Receiving Advance': inv.advanceReceivedDate || '',
-    'Advance Bank Ref / FIRC': inv.advanceBankRef || '',
-    'Balance Forward Rate (Bank)': inv.balanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
-    'Balance Payment Amount': inv.balancePaymentAmountCurrency || '',
-    'Date of Receiving Balance Payment': inv.balancePaymentDate || '',
-    'Balance Bank Ref / FIRC': inv.balanceBankRef || '',
-    'Receiving Bank Account': '',
-    'Settlement Notes': '',
-    'Current Realization Status': inv.realizationStatus
-  }));
+  const data = invoices.map((inv) => {
+    const advTerms = inv.advanceTermsUSD ?? (inv.advanceReceivedCurrency || '');
+    const actualAdv = inv.advanceReceivedCurrency ?? '';
+    const advShortfall = inv.advanceShortfallUSD ?? (advTerms && actualAdv ? Math.max(0, Number((Number(advTerms) - Number(actualAdv)).toFixed(2))) : '');
+
+    const balPrice = inv.balanceActualPriceUSD ?? (inv.totalAmountCurrency ? Math.max(0, Number((inv.totalAmountCurrency - (Number(advTerms) || Number(actualAdv) || 0)).toFixed(2))) : '');
+    const actualBal = inv.balancePaymentAmountCurrency ?? '';
+    const balShortfall = inv.balanceShortfallUSD ?? (balPrice && actualBal ? Math.max(0, Number((Number(balPrice) - Number(actualBal)).toFixed(2))) : '');
+    const totalShortfall = inv.totalShortfallUSD ?? ((Number(advShortfall) || 0) + (Number(balShortfall) || 0) || '');
+
+    return {
+      'Invoice No': inv.invoiceNo,
+      'Invoice Date': inv.invoiceDate,
+      'Consignee / Customer': customerMap.get(inv.consigneeId) || 'Export Buyer',
+      'Currency': inv.currency,
+      'Total Invoiced Value (USD)': inv.totalAmountCurrency,
+      'Advance as per Contract Terms (USD)': advTerms,
+      'Actual Advance Received (USD)': actualAdv,
+      'Advance Shortfall (USD)': advShortfall,
+      'Date of Receiving Advance': inv.advanceReceivedDate || '',
+      'Advance Forward Rate (Bank)': inv.advanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50,
+      'Advance Bank Ref / FIRC': inv.advanceBankRef || '',
+      'Balance as per Actual Price (USD)': balPrice,
+      'Actual Balance Received (USD)': actualBal,
+      'Balance Shortfall (USD)': balShortfall,
+      'Total Shortfall (USD)': totalShortfall,
+      'Date of Receiving Balance Payment': inv.balancePaymentDate || '',
+      'Balance Forward Rate (Bank)': inv.balanceExchangeRate || inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.75,
+      'Balance Bank Ref / FIRC': inv.balanceBankRef || '',
+      'Receiving Bank Account': '',
+      'Settlement Notes': '',
+      'Current Realization Status': inv.realizationStatus
+    };
+  });
 
   const ws = XLSX.utils.json_to_sheet(data.length > 0 ? data : [
     {
@@ -1036,17 +1069,22 @@ export function downloadActiveInvoicesSettlementTemplate(
       'Invoice Date': '19-10-2026',
       'Consignee / Customer': 'Tokyo Seafood Trading Co.',
       'Currency': 'USD',
-      'Total Invoiced Value': 26100,
-      'Advance Forward Rate (Bank)': 84.50,
-      'Advance Received': 7830,
+      'Total Invoiced Value (USD)': 26100,
+      'Advance as per Contract Terms (USD)': 8000,
+      'Actual Advance Received (USD)': 7830,
+      'Advance Shortfall (USD)': 170,
       'Date of Receiving Advance': '15-10-2026',
+      'Advance Forward Rate (Bank)': 84.50,
       'Advance Bank Ref / FIRC': 'FIRC-HDFC-ADV-8821',
-      'Balance Forward Rate (Bank)': 84.75,
-      'Balance Payment Amount': 18270,
+      'Balance as per Actual Price (USD)': 18100,
+      'Actual Balance Received (USD)': 18000,
+      'Balance Shortfall (USD)': 100,
+      'Total Shortfall (USD)': 270,
       'Date of Receiving Balance Payment': '28-10-2026',
+      'Balance Forward Rate (Bank)': 84.75,
       'Balance Bank Ref / FIRC': 'FIRC-HDFC-BAL-9934',
       'Receiving Bank Account': 'HDFC Current Account',
-      'Settlement Notes': '30% advance received at 84.50, balance at 84.75 forward rate'
+      'Settlement Notes': 'Shortfall of $270 due to intermediary correspondent bank deductions'
     }
   ]);
 

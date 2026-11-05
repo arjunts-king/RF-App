@@ -15,7 +15,9 @@ export interface InvoiceCollectionMetric {
   balanceExchangeRate: number;
   
   // Advance specifics
+  advanceTermsUSD?: number;
   advanceReceivedCurrency: number;
+  advanceShortfallUSD?: number;
   advanceReceivedDate?: string;
   advanceBankRef?: string;
   outstandingAfterAdvanceCurrency: number;
@@ -24,11 +26,14 @@ export interface InvoiceCollectionMetric {
   outstandingAfterAdvancePct: number;
   
   // Balance specifics
+  balanceActualPriceUSD?: number;
   balancePaymentAmountCurrency: number;
+  balanceShortfallUSD?: number;
   balancePaymentDate?: string;
   balanceBankRef?: string;
   
   // Realization status & totals
+  totalShortfallUSD?: number;
   totalRealizedCurrency: number;
   totalRealizedINR: number;
   balanceRealizationCurrency: number;
@@ -57,6 +62,7 @@ export interface ConsigneeCollectionSummary {
   totalCollectedUSD: number;
   totalOutstandingUSD: number;
   totalOutstandingINR: number;
+  totalShortfallUSD: number;
   avgDaysToAdvance: number | null;
   avgDaysAdvanceToBalance: number | null;
   avgCollectionDays: number | null; // Unweighted DSO in days
@@ -79,6 +85,7 @@ export interface ReceivablesCollectionAnalysis {
   totalCollectedUSD: number;
   totalOutstandingUSD: number;
   totalOutstandingINR: number;
+  totalShortfallUSD: number;
   collectionEfficiencyIndex: number;
   
   // DSO & Turnaround Metrics
@@ -276,16 +283,21 @@ export function calculateReceivablesCollectionAnalysis(
       bankPreDeterminedExchangeRate: rate,
       advanceExchangeRate: advanceRate,
       balanceExchangeRate: balanceRate,
+      advanceTermsUSD: inv.advanceTermsUSD,
       advanceReceivedCurrency: advUSD,
+      advanceShortfallUSD: inv.advanceShortfallUSD,
       advanceReceivedDate: inv.advanceReceivedDate,
       advanceBankRef: inv.advanceBankRef,
       outstandingAfterAdvanceCurrency: outstandingAfterAdv.outstandingAfterAdvanceCurrency,
       outstandingAfterAdvanceINR: outstandingAfterAdv.outstandingAfterAdvanceINR,
       advancePct: outstandingAfterAdv.advancePercentage,
       outstandingAfterAdvancePct: outstandingAfterAdv.outstandingPercentage,
+      balanceActualPriceUSD: inv.balanceActualPriceUSD,
       balancePaymentAmountCurrency: balUSD,
+      balanceShortfallUSD: inv.balanceShortfallUSD,
       balancePaymentDate: inv.balancePaymentDate,
       balanceBankRef: inv.balanceBankRef,
+      totalShortfallUSD: inv.totalShortfallUSD,
       totalRealizedCurrency: totalCollected,
       totalRealizedINR: inv.totalRealizedINR || Number((totalCollected * rate).toFixed(2)),
       balanceRealizationCurrency: outstandingUSD,
@@ -408,6 +420,7 @@ export function calculateReceivablesCollectionAnalysis(
         totalCollectedUSD: totalCol,
         totalOutstandingUSD: totalOutUSD,
         totalOutstandingINR: totalOutINR,
+        totalShortfallUSD: list.reduce((s, m) => s + (m.totalShortfallUSD || 0), 0),
         avgDaysToAdvance: avgDaysAdv,
         avgDaysAdvanceToBalance: avgDaysBal,
         avgCollectionDays: avgColDays,
@@ -431,6 +444,7 @@ export function calculateReceivablesCollectionAnalysis(
     totalCollectedUSD,
     totalOutstandingUSD,
     totalOutstandingINR,
+    totalShortfallUSD: invoiceMetrics.reduce((s, m) => s + (m.totalShortfallUSD || 0), 0),
     collectionEfficiencyIndex,
     averageCollectionPeriodDays,
     weightedCollectionPeriodDays,

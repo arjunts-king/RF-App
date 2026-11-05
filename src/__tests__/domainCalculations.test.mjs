@@ -919,6 +919,85 @@ test('Dual Forward Rates: Independent advance & balance forward rates, weighted 
   assert.equal(matchedBalRate, 84.85);
 });
 
+test('Realization Shortfall & Contract Terms Tracking: Advance & Balance USD discrepancies and import normalization', () => {
+  // Scenario: Total export invoice value $50,000 USD
+  // Contract stipulates 30% advance ($15,000 USD), but correspondent bank deductions yield actual advance $14,940 USD (Shortfall = $60 USD)
+  // Balance as per actual shipping price is $35,000 USD, but overseas wire deduction yields actual balance $34,800 USD (Shortfall = $200 USD)
+  const invoiceTotalUSD = 50000;
+  const advanceTermsUSD = 15000;
+  const actualAdvanceUSD = 14940;
+  const advanceShortfallUSD = Math.max(0, Number((advanceTermsUSD - actualAdvanceUSD).toFixed(2)));
+  assert.equal(advanceShortfallUSD, 60.00);
+
+  const balanceActualPriceUSD = 35000;
+  const actualBalanceUSD = 34800;
+  const balanceShortfallUSD = Math.max(0, Number((balanceActualPriceUSD - actualBalanceUSD).toFixed(2)));
+  assert.equal(balanceShortfallUSD, 200.00);
+
+  const totalShortfallUSD = Number((advanceShortfallUSD + balanceShortfallUSD).toFixed(2));
+  assert.equal(totalShortfallUSD, 260.00);
+
+  const totalActualSettledUSD = actualAdvanceUSD + actualBalanceUSD;
+  assert.equal(totalActualSettledUSD, 49740.00);
+
+  // Total Accounted = Actual Realized + Deductions/Shortfall accounted
+  const totalAccountedUSD = totalActualSettledUSD + totalShortfallUSD;
+  assert.equal(totalAccountedUSD, invoiceTotalUSD);
+
+  // Settlement reconciliation status logic
+  const isFullyRealized = (actualBalanceUSD > 0 && totalAccountedUSD >= invoiceTotalUSD - 0.05);
+  assert.equal(isFullyRealized, true);
+
+  // Normalization for template header columns
+  assert.equal(normalizeKey('Advance as per Contract Terms (USD)'), 'advanceaspercontracttermsusd');
+  assert.equal(normalizeKey('Actual Advance Received (USD)'), 'actualadvancereceivedusd');
+  assert.equal(normalizeKey('Advance Shortfall (USD)'), 'advanceshortfallusd');
+  assert.equal(normalizeKey('Balance as per Actual Price (USD)'), 'balanceasperactualpriceusd');
+  assert.equal(normalizeKey('Actual Balance Received (USD)'), 'actualbalancereceivedusd');
+  assert.equal(normalizeKey('Balance Shortfall (USD)'), 'balanceshortfallusd');
+  assert.equal(normalizeKey('Total Shortfall (USD)'), 'totalshortfallusd');
+
+  // Flexible key matching test from import row
+  const importRow = {
+    'Invoice No': 'EXP-2026-105',
+    'Advance as per Contract Terms (USD)': 15000,
+    'Actual Advance Received (USD)': 14940,
+    'Advance Shortfall (USD)': 60,
+    'Balance as per Actual Price (USD)': 35000,
+    'Actual Balance Received (USD)': 34800,
+    'Balance Shortfall (USD)': 200,
+    'Total Shortfall (USD)': 260
+  };
+
+  const parsedAdvTerms = getFlexibleValue(importRow, [
+    'advanceaspercontracttermsusd',
+    'advancecontracttermsusd',
+    'advancetermsusd'
+  ]);
+  const parsedActualAdv = getFlexibleValue(importRow, [
+    'actualadvancereceivedusd',
+    'advancereceivedusd'
+  ]);
+  const parsedBalPrice = getFlexibleValue(importRow, [
+    'balanceasperactualpriceusd',
+    'balanceactualpriceusd'
+  ]);
+  const parsedActualBal = getFlexibleValue(importRow, [
+    'actualbalancereceivedusd',
+    'balancepaymentamountusd'
+  ]);
+  const parsedTotalShortfall = getFlexibleValue(importRow, [
+    'totalshortfallusd',
+    'totalshortfall'
+  ]);
+
+  assert.equal(parsedAdvTerms, 15000);
+  assert.equal(parsedActualAdv, 14940);
+  assert.equal(parsedBalPrice, 35000);
+  assert.equal(parsedActualBal, 34800);
+  assert.equal(parsedTotalShortfall, 260);
+});
+
 
 
 

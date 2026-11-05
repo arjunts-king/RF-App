@@ -172,14 +172,19 @@ interface DataContextType {
   updateInvoiceSettlement: (
     invoiceId: string,
     settlementData: {
+      advanceTermsUSD?: number;
       advanceReceivedCurrency?: number;
+      advanceShortfallUSD?: number;
       advanceReceivedDate?: string;
       advanceBankRef?: string;
       advanceExchangeRate?: number;
+      balanceActualPriceUSD?: number;
       balancePaymentAmountCurrency?: number;
+      balanceShortfallUSD?: number;
       balancePaymentDate?: string;
       balanceBankRef?: string;
       balanceExchangeRate?: number;
+      totalShortfallUSD?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
       notes?: string;
@@ -2101,18 +2106,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       advanceExchangeRate: invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
       balanceExchangeRate: invoiceData.balanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
       bankPreDeterminedExchangeRate: invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
+      advanceTermsUSD: invoiceData.advanceTermsUSD || invoiceData.advanceReceivedCurrency,
       advanceReceivedCurrency: invoiceData.advanceReceivedCurrency,
+      advanceShortfallUSD: invoiceData.advanceShortfallUSD || (invoiceData.advanceTermsUSD && invoiceData.advanceReceivedCurrency ? Math.max(0, Number((invoiceData.advanceTermsUSD - invoiceData.advanceReceivedCurrency).toFixed(2))) : undefined),
       advanceReceivedDate: invoiceData.advanceReceivedDate,
       advanceReceivedINR: invoiceData.advanceReceivedCurrency
         ? Number((invoiceData.advanceReceivedCurrency * (invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
         : undefined,
       advanceBankRef: invoiceData.advanceBankRef,
+      balanceActualPriceUSD: invoiceData.balanceActualPriceUSD || (totalAmountCurrency ? Math.max(0, Number((totalAmountCurrency - (invoiceData.advanceTermsUSD || invoiceData.advanceReceivedCurrency || 0)).toFixed(2))) : undefined),
       balancePaymentAmountCurrency: invoiceData.balancePaymentAmountCurrency,
+      balanceShortfallUSD: invoiceData.balanceShortfallUSD || (invoiceData.balanceActualPriceUSD && invoiceData.balancePaymentAmountCurrency ? Math.max(0, Number((invoiceData.balanceActualPriceUSD - invoiceData.balancePaymentAmountCurrency).toFixed(2))) : undefined),
       balancePaymentDate: invoiceData.balancePaymentDate,
       balancePaymentINR: invoiceData.balancePaymentAmountCurrency
         ? Number((invoiceData.balancePaymentAmountCurrency * (invoiceData.balanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
         : undefined,
       balanceBankRef: invoiceData.balanceBankRef,
+      totalShortfallUSD: invoiceData.totalShortfallUSD || ((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0) > 0 ? Number(((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0)).toFixed(2)) : undefined),
 
       realizations: invoiceData.realizations || [],
       totalRealizedCurrency: invoiceData.totalRealizedCurrency || (invoiceData.advanceReceivedCurrency ? Number(invoiceData.advanceReceivedCurrency) : 0),
@@ -2314,14 +2324,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateInvoiceSettlement = (
     invoiceId: string,
     settlementData: {
+      advanceTermsUSD?: number;
       advanceReceivedCurrency?: number;
+      advanceShortfallUSD?: number;
       advanceReceivedDate?: string;
       advanceBankRef?: string;
       advanceExchangeRate?: number;
+      balanceActualPriceUSD?: number;
       balancePaymentAmountCurrency?: number;
+      balanceShortfallUSD?: number;
       balancePaymentDate?: string;
       balanceBankRef?: string;
       balanceExchangeRate?: number;
+      totalShortfallUSD?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
       notes?: string;
@@ -2350,6 +2365,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       : invoice.balanceExchangeRate || bankRate;
 
     const advanceUSD = Number(settlementData.advanceReceivedCurrency) || 0;
+    const advanceTermsUSD = Number(settlementData.advanceTermsUSD) > 0
+      ? Number(Number(settlementData.advanceTermsUSD).toFixed(2))
+      : (advanceUSD > 0 ? (invoice.advanceTermsUSD || advanceUSD) : undefined);
+
+    const advanceShortfallUSD = advanceTermsUSD && advanceTermsUSD > advanceUSD
+      ? Number((advanceTermsUSD - advanceUSD).toFixed(2))
+      : undefined;
+
     const advanceDate = advanceUSD > 0
       ? (settlementData.advanceReceivedDate || invoice.advanceReceivedDate || new Date().toISOString().split('T')[0])
       : undefined;
@@ -2358,6 +2381,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       : undefined;
 
     const balanceUSD = Number(settlementData.balancePaymentAmountCurrency) || 0;
+    const balanceActualPriceUSD = Number(settlementData.balanceActualPriceUSD) > 0
+      ? Number(Number(settlementData.balanceActualPriceUSD).toFixed(2))
+      : (balanceUSD > 0
+          ? (invoice.balanceActualPriceUSD || Math.max(0, Number((invoice.totalAmountCurrency - (advanceTermsUSD || advanceUSD)).toFixed(2))))
+          : undefined);
+
+    const balanceShortfallUSD = balanceActualPriceUSD && balanceActualPriceUSD > balanceUSD
+      ? Number((balanceActualPriceUSD - balanceUSD).toFixed(2))
+      : undefined;
+
+    const totalShortfallUSD = (advanceShortfallUSD || 0) + (balanceShortfallUSD || 0) > 0
+      ? Number(((advanceShortfallUSD || 0) + (balanceShortfallUSD || 0)).toFixed(2))
+      : undefined;
+
     const balanceDate = balanceUSD > 0
       ? (settlementData.balancePaymentDate || invoice.balancePaymentDate || new Date().toISOString().split('T')[0])
       : undefined;
@@ -2377,14 +2414,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     let realizationStatus: RealizationStatus = 'Not Realized';
     if (totalRealizedCurrency > 0) {
-      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+      if (
+        balanceRealizationCurrency <= 0.05 ||
+        totalRealizedCurrency >= invoice.totalAmountCurrency ||
+        (balanceUSD > 0 && totalRealizedCurrency + (totalShortfallUSD || 0) >= invoice.totalAmountCurrency - 0.05)
+      ) {
         realizationStatus = 'Fully Realized';
       } else {
         realizationStatus = 'Partially Realized';
       }
     }
 
-    // Build synchronized realization records with independent forward rates
+    // Build synchronized realization records with independent forward rates and shortfalls
     const updatedRealizations: RealizationRecord[] = [];
     if (advanceUSD > 0 && advanceDate) {
       updatedRealizations.push({
@@ -2397,6 +2438,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bankAccountId: settlementData.bankAccountId,
         notes: settlementData.notes ? `Advance payment: ${settlementData.notes}` : 'Advance received',
         paymentType: 'Advance',
+        contractTermsAmountUSD: advanceTermsUSD,
+        shortfallUSD: advanceShortfallUSD,
         createdAt: new Date().toISOString(),
         createdBy: currentUser.email
       });
@@ -2412,6 +2455,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bankAccountId: settlementData.bankAccountId,
         notes: settlementData.notes ? `Balance payment: ${settlementData.notes}` : 'Balance settlement received',
         paymentType: 'Balance',
+        contractTermsAmountUSD: balanceActualPriceUSD,
+        shortfallUSD: balanceShortfallUSD,
         createdAt: new Date().toISOString(),
         createdBy: currentUser.email
       });
@@ -2424,17 +2469,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updatedInvoice: SalesInvoice = {
       ...invoice,
-      advanceExchangeRate: advanceRate,
-      balanceExchangeRate: balanceRate,
-      bankPreDeterminedExchangeRate: bankRate,
+      advanceTermsUSD: advanceTermsUSD && advanceTermsUSD > 0 ? advanceTermsUSD : undefined,
       advanceReceivedCurrency: advanceUSD > 0 ? advanceUSD : undefined,
+      advanceShortfallUSD: advanceShortfallUSD && advanceShortfallUSD > 0 ? advanceShortfallUSD : undefined,
+      advanceExchangeRate: advanceRate,
       advanceReceivedDate: advanceUSD > 0 ? advanceDate : undefined,
       advanceReceivedINR: advanceUSD > 0 ? advanceINR : undefined,
       advanceBankRef: advanceUSD > 0 ? advanceBankRef : undefined,
+      balanceActualPriceUSD: balanceActualPriceUSD && balanceActualPriceUSD > 0 ? balanceActualPriceUSD : undefined,
       balancePaymentAmountCurrency: balanceUSD > 0 ? balanceUSD : undefined,
+      balanceShortfallUSD: balanceShortfallUSD && balanceShortfallUSD > 0 ? balanceShortfallUSD : undefined,
+      balanceExchangeRate: balanceRate,
       balancePaymentDate: balanceUSD > 0 ? balanceDate : undefined,
       balancePaymentINR: balanceUSD > 0 ? balanceINR : undefined,
       balanceBankRef: balanceUSD > 0 ? balanceBankRef : undefined,
+      totalShortfallUSD: totalShortfallUSD && totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
+      bankPreDeterminedExchangeRate: bankRate,
       realizations: updatedRealizations,
       totalRealizedCurrency,
       balanceRealizationCurrency,
@@ -5016,14 +5066,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rawBalRate = parseFloat(getFlexibleValue(headerRow, ['balanceforwardratebank', 'balanceforwardrate', 'balanceexchangerate', 'balancerate', 'forwardratebalance', 'balrate', 'predeterminedexchangeratebalance']) || '');
       const balanceExchangeRate = !isNaN(rawBalRate) && rawBalRate > 0 ? Number(rawBalRate.toFixed(4)) : bankPreDeterminedExchangeRate;
 
-      const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
+      const rawAdvTermsUSD = parseFloat(getFlexibleValue(headerRow, ['advanceaspercontracttermsusd', 'advanceaspercontractterms', 'advancecontracttermsusd', 'advancecontractterms', 'contractadvanceusd', 'contractadvance', 'contractualadvanceusd', 'contractualadvance', 'advanceaspertcontracttermsusd', 'advanceaspertcontractterms']) || '');
+      const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['actualadvancereceivedusd', 'actualadvancereceived', 'advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
       const advanceReceivedCurrency = !isNaN(rawAdvUSD) && rawAdvUSD > 0 ? Number(rawAdvUSD.toFixed(2)) : undefined;
+      const advanceTermsUSD = !isNaN(rawAdvTermsUSD) && rawAdvTermsUSD > 0 ? Number(rawAdvTermsUSD.toFixed(2)) : advanceReceivedCurrency;
+      const advanceShortfallUSD = advanceTermsUSD && advanceReceivedCurrency && advanceTermsUSD > advanceReceivedCurrency ? Number((advanceTermsUSD - advanceReceivedCurrency).toFixed(2)) : undefined;
+
       const rawAdvDate = getFlexibleValue(headerRow, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate', 'dateadvance', 'advdate', 'advancereceiveddate']);
       const advanceReceivedDate = rawAdvDate ? formatExcelDate(rawAdvDate) : (advanceReceivedCurrency ? invoiceDate : undefined);
       const advanceReceivedINR = advanceReceivedCurrency ? Number((advanceReceivedCurrency * advanceExchangeRate).toFixed(2)) : undefined;
 
-      const rawBalUSD = parseFloat(getFlexibleValue(headerRow, ['balanacepaymentamount', 'balancepaymentamount', 'balancepaymentamountcurrency', 'balancepayment', 'balanceamount', 'balanceusd', 'balance']) || '0');
+      const rawBalPriceUSD = parseFloat(getFlexibleValue(headerRow, ['balanceasperactualpriceusd', 'balanceasperactualprice', 'balanceactualpriceusd', 'balanceactualprice', 'contractbalanceusd', 'balancepriceusd', 'balanceaspershippingprice']) || '');
+      const rawBalUSD = parseFloat(getFlexibleValue(headerRow, ['actualbalancereceivedusd', 'actualbalancereceived', 'balanacepaymentamount', 'balancepaymentamount', 'balancepaymentamountcurrency', 'balancepayment', 'balanceamount', 'balanceusd', 'balance']) || '0');
       const balancePaymentAmountCurrency = !isNaN(rawBalUSD) && rawBalUSD > 0 ? Number(rawBalUSD.toFixed(2)) : undefined;
+      const balanceActualPriceUSD = !isNaN(rawBalPriceUSD) && rawBalPriceUSD > 0
+        ? Number(rawBalPriceUSD.toFixed(2))
+        : (balancePaymentAmountCurrency ? Math.max(0, Number((totalAmountCurrency - (advanceTermsUSD || advanceReceivedCurrency || 0)).toFixed(2))) : undefined);
+      const balanceShortfallUSD = balanceActualPriceUSD && balancePaymentAmountCurrency && balanceActualPriceUSD > balancePaymentAmountCurrency ? Number((balanceActualPriceUSD - balancePaymentAmountCurrency).toFixed(2)) : undefined;
+
+      const totalShortfallUSD = (advanceShortfallUSD || 0) + (balanceShortfallUSD || 0) > 0 ? Number(((advanceShortfallUSD || 0) + (balanceShortfallUSD || 0)).toFixed(2)) : undefined;
+
       const rawBalDate = getFlexibleValue(headerRow, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate', 'datebalance', 'baldate', 'balancepaymentdate']);
       const balancePaymentDate = rawBalDate ? formatExcelDate(rawBalDate) : undefined;
       const balancePaymentINR = balancePaymentAmountCurrency ? Number((balancePaymentAmountCurrency * balanceExchangeRate).toFixed(2)) : undefined;
@@ -5034,7 +5096,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       let realizationStatus: RealizationStatus = 'Not Realized';
       if (totalRealizedCurrency > 0) {
-        if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= totalAmountCurrency) {
+        if (
+          balanceRealizationCurrency <= 0.05 ||
+          totalRealizedCurrency >= totalAmountCurrency ||
+          (balancePaymentAmountCurrency && totalRealizedCurrency + (totalShortfallUSD || 0) >= totalAmountCurrency - 0.05)
+        ) {
           realizationStatus = 'Fully Realized';
         } else {
           realizationStatus = 'Partially Realized';
@@ -5052,6 +5118,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bankRefNo: `ADV-${invNoKey}`,
           notes: 'Advance received',
           paymentType: 'Advance',
+          contractTermsAmountUSD: advanceTermsUSD,
+          shortfallUSD: advanceShortfallUSD,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.email || 'import@system'
         });
@@ -5066,6 +5134,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bankRefNo: `BAL-${invNoKey}`,
           notes: 'Balance payment received',
           paymentType: 'Balance',
+          contractTermsAmountUSD: balanceActualPriceUSD,
+          shortfallUSD: balanceShortfallUSD,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.email || 'import@system'
         });
@@ -5097,17 +5167,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         grossProfitINR,
         profitMarginPct,
         estimatedAmountINR,
-        advanceExchangeRate,
-        balanceExchangeRate,
-        bankPreDeterminedExchangeRate,
+        advanceTermsUSD,
         advanceReceivedCurrency,
+        advanceShortfallUSD,
+        advanceExchangeRate,
         advanceReceivedDate,
         advanceReceivedINR,
         advanceBankRef: advanceReceivedCurrency ? `ADV-${invNoKey}` : undefined,
+        balanceActualPriceUSD,
         balancePaymentAmountCurrency,
+        balanceShortfallUSD,
+        balanceExchangeRate,
         balancePaymentDate,
         balancePaymentINR,
         balanceBankRef: balancePaymentAmountCurrency ? `BAL-${invNoKey}` : undefined,
+        totalShortfallUSD,
+        bankPreDeterminedExchangeRate,
         realizations: initialRealizations,
         totalRealizedCurrency,
         balanceRealizationCurrency,
@@ -5252,6 +5327,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const rawAdvUSD = parseFloat(
         getFlexibleValue(row, [
+          'actualadvancereceivedusd',
+          'actualadvancereceived',
           'advancereceivedusd',
           'advancereceived',
           'advancereceivedcurrency',
@@ -5264,6 +5341,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         !isNaN(rawAdvUSD) && rawAdvUSD >= 0
           ? Number(rawAdvUSD.toFixed(2))
           : baseInv.advanceReceivedCurrency || 0;
+
+      const rawAdvTermsUSD = parseFloat(
+        getFlexibleValue(row, [
+          'advanceaspercontracttermsusd',
+          'advanceaspercontractterms',
+          'advancecontracttermsusd',
+          'advancecontractterms',
+          'contractadvanceusd',
+          'contractadvance',
+          'contractualadvanceusd',
+          'contractualadvance',
+          'advanceaspertcontracttermsusd',
+          'advanceaspertcontractterms'
+        ]) || ''
+      );
+      const advanceTermsUSD =
+        !isNaN(rawAdvTermsUSD) && rawAdvTermsUSD > 0
+          ? Number(rawAdvTermsUSD.toFixed(2))
+          : (advUSD > 0 ? (baseInv.advanceTermsUSD || advUSD) : undefined);
+
+      const advShortfallUSD =
+        advanceTermsUSD && advanceTermsUSD > advUSD
+          ? Number((advanceTermsUSD - advUSD).toFixed(2))
+          : undefined;
 
       const rawAdvDate = getFlexibleValue(row, [
         'dateofreceivingtheadvance',
@@ -5286,6 +5387,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const rawBalUSD = parseFloat(
         getFlexibleValue(row, [
+          'actualbalancereceivedusd',
+          'actualbalancereceived',
           'balancepaymentamountusd',
           'balanacepaymentamount',
           'balancepaymentamount',
@@ -5300,6 +5403,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         !isNaN(rawBalUSD) && rawBalUSD >= 0
           ? Number(rawBalUSD.toFixed(2))
           : baseInv.balancePaymentAmountCurrency || 0;
+
+      const rawBalPriceUSD = parseFloat(
+        getFlexibleValue(row, [
+          'balanceasperactualpriceusd',
+          'balanceasperactualprice',
+          'balanceactualpriceusd',
+          'balanceactualprice',
+          'contractbalanceusd',
+          'balancepriceusd',
+          'balanceaspershippingprice'
+        ]) || ''
+      );
+      const balanceActualPriceUSD =
+        !isNaN(rawBalPriceUSD) && rawBalPriceUSD > 0
+          ? Number(rawBalPriceUSD.toFixed(2))
+          : (balUSD > 0
+              ? (baseInv.balanceActualPriceUSD || Math.max(0, Number((baseInv.totalAmountCurrency - (advanceTermsUSD || advUSD)).toFixed(2))))
+              : undefined);
+
+      const balShortfallUSD =
+        balanceActualPriceUSD && balanceActualPriceUSD > balUSD
+          ? Number((balanceActualPriceUSD - balUSD).toFixed(2))
+          : undefined;
+
+      const totalShortfallUSD =
+        (advShortfallUSD || 0) + (balShortfallUSD || 0) > 0
+          ? Number(((advShortfallUSD || 0) + (balShortfallUSD || 0)).toFixed(2))
+          : undefined;
 
       const rawBalDate = getFlexibleValue(row, [
         'dateofreceivingbalanacepayment',
@@ -5348,7 +5479,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       let realizationStatus: RealizationStatus = 'Not Realized';
       if (totalRealizedCurrency > 0) {
-        if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= baseInv.totalAmountCurrency) {
+        if (
+          balanceRealizationCurrency <= 0.05 ||
+          totalRealizedCurrency >= baseInv.totalAmountCurrency ||
+          (balUSD > 0 && totalRealizedCurrency + (totalShortfallUSD || 0) >= baseInv.totalAmountCurrency - 0.05)
+        ) {
           realizationStatus = 'Fully Realized';
         } else {
           realizationStatus = 'Partially Realized';
@@ -5367,6 +5502,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bankAccountId,
           notes: rawNotes ? `Advance: ${rawNotes}` : 'Advance received (imported)',
           paymentType: 'Advance',
+          contractTermsAmountUSD: advanceTermsUSD,
+          shortfallUSD: advShortfallUSD,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.email || 'import@system'
         });
@@ -5382,6 +5519,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bankAccountId,
           notes: rawNotes ? `Balance: ${rawNotes}` : 'Balance received (imported)',
           paymentType: 'Balance',
+          contractTermsAmountUSD: balanceActualPriceUSD,
+          shortfallUSD: balShortfallUSD,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.email || 'import@system'
         });
@@ -5389,17 +5528,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const updatedInvoice: SalesInvoice = {
         ...baseInv,
-        advanceExchangeRate: advanceRate,
-        balanceExchangeRate: balanceRate,
-        bankPreDeterminedExchangeRate: bankRate,
+        advanceTermsUSD: advanceTermsUSD && advanceTermsUSD > 0 ? advanceTermsUSD : undefined,
         advanceReceivedCurrency: advUSD > 0 ? advUSD : undefined,
+        advanceShortfallUSD: advShortfallUSD && advShortfallUSD > 0 ? advShortfallUSD : undefined,
+        advanceExchangeRate: advanceRate,
         advanceReceivedDate: advUSD > 0 ? advDate : undefined,
         advanceReceivedINR: advUSD > 0 ? advINR : undefined,
         advanceBankRef: advUSD > 0 ? advRef : undefined,
+        balanceActualPriceUSD: balanceActualPriceUSD && balanceActualPriceUSD > 0 ? balanceActualPriceUSD : undefined,
         balancePaymentAmountCurrency: balUSD > 0 ? balUSD : undefined,
+        balanceShortfallUSD: balShortfallUSD && balShortfallUSD > 0 ? balShortfallUSD : undefined,
+        balanceExchangeRate: balanceRate,
         balancePaymentDate: balUSD > 0 ? balDate : undefined,
         balancePaymentINR: balUSD > 0 ? balINR : undefined,
         balanceBankRef: balUSD > 0 ? balRef : undefined,
+        totalShortfallUSD: totalShortfallUSD && totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
+        bankPreDeterminedExchangeRate: bankRate,
         realizations: updatedRealizations,
         totalRealizedCurrency,
         balanceRealizationCurrency,

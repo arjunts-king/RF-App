@@ -153,7 +153,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const overallProgressPct =
     totalInvoicedUSD > 0 ? Math.min(100, Math.round((totalRealizedUSD / totalInvoicedUSD) * 100)) : 0;
 
-  // Export CSV with all settlement parameters including dual forward rates
+  // Export CSV with all settlement parameters including dual forward rates and shortfall tracking
   const handleExportCSV = () => {
     const exportData = filteredInvoices.map((inv) => {
       const consignee = customerMap.get(inv.consigneeId);
@@ -177,19 +177,24 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         POD: pod?.name || '',
         Currency: inv.currency,
         TotalAmount: inv.totalAmountCurrency,
+        AdvanceTermsUSD: inv.advanceTermsUSD ?? '',
+        ActualAdvanceReceivedUSD: advUSD,
+        AdvanceShortfallUSD: inv.advanceShortfallUSD ?? 0,
         AdvanceForwardRate: advRate,
-        BalanceForwardRate: balRate,
-        BankExchangeRate: bankRate,
-        AdvanceReceivedUSD: advUSD,
         AdvanceDate: inv.advanceReceivedDate || '',
         AdvanceReceivedINR: advINR,
         AdvanceBankRef: inv.advanceBankRef || '',
         OutstandingAfterAdvanceUSD: outstandingAfterAdv.outstandingAfterAdvanceCurrency,
         OutstandingAfterAdvanceINR: outstandingAfterAdv.outstandingAfterAdvanceINR,
-        BalancePaymentUSD: balUSD,
+        BalanceActualPriceUSD: inv.balanceActualPriceUSD ?? '',
+        ActualBalanceReceivedUSD: balUSD,
+        BalanceShortfallUSD: inv.balanceShortfallUSD ?? 0,
+        BalanceForwardRate: balRate,
         BalanceDate: inv.balancePaymentDate || '',
         BalancePaymentINR: balINR,
         BalanceBankRef: inv.balanceBankRef || '',
+        TotalShortfallUSD: inv.totalShortfallUSD ?? 0,
+        BankExchangeRate: bankRate,
         TotalRealizedUSD: inv.totalRealizedCurrency,
         TotalRealizedINR: inv.totalRealizedINR,
         UnrealizedBalanceUSD: inv.balanceRealizationCurrency,
@@ -207,19 +212,24 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       { key: 'POD', label: 'Port of Discharge' },
       { key: 'Currency', label: 'Currency' },
       { key: 'TotalAmount', label: 'Total Invoiced (USD)' },
+      { key: 'AdvanceTermsUSD', label: 'Advance as per Contract Terms (USD)' },
+      { key: 'ActualAdvanceReceivedUSD', label: 'Actual Advance Received (USD)' },
+      { key: 'AdvanceShortfallUSD', label: 'Advance Shortfall (USD)' },
       { key: 'AdvanceForwardRate', label: 'Advance Forward Rate (Bank)' },
-      { key: 'BalanceForwardRate', label: 'Balance Forward Rate (Bank)' },
-      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
-      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
       { key: 'AdvanceDate', label: 'Date of Receiving Advance' },
       { key: 'AdvanceReceivedINR', label: 'Advance Received (INR)' },
       { key: 'AdvanceBankRef', label: 'Advance Bank Ref / FIRC' },
       { key: 'OutstandingAfterAdvanceUSD', label: 'Outstanding After Advance (USD)' },
       { key: 'OutstandingAfterAdvanceINR', label: 'Outstanding After Advance (INR)' },
-      { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
+      { key: 'BalanceActualPriceUSD', label: 'Balance as per Actual Price (USD)' },
+      { key: 'ActualBalanceReceivedUSD', label: 'Actual Balance Received (USD)' },
+      { key: 'BalanceShortfallUSD', label: 'Balance Shortfall (USD)' },
+      { key: 'BalanceForwardRate', label: 'Balance Forward Rate (Bank)' },
       { key: 'BalanceDate', label: 'Date of Receiving Balance Payment' },
       { key: 'BalancePaymentINR', label: 'Balance Payment Amount (INR)' },
       { key: 'BalanceBankRef', label: 'Balance Bank Ref / FIRC' },
+      { key: 'TotalShortfallUSD', label: 'Total Shortfall (USD)' },
+      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
       { key: 'TotalRealizedUSD', label: 'Total Realized (USD)' },
       { key: 'TotalRealizedINR', label: 'Total Realized (INR)' },
       { key: 'UnrealizedBalanceUSD', label: 'Unrealized Balance (USD)' },
@@ -572,27 +582,28 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       {/* Realization & Settlement Schedule Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse min-w-[1360px]">
+          <table className="w-full text-left text-xs border-collapse min-w-[1440px]">
             <thead>
               <tr className="bg-gray-50/90 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
-                <th className="py-3 px-3 w-[140px] whitespace-nowrap">Invoice # &amp; Date</th>
-                <th className="py-3 px-3 min-w-[180px] max-w-[220px]">Consignee &amp; Buyer</th>
-                <th className="py-3 px-3 w-[125px] text-right whitespace-nowrap">Invoice Value</th>
+                <th className="py-3 px-3 w-[135px] whitespace-nowrap">Invoice # &amp; Date</th>
+                <th className="py-3 px-3 min-w-[170px] max-w-[210px]">Consignee &amp; Buyer</th>
+                <th className="py-3 px-3 w-[120px] text-right whitespace-nowrap">Invoice Value</th>
                 <th className="py-3 px-3 w-[130px] text-center whitespace-nowrap bg-rose-50/40">Bank Forward Rates</th>
-                <th className="py-3 px-3 w-[130px] text-right whitespace-nowrap bg-blue-50/40">Advance Received</th>
-                <th className="py-3 px-3 w-[125px] text-center whitespace-nowrap bg-blue-50/40">Date of Advance</th>
-                <th className="py-3 px-3 w-[140px] text-right whitespace-nowrap bg-indigo-50/40">Outstanding Balance</th>
-                <th className="py-3 px-3 w-[130px] text-right whitespace-nowrap bg-emerald-50/40">Balance Payment</th>
-                <th className="py-3 px-3 w-[125px] text-center whitespace-nowrap bg-emerald-50/40">Date of Balance</th>
+                <th className="py-3 px-3 w-[140px] text-right whitespace-nowrap bg-blue-50/40">Advance Received</th>
+                <th className="py-3 px-3 w-[120px] text-center whitespace-nowrap bg-blue-50/40">Date of Advance</th>
+                <th className="py-3 px-3 w-[135px] text-right whitespace-nowrap bg-indigo-50/40">Outstanding Balance</th>
+                <th className="py-3 px-3 w-[140px] text-right whitespace-nowrap bg-emerald-50/40">Balance Payment</th>
+                <th className="py-3 px-3 w-[120px] text-center whitespace-nowrap bg-emerald-50/40">Date of Balance</th>
+                <th className="py-3 px-3 w-[115px] text-right whitespace-nowrap bg-amber-50/50">Shortfall (USD)</th>
                 <th className="py-3 px-3 w-[120px] text-right whitespace-nowrap">Net Unrealized</th>
                 <th className="py-3 px-3 w-[110px] text-center whitespace-nowrap">Status</th>
-                <th className="py-3 px-3 w-[115px] text-center whitespace-nowrap">Actions</th>
+                <th className="py-3 px-3 w-[110px] text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-ink-500">
+                  <td colSpan={13} className="py-12 text-center text-ink-500">
                     <BadgeDollarSign className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     <p className="font-semibold text-sm text-ink-700">No export invoices match the selected criteria</p>
                     <p className="text-xs text-ink-500 mt-1">
@@ -679,7 +690,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         </div>
                       </td>
 
-                      {/* Advance Received */}
+                      {/* Advance Received (Contract Terms vs Actual) */}
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
                         {advUSD > 0 ? (
                           <div>
@@ -689,9 +700,26 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             <div className="text-[10px] text-blue-600 font-medium tabular-nums">
                               {formatINR(advINR)} ({advPct}%)
                             </div>
+                            {inv.advanceTermsUSD && inv.advanceTermsUSD !== advUSD && (
+                              <div className="text-[9px] text-ink-500 font-medium mt-0.5">
+                                Terms: ${inv.advanceTermsUSD.toLocaleString()}
+                              </div>
+                            )}
+                            {inv.advanceShortfallUSD && inv.advanceShortfallUSD > 0 && (
+                              <div className="text-[9px] text-amber-700 font-bold">
+                                -${inv.advanceShortfallUSD.toFixed(2)} wire fee
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-ink-400 font-medium italic">No advance</span>
+                          <div>
+                            <span className="text-[11px] text-ink-400 font-medium italic">No advance</span>
+                            {inv.advanceTermsUSD && inv.advanceTermsUSD > 0 && (
+                              <div className="text-[9px] text-ink-500">
+                                Terms: ${inv.advanceTermsUSD.toLocaleString()}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -724,7 +752,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         </div>
                       </td>
 
-                      {/* Balance Payment Amount */}
+                      {/* Balance Payment Amount (Price vs Actual) */}
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
                         {balUSD > 0 ? (
                           <div>
@@ -734,11 +762,28 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             <div className="text-[10px] text-emerald-700 font-medium tabular-nums">
                               {formatINR(balINR)}
                             </div>
+                            {inv.balanceActualPriceUSD && inv.balanceActualPriceUSD !== balUSD && (
+                              <div className="text-[9px] text-ink-500 font-medium mt-0.5">
+                                Price: ${inv.balanceActualPriceUSD.toLocaleString()}
+                              </div>
+                            )}
+                            {inv.balanceShortfallUSD && inv.balanceShortfallUSD > 0 && (
+                              <div className="text-[9px] text-amber-700 font-bold">
+                                -${inv.balanceShortfallUSD.toFixed(2)} wire fee
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-amber-700 font-semibold italic">
-                            Pending {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}
-                          </span>
+                          <div>
+                            <span className="text-[11px] text-amber-700 font-semibold italic">
+                              Pending {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}
+                            </span>
+                            {inv.balanceActualPriceUSD && inv.balanceActualPriceUSD > 0 && (
+                              <div className="text-[9px] text-ink-500">
+                                Price: ${inv.balanceActualPriceUSD.toLocaleString()}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -758,6 +803,22 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                           <div className="text-[9px] text-emerald-700 font-mono truncate max-w-[120px] mx-auto" title={inv.balanceBankRef}>
                             {inv.balanceBankRef}
                           </div>
+                        )}
+                      </td>
+
+                      {/* Realization Shortfall in USD */}
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-amber-50/30">
+                        {inv.totalShortfallUSD && inv.totalShortfallUSD > 0 ? (
+                          <div>
+                            <div className="font-black text-amber-800 tabular-nums">
+                              -${inv.totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[9px] text-amber-700 font-semibold">
+                              USD Deductions
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-ink-300 font-medium">—</span>
                         )}
                       </td>
 
@@ -1398,10 +1459,13 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         <th className="py-2 px-2.5">Match Status</th>
                         <th className="py-2 px-2.5 text-right">Adv Rate</th>
                         <th className="py-2 px-2.5 text-right">Bal Rate</th>
-                        <th className="py-2 px-2.5 text-right">Advance (USD)</th>
-                        <th className="py-2 px-2.5">Advance Date</th>
-                        <th className="py-2 px-2.5 text-right">Balance (USD)</th>
-                        <th className="py-2 px-2.5">Balance Date</th>
+                        <th className="py-2 px-2.5 text-right">Adv Terms</th>
+                        <th className="py-2 px-2.5 text-right">Actual Adv</th>
+                        <th className="py-2 px-2.5">Adv Date</th>
+                        <th className="py-2 px-2.5 text-right">Bal Price</th>
+                        <th className="py-2 px-2.5 text-right">Actual Bal</th>
+                        <th className="py-2 px-2.5">Bal Date</th>
+                        <th className="py-2 px-2.5 text-right">Shortfall</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 font-medium">
@@ -1449,19 +1513,45 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         );
                         const balRate = !isNaN(rawBalRate) && rawBalRate > 0 ? rawBalRate : (matched?.balanceExchangeRate || fallbackRate);
 
+                        const rawAdvTerms = parseFloat(
+                          getFlexibleValue(row, [
+                            'advanceaspercontracttermsusd',
+                            'advancecontracttermsusd',
+                            'advancetermsusd',
+                            'advanceterms',
+                            'contractadvanceusd'
+                          ]) || ''
+                        );
+                        const advTerms = !isNaN(rawAdvTerms) && rawAdvTerms > 0 ? rawAdvTerms : (matched?.advanceTermsUSD || 0);
+
                         const rawAdvUSD = parseFloat(
-                          getFlexibleValue(row, ['advancereceivedusd', 'advancereceived', 'advanceamount', 'advance']) || ''
+                          getFlexibleValue(row, ['actualadvancereceivedusd', 'advancereceivedusd', 'advancereceived', 'advanceamount', 'advance']) || ''
                         );
                         const advDate = formatExcelDate(
                           getFlexibleValue(row, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate'])
                         );
 
+                        const rawBalPrice = parseFloat(
+                          getFlexibleValue(row, [
+                            'balanceasperactualpriceusd',
+                            'balanceactualpriceusd',
+                            'actualpricebalanceusd',
+                            'balancepriceusd',
+                            'balanceprice'
+                          ]) || ''
+                        );
+                        const balPrice = !isNaN(rawBalPrice) && rawBalPrice > 0 ? rawBalPrice : (matched?.balanceActualPriceUSD || 0);
+
                         const rawBalUSD = parseFloat(
-                          getFlexibleValue(row, ['balancepaymentamountusd', 'balancepaymentamount', 'balanceamount', 'balance']) || ''
+                          getFlexibleValue(row, ['actualbalancereceivedusd', 'balancepaymentamountusd', 'balancepaymentamount', 'balanceamount', 'balance']) || ''
                         );
                         const balDate = formatExcelDate(
                           getFlexibleValue(row, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate'])
                         );
+
+                        const advShortfall = advTerms > 0 && !isNaN(rawAdvUSD) && advTerms > rawAdvUSD ? Number((advTerms - rawAdvUSD).toFixed(2)) : 0;
+                        const balShortfall = balPrice > 0 && !isNaN(rawBalUSD) && balPrice > rawBalUSD ? Number((balPrice - rawBalUSD).toFixed(2)) : 0;
+                        const totalShortfall = Number((advShortfall + balShortfall).toFixed(2));
 
                         return (
                           <tr key={idx} className={matched ? 'hover:bg-gray-50' : 'bg-rose-50/40 text-rose-900'}>
@@ -1488,17 +1578,26 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             <td className="py-1.5 px-2.5 text-right font-mono font-bold text-emerald-800">
                               ₹{balRate.toFixed(2)}
                             </td>
+                            <td className="py-1.5 px-2.5 text-right font-medium text-ink-700">
+                              {advTerms > 0 ? `$${advTerms.toLocaleString()}` : '—'}
+                            </td>
                             <td className="py-1.5 px-2.5 text-right font-bold text-blue-800">
                               {!isNaN(rawAdvUSD) && rawAdvUSD > 0 ? `$${rawAdvUSD.toLocaleString()}` : '—'}
                             </td>
                             <td className="py-1.5 px-2.5 text-ink-600 whitespace-nowrap text-[10px]">
                               {advDate || '—'}
                             </td>
+                            <td className="py-1.5 px-2.5 text-right font-medium text-ink-700">
+                              {balPrice > 0 ? `$${balPrice.toLocaleString()}` : '—'}
+                            </td>
                             <td className="py-1.5 px-2.5 text-right font-bold text-emerald-800">
                               {!isNaN(rawBalUSD) && rawBalUSD > 0 ? `$${rawBalUSD.toLocaleString()}` : '—'}
                             </td>
                             <td className="py-1.5 px-2.5 text-ink-600 whitespace-nowrap text-[10px]">
                               {balDate || '—'}
+                            </td>
+                            <td className="py-1.5 px-2.5 text-right font-bold text-amber-700">
+                              {totalShortfall > 0 ? `-$${totalShortfall.toLocaleString()}` : '—'}
                             </td>
                           </tr>
                         );

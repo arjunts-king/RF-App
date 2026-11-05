@@ -389,6 +389,8 @@ export interface RealizationRecord {
   bankChargesCurrency?: number; // Deductions / Foreign bank charges in foreign currency
   notes?: string;
   paymentType?: 'Advance' | 'Balance' | 'Full' | 'Other';
+  contractTermsAmountUSD?: number; // Advance as per contract terms / Balance as per price (in USD)
+  shortfallUSD?: number; // Shortfall / deduction in foreign currency (in USD)
   createdAt: string;
   createdBy: string;
 }
@@ -473,16 +475,21 @@ export interface SalesInvoice {
   averageRealizedExchangeRate?: number; // totalRealizedINR / totalRealizedCurrency
 
   // Realization & Settlement Schedule Fields (Invoice Settlement)
-  advanceReceivedCurrency?: number; // Advance received in invoice foreign currency (e.g. USD)
+  advanceTermsUSD?: number; // Advance as per terms of contract in USD
+  advanceReceivedCurrency?: number; // Actual advance received in invoice foreign currency (USD)
+  advanceShortfallUSD?: number; // Shortfall in advance payment in USD (advanceTermsUSD - advanceReceivedCurrency)
   advanceReceivedDate?: string; // Date of receiving the advance (YYYY-MM-DD)
-  advanceReceivedINR?: number; // Advance received in INR (advanceReceivedCurrency * advanceExchangeRate)
+  advanceReceivedINR?: number; // Actual advance received in INR (advanceReceivedCurrency * advanceExchangeRate)
   advanceBankRef?: string; // Advance Bank Reference / FIRC / Wire Advice
   advanceExchangeRate?: number; // Forward exchange rate for advance payment (pre-determined with bank)
-  balancePaymentAmountCurrency?: number; // Balance payment amount in foreign currency (e.g. USD)
+  balanceActualPriceUSD?: number; // Balance as per actual price / contract in USD
+  balancePaymentAmountCurrency?: number; // Actual balance payment amount in foreign currency (USD)
+  balanceShortfallUSD?: number; // Shortfall in balance payment in USD (balanceActualPriceUSD - balancePaymentAmountCurrency)
   balancePaymentDate?: string; // Date of receiving balance payment (YYYY-MM-DD)
-  balancePaymentINR?: number; // Balance payment in INR (balancePaymentAmountCurrency * balanceExchangeRate)
+  balancePaymentINR?: number; // Actual balance payment in INR (balancePaymentAmountCurrency * balanceExchangeRate)
   balanceBankRef?: string; // Balance Bank Reference / FIRC / Wire Advice
   balanceExchangeRate?: number; // Forward exchange rate for balance payment (pre-determined with bank)
+  totalShortfallUSD?: number; // Total shortfall in realization in USD (advanceShortfallUSD + balanceShortfallUSD)
   bankPreDeterminedExchangeRate?: number; // Primary/legacy exchange rate of that invoice (pre determined with bank)
 
   // Soft-delete / Void
