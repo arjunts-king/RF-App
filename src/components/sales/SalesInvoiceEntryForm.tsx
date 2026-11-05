@@ -1003,6 +1003,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               placeholder="Optional upfront deposit"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
             />
+            {parseFloat(advanceReceived) > 0 && (
+              <div className="mt-1 p-1.5 bg-blue-50/90 rounded-lg border border-blue-200 text-[10px] text-blue-950 flex flex-col gap-0.5">
+                <span className="font-semibold">
+                  Advance: {currency} {parseFloat(advanceReceived).toLocaleString(undefined, { minimumFractionDigits: 2 })} ({((parseFloat(advanceReceived) / (totalAmountCurrency || 1)) * 100).toFixed(1)}%)
+                </span>
+                <span className="font-bold text-rose-700">
+                  Direct Outstanding: {currency} {Math.max(0, totalAmountCurrency - (parseFloat(advanceReceived) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  {' '}({formatINR(Math.max(0, totalAmountCurrency - (parseFloat(advanceReceived) || 0)) * currentRate)})
+                </span>
+              </div>
+            )}
           </div>
 
           <div>

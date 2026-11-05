@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { SalesInvoice } from '../../types';
@@ -18,6 +18,10 @@ import {
   formatExcelDate
 } from '../../utils/excelImport';
 import {
+  computeOutstandingFromAdvance,
+  calculateReceivablesCollectionAnalysis
+} from '../../utils/collectionAnalysis';
+import {
   Search,
   Download,
   Upload,
@@ -32,7 +36,11 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Sparkles,
-  FileCheck
+  FileCheck,
+  Clock,
+  Timer,
+  BarChart3,
+  Users
 } from 'lucide-react';
 
 export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -43,6 +51,20 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const [customerFilter, setCustomerFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showVoided, setShowVoided] = useState(false);
+
+  // View mode switcher: Settlement Register vs Receivables Collection Period Analysis
+  const [activeTab, setActiveTab] = useState<'register' | 'collection-analysis'>('register');
+
+  // Collection Analysis Filter State
+  const [consigneeSearchTerm, setConsigneeSearchTerm] = useState('');
+  const [consigneeHealthFilter, setConsigneeHealthFilter] = useState<string>('');
+  const [invoiceCollectionStatusFilter, setInvoiceCollectionStatusFilter] = useState<string>('');
+
+  // Compute Receivables Collection Period Analysis
+  const collectionAnalysis = useMemo(
+    () => calculateReceivablesCollectionAnalysis(salesInvoices, customers),
+    [salesInvoices, customers]
+  );
 
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
 
@@ -82,6 +104,28 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     return true;
   });
 
+  // Filtered Consignees for Collection Period Analysis
+  const filteredConsignees = useMemo(() => {
+    return collectionAnalysis.consigneeBreakdown.filter((c) => {
+      if (consigneeHealthFilter && c.collectionHealth !== consigneeHealthFilter) return false;
+      if (consigneeSearchTerm) {
+        const q = consigneeSearchTerm.toLowerCase();
+        return c.consigneeName.toLowerCase().includes(q) || c.country.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [collectionAnalysis.consigneeBreakdown, consigneeSearchTerm, consigneeHealthFilter]);
+
+  // Filtered Invoices for Collection Period Analysis
+  const filteredInvoiceMetrics = useMemo(() => {
+    return collectionAnalysis.invoiceMetrics.filter((m) => {
+      if (invoiceCollectionStatusFilter && m.realizationStatus !== invoiceCollectionStatusFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [collectionAnalysis.invoiceMetrics, invoiceCollectionStatusFilter]);
+
   // Aggregates
   const activeInvoices = salesInvoices.filter((inv) => !inv.isVoided);
   const totalInvoicedUSD = activeInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
@@ -89,6 +133,13 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const totalAdvanceINR = activeInvoices.reduce((s, inv) => {
     const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
     return s + (inv.advanceReceivedINR || (inv.advanceReceivedCurrency || 0) * rate);
+  }, 0);
+  const totalOutstandingAfterAdvanceUSD = Math.max(0, totalInvoicedUSD - totalAdvanceUSD);
+  const totalOutstandingAfterAdvanceINR = activeInvoices.reduce((s, inv) => {
+    const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
+    const adv = inv.advanceReceivedCurrency || 0;
+    const out = Math.max(0, inv.totalAmountCurrency - adv);
+    return s + out * rate;
   }, 0);
   const totalBalanceUSD = activeInvoices.reduce((s, inv) => s + (inv.balancePaymentAmountCurrency || 0), 0);
   const totalBalanceINR = activeInvoices.reduce((s, inv) => {
@@ -113,6 +164,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       const advINR = inv.advanceReceivedINR || Number((advUSD * bankRate).toFixed(2));
       const balUSD = inv.balancePaymentAmountCurrency || 0;
       const balINR = inv.balancePaymentINR || Number((balUSD * bankRate).toFixed(2));
+      const outstandingAfterAdv = computeOutstandingFromAdvance(inv.totalAmountCurrency, advUSD, bankRate);
 
       return {
         InvoiceNo: inv.invoiceNo,
@@ -128,6 +180,8 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         AdvanceDate: inv.advanceReceivedDate || '',
         AdvanceReceivedINR: advINR,
         AdvanceBankRef: inv.advanceBankRef || '',
+        OutstandingAfterAdvanceUSD: outstandingAfterAdv.outstandingAfterAdvanceCurrency,
+        OutstandingAfterAdvanceINR: outstandingAfterAdv.outstandingAfterAdvanceINR,
         BalancePaymentUSD: balUSD,
         BalanceDate: inv.balancePaymentDate || '',
         BalancePaymentINR: balINR,
@@ -154,6 +208,8 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       { key: 'AdvanceDate', label: 'Date of Receiving Advance' },
       { key: 'AdvanceReceivedINR', label: 'Advance Received (INR)' },
       { key: 'AdvanceBankRef', label: 'Advance Bank Ref / FIRC' },
+      { key: 'OutstandingAfterAdvanceUSD', label: 'Outstanding After Advance (USD)' },
+      { key: 'OutstandingAfterAdvanceINR', label: 'Outstanding After Advance (INR)' },
       { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
       { key: 'BalanceDate', label: 'Date of Receiving Balance Payment' },
       { key: 'BalancePaymentINR', label: 'Balance Payment Amount (INR)' },
@@ -166,6 +222,58 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     ]);
 
     downloadFile(csvStr, `Export_Realization_Settlement_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  // Export Comprehensive Receivables Collection Period Analysis CSV
+  const handleExportCollectionAnalysisCSV = () => {
+    const rows: any[] = [];
+    collectionAnalysis.consigneeBreakdown.forEach((c) => {
+      rows.push({
+        Type: 'Consignee Summary',
+        Consignee: c.consigneeName,
+        Country: c.country,
+        TotalInvoices: c.totalInvoicesCount,
+        RealizedInvoices: c.realizedInvoicesCount,
+        OutstandingInvoices: c.outstandingInvoicesCount,
+        InvoicedUSD: c.totalInvoicedUSD,
+        AdvanceCollectedUSD: c.totalAdvanceUSD,
+        OutstandingAfterAdvanceUSD: c.totalOutstandingAfterAdvanceUSD,
+        BalanceCollectedUSD: c.totalBalanceUSD,
+        TotalCollectedUSD: c.totalCollectedUSD,
+        TotalOutstandingUSD: c.totalOutstandingUSD,
+        TotalOutstandingINR: c.totalOutstandingINR,
+        AvgDaysToAdvance: c.avgDaysToAdvance !== null ? c.avgDaysToAdvance : 'N/A',
+        AvgDaysAdvanceToBalance: c.avgDaysAdvanceToBalance !== null ? c.avgDaysAdvanceToBalance : 'N/A',
+        AverageCollectionPeriodDSO: c.avgCollectionDays !== null ? c.avgCollectionDays : 'N/A',
+        WeightedDSO: c.weightedAvgCollectionDays !== null ? c.weightedAvgCollectionDays : 'N/A',
+        CollectionEfficiencyPct: `${c.collectionEfficiencyPct}%`,
+        HealthStatus: c.collectionHealth
+      });
+    });
+
+    const csvStr = convertToCSV(rows, [
+      { key: 'Type', label: 'Record Type' },
+      { key: 'Consignee', label: 'Consignee / Foreign Buyer' },
+      { key: 'Country', label: 'Country' },
+      { key: 'TotalInvoices', label: 'Total Invoices' },
+      { key: 'RealizedInvoices', label: 'Realized Invoices' },
+      { key: 'OutstandingInvoices', label: 'Outstanding Invoices' },
+      { key: 'InvoicedUSD', label: 'Total Invoiced (USD)' },
+      { key: 'AdvanceCollectedUSD', label: 'Advance Collected (USD)' },
+      { key: 'OutstandingAfterAdvanceUSD', label: 'Outstanding After Advance (USD)' },
+      { key: 'BalanceCollectedUSD', label: 'Balance Payment (USD)' },
+      { key: 'TotalCollectedUSD', label: 'Total Collected (USD)' },
+      { key: 'TotalOutstandingUSD', label: 'Total Outstanding (USD)' },
+      { key: 'TotalOutstandingINR', label: 'Total Outstanding (INR)' },
+      { key: 'AvgDaysToAdvance', label: 'Avg Days to Pay Advance' },
+      { key: 'AvgDaysAdvanceToBalance', label: 'Avg Turnaround: Advance to Balance (Days)' },
+      { key: 'AverageCollectionPeriodDSO', label: 'Avg Collection Period / DSO (Days)' },
+      { key: 'WeightedDSO', label: 'Amount-Weighted DSO (Days)' },
+      { key: 'CollectionEfficiencyPct', label: 'Collection Efficiency (%)' },
+      { key: 'HealthStatus', label: 'Collection Health Rating' }
+    ]);
+
+    downloadFile(csvStr, `Receivables_Collection_Period_Analysis_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   // Handle File Selection for Settlement Import
@@ -213,9 +321,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Figma Header Block */}
       <PageHeader
-        title="Export realization & settlement register"
-        subtitle="Manage advance payments received, balance remittances, bank receipt dates, and pre-determined bank exchange rates for all commercial invoices."
-        breadcrumbs={['Sales', 'Settlement & Banking', 'Realization & Settlement']}
+        title="Export realization & receivables collection analysis"
+        subtitle="Manage advance payments received, direct outstanding balances, balance remittances, bank booked exchange rates, and receivables collection period (DSO) velocity."
+        breadcrumbs={['Sales', 'Settlement & Banking', 'Realization & Collection Analysis']}
         primaryAction={
           permissions.canManageSalesRealization
             ? {
@@ -262,39 +370,102 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         ]}
       />
 
-      {/* Bento Settlement KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <BentoCard
-          label="Total Invoiced (USD)"
-          value={`$${totalInvoicedUSD.toLocaleString()}`}
-          caption={`${activeInvoices.length} active invoices`}
-          variant="highlight"
-        />
-        <BentoCard
-          label="Advance Received"
-          value={`$${totalAdvanceUSD.toLocaleString()}`}
-          caption={`₹${(totalAdvanceINR / 100000).toFixed(2)} L credited`}
-          variant="default"
-        />
-        <BentoCard
-          label="Balance Received"
-          value={`$${totalBalanceUSD.toLocaleString()}`}
-          caption={`₹${(totalBalanceINR / 100000).toFixed(2)} L credited`}
-          variant="default"
-        />
-        <BentoCard
-          label="Total Realized (INR)"
-          value={formatINR(totalRealizedINR)}
-          caption={`${overallProgressPct}% proceeds realized`}
-          variant="success"
-        />
-        <BentoCard
-          label="Unrealized Balance"
-          value={`$${totalUnrealizedUSD.toLocaleString()}`}
-          caption={totalUnrealizedUSD > 0 ? 'Pending foreign remittance' : 'All invoices fully settled'}
-          variant={totalUnrealizedUSD > 0 ? 'warning' : 'success'}
-        />
+      {/* Navigation View Switcher */}
+      <div className="flex flex-wrap items-center justify-between border-b border-gray-200 pb-2 gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('register')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'register'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-white text-ink-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <BadgeDollarSign className="w-4 h-4" />
+            <span>Realization &amp; Settlement Register</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                activeTab === 'register' ? 'bg-white/20 text-white' : 'bg-gray-100 text-ink-600'
+              }`}
+            >
+              {activeInvoices.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('collection-analysis')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'collection-analysis'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-white text-ink-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span>Receivables Collection Period Analysis</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                activeTab === 'collection-analysis' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+              }`}
+            >
+              {collectionAnalysis.averageCollectionPeriodDays !== null
+                ? `${collectionAnalysis.averageCollectionPeriodDays}d DSO`
+                : 'DSO'}
+            </span>
+          </button>
+        </div>
+
+        {activeTab === 'collection-analysis' && (
+          <button
+            onClick={handleExportCollectionAnalysisCSV}
+            className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <span>Export Collection Analysis CSV</span>
+          </button>
+        )}
       </div>
+
+      {activeTab === 'register' && (
+        <div className="space-y-6">
+          {/* Bento Settlement KPI Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <BentoCard
+              label="Total Invoiced (USD)"
+              value={`$${totalInvoicedUSD.toLocaleString()}`}
+              caption={`${activeInvoices.length} active invoices`}
+              variant="highlight"
+            />
+            <BentoCard
+              label="Advance Received"
+              value={`$${totalAdvanceUSD.toLocaleString()}`}
+              caption={`₹${(totalAdvanceINR / 100000).toFixed(2)} L credited`}
+              variant="default"
+            />
+            <BentoCard
+              label="Direct Outstanding After Advance"
+              value={`$${totalOutstandingAfterAdvanceUSD.toLocaleString()}`}
+              caption={`₹${(totalOutstandingAfterAdvanceINR / 100000).toFixed(2)} L balance`}
+              variant="default"
+            />
+            <BentoCard
+              label="Balance Received"
+              value={`$${totalBalanceUSD.toLocaleString()}`}
+              caption={`₹${(totalBalanceINR / 100000).toFixed(2)} L credited`}
+              variant="default"
+            />
+            <BentoCard
+              label="Total Realized (INR)"
+              value={formatINR(totalRealizedINR)}
+              caption={`${overallProgressPct}% proceeds realized`}
+              variant="success"
+            />
+            <BentoCard
+              label="Net Unrealized Balance"
+              value={`$${totalUnrealizedUSD.toLocaleString()}`}
+              caption={totalUnrealizedUSD > 0 ? 'Pending foreign remittance' : 'All invoices fully settled'}
+              variant={totalUnrealizedUSD > 0 ? 'warning' : 'success'}
+            />
+          </div>
 
       {/* Import Realization Callout Banner */}
       <div className="p-4 bg-gradient-to-r from-rose-50 via-white to-blue-50 border border-rose-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-2xs">
@@ -400,6 +571,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                 <th className="py-3 px-3 text-center bg-rose-50/40">Bank Rate</th>
                 <th className="py-3 px-3 text-right bg-blue-50/40">Advance Received</th>
                 <th className="py-3 px-3 bg-blue-50/40">Date of Advance</th>
+                <th className="py-3 px-3 text-right bg-indigo-50/40">Outstanding After Advance</th>
                 <th className="py-3 px-3 text-right bg-emerald-50/40">Balance Payment</th>
                 <th className="py-3 px-3 bg-emerald-50/40">Date of Balance</th>
                 <th className="py-3 px-3 text-right">Unrealized</th>
@@ -410,7 +582,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             <tbody className="divide-y divide-gray-100">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-ink-500">
+                  <td colSpan={12} className="py-12 text-center text-ink-500">
                     <BadgeDollarSign className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     <p className="font-semibold text-sm text-ink-700">No export invoices match the selected criteria</p>
                     <p className="text-xs text-ink-500 mt-1">
@@ -429,6 +601,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                   const balINR = inv.balancePaymentINR || (balUSD > 0 ? Number((balUSD * bankRate).toFixed(2)) : 0);
 
                   const advPct = inv.totalAmountCurrency > 0 ? ((advUSD / inv.totalAmountCurrency) * 100).toFixed(0) : '0';
+                  const outstandingAfterAdv = computeOutstandingFromAdvance(inv.totalAmountCurrency, advUSD, bankRate);
 
                   return (
                     <tr
@@ -518,6 +691,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             {inv.advanceBankRef}
                           </div>
                         )}
+                      </td>
+
+                      {/* Outstanding After Advance (Direct Calculation) */}
+                      <td className="py-3 px-3 text-right bg-indigo-50/25">
+                        <div className="font-extrabold text-ink-950 tabular-nums">
+                          {inv.currency} {outstandingAfterAdv.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-[10px] text-ink-500 font-medium tabular-nums">
+                          {formatINR(outstandingAfterAdv.outstandingAfterAdvanceINR)} ({outstandingAfterAdv.outstandingPercentage}%)
+                        </div>
                       </td>
 
                       {/* Balance Payment Amount */}
@@ -621,6 +804,449 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           </table>
         </div>
       </div>
+    </div>
+  )}
+
+  {/* ============================================================== */}
+  {/* RECEIVABLES COLLECTION PERIOD ANALYSIS VIEW */}
+  {/* ============================================================== */}
+  {activeTab === 'collection-analysis' && (
+    <div className="space-y-6">
+      {/* Executive Collection Period KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <BentoCard
+          label="Avg Collection Period (DSO)"
+          value={collectionAnalysis.averageCollectionPeriodDays !== null ? `${collectionAnalysis.averageCollectionPeriodDays} Days` : 'N/A'}
+          caption={`Unweighted DSO (${collectionAnalysis.totalRealizedInvoices} realized)`}
+          variant={
+            collectionAnalysis.averageCollectionPeriodDays === null
+              ? 'default'
+              : collectionAnalysis.averageCollectionPeriodDays <= 30
+              ? 'success'
+              : collectionAnalysis.averageCollectionPeriodDays <= 45
+              ? 'default'
+              : 'warning'
+          }
+        />
+        <BentoCard
+          label="Weighted DSO"
+          value={collectionAnalysis.weightedCollectionPeriodDays !== null ? `${collectionAnalysis.weightedCollectionPeriodDays} Days` : 'N/A'}
+          caption="Weighted by USD transaction volume"
+          variant="highlight"
+        />
+        <BentoCard
+          label="Avg Advance Receipt Lag"
+          value={collectionAnalysis.averageDaysToAdvance !== null ? `${collectionAnalysis.averageDaysToAdvance} Days` : 'N/A'}
+          caption="Invoice date to advance receipt"
+          variant="default"
+        />
+        <BentoCard
+          label="Advance &rarr; Balance Lag"
+          value={collectionAnalysis.averageDaysAdvanceToBalance !== null ? `${collectionAnalysis.averageDaysAdvanceToBalance} Days` : 'N/A'}
+          caption="Advance receipt to balance clearance"
+          variant="default"
+        />
+        <BentoCard
+          label="Collection Efficiency Index"
+          value={`${collectionAnalysis.collectionEfficiencyIndex}%`}
+          caption={`$${collectionAnalysis.totalCollectedUSD.toLocaleString()} of $${collectionAnalysis.totalInvoicedUSD.toLocaleString()}`}
+          variant={collectionAnalysis.collectionEfficiencyIndex >= 80 ? 'success' : 'default'}
+        />
+        <BentoCard
+          label="Total Receivables Outstanding"
+          value={`$${collectionAnalysis.totalOutstandingUSD.toLocaleString()}`}
+          caption={`${formatINR(collectionAnalysis.totalOutstandingINR)} pending`}
+          variant={collectionAnalysis.totalOutstandingUSD > 0 ? 'warning' : 'success'}
+        />
+      </div>
+
+      {/* Ageing Distribution of Outstanding Receivables */}
+      <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+              <BarChart3 className="w-4 h-4 text-rose-600" />
+              Receivables Ageing Distribution (Unsettled Export Portfolios)
+            </h3>
+            <p className="text-[11px] text-ink-500 mt-0.5">
+              Age analysis of open invoices from invoice issue date to today
+            </p>
+          </div>
+          <span className="text-xs font-bold text-ink-700 bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
+            Total Unsettled: ${collectionAnalysis.totalOutstandingUSD.toLocaleString()} ({formatINR(collectionAnalysis.totalOutstandingINR)})
+          </span>
+        </div>
+
+        {/* Visual Ageing Bar */}
+        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
+          {collectionAnalysis.ageingBuckets['0-30 Days'].pct > 0 && (
+            <div
+              style={{ width: `${collectionAnalysis.ageingBuckets['0-30 Days'].pct}%` }}
+              className="bg-emerald-500 h-full transition-all duration-300"
+              title={`0-30 Days: ${collectionAnalysis.ageingBuckets['0-30 Days'].pct}%`}
+            />
+          )}
+          {collectionAnalysis.ageingBuckets['31-60 Days'].pct > 0 && (
+            <div
+              style={{ width: `${collectionAnalysis.ageingBuckets['31-60 Days'].pct}%` }}
+              className="bg-blue-500 h-full transition-all duration-300"
+              title={`31-60 Days: ${collectionAnalysis.ageingBuckets['31-60 Days'].pct}%`}
+            />
+          )}
+          {collectionAnalysis.ageingBuckets['61-90 Days'].pct > 0 && (
+            <div
+              style={{ width: `${collectionAnalysis.ageingBuckets['61-90 Days'].pct}%` }}
+              className="bg-amber-500 h-full transition-all duration-300"
+              title={`61-90 Days: ${collectionAnalysis.ageingBuckets['61-90 Days'].pct}%`}
+            />
+          )}
+          {collectionAnalysis.ageingBuckets['90+ Days'].pct > 0 && (
+            <div
+              style={{ width: `${collectionAnalysis.ageingBuckets['90+ Days'].pct}%` }}
+              className="bg-rose-500 h-full transition-all duration-300"
+              title={`90+ Days: ${collectionAnalysis.ageingBuckets['90+ Days'].pct}%`}
+            />
+          )}
+        </div>
+
+        {/* 4 Bucket Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200">
+            <div className="flex items-center justify-between text-emerald-900 font-bold text-[11px]">
+              <span>0 - 30 Days (Current)</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 rounded text-emerald-800">
+                {collectionAnalysis.ageingBuckets['0-30 Days'].pct}%
+              </span>
+            </div>
+            <div className="text-base font-black text-emerald-950 mt-1 tabular-nums">
+              ${collectionAnalysis.ageingBuckets['0-30 Days'].balanceUSD.toLocaleString()}
+            </div>
+            <div className="text-[10px] text-emerald-700 mt-0.5">
+              {collectionAnalysis.ageingBuckets['0-30 Days'].count} invoices · {formatINR(collectionAnalysis.ageingBuckets['0-30 Days'].balanceINR)}
+            </div>
+          </div>
+
+          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-200">
+            <div className="flex items-center justify-between text-blue-900 font-bold text-[11px]">
+              <span>31 - 60 Days (Grace)</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 rounded text-blue-800">
+                {collectionAnalysis.ageingBuckets['31-60 Days'].pct}%
+              </span>
+            </div>
+            <div className="text-base font-black text-blue-950 mt-1 tabular-nums">
+              ${collectionAnalysis.ageingBuckets['31-60 Days'].balanceUSD.toLocaleString()}
+            </div>
+            <div className="text-[10px] text-blue-700 mt-0.5">
+              {collectionAnalysis.ageingBuckets['31-60 Days'].count} invoices · {formatINR(collectionAnalysis.ageingBuckets['31-60 Days'].balanceINR)}
+            </div>
+          </div>
+
+          <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200">
+            <div className="flex items-center justify-between text-amber-900 font-bold text-[11px]">
+              <span>61 - 90 Days (Delayed)</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 rounded text-amber-800">
+                {collectionAnalysis.ageingBuckets['61-90 Days'].pct}%
+              </span>
+            </div>
+            <div className="text-base font-black text-amber-950 mt-1 tabular-nums">
+              ${collectionAnalysis.ageingBuckets['61-90 Days'].balanceUSD.toLocaleString()}
+            </div>
+            <div className="text-[10px] text-amber-700 mt-0.5">
+              {collectionAnalysis.ageingBuckets['61-90 Days'].count} invoices · {formatINR(collectionAnalysis.ageingBuckets['61-90 Days'].balanceINR)}
+            </div>
+          </div>
+
+          <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-200">
+            <div className="flex items-center justify-between text-rose-900 font-bold text-[11px]">
+              <span>90+ Days (Critical)</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-rose-100 rounded text-rose-800">
+                {collectionAnalysis.ageingBuckets['90+ Days'].pct}%
+              </span>
+            </div>
+            <div className="text-base font-black text-rose-950 mt-1 tabular-nums">
+              ${collectionAnalysis.ageingBuckets['90+ Days'].balanceUSD.toLocaleString()}
+            </div>
+            <div className="text-[10px] text-rose-700 mt-0.5">
+              {collectionAnalysis.ageingBuckets['90+ Days'].count} invoices · {formatINR(collectionAnalysis.ageingBuckets['90+ Days'].balanceINR)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Consignee / Foreign Buyer Collection Velocity Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden space-y-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-blue-600" />
+              Consignee &amp; Buyer Collection Velocity &amp; Efficiency
+            </h3>
+            <p className="text-[11px] text-ink-500 mt-0.5">
+              Average turnaround for advance payment, balance payment, and overall DSO per foreign buyer
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
+              <input
+                type="text"
+                placeholder="Filter buyer or country..."
+                value={consigneeSearchTerm}
+                onChange={(e) => setConsigneeSearchTerm(e.target.value)}
+                className="pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-rose-400"
+              />
+            </div>
+
+            <select
+              value={consigneeHealthFilter}
+              onChange={(e) => setConsigneeHealthFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-rose-400 font-medium"
+            >
+              <option value="">All Health Ratings</option>
+              <option value="Prompt">Prompt (&le; 20 Days)</option>
+              <option value="Standard">Standard (21 - 40 Days)</option>
+              <option value="Delayed">Delayed (41 - 60 Days)</option>
+              <option value="Critical">Critical (&gt; 60 Days)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
+                <th className="py-2.5 px-3">Consignee &amp; Buyer</th>
+                <th className="py-2.5 px-3">Country</th>
+                <th className="py-2.5 px-3 text-center">Invoices</th>
+                <th className="py-2.5 px-3 text-right">Invoiced (USD)</th>
+                <th className="py-2.5 px-3 text-right">Collected (USD)</th>
+                <th className="py-2.5 px-3 text-right">Outstanding (USD)</th>
+                <th className="py-2.5 px-3 text-center bg-blue-50/50">Avg Days to Advance</th>
+                <th className="py-2.5 px-3 text-center bg-indigo-50/50">Advance &rarr; Balance Lag</th>
+                <th className="py-2.5 px-3 text-center bg-rose-50/50">Avg Collection Period (DSO)</th>
+                <th className="py-2.5 px-3 text-center">Health Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredConsignees.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-8 text-center text-ink-500">
+                    No buyers match the filter criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredConsignees.map((c) => (
+                  <tr key={c.consigneeId} className="hover:bg-gray-50/60 transition">
+                    <td className="py-3 px-3 font-bold text-ink-900">{c.consigneeName}</td>
+                    <td className="py-3 px-3 text-ink-600 font-medium">{c.country}</td>
+                    <td className="py-3 px-3 text-center">
+                      <span className="font-semibold text-ink-800">{c.totalInvoicesCount}</span>
+                      <span className="text-[10px] text-ink-500 block">
+                        {c.realizedInvoicesCount} settled / {c.outstandingInvoicesCount} open
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right font-extrabold text-ink-950 tabular-nums">
+                      ${c.totalInvoicedUSD.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold text-emerald-800 tabular-nums">
+                      <div>${c.totalCollectedUSD.toLocaleString()}</div>
+                      <div className="text-[10px] text-emerald-600 font-semibold">{c.collectionEfficiencyPct}%</div>
+                    </td>
+                    <td className="py-3 px-3 text-right font-black tabular-nums">
+                      <div className={c.totalOutstandingUSD > 0.05 ? 'text-rose-700' : 'text-emerald-700'}>
+                        ${c.totalOutstandingUSD.toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-ink-500">
+                        {formatINR(c.totalOutstandingINR)}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-center bg-blue-50/30">
+                      {c.avgDaysToAdvance !== null ? (
+                        <span className="font-bold text-blue-900">{c.avgDaysToAdvance} Days</span>
+                      ) : (
+                        <span className="text-ink-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center bg-indigo-50/30">
+                      {c.avgDaysAdvanceToBalance !== null ? (
+                        <span className="font-bold text-indigo-900">{c.avgDaysAdvanceToBalance} Days</span>
+                      ) : (
+                        <span className="text-ink-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center bg-rose-50/30">
+                      {c.avgCollectionDays !== null ? (
+                        <div className="font-black text-rose-900">
+                          {c.avgCollectionDays} Days
+                          {c.weightedAvgCollectionDays !== null && (
+                            <span className="text-[10px] text-ink-500 block font-normal">
+                              Weighted: {c.weightedAvgCollectionDays}d
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-ink-400 italic">Pending collection</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          c.collectionHealth === 'Prompt'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : c.collectionHealth === 'Standard'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                            : c.collectionHealth === 'Delayed'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : 'bg-rose-100 text-rose-800 border border-rose-300'
+                        }`}
+                      >
+                        {c.collectionHealth}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Invoice-Level Collection Velocity & Turnaround Log */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden space-y-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+              <Timer className="w-4 h-4 text-emerald-600" />
+              Invoice Collection Timelines &amp; Turnaround Turn
+            </h3>
+            <p className="text-[11px] text-ink-500 mt-0.5">
+              Full lifecycle timeline from invoice creation to advance receipt and final balance settlement
+            </p>
+          </div>
+
+          <select
+            value={invoiceCollectionStatusFilter}
+            onChange={(e) => setInvoiceCollectionStatusFilter(e.target.value)}
+            className="px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-rose-400 font-medium"
+          >
+            <option value="">All Invoices</option>
+            <option value="Fully Realized">Fully Realized Invoices</option>
+            <option value="Partially Realized">Partially Realized (Advance Paid)</option>
+            <option value="Not Realized">Not Realized (Pending)</option>
+          </select>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
+                <th className="py-2.5 px-3">Invoice # &amp; Date</th>
+                <th className="py-2.5 px-3">Consignee</th>
+                <th className="py-2.5 px-3 text-right">Invoice Value</th>
+                <th className="py-2.5 px-3 text-right bg-blue-50/40">Advance Received</th>
+                <th className="py-2.5 px-3 text-center bg-blue-50/40">Days to Advance</th>
+                <th className="py-2.5 px-3 text-right bg-indigo-50/40">Outstanding After Advance</th>
+                <th className="py-2.5 px-3 text-right bg-emerald-50/40">Balance Payment</th>
+                <th className="py-2.5 px-3 text-center bg-emerald-50/40">Turnaround (Adv &rarr; Bal)</th>
+                <th className="py-2.5 px-3 text-center bg-rose-50/40">Total Collection Turn</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredInvoiceMetrics.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-8 text-center text-ink-500">
+                    No invoices match the filter criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredInvoiceMetrics.map((m) => (
+                  <tr key={m.invoiceId} className="hover:bg-gray-50/60 transition">
+                    <td className="py-3 px-3">
+                      <div className="font-mono font-bold text-rose-700">{m.invoiceNo}</div>
+                      <div className="text-[11px] text-ink-500">{m.invoiceDate}</div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="font-bold text-ink-900">{m.consigneeName}</div>
+                      <div className="text-[10px] text-ink-500">{m.country}</div>
+                    </td>
+                    <td className="py-3 px-3 text-right font-black tabular-nums">
+                      {m.currency} {m.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-3 text-right bg-blue-50/20">
+                      {m.advanceReceivedCurrency > 0 ? (
+                        <div>
+                          <div className="font-bold text-blue-800 tabular-nums">
+                            {m.currency} {m.advanceReceivedCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[10px] text-blue-600">{m.advanceReceivedDate}</div>
+                        </div>
+                      ) : (
+                        <span className="text-ink-400 italic">None</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center bg-blue-50/20 font-bold">
+                      {m.daysToAdvance !== null ? (
+                        <span className="text-blue-900">{m.daysToAdvance} Days</span>
+                      ) : (
+                        <span className="text-ink-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right bg-indigo-50/20 font-bold tabular-nums">
+                      <div className="text-ink-900">
+                        {m.currency} {m.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-ink-500 font-normal">
+                        {m.outstandingAfterAdvancePct}% remaining
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-right bg-emerald-50/20">
+                      {m.balancePaymentAmountCurrency > 0 ? (
+                        <div>
+                          <div className="font-bold text-emerald-800 tabular-nums">
+                            {m.currency} {m.balancePaymentAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[10px] text-emerald-600">{m.balancePaymentDate}</div>
+                        </div>
+                      ) : (
+                        <span className="text-amber-700 italic font-semibold">Unsettled</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center bg-emerald-50/20 font-bold">
+                      {m.daysAdvanceToBalance !== null ? (
+                        <span className="text-emerald-900">{m.daysAdvanceToBalance} Days</span>
+                      ) : (
+                        <span className="text-ink-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center bg-rose-50/20 font-black">
+                      {m.totalCollectionDays !== null ? (
+                        <span className="text-rose-900">{m.totalCollectionDays} Days DSO</span>
+                      ) : (
+                        <span className="text-amber-700 font-semibold">{m.ageDays}d Ageing</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <StatusBadge
+                        status={
+                          m.realizationStatus === 'Fully Realized'
+                            ? 'Realized'
+                            : m.realizationStatus === 'Partially Realized'
+                            ? 'Partially realized'
+                            : 'Not realized'
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )}
 
       {/* Manual Realization & Settlement Modal */}
       {realizationTarget && (

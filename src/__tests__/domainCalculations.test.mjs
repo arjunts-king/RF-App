@@ -22,6 +22,12 @@ import {
   calculatePerpetualInventory
 } from '../utils/inventoryValuation.ts';
 
+import {
+  computeOutstandingFromAdvance,
+  calculateDaysBetween,
+  calculateReceivablesCollectionAnalysis
+} from '../utils/collectionAnalysis.ts';
+
 // ============================================================================
 // SUITE 1: Pure Utility Formatters (excelFormatters.ts)
 // ============================================================================
@@ -755,5 +761,102 @@ test('Sales Realization & Settlement: computes advance received, balance payment
   assert.equal(remainingBalance, 0);
   assert.equal(status, 'Fully Realized');
 });
+
+test('Sales Realization: computeOutstandingFromAdvance directly calculates remaining balance and percentages', () => {
+  // Invoice of $26,100, advance received $7,830, bank rate 84.75
+  const res = computeOutstandingFromAdvance(26100, 7830, 84.75);
+  assert.equal(res.outstandingAfterAdvanceCurrency, 18270);
+  assert.equal(res.advancePercentage, 30.0);
+  assert.equal(res.outstandingPercentage, 70.0);
+  assert.equal(res.outstandingAfterAdvanceINR, 1548382.5); // 18270 * 84.75
+
+  // 100% advance test
+  const fullAdv = computeOutstandingFromAdvance(10000, 10000, 85);
+  assert.equal(fullAdv.outstandingAfterAdvanceCurrency, 0);
+  assert.equal(fullAdv.advancePercentage, 100.0);
+  assert.equal(fullAdv.outstandingPercentage, 0.0);
+
+  // 0 advance test
+  const zeroAdv = computeOutstandingFromAdvance(10000, 0, 85);
+  assert.equal(zeroAdv.outstandingAfterAdvanceCurrency, 10000);
+  assert.equal(zeroAdv.advancePercentage, 0.0);
+  assert.equal(zeroAdv.outstandingPercentage, 100.0);
+});
+
+test('Receivables Collection Period Analysis: calculates DSO, advance lag, turnaround lag, and ageing buckets', () => {
+  const dummyCustomers = [
+    { id: 'c1', name: 'Tokyo Seafood Co.', country: 'Japan' },
+    { id: 'c2', name: 'Mediterranean Foods SL', country: 'Spain' }
+  ];
+
+  const dummyInvoices = [
+    // Invoice 1: Fully realized with 5 days to advance, 15 days advance to balance (total 20 days DSO)
+    {
+      id: 'inv-1',
+      invoiceNo: 'EXP-001',
+      invoiceDate: '2026-10-01',
+      consigneeId: 'c1',
+      currency: 'USD',
+      totalAmountCurrency: 20000,
+      bankPreDeterminedExchangeRate: 84.5,
+      exchangeRate: 84.5,
+      advanceReceivedCurrency: 6000,
+      advanceReceivedDate: '2026-10-06', // 5 days
+      balancePaymentAmountCurrency: 14000,
+      balancePaymentDate: '2026-10-21', // 15 days after advance
+      totalRealizedCurrency: 20000,
+      totalRealizedINR: 1690000,
+      balanceRealizationCurrency: 0,
+      realizationStatus: 'Fully Realized'
+    },
+    // Invoice 2: Partially realized (advance received, balance outstanding)
+    {
+      id: 'inv-2',
+      invoiceNo: 'EXP-002',
+      invoiceDate: '2026-10-10',
+      consigneeId: 'c2',
+      currency: 'USD',
+      totalAmountCurrency: 30000,
+      bankPreDeterminedExchangeRate: 85.0,
+      exchangeRate: 85.0,
+      advanceReceivedCurrency: 9000,
+      advanceReceivedDate: '2026-10-15', // 5 days
+      totalRealizedCurrency: 9000,
+      totalRealizedINR: 765000,
+      balanceRealizationCurrency: 21000,
+      realizationStatus: 'Partially Realized'
+    }
+  ];
+
+  const analysis = calculateReceivablesCollectionAnalysis(
+    dummyInvoices,
+    dummyCustomers,
+    new Date('2026-10-31')
+  );
+
+  assert.equal(analysis.totalActiveInvoices, 2);
+  assert.equal(analysis.totalRealizedInvoices, 1);
+  assert.equal(analysis.totalPartiallyRealizedInvoices, 1);
+  assert.equal(analysis.totalInvoicedUSD, 50000);
+  assert.equal(analysis.totalAdvanceUSD, 15000);
+  assert.equal(analysis.totalOutstandingAfterAdvanceUSD, 35000);
+  assert.equal(analysis.totalCollectedUSD, 29000);
+  assert.equal(analysis.totalOutstandingUSD, 21000);
+
+  // DSO should be 20 days (from 2026-10-01 to 2026-10-21)
+  assert.equal(analysis.averageCollectionPeriodDays, 20);
+  // Average days to advance = (5 + 5) / 2 = 5 days
+  assert.equal(analysis.averageDaysToAdvance, 5);
+  // Turnaround from advance to balance = 15 days
+  assert.equal(analysis.averageDaysAdvanceToBalance, 15);
+
+  // Consignee summaries
+  assert.equal(analysis.consigneeBreakdown.length, 2);
+  const c1Summary = analysis.consigneeBreakdown.find((c) => c.consigneeId === 'c1');
+  assert.ok(c1Summary);
+  assert.equal(c1Summary.avgCollectionDays, 20);
+  assert.equal(c1Summary.collectionHealth, 'Prompt');
+});
+
 
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { SalesInvoice } from '../../types';
 import { formatINR } from '../../utils/calculations';
+import { computeOutstandingFromAdvance } from '../../utils/collectionAnalysis';
 import {
   Calendar,
   Building,
@@ -76,6 +77,12 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
   const currentAdvINR = currentAdvUSD * currentBankRate;
   const currentBalINR = currentBalUSD * currentBankRate;
+
+  const outstandingAfterAdv = computeOutstandingFromAdvance(
+    invoice.totalAmountCurrency,
+    currentAdvUSD,
+    currentBankRate
+  );
 
   const totalSettledUSD = currentAdvUSD + currentBalUSD;
   const totalSettledINR = currentAdvINR + currentBalINR;
@@ -404,6 +411,66 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium text-xs outline-none focus:border-blue-500"
               />
             </div>
+          </div>
+
+          {/* DIRECT OUTSTANDING COMPUTATION BASED ON TOTAL INVOICE AMOUNT */}
+          <div className="p-3.5 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-blue-50/90 rounded-xl border border-blue-200/90 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-blue-950 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                Direct Outstanding Balance Calculation
+              </span>
+              <span className="text-[10px] font-semibold text-blue-800 bg-white/90 px-2 py-0.5 rounded-md border border-blue-200">
+                Total Invoice Value: {invoice.currency} {invoice.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-2.5 bg-white/90 rounded-xl border border-blue-100 flex flex-col justify-center">
+                <span className="text-[10px] font-medium text-ink-500">Advance Received</span>
+                <span className="text-sm font-bold text-blue-700">
+                  {invoice.currency} {currentAdvUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[10px] text-blue-600 mt-0.5">
+                  {outstandingAfterAdv.advancePercentage}% of total invoice
+                </span>
+              </div>
+
+              <div className="p-2.5 bg-white/90 rounded-xl border border-blue-300 sm:col-span-2 flex flex-col justify-center shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                    Direct Outstanding Balance Remaining
+                  </span>
+                  <span className="text-[10px] font-bold text-ink-600">
+                    {formatINR(outstandingAfterAdv.outstandingAfterAdvanceINR)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between mt-0.5">
+                  <span className="text-base font-black text-rose-700 tabular-nums">
+                    {invoice.currency} {outstandingAfterAdv.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                    {outstandingAfterAdv.outstandingPercentage}% outstanding
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {currentAdvUSD > 0 && currentBalUSD <= 0 && outstandingAfterAdv.outstandingAfterAdvanceCurrency > 0 && (
+              <div className="flex flex-wrap items-center justify-between pt-1 border-t border-blue-200/60 text-[11px] gap-2">
+                <span className="text-ink-600">
+                  Recording advance now? Settle full remaining balance upon document release:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleFillFullBalance}
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold rounded-lg transition text-[11px] flex items-center gap-1 shadow-xs"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Auto-fill Balance = {invoice.currency} {outstandingAfterAdv.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </button>
+              </div>
+            )}
           </div>
 
           {currentAdvUSD > 0 && (
