@@ -321,9 +321,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Figma Header Block */}
       <PageHeader
-        title="Export realization & receivables collection analysis"
-        subtitle="Manage advance payments received, direct outstanding balances, balance remittances, bank booked exchange rates, and receivables collection period (DSO) velocity."
-        breadcrumbs={['Sales', 'Settlement & Banking', 'Realization & Collection Analysis']}
+        title="Realization & Settlement"
+        subtitle="Manage advance payments received, outstanding balances, balance remittances, bank exchange rates, and collection period (DSO) velocity."
+        breadcrumbs={['Sales', 'Settlement & Banking', 'Realization & Settlement']}
         primaryAction={
           permissions.canManageSalesRealization
             ? {
@@ -344,26 +344,30 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         }
         secondaryActions={[
           {
-            label: 'Download Invoices Sheet',
+            label: 'Invoices Template',
             onClick: () => downloadActiveInvoicesSettlementTemplate(activeInvoices, customers),
-            icon: FileSpreadsheet
+            icon: FileSpreadsheet,
+            title: 'Download Excel sheet with active invoices pre-filled'
           },
           {
-            label: 'Download Blank Template',
+            label: 'Blank Template',
             onClick: () => downloadExcelTemplate('sales-realizations'),
-            icon: Download
+            icon: Download,
+            title: 'Download blank sample template'
           },
           {
-            label: 'Export Settlement CSV',
+            label: 'Export CSV',
             onClick: handleExportCSV,
-            icon: Download
+            icon: Download,
+            title: 'Export realization register as CSV'
           },
           ...(onNavigate
             ? [
                 {
                   label: 'Invoices Register',
                   onClick: () => onNavigate('invoices'),
-                  icon: ArrowRight
+                  icon: ArrowRight,
+                  title: 'Navigate to Invoices Register'
                 }
               ]
             : [])
@@ -375,7 +379,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setActiveTab('register')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'register'
                 ? 'bg-rose-600 text-white shadow-xs'
                 : 'text-ink-700 hover:bg-rose-50 hover:text-rose-800'
@@ -394,7 +398,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
           <button
             onClick={() => setActiveTab('collection-analysis')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'collection-analysis'
                 ? 'bg-rose-600 text-white shadow-xs'
                 : 'text-ink-700 hover:bg-blue-50 hover:text-blue-800'
@@ -417,7 +421,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         {activeTab === 'collection-analysis' && (
           <button
             onClick={handleExportCollectionAnalysisCSV}
-            className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs mr-1"
+            className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs mr-1 whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5 text-blue-600" />
             <span>Export Collection Analysis CSV</span>

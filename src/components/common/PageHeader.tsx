@@ -74,8 +74,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       )}
 
       {/* Main Header Row: Title on Left, Single Primary Button (+ Quieter Secondaries) on Right */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1 min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1 min-w-[280px] sm:min-w-[340px] max-w-3xl flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900 font-sans">
               {title}
@@ -87,7 +87,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             )}
           </div>
           {effectiveDescription && (
-            <p className="text-sm text-ink-500 font-normal leading-relaxed max-w-3xl">
+            <p className="text-sm text-ink-500 font-normal leading-relaxed">
               {effectiveDescription}
             </p>
           )}
@@ -95,7 +95,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
         {/* Action Group: One Confident Primary Button with Quieter Secondary Actions */}
         {(primaryAction || allSecondaryActions.length > 0) && (
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap sm:justify-end">
             {allSecondaryActions.map((act, index) => {
               const Icon = act.icon;
               return (
@@ -105,7 +105,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   onClick={act.onClick}
                   disabled={act.disabled}
                   title={act.title}
-                  className="btn-secondary-liquid inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/80 glass-surface-thin text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                  className="btn-secondary-liquid inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/80 glass-surface-thin text-ink-700 text-xs font-semibold shadow-2xs hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/20 whitespace-nowrap"
                 >
                   {Icon && <Icon className="w-3.5 h-3.5 text-ink-500" />}
                   <span>{act.label}</span>
@@ -119,7 +119,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
                 title={primaryAction.title}
-                className="btn-liquid inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30"
+                className="btn-liquid inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-rose-600/30 whitespace-nowrap"
               >
                 {primaryAction.icon && <primaryAction.icon className="w-4 h-4" />}
                 <span>{primaryAction.label}</span>
