@@ -14,6 +14,7 @@ const DashboardOverview = lazy(() => import('./components/dashboard/DashboardOve
 const PurchaseEntryForm = lazy(() => import('./components/purchase/PurchaseEntryForm').then(m => ({ default: m.PurchaseEntryForm })));
 const PurchaseList = lazy(() => import('./components/purchase/PurchaseList').then(m => ({ default: m.PurchaseList })));
 const PurchaseReturnsView = lazy(() => import('./components/purchase/PurchaseReturnsView').then(m => ({ default: m.PurchaseReturnsView })));
+const PurchasePaymentView = lazy(() => import('./components/purchase/PurchasePaymentView').then(m => ({ default: m.PurchasePaymentView })));
 const BatchExpenseView = lazy(() => import('./components/purchase/BatchExpenseView').then(m => ({ default: m.BatchExpenseView })));
 const SupplierLedgerView = lazy(() => import('./components/payments/SupplierLedgerView').then(m => ({ default: m.SupplierLedgerView })));
 const OutstandingReport = lazy(() => import('./components/payments/OutstandingReport').then(m => ({ default: m.OutstandingReport })));
@@ -73,6 +74,7 @@ const MainLayout: React.FC = () => {
   const [activeModule, setActiveModule] = useState<ActiveModuleType>('home');
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [returnPurchaseId, setReturnPurchaseId] = useState<string | undefined>();
+  const [paymentPurchaseId, setPaymentPurchaseId] = useState<string | undefined>();
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
   const [inventoryTab, setInventoryTab] = useState<InventoryNavTab>('inv-dashboard');
@@ -341,6 +343,10 @@ const MainLayout: React.FC = () => {
                     setReturnPurchaseId(pId);
                     setActiveTab('purchase-returns');
                   }}
+                  onSelectForPayment={(pId) => {
+                    setPaymentPurchaseId(pId);
+                    setActiveTab('purchase-payments');
+                  }}
                 />
               )}
               {activeTab === 'purchase-returns' && (
@@ -348,6 +354,13 @@ const MainLayout: React.FC = () => {
                   onNavigate={setActiveTab}
                   preselectedPurchaseId={returnPurchaseId}
                   onClearPreselectedPurchase={() => setReturnPurchaseId(undefined)}
+                />
+              )}
+              {activeTab === 'purchase-payments' && (
+                <PurchasePaymentView
+                  onNavigate={(tab) => setActiveTab(tab)}
+                  preselectedPurchaseId={paymentPurchaseId}
+                  onClearPreselectedPurchase={() => setPaymentPurchaseId(undefined)}
                 />
               )}
               {activeTab === 'batch-expenses' && <BatchExpenseView />}

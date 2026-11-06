@@ -39,7 +39,8 @@ import {
   Users,
   Anchor,
   Fish,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 
 export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales' | 'inventory';
@@ -101,6 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     {
       title: 'ACCOUNTING & LEDGERS',
       items: [
+        { id: 'purchase-payments', label: 'Purchase Payments (Disbursals)', icon: CreditCard, desc: 'Record supplier payments, settlement vouchers & history', show: permissions.canManagePayments },
         { id: 'payments', label: 'Supplier Ledger & Payments', icon: BookOpen, desc: 'Running debits/credits & printable A4 statement' },
         { id: 'outstanding', label: 'Outstanding & Ageing (180+d)', icon: Clock, desc: 'Bucket analysis & overdue flags' }
       ]

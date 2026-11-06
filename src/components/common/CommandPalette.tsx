@@ -27,6 +27,7 @@ import {
   Users,
   Anchor,
   Fish,
+  CreditCard,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
@@ -190,6 +191,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       module: 'purchase',
       tab: 'batch-expenses',
       icon: Layers,
+      category: 'Purchase Module'
+    },
+    {
+      id: 'pur-purchase-payments',
+      title: 'Purchase Payments & Supplier Disbursals',
+      subtitle: 'Record post-procurement supplier payments, print vouchers & history',
+      module: 'purchase',
+      tab: 'purchase-payments',
+      icon: CreditCard,
       category: 'Purchase Module'
     },
     {

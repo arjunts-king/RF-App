@@ -1518,7 +1518,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    const paymentNo = `PAY-${String(payments.length + 1).padStart(5, '0')}`;
+    const existingNums = payments.map((p) => {
+      const match = p.paymentNo?.match(/PAY-(\d+)/i);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    const nextNum = existingNums.length > 0 ? Math.max(0, ...existingNums) + 1 : 1;
+    const paymentNo = `PAY-${String(nextNum).padStart(5, '0')}`;
     const newPayment: PaymentRecord = {
       ...paymentData,
       id: `pay-${Date.now()}`,

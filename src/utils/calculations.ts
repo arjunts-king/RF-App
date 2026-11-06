@@ -390,6 +390,39 @@ export function formatINR(val: number | undefined | null): string {
 }
 
 /**
+ * Format Indian Currency with intelligent Crore (Cr) and Lakh (L) compaction for dashboard boxes
+ * e.g. 100,00,00,000 -> "₹100.00 Cr", 5,40,00,000 -> "₹5.40 Cr", 45,00,000 -> "₹45.00 L"
+ */
+export function formatCroreINR(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) return '₹0.00';
+  const num = Number(val);
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+
+  if (abs >= 10000000) {
+    // 1 Crore and above (up to 100+ Crores)
+    const cr = abs / 10000000;
+    return `${sign}₹${cr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+  }
+  if (abs >= 100000) {
+    // 1 Lakh and above
+    const lk = abs / 100000;
+    return `${sign}₹${lk.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L`;
+  }
+  return formatINR(val);
+}
+
+/**
+ * Returns both the formatted string and its short smart representation for high-value dashboard metrics
+ */
+export function formatDashboardINR(val: number | undefined | null): { full: string; compact: string; isCrore: boolean } {
+  const full = formatINR(val);
+  const compact = formatCroreINR(val);
+  const isCrore = Boolean(val && Math.abs(val) >= 10000000);
+  return { full, compact, isCrore };
+}
+
+/**
  * Format numeric weight in kilograms
  */
 export function formatKg(val: number | undefined | null): string {

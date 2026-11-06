@@ -23,15 +23,17 @@ import {
   RotateCcw,
   Sparkles,
   PlusCircle,
+  CreditCard,
   X
 } from 'lucide-react';
 
 interface PurchaseListProps {
   onNavigate?: (tab: any) => void;
   onSelectForReturn?: (purchaseId: string) => void;
+  onSelectForPayment?: (purchaseId: string) => void;
 }
 
-export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelectForReturn }) => {
+export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelectForReturn, onSelectForPayment }) => {
   const {
     purchases,
     purchaseReturns,
@@ -844,6 +846,23 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                               title="Record purchase return / debit note against this purchase"
                             >
                               <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Record Payment Action */}
+                          {!p.isVoided && p.balancePayable > 0 && permissions.canManagePayments && (
+                            <button
+                              onClick={() => {
+                                if (onSelectForPayment) {
+                                  onSelectForPayment(p.id);
+                                } else if (onNavigate) {
+                                  onNavigate('purchase-payments');
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+                              title="Record supplier payment disbursal for this lot"
+                            >
+                              <CreditCard className="w-4 h-4" />
                             </button>
                           )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { formatINR, formatKg, formatCroreINR } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import { NavTab } from '../common/Sidebar';
@@ -317,188 +317,322 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         )}
       </div>
 
-      {/* 3. BENTO-STYLE GRID OF ROUNDED KPI CARDS WITH CAPTIONS & REPORT LINKS (Liquid Glass Polish) */}
+      {/* 3. BENTO-STYLE GRID OF ROUNDED KPI CARDS WITH CAPTIONS & REPORT LINKS (Liquid Glass Polish, 100-Crore Aligned) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Total Volume */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Total Volume</span>
-              <span className="text-2xl font-black text-ink-900 mt-1 block font-mono">{formatKg(totalWeight)}</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Weighed landings across all centres</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Total Volume">
+                Total Volume
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <Scale className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Scale className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className={`font-black font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full ${
+                    formatKg(totalWeight).length > 18 ? 'text-base sm:text-lg' : formatKg(totalWeight).length > 14 ? 'text-lg sm:text-xl' : formatKg(totalWeight).length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl'
+                  } text-ink-900`}
+                  title={formatKg(totalWeight)}
+                >
+                  {formatKg(totalWeight)}
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Weighed landings across all centres">
+                Weighed landings across all centres
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('reports')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View daily landing report</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View daily landing report</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 2: Raw Purchase Value */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Raw Purchase Value</span>
-              <span className="text-2xl font-black text-ink-900 mt-1 block font-mono">{formatINR(totalPurchaseValue)}</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Pre-expense base procurement cost</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Raw Purchase Value">
+                Raw Purchase Value
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <DollarSign className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className={`font-black font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full ${
+                    formatINR(totalPurchaseValue).length > 18 ? 'text-base sm:text-lg' : formatINR(totalPurchaseValue).length > 14 ? 'text-lg sm:text-xl' : formatINR(totalPurchaseValue).length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl'
+                  } text-ink-900`}
+                  title={formatINR(totalPurchaseValue)}
+                >
+                  {formatINR(totalPurchaseValue)}
+                </span>
+                {totalPurchaseValue >= 10000000 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                    {formatCroreINR(totalPurchaseValue)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Pre-expense base procurement cost">
+                Pre-expense base procurement cost
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('purchases')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View purchase transactions</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View purchase transactions</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 3: Final Landed Cost */}
-        <div className="glass-surface-blush card-liquid-hover p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800 block">Final Landed Cost</span>
-              <span className="text-2xl font-black text-rose-700 mt-1 block font-mono">{formatINR(totalCost)}</span>
-              <p className="text-[11px] text-rose-900/70 mt-0.5">Includes base cost minus damage + all expenses</p>
+        <div className="glass-surface-blush card-liquid-hover p-4 sm:p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-800 block truncate min-w-0" title="Final Landed Cost">
+                Final Landed Cost
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <TrendingUp className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <TrendingUp className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className={`font-black font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full ${
+                    formatINR(totalCost).length > 18 ? 'text-base sm:text-lg' : formatINR(totalCost).length > 14 ? 'text-lg sm:text-xl' : formatINR(totalCost).length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl'
+                  } text-rose-700`}
+                  title={formatINR(totalCost)}
+                >
+                  {formatINR(totalCost)}
+                </span>
+                {totalCost >= 10000000 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
+                    {formatCroreINR(totalCost)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-rose-900/70 leading-snug line-clamp-1" title="Includes base cost minus damage + all expenses">
+                Includes base cost minus damage + all expenses
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-rose-100">
             <button
               onClick={() => onNavigateTab && onNavigateTab('reports')}
-              className="text-xs font-bold text-rose-800 hover:text-rose-950 inline-flex items-center gap-1 group"
+              className="text-xs font-bold text-rose-800 hover:text-rose-950 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View consolidated monthly audit</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View consolidated monthly audit</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 4: Direct Expenses */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Direct Expenses</span>
-              <span className="text-2xl font-black text-ink-900 mt-1 block font-mono">{formatINR(totalExpenses)}</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Ice, transport, dalali &amp; harbour labour</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Direct Expenses">
+                Direct Expenses
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <Layers className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className={`font-black font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full ${
+                    formatINR(totalExpenses).length > 18 ? 'text-base sm:text-lg' : formatINR(totalExpenses).length > 14 ? 'text-lg sm:text-xl' : formatINR(totalExpenses).length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl'
+                  } text-ink-900`}
+                  title={formatINR(totalExpenses)}
+                >
+                  {formatINR(totalExpenses)}
+                </span>
+                {totalExpenses >= 10000000 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                    {formatCroreINR(totalExpenses)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Ice, transport, dalali & harbour labour">
+                Ice, transport, dalali &amp; harbour labour
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('batch-expenses')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View shared batch expense pools</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View shared batch expense pools</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 5: Average Buy Rate */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Average Buy Rate</span>
-              <span className="text-2xl font-black text-ink-900 mt-1 block font-mono">₹{avgRate.toFixed(2)} / Kg</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Volume-weighted raw buy rate</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Average Buy Rate">
+                Average Buy Rate
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <BarChart3 className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className="text-xl sm:text-2xl font-black text-ink-900 font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full"
+                  title={`₹${avgRate.toFixed(2)} / Kg`}
+                >
+                  ₹{avgRate.toFixed(2)} <span className="text-sm font-semibold text-ink-500">/ Kg</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Volume-weighted raw buy rate">
+                Volume-weighted raw buy rate
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('reports')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View species &amp; grade price variance</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View species &amp; grade price variance</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 6: Effective Landed Rate */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Effective Landed Rate</span>
-              <span className="text-2xl font-black text-rose-900 mt-1 block font-mono">₹{effectiveCostPerKg.toFixed(2)} / Kg</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">True landed unit cost per raw Kg</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Effective Landed Rate">
+                Effective Landed Rate
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <TrendingUp className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className="text-xl sm:text-2xl font-black text-rose-900 font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full"
+                  title={`₹${effectiveCostPerKg.toFixed(2)} / Kg`}
+                >
+                  ₹{effectiveCostPerKg.toFixed(2)} <span className="text-sm font-semibold text-ink-500">/ Kg</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="True landed unit cost per raw Kg">
+                True landed unit cost per raw Kg
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('reports')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View cost matrix analysis</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View cost matrix analysis</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 7: Outstanding Payables */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Outstanding Payables</span>
-              <span className="text-2xl font-black text-rose-700 mt-1 block font-mono">{formatINR(totalOutstanding)}</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Unsettled dues to suppliers &amp; boats</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Outstanding Payables">
+                Outstanding Payables
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className={`font-black font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full ${
+                    formatINR(totalOutstanding).length > 18 ? 'text-base sm:text-lg' : formatINR(totalOutstanding).length > 14 ? 'text-lg sm:text-xl' : formatINR(totalOutstanding).length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl'
+                  } text-rose-700`}
+                  title={formatINR(totalOutstanding)}
+                >
+                  {formatINR(totalOutstanding)}
+                </span>
+                {totalOutstanding >= 10000000 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
+                    {formatCroreINR(totalOutstanding)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Unsettled dues to suppliers & boats">
+                Unsettled dues to suppliers &amp; boats
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('outstanding')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>View ageing buckets (180+d)</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">View ageing buckets (180+d)</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>
 
         {/* KPI 8: Active Suppliers */}
-        <div className="glass-surface-regular card-liquid-hover p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">Active Suppliers</span>
-              <span className="text-2xl font-black text-ink-900 mt-1 block font-mono">{activeSupplierCount}</span>
-              <p className="text-[11px] text-ink-500 mt-0.5">Supplying boats, agents &amp; farms</p>
+        <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-ink-500 block truncate min-w-0" title="Active Suppliers">
+                Active Suppliers
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <Users className="w-4 h-4" />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+                <span
+                  className="text-xl sm:text-2xl font-black text-ink-900 font-mono tracking-tight whitespace-nowrap tabular-nums block truncate max-w-full"
+                  title={String(activeSupplierCount)}
+                >
+                  {activeSupplierCount}
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Supplying boats, agents & farms">
+                Supplying boats, agents &amp; farms
+              </p>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-gray-50">
             <button
               onClick={() => onNavigateTab && onNavigateTab('payments')}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group"
+              className="text-xs font-semibold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 group truncate max-w-full"
             >
-              <span>Open supplier ledger statement</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className="truncate">Open supplier ledger statement</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         </div>

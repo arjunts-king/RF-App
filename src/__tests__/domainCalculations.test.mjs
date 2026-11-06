@@ -12,7 +12,9 @@ import {
   getIndianFinancialYear,
   calculateDueDate,
   derivePaymentStatus,
-  getAgeingBucket
+  getAgeingBucket,
+  formatCroreINR,
+  formatDashboardINR
 } from '../utils/calculations.ts';
 
 import {
@@ -1349,6 +1351,102 @@ test('Excel Import Normalization: Flexible recognition of Expense Batch No and Y
   const resolvedExpBatch = legacyExpBatch || legacyBatchNo;
   assert.equal(resolvedExpBatch, 'BATCH-LEGACY-01');
 });
+
+// ============================================================================
+// SUITE 16: High-Value 100-Crore Dashboard Alignment & Purchase Payments
+// ============================================================================
+
+test('formatCroreINR and formatDashboardINR for high-magnitude amounts up to 100 Crores', () => {
+  // 100 Crores (1,00,00,00,000)
+  const hundredCrores = 1000000000;
+  assert.equal(formatCroreINR(hundredCrores), '₹100.00 Cr');
+  const d100 = formatDashboardINR(hundredCrores);
+  assert.equal(d100.compact, '₹100.00 Cr');
+  assert.equal(d100.isCrore, true);
+
+  // 10 Crores (10,00,00,000)
+  assert.equal(formatCroreINR(100000000), '₹10.00 Cr');
+
+  // 1.5 Crores (1,50,00,000)
+  assert.equal(formatCroreINR(15000000), '₹1.50 Cr');
+
+  // 45 Lakhs (45,00,000)
+  assert.equal(formatCroreINR(4500000), '₹45.00 L');
+
+  // 2.5 Lakhs (2,50,000)
+  assert.equal(formatCroreINR(250000), '₹2.50 L');
+
+  // Edge cases and sub-lakh values
+  assert.equal(formatCroreINR(50000).replace(/\s/g, ''), '₹50,000.00'.replace(/\s/g, ''));
+  assert.equal(formatCroreINR(0).replace(/\s/g, ''), '₹0.00'.replace(/\s/g, ''));
+  assert.equal(formatCroreINR(null).replace(/\s/g, ''), '₹0.00'.replace(/\s/g, ''));
+  assert.equal(formatCroreINR(undefined).replace(/\s/g, ''), '₹0.00'.replace(/\s/g, ''));
+
+  // Negative 100 Crores
+  assert.equal(formatCroreINR(-1000000000), '-₹100.00 Cr');
+});
+
+test('Purchase post-procurement payment settlement & balance deduction logic', () => {
+  // Mock purchases
+  const purchases = [
+    {
+      id: 'pur-1',
+      purchaseId: 'PUR-00001',
+      supplierId: 'sup-1',
+      totalCost: 150000,
+      amountPaid: 50000,
+      balancePayable: 100000,
+      paymentStatus: 'Partially Paid'
+    },
+    {
+      id: 'pur-2',
+      purchaseId: 'PUR-00002',
+      supplierId: 'sup-1',
+      totalCost: 200000,
+      amountPaid: 0,
+      balancePayable: 200000,
+      paymentStatus: 'Unpaid'
+    }
+  ];
+
+  // Disburse 100,000 targeting specific purchase 'pur-1'
+  const targetedPaymentAmount = 100000;
+  const targetId = 'pur-1';
+
+  const updatedTargeted = purchases.map((p) => {
+    if (p.id !== targetId) return p;
+    const updatedPaid = p.amountPaid + targetedPaymentAmount;
+    const updatedBal = Math.max(0, p.totalCost - updatedPaid);
+    const updatedStatus = derivePaymentStatus(p.totalCost, updatedPaid);
+    return { ...p, amountPaid: updatedPaid, balancePayable: updatedBal, paymentStatus: updatedStatus };
+  });
+
+  const settledPur1 = updatedTargeted.find((p) => p.id === 'pur-1');
+  assert.equal(settledPur1.amountPaid, 150000);
+  assert.equal(settledPur1.balancePayable, 0);
+  assert.equal(settledPur1.paymentStatus, 'Fully Paid');
+
+  // Disburse 150,000 via FIFO across all due purchases
+  let remaining = 150000;
+  const updatedFifo = purchases.map((p) => {
+    if (remaining <= 0 || p.balancePayable <= 0) return p;
+    const alloc = Math.min(remaining, p.balancePayable);
+    const updatedPaid = p.amountPaid + alloc;
+    const updatedBal = Math.max(0, p.totalCost - updatedPaid);
+    const updatedStatus = derivePaymentStatus(p.totalCost, updatedPaid);
+    remaining -= alloc;
+    return { ...p, amountPaid: updatedPaid, balancePayable: updatedBal, paymentStatus: updatedStatus };
+  });
+
+  assert.equal(updatedFifo[0].amountPaid, 150000);
+  assert.equal(updatedFifo[0].balancePayable, 0);
+  assert.equal(updatedFifo[0].paymentStatus, 'Fully Paid');
+
+  assert.equal(updatedFifo[1].amountPaid, 50000);
+  assert.equal(updatedFifo[1].balancePayable, 150000);
+  assert.equal(updatedFifo[1].paymentStatus, 'Partially Paid');
+});
+
 
 
 

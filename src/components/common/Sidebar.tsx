@@ -15,7 +15,8 @@ import {
   UserPlus,
   Settings,
   FileSpreadsheet,
-  RotateCcw
+  RotateCcw,
+  CreditCard
 } from 'lucide-react';
 
 export type NavTab =
@@ -23,6 +24,7 @@ export type NavTab =
   | 'purchase-entry'
   | 'purchases'
   | 'purchase-returns'
+  | 'purchase-payments'
   | 'batch-expenses'
   | 'payments'
   | 'outstanding'
@@ -94,8 +96,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       badge: 'Ledgers',
       items: [
         {
+          id: 'purchase-payments',
+          label: 'Purchase Payments (Disbursals)',
+          icon: CreditCard,
+          badge: 'Disburse',
+          desc: 'Record supplier payments, settlement vouchers & history',
+          show: permissions.canManagePayments
+        },
+        {
           id: 'payments',
-          label: 'Supplier Ledger & Payments',
+          label: 'Supplier Ledger & Statement',
           icon: BookOpen,
           desc: 'Running debits/credits & printable A4 statement'
         },
