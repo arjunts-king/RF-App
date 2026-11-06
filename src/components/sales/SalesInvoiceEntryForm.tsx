@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency } from '../../types';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
@@ -47,10 +47,8 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const currentYear = new Date().getFullYear();
 
   // --- Section 1: Exporter & Document Identification ---
-  const [exporterName, setExporterName] = useState(businessSettings.businessName || 'ABC Pvt. Ltd.');
-  const [exporterAddress, setExporterAddress] = useState(
-    businessSettings.address || 'Ambattur Industrial Estate, Ambattur,\nChennai, Tamil Nadu - 600094'
-  );
+  const [exporterName, setExporterName] = useState(businessSettings.businessName || '');
+  const [exporterAddress, setExporterAddress] = useState(businessSettings.address || '');
   const [invoiceNo, setInvoiceNo] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(today);
   const [exporterRef, setExporterRef] = useState('');
@@ -63,23 +61,23 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [consigneeName, setConsigneeName] = useState('');
   const [consigneeAddress, setConsigneeAddress] = useState('');
   const [buyerId, setBuyerId] = useState('');
-  const [buyerName, setBuyerName] = useState('N.A.');
+  const [buyerName, setBuyerName] = useState('');
   const [buyerAddress, setBuyerAddress] = useState('');
 
   // --- Section 3: Shipping, Logistics & Valuation ---
   const [countryOfOrigin, setCountryOfOrigin] = useState('INDIA');
   const [countryOfDestination, setCountryOfDestination] = useState('');
-  const [preCarriageBy, setPreCarriageBy] = useState('N.A.');
-  const [placeOfReceipt, setPlaceOfReceipt] = useState('N.A.');
-  const [termsOfPayment, setTermsOfPayment] = useState('100% TT AFTER MAILING THE ORIGINAL DOCUMENTS');
-  const [priceTerms, setPriceTerms] = useState('CFR LAT KRABANG');
-  const [vesselFlightNo, setVesselFlightNo] = useState('MOGRAL 119W');
+  const [preCarriageBy, setPreCarriageBy] = useState('');
+  const [placeOfReceipt, setPlaceOfReceipt] = useState('');
+  const [termsOfPayment, setTermsOfPayment] = useState('');
+  const [priceTerms, setPriceTerms] = useState('');
+  const [vesselFlightNo, setVesselFlightNo] = useState('');
   const [portOfLoadingId, setPortOfLoadingId] = useState('');
-  const [portOfLoading, setPortOfLoading] = useState('COCHIN, INDIA');
+  const [portOfLoading, setPortOfLoading] = useState('');
   const [portOfDischargeId, setPortOfDischargeId] = useState('');
-  const [portOfDischarge, setPortOfDischarge] = useState('LAEM CHABANG');
+  const [portOfDischarge, setPortOfDischarge] = useState('');
   const [finalDestinationId, setFinalDestinationId] = useState('');
-  const [finalDestination, setFinalDestination] = useState('LAT KRABANG, THAILAND');
+  const [finalDestination, setFinalDestination] = useState('');
   const [currency, setCurrency] = useState<SalesCurrency>('USD');
   const [exchangeRate, setExchangeRate] = useState('84.50');
   const [advanceReceived, setAdvanceReceived] = useState('');
@@ -87,15 +85,13 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [remarks, setRemarks] = useState('');
 
   // --- Section 4: Cargo & Packaging Summary ---
-  const [commodityDescription, setCommodityDescription] = useState(
-    '2600 CARTONS OF FROZEN INDIAN MACKEREL - A GRADE & B GRADE- DS'
-  );
-  const [packingDescription, setPackingDescription] = useState('1X10KG');
-  const [scientificName, setScientificName] = useState('RASTRELLIGER KANAGURTA');
-  const [shippingMarks, setShippingMarks] = useState('MERIT D.S');
-  const [containerNo, setContainerNo] = useState('ONEU90399086');
-  const [sealNo, setSealNo] = useState('IN567892');
-  const [grossWeightKg, setGrossWeightKg] = useState<number | ''>(27950);
+  const [commodityDescription, setCommodityDescription] = useState('');
+  const [packingDescription, setPackingDescription] = useState('');
+  const [scientificName, setScientificName] = useState('');
+  const [shippingMarks, setShippingMarks] = useState('');
+  const [containerNo, setContainerNo] = useState('');
+  const [sealNo, setSealNo] = useState('');
+  const [grossWeightKg, setGrossWeightKg] = useState<number | ''>('');
 
   // --- Section 5: Line Items ---
   const [lines, setLines] = useState<LineItemDraft[]>([]);
@@ -103,15 +99,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   // --- Section 6: Factory, Statutory Declaration & Signatory ---
   const [amountInWordsCustom, setAmountInWordsCustom] = useState('');
   const [factoryNameAndAddress, setFactoryNameAndAddress] = useState(
-    `${businessSettings.businessName || 'ABC Pvt. Ltd.'}, ${businessSettings.address || 'Ambattur Industrial Estate, Ambattur, Chennai, Tamil Nadu - 600094'}`
+    businessSettings.businessName && businessSettings.address ? `${businessSettings.businessName}, ${businessSettings.address}` : ''
   );
-  const [factoryApprovalNumber, setFactoryApprovalNumber] = useState('9085');
+  const [factoryApprovalNumber, setFactoryApprovalNumber] = useState('');
   const [billOfLadingNo, setBillOfLadingNo] = useState('');
   const [declarationText, setDeclarationText] = useState(
     'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct'
   );
-  const [signatoryCompany, setSignatoryCompany] = useState(`For ${businessSettings.businessName || 'RELISH FOODS'}`);
-  const [signatoryDesignation, setSignatoryDesignation] = useState('Partner');
+  const [signatoryCompany, setSignatoryCompany] = useState(
+    businessSettings.businessName ? `For ${businessSettings.businessName}` : ''
+  );
+  const [signatoryDesignation, setSignatoryDesignation] = useState('');
   const [signatureDate, setSignatureDate] = useState(today);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,70 +130,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     }
     if (businessSettings.address) {
       setExporterAddress(businessSettings.address);
-      setFactoryNameAndAddress(`${businessSettings.businessName || 'ABC Pvt. Ltd.'}, ${businessSettings.address}`);
-    }
-
-    // Pre-select Indian port of loading if available
-    const indianPort = ports.find((p) => p.country.toLowerCase() === 'india' && p.active) || ports[0];
-    if (indianPort && !portOfLoadingId) {
-      setPortOfLoadingId(indianPort.id);
-      setPortOfLoading(`${indianPort.name.toUpperCase()}, ${indianPort.country.toUpperCase()}`);
-    }
-
-    // Pre-select foreign port
-    const foreignPort = ports.find((p) => p.country.toLowerCase() !== 'india' && p.active) || ports[1] || ports[0];
-    if (foreignPort && !portOfDischargeId) {
-      setPortOfDischargeId(foreignPort.id);
-      setPortOfDischarge(foreignPort.name.toUpperCase());
-      setFinalDestinationId(foreignPort.id);
-      setFinalDestination(`${foreignPort.name.toUpperCase()}, ${foreignPort.country.toUpperCase()}`);
-      setCountryOfDestination(foreignPort.country.toUpperCase());
-    }
-
-    // Pre-populate sample lines if none
-    if (lines.length === 0 && species.length > 0) {
-      const defaultSpecies = species.find((s) => s.active) || species[0];
-      setLines([
-        {
-          id: `line-${Date.now()}-1`,
-          speciesId: defaultSpecies?.id || '',
-          hsCode: defaultSpecies?.hsCode || '03061790',
-          sizeId: sizes[0]?.id || '',
-          countId: counts[0]?.id || '',
-          productDescription: 'FROZEN INDIAN MACKEREL – A GRADE',
-          gradeSize: '6/8',
-          cartonsCount: 162,
-          weightKg: 1620,
-          ratePerKg: 2.13,
-          fobValueCurrency: ''
-        },
-        {
-          id: `line-${Date.now()}-2`,
-          speciesId: defaultSpecies?.id || '',
-          hsCode: defaultSpecies?.hsCode || '03061790',
-          sizeId: sizes[0]?.id || '',
-          countId: counts[0]?.id || '',
-          productDescription: 'FROZEN INDIAN MACKEREL – A GRADE',
-          gradeSize: '8/10',
-          cartonsCount: 1948,
-          weightKg: 19480,
-          ratePerKg: 1.93,
-          fobValueCurrency: ''
-        },
-        {
-          id: `line-${Date.now()}-3`,
-          speciesId: defaultSpecies?.id || '',
-          hsCode: defaultSpecies?.hsCode || '03061790',
-          sizeId: sizes[0]?.id || '',
-          countId: counts[0]?.id || '',
-          productDescription: 'FROZEN INDIAN MACKEREL – B GRADE- DS',
-          gradeSize: '8/10',
-          cartonsCount: 490,
-          weightKg: 4900,
-          ratePerKg: 1.53,
-          fobValueCurrency: ''
-        }
-      ]);
+      setFactoryNameAndAddress(businessSettings.businessName && businessSettings.address ? `${businessSettings.businessName}, ${businessSettings.address}` : '');
     }
   }, [salesInvoices.length, currentYear, businessSettings]);
 
@@ -1010,7 +945,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 </span>
                 <span className="font-bold text-rose-700">
                   Direct Outstanding: {currency} {Math.max(0, totalAmountCurrency - (parseFloat(advanceReceived) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  {' '}({formatINR(Math.max(0, totalAmountCurrency - (parseFloat(advanceReceived) || 0)) * currentRate)})
                 </span>
               </div>
             )}
@@ -1510,8 +1444,8 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             value: `${currency} ${totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           },
           {
-            label: 'Est. INR Realization',
-            value: formatINR(estimatedAmountINR),
+            label: 'Forward Booking',
+            value: `₹${exchangeRate} / ${currency}`,
             highlight: true
           }
         ]}

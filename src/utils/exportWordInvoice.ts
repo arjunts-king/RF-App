@@ -136,7 +136,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   `).join('');
 
   // Buyer
-  const buyerName = inv.buyerName || 'N.A.';
+  const buyerName = inv.buyerName || '';
   const buyerAddress = inv.buyerAddress || '';
   const buyerAddrLines = buyerAddress.split('\n').filter(Boolean);
   const buyerAddrParagraphs = buyerAddrLines.map(line => `
@@ -150,15 +150,15 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const totalWeight = inv.totalWeightKg !== undefined ? inv.totalWeightKg : lineItems.reduce((acc, l) => acc + (l.weightKg || 0), 0);
   const totalAmount = inv.totalAmountCurrency !== undefined ? inv.totalAmountCurrency : lineItems.reduce((acc, l) => acc + (l.amountCurrency || 0), 0);
   const netWeight = inv.netWeightKg !== undefined ? inv.netWeightKg : totalWeight;
-  const grossWeight = inv.grossWeightKg !== undefined ? inv.grossWeightKg : (netWeight ? netWeight * 1.075 : 0);
+  const grossWeight = inv.grossWeightKg !== undefined ? inv.grossWeightKg : '';
 
-  const priceTermsPrefix = inv.priceTerms ? (inv.priceTerms.split(' ')[0].toUpperCase() + ' ') : 'CFR ';
+  const priceTermsPrefix = inv.priceTerms ? (inv.priceTerms.split(' ')[0].toUpperCase() + ' ') : '';
   const currencyName = inv.currency === 'EUR' ? 'EUROS' : (inv.currency === 'GBP' ? 'BRITISH POUNDS' : 'U.S. DOLLARS');
-  const defaultAmountWords = `${priceTermsPrefix}${currencyName}: ${numberToWordsInternational(totalAmount)}`;
+  const defaultAmountWords = totalAmount > 0 ? `${priceTermsPrefix}${currencyName}: ${numberToWordsInternational(totalAmount)}` : '';
   const finalAmountWords = inv.amountInWords || defaultAmountWords;
 
-  const signatoryCompany = inv.signatoryCompany || (`For ${settings?.businessName || 'RELISH FOODS'}`);
-  const signatoryDesignation = inv.signatoryDesignation || 'Partner';
+  const signatoryCompany = inv.signatoryCompany || (settings?.businessName ? `For ${settings.businessName}` : '');
+  const signatoryDesignation = inv.signatoryDesignation || '';
   const signatureDate = inv.signatureDate || inv.invoiceDate;
 
   return `
@@ -294,7 +294,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.countryOfOrigin || 'INDIA')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.countryOfOrigin || '')}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -320,7 +320,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.preCarriageBy || 'N.A.')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.preCarriageBy || '')}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -331,7 +331,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.placeOfReceipt || 'N.A.')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.placeOfReceipt || '')}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -367,7 +367,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.portOfLoading || 'COCHIN, INDIA')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.portOfLoading || '')}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -453,11 +453,11 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:tcPr><w:tcW w:w="5505" w:type="dxa"/><w:gridSpan w:val="5"/></w:tcPr>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>COMMODITY: ${escapeXml(inv.commodityDescription || (totalCartons ? totalCartons + ' CARTONS OF SEAFOOD PRODUCTS' : ''))}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>COMMODITY: ${escapeXml(inv.commodityDescription || '')}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>PACKING: ${escapeXml(inv.packingDescription || '1X10KG')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>PACKING: ${escapeXml(inv.packingDescription || '')}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
@@ -479,7 +479,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:tcPr><w:tcW w:w="1060" w:type="dxa"/><w:gridSpan w:val="2"/></w:tcPr>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${inv.priceTerms ? escapeXml(inv.priceTerms.split(' ')[0]) : 'CFR'}/${inv.currency || 'USD'}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${inv.priceTerms ? escapeXml(inv.priceTerms.split(' ')[0]) : ''}${inv.priceTerms && inv.currency ? '/' : ''}${inv.currency || ''}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
@@ -490,7 +490,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:tcPr><w:tcW w:w="1337" w:type="dxa"/></w:tcPr>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${inv.currency || 'USD'}/${inv.priceTerms ? escapeXml(inv.priceTerms.split(' ')[0]) : 'CFR'}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${inv.currency || ''}${inv.priceTerms && inv.currency ? '/' : ''}${inv.priceTerms ? escapeXml(inv.priceTerms.split(' ')[0]) : ''}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
@@ -590,8 +590,8 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">Net weight: Kgs    :  ${netWeight.toFixed(3)}</w:t></w:r>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">                                              Gross weight Kgs :  ${grossWeight ? grossWeight.toFixed(3) : ''}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">Net weight: Kgs    :  ${netWeight ? (typeof netWeight === 'number' ? netWeight.toFixed(3) : netWeight) : ''}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">                                              Gross weight Kgs :  ${grossWeight ? (typeof grossWeight === 'number' ? grossWeight.toFixed(3) : grossWeight) : ''}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>

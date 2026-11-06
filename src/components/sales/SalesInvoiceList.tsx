@@ -209,11 +209,12 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
         FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
-        EstimatedINR: inv.estimatedAmountINR,
+        FOBValueINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0))
+          ? (inv.totalFobValueINR || inv.totalRealizedINR)
+          : '',
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
-        RealizedINR: inv.totalRealizedINR,
+        RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',
         BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
         AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
         AdvanceReceivedDate: inv.advanceReceivedDate || '',
@@ -236,8 +237,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
       { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
       { key: 'FOBValueUSD', label: 'FOB Value (USD)' },
-      { key: 'FOBValueINR', label: 'FOB Value (INR)' },
-      { key: 'EstimatedINR', label: 'Estimated INR Value' },
+      { key: 'FOBValueINR', label: 'Realized FOB (INR)' },
       { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
       { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
       { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
@@ -297,11 +297,12 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
         FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
-        EstimatedINR: inv.estimatedAmountINR,
+        FOBValueINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0))
+          ? (inv.totalFobValueINR || inv.totalRealizedINR)
+          : '',
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
-        RealizedINR: inv.totalRealizedINR,
+        RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',
         BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
         AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
         AdvanceReceivedDate: inv.advanceReceivedDate || '',
@@ -324,8 +325,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
       { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
       { key: 'FOBValueUSD', label: 'Total FOB Value (USD)' },
-      { key: 'FOBValueINR', label: 'Total FOB Value (INR)' },
-      { key: 'EstimatedINR', label: 'Estimated INR' },
+      { key: 'FOBValueINR', label: 'Realized FOB (INR)' },
       { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
       { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
       { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
@@ -586,9 +586,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                         <div className="font-black text-rose-950 tabular-nums">
                           {inv.currency} {inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="text-[10px] text-ink-500 tabular-nums">
-                          Est: ₹{inv.estimatedAmountINR.toLocaleString()}
-                        </div>
+                        {(inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? (
+                          <div className="text-[10px] text-emerald-700 font-bold tabular-nums">
+                            Realized: ₹{inv.totalRealizedINR.toLocaleString()}
+                          </div>
+                        ) : null}
                       </td>
 
                       {/* Realization Status */}
@@ -608,6 +610,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                       <td className="py-3 px-3 text-right">
                         <div className="text-emerald-700 font-bold tabular-nums">
                           {inv.currency} {inv.totalRealizedCurrency.toLocaleString()}
+                          {(inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) && (
+                            <span className="text-[10px] text-emerald-800 ml-1 block font-mono">
+                              ({formatINR(inv.totalRealizedINR)})
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] text-ink-500 tabular-nums">
                           Bal: {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}

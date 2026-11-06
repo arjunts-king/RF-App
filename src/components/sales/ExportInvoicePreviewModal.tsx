@@ -28,38 +28,38 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const foundPod = ports?.find((p) => p.id === invoice.portOfDischargeId);
   const foundDest = ports?.find((p) => p.id === invoice.finalDestinationId);
 
-  const exporterName = invoice.exporterName || settings?.businessName || 'ABC Pvt. Ltd.';
-  const exporterAddress = invoice.exporterAddress || settings?.address || 'Ambattur Industrial Estate, Ambattur,\nChennai, Tamil Nadu - 600094';
-  const invoiceNo = invoice.invoiceNo || 'EXP-2026-0001';
-  const invoiceDate = invoice.invoiceDate || new Date().toISOString().split('T')[0];
+  const exporterName = invoice.exporterName || settings?.businessName || '';
+  const exporterAddress = invoice.exporterAddress || settings?.address || '';
+  const invoiceNo = invoice.invoiceNo || '';
+  const invoiceDate = invoice.invoiceDate || '';
   const exporterRef = invoice.exporterRef || invoiceNo;
   const orderNo = invoice.orderNo || '';
   const orderDate = invoice.orderDate || '';
   const otherReferences = invoice.otherReferences || '';
 
-  const consigneeName = invoice.consigneeName || foundConsignee?.name || 'John Trading Co.,';
-  const consigneeAddress = invoice.consigneeAddress || foundConsignee?.address || '498 MOO.8, T. TAIBAN\nA. MUANG SAMUTPRAKAN\nTHAILAND  10280';
-  const buyerName = invoice.buyerName || foundBuyer?.name || 'N.A.';
+  const consigneeName = invoice.consigneeName || foundConsignee?.name || '';
+  const consigneeAddress = invoice.consigneeAddress || foundConsignee?.address || '';
+  const buyerName = invoice.buyerName || foundBuyer?.name || '';
   const buyerAddress = invoice.buyerAddress || foundBuyer?.address || '';
 
-  const countryOfOrigin = invoice.countryOfOrigin || 'INDIA';
-  const countryOfDestination = invoice.countryOfDestination || foundConsignee?.country || foundPod?.country || 'THAILAND';
-  const preCarriageBy = invoice.preCarriageBy || 'N.A.';
-  const placeOfReceipt = invoice.placeOfReceipt || 'N.A.';
-  const termsOfPayment = invoice.termsOfPayment || '100% TT AFTER MAILING THE ORIGINAL DOCUMENTS';
-  const priceTerms = invoice.priceTerms || 'CFR LAT KRABANG';
-  const vesselFlightNo = invoice.vesselFlightNo || 'MOGRAL 119W';
-  const portOfLoading = invoice.portOfLoading || (foundPol ? `${foundPol.name}, ${foundPol.country}` : 'COCHIN, INDIA');
-  const portOfDischarge = invoice.portOfDischarge || foundPod?.name || 'LAEM CHABANG';
-  const finalDestination = invoice.finalDestination || (foundDest ? `${foundDest.name}, ${foundDest.country}` : 'LAT KRABANG, THAILAND');
+  const countryOfOrigin = invoice.countryOfOrigin || '';
+  const countryOfDestination = invoice.countryOfDestination || foundConsignee?.country || foundPod?.country || '';
+  const preCarriageBy = invoice.preCarriageBy || '';
+  const placeOfReceipt = invoice.placeOfReceipt || '';
+  const termsOfPayment = invoice.termsOfPayment || '';
+  const priceTerms = invoice.priceTerms || '';
+  const vesselFlightNo = invoice.vesselFlightNo || '';
+  const portOfLoading = invoice.portOfLoading || (foundPol ? `${foundPol.name}, ${foundPol.country}` : '');
+  const portOfDischarge = invoice.portOfDischarge || foundPod?.name || '';
+  const finalDestination = invoice.finalDestination || (foundDest ? `${foundDest.name}, ${foundDest.country}` : '');
   const currency = invoice.currency || 'USD';
 
-  const commodityDescription = invoice.commodityDescription || 'CARTONS OF FROZEN SEAFOOD';
-  const packingDescription = invoice.packingDescription || '1X10KG';
-  const scientificName = invoice.scientificName || 'RASTRELLIGER KANAGURTA';
-  const shippingMarks = invoice.shippingMarks || 'MERIT D.S';
-  const containerNo = invoice.containerNo || 'ONEU90399086';
-  const sealNo = invoice.sealNo || 'IN567892';
+  const commodityDescription = invoice.commodityDescription || '';
+  const packingDescription = invoice.packingDescription || '';
+  const scientificName = invoice.scientificName || '';
+  const shippingMarks = invoice.shippingMarks || '';
+  const containerNo = invoice.containerNo || '';
+  const sealNo = invoice.sealNo || '';
 
   const lineItems = invoice.lineItems || [];
   const totalCartons = invoice.totalCartons !== undefined
@@ -73,18 +73,20 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
     : lineItems.reduce((acc, l) => acc + (l.amountCurrency || (l.weightKg || 0) * (l.ratePerKg || 0)), 0);
 
   const netWeightKg = invoice.netWeightKg !== undefined ? invoice.netWeightKg : totalWeightKg;
-  const grossWeightKg = invoice.grossWeightKg !== undefined ? invoice.grossWeightKg : (netWeightKg ? netWeightKg * 1.075 : 0);
+  const grossWeightKg = invoice.grossWeightKg !== undefined ? invoice.grossWeightKg : '';
 
-  const priceTermsPrefix = priceTerms.split(' ')[0].toUpperCase();
-  const defaultAmountWords = `${priceTermsPrefix} ${currency === 'USD' ? 'U.S. DOLLARS' : currency}: ${numberToWordsInternational(totalAmountCurrency)}`;
+  const priceTermsPrefix = priceTerms ? priceTerms.split(' ')[0].toUpperCase() : '';
+  const defaultAmountWords = totalAmountCurrency > 0
+    ? `${priceTermsPrefix ? priceTermsPrefix + ' ' : ''}${currency === 'USD' ? 'U.S. DOLLARS' : currency}: ${numberToWordsInternational(totalAmountCurrency)}`
+    : '';
   const amountInWords = invoice.amountInWords || defaultAmountWords;
 
-  const factoryNameAndAddress = invoice.factoryNameAndAddress || `${exporterName}, ${exporterAddress.replace(/\n/g, ', ')}`;
-  const factoryApprovalNumber = invoice.factoryApprovalNumber || '9085';
+  const factoryNameAndAddress = invoice.factoryNameAndAddress || (exporterName ? `${exporterName}${exporterAddress ? ', ' + exporterAddress.replace(/\n/g, ', ') : ''}` : '');
+  const factoryApprovalNumber = invoice.factoryApprovalNumber || '';
   const billOfLadingNo = invoice.billOfLadingNo || '';
-  const declarationText = invoice.declarationText || 'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct';
-  const signatoryCompany = invoice.signatoryCompany || `For ${settings?.businessName || 'RELISH FOODS'}`;
-  const signatoryDesignation = invoice.signatoryDesignation || 'Partner';
+  const declarationText = invoice.declarationText || (invoice.id ? 'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct' : '');
+  const signatoryCompany = invoice.signatoryCompany || (settings?.businessName ? `For ${settings.businessName}` : '');
+  const signatoryDesignation = invoice.signatoryDesignation || '';
   const signatureDate = invoice.signatureDate || invoiceDate;
 
   const handleDownload = async () => {
@@ -372,8 +374,8 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                       <span>Seal Number : &nbsp;{sealNo}</span>
                     </div>
                     <div className="flex justify-between mt-1.5">
-                      <span>Net weight: Kgs &nbsp;&nbsp;&nbsp;: &nbsp;{netWeightKg.toFixed(3)}</span>
-                      <span>Gross weight Kgs : &nbsp;{grossWeightKg ? grossWeightKg.toFixed(3) : ''}</span>
+                      <span>Net weight: Kgs &nbsp;&nbsp;&nbsp;: &nbsp;{typeof netWeightKg === 'number' && netWeightKg > 0 ? netWeightKg.toFixed(3) : (netWeightKg || '')}</span>
+                      <span>Gross weight Kgs : &nbsp;{typeof grossWeightKg === 'number' && grossWeightKg > 0 ? grossWeightKg.toFixed(3) : (grossWeightKg || '')}</span>
                     </div>
                   </td>
                   <td></td>

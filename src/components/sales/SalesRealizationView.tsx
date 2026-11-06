@@ -135,12 +135,6 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     return s + (inv.advanceReceivedINR || (inv.advanceReceivedCurrency || 0) * rate);
   }, 0);
   const totalOutstandingAfterAdvanceUSD = Math.max(0, totalInvoicedUSD - totalAdvanceUSD);
-  const totalOutstandingAfterAdvanceINR = activeInvoices.reduce((s, inv) => {
-    const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
-    const adv = inv.advanceReceivedCurrency || 0;
-    const out = Math.max(0, inv.totalAmountCurrency - adv);
-    return s + out * rate;
-  }, 0);
   const totalBalanceUSD = activeInvoices.reduce((s, inv) => s + (inv.balancePaymentAmountCurrency || 0), 0);
   const totalBalanceINR = activeInvoices.reduce((s, inv) => {
     const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
@@ -464,7 +458,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             <BentoCard
               label="Outstanding Post-Adv"
               value={`$${totalOutstandingAfterAdvanceUSD.toLocaleString()}`}
-              caption={`₹${(totalOutstandingAfterAdvanceINR / 100000).toFixed(2)} L remaining`}
+              caption="Awaiting balance remittance"
               variant="default"
             />
             <BentoCard
@@ -748,7 +742,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                           {inv.currency} {outstandingAfterAdv.outstandingAfterAdvanceCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-ink-500 font-medium tabular-nums">
-                          {formatINR(outstandingAfterAdv.outstandingAfterAdvanceINR)} ({outstandingAfterAdv.outstandingPercentage}%)
+                          {outstandingAfterAdv.outstandingPercentage}% outstanding
                         </div>
                       </td>
 

@@ -411,7 +411,7 @@ export const SalesReportsHub: React.FC = () => {
         WeightKg: inv.totalWeightKg,
         AmountUSD: inv.totalAmountCurrency,
         Status: inv.realizationStatus,
-        RealizedINR: inv.totalRealizedINR,
+        RealizedINR: inv.totalRealizedINR > 0 ? inv.totalRealizedINR : '',
         BalanceUSD: inv.balanceRealizationCurrency
       }));
       const csv = convertToCSV(data, [
@@ -543,7 +543,7 @@ export const SalesReportsHub: React.FC = () => {
             </div>
             <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
               <span className="text-[10px] font-bold text-ink-500 uppercase block">Realized Inward (INR)</span>
-              <span className="text-lg font-black text-emerald-700 mt-0.5 block">{formatINR(regTotalINR)}</span>
+              <span className="text-lg font-black text-emerald-700 mt-0.5 block">{regTotalINR > 0 ? formatINR(regTotalINR) : '—'}</span>
             </div>
             <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
               <span className="text-[10px] font-bold text-ink-500 uppercase block">Outstanding (USD)</span>
@@ -593,7 +593,7 @@ export const SalesReportsHub: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-2 px-3 text-right text-emerald-700 font-bold">
-                        {formatINR(inv.totalRealizedINR)}
+                        {inv.totalRealizedINR > 0 ? formatINR(inv.totalRealizedINR) : '—'}
                       </td>
                       <td className="py-2 px-3 text-right text-rose-700 font-bold">
                         ${inv.balanceRealizationCurrency.toLocaleString()}

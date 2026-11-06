@@ -302,8 +302,12 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <div className="text-[10px] uppercase font-bold text-rose-300">Total Net FOB Valuation</div>
             <div className="text-sm font-extrabold text-white flex items-center gap-2 justify-end">
               <span>${totalFOB.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span className="text-rose-300">&bull;</span>
-              <span className="text-amber-300">{formatINR(totalFOB * 84.5)}</span>
+              {totalRealizedINR > 0 && (
+                <>
+                  <span className="text-rose-300">&bull;</span>
+                  <span className="text-amber-300">Realized: {formatINR(totalRealizedINR)}</span>
+                </>
+              )}
             </div>
           </div>
           {onNavigate && (
