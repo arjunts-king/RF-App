@@ -83,7 +83,6 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
       id: 'settlement-banking',
       title: 'Settlement & Banking',
       icon: BadgeDollarSign,
-      badge: 'FIRC',
       items: [
         {
           id: 'realizations',
@@ -129,7 +128,6 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
       id: 'data-migration',
       title: 'Data & Migration',
       icon: FileSpreadsheet,
-      badge: 'Excel',
       items: [
         {
           id: 'sales-excel-import',

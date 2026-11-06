@@ -169,27 +169,27 @@ export function FlyoutSidebar<T extends string>({
     <>
       <aside
         ref={sidebarRef}
-        className="w-full md:w-60 lg:w-64 bg-white md:border-r border-gray-100 flex flex-col shrink-0 h-full select-none"
+        className="w-full md:w-44 lg:w-48 bg-white md:border-r border-gray-100 flex flex-col shrink-0 h-full select-none"
       >
         {/* Module Header Bar */}
-        <div className="p-4 border-b border-gray-100/90 bg-gradient-to-b from-gray-50/70 to-white">
+        <div className="p-3 border-b border-gray-100/90 bg-gradient-to-b from-gray-50/70 to-white">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-900">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-900 block truncate">
               {moduleTitle}
             </span>
             {moduleBadge && (
-              <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+              <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded-full border border-rose-200 shrink-0">
                 {moduleBadge}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-ink-500 font-medium mt-0.5">
-            Hover or select a sub-heading to view options
+          <p className="text-[10px] text-ink-500 font-medium mt-0.5 leading-tight">
+            Select sub-heading for options
           </p>
         </div>
 
         {/* Sub-Headings List (Desktop Flyout Trigger + Mobile Accordion) */}
-        <div className="p-3 space-y-1.5 flex-1 overflow-y-auto">
+        <div className="p-2 space-y-1 flex-1 overflow-y-auto">
           {subHeadings.map((subHeading) => {
             const visibleItems = subHeading.items.filter((i) => i.show === undefined || i.show);
             if (visibleItems.length === 0) return null;
@@ -197,7 +197,6 @@ export function FlyoutSidebar<T extends string>({
             const isGroupActive = subHeading.items.some((i) => i.id === activeTab);
             const isHovered = displayedSubHeading?.id === subHeading.id;
             const Icon = subHeading.icon;
-            const activeItemInGroup = subHeading.items.find((i) => i.id === activeTab);
 
             return (
               <div key={subHeading.id} className="relative">
@@ -206,7 +205,7 @@ export function FlyoutSidebar<T extends string>({
                   onClick={(e) => handleRowClick(e.currentTarget, subHeading)}
                   onMouseEnter={(e) => handleMouseEnterRow(e.currentTarget, subHeading)}
                   onMouseLeave={handleMouseLeaveRow}
-                  className={`w-full group text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between border ${
+                  className={`w-full group text-left px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between gap-1.5 border ${
                     isHovered
                       ? 'bg-rose-50/90 text-rose-900 border-rose-200/90 shadow-2xs'
                       : isGroupActive
@@ -216,9 +215,9 @@ export function FlyoutSidebar<T extends string>({
                   aria-haspopup="true"
                   aria-expanded={isHovered}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                         isGroupActive
                           ? 'bg-rose-600 text-white shadow-2xs'
                           : isHovered
@@ -230,32 +229,17 @@ export function FlyoutSidebar<T extends string>({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-bold tracking-tight">
+                      <div className="text-xs font-bold tracking-tight text-ink-900 group-hover:text-rose-900 break-words whitespace-normal leading-snug">
                         {subHeading.title}
                       </div>
-                      {isGroupActive && activeItemInGroup && (
-                        <div className="text-[10px] text-rose-600 font-medium truncate">
-                          {activeItemInGroup.label}
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 pl-1">
-                    {subHeading.badge && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight bg-gray-100 text-ink-600 group-hover:bg-rose-100 group-hover:text-rose-800">
-                        {subHeading.badge}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-ink-400 font-bold px-1.5 py-0.5 bg-gray-50 rounded-md border border-gray-100">
-                      {visibleItems.length}
-                    </span>
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 transition-transform text-ink-400 group-hover:text-rose-600 ${
-                        isHovered ? 'translate-x-0.5 text-rose-600' : ''
-                      }`}
-                    />
-                  </div>
+                  <ChevronRight
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform text-ink-400 group-hover:text-rose-600 ${
+                      isHovered ? 'translate-x-0.5 text-rose-600' : ''
+                    }`}
+                  />
                 </button>
 
                 {/* Mobile Accordion Inline View (Only visible on small viewports) */}

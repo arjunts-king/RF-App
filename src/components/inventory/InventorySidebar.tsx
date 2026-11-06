@@ -44,7 +44,6 @@ export const InventorySidebar: React.FC<InventorySidebarProps> = ({ activeTab, o
       id: 'core-inventory',
       title: 'Core Inventory',
       icon: Boxes,
-      badge: 'Stock',
       items: [
         {
           id: 'inv-dashboard',
@@ -73,7 +72,6 @@ export const InventorySidebar: React.FC<InventorySidebarProps> = ({ activeTab, o
       id: 'inventory-operations',
       title: 'Inventory Operations',
       icon: RotateCcw,
-      badge: 'Ops',
       items: [
         {
           id: 'item-master',
@@ -106,7 +104,6 @@ export const InventorySidebar: React.FC<InventorySidebarProps> = ({ activeTab, o
       id: 'period-close-audit',
       title: 'Period Close & Audit',
       icon: Layers,
-      badge: 'Lock',
       items: [
         {
           id: 'period-close',

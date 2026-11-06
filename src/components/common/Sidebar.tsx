@@ -49,7 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       id: 'core-procurement',
       title: 'Core Procurement',
       icon: Receipt,
-      badge: 'Landing',
       items: [
         {
           id: 'dashboard',
@@ -93,7 +92,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       id: 'accounting-ledgers',
       title: 'Accounting & Ledgers',
       icon: BookOpen,
-      badge: 'Ledgers',
       items: [
         {
           id: 'purchase-payments',
@@ -122,7 +120,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       id: 'procurement-masters',
       title: 'Procurement Masters',
       icon: Database,
-      badge: 'Masters',
       items: [
         {
           id: 'master-data',
@@ -165,7 +162,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       id: 'configuration-admin',
       title: 'Configuration & Admin',
       icon: Settings,
-      badge: 'Admin',
       items: [
         {
           id: 'user-mgmt',

@@ -33,7 +33,6 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
       id: 'core-production',
       title: 'Core Production',
       icon: Factory,
-      badge: 'Plant',
       items: [
         {
           id: 'prod-dashboard',
@@ -63,7 +62,6 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
       id: 'production-masters',
       title: 'Production Masters',
       icon: Boxes,
-      badge: 'Standards',
       items: [
         {
           id: 'slab-types',
@@ -79,7 +77,6 @@ export const ProductionSidebar: React.FC<ProductionSidebarProps> = ({ activeTab,
       id: 'data-migration',
       title: 'Data & Migration',
       icon: FileSpreadsheet,
-      badge: 'Excel',
       items: [
         {
           id: 'prod-excel-import',
