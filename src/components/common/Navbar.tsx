@@ -80,6 +80,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleForceUpdate = async () => {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const r of registrations) {
+          await r.unregister();
+        }
+      }
+    } catch (err) {
+      console.warn('Cache clearing error:', err);
+    }
+    window.location.reload();
+  };
+
   const totalAlerts = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
     const overdueCount = purchases.filter((p) => !p.isVoided && p.balancePayable > 0 && p.dueDate && p.dueDate < todayStr).length;
@@ -500,6 +518,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isOnline ? <Wifi className="w-3 h-3 text-emerald-600" /> : <WifiOff className="w-3 h-3 text-amber-700" />}
               <span className="text-[11px] font-semibold">{isOnline ? 'Live' : 'Offline'}</span>
             </div>
+
+            {/* Quick Refresh App Version Button */}
+            <button
+              onClick={handleForceUpdate}
+              className="p-1.5 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
+              title="Refresh and load latest deployment version (clears cached release)"
+              aria-label="Refresh app version"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
 
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}
             <button

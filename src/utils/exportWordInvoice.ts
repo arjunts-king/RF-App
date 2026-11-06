@@ -125,8 +125,10 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const expAddrRuns = expLines.map((line, idx) => `<w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>${idx > 0 || exporterName ? '<w:br/>' : ''}<w:t>${escapeXml(line.trim())}</w:t></w:r>`).join('');
 
   // Consignee
-  const consigneeName = inv.consigneeName || '';
-  const consigneeAddress = inv.consigneeAddress || '';
+  const rawConsigneeName = inv.consigneeName || '';
+  const consigneeName = rawConsigneeName !== 'John Trading Co.,' ? rawConsigneeName : '';
+  const rawConsigneeAddress = inv.consigneeAddress || '';
+  const consigneeAddress = !rawConsigneeAddress.includes('Bangkok 10110') ? rawConsigneeAddress : '';
   const consAddrLines = consigneeAddress.split('\n').filter(Boolean);
   const consAddrParagraphs = consAddrLines.map(line => `
     <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
@@ -136,8 +138,10 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   `).join('');
 
   // Buyer
-  const buyerName = inv.buyerName || '';
-  const buyerAddress = inv.buyerAddress || '';
+  const rawBuyerName = inv.buyerName || '';
+  const buyerName = rawBuyerName !== 'ABC Pvt. Ltd.' ? rawBuyerName : '';
+  const rawBuyerAddress = inv.buyerAddress || '';
+  const buyerAddress = rawBuyerAddress !== 'Bangkok, Thailand' ? rawBuyerAddress : '';
   const buyerAddrLines = buyerAddress.split('\n').filter(Boolean);
   const buyerAddrParagraphs = buyerAddrLines.map(line => `
     <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
@@ -145,6 +149,14 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(line.trim())}</w:t></w:r>
     </w:p>
   `).join('');
+
+  const vesselFlightNo = (inv.vesselFlightNo && inv.vesselFlightNo !== 'MOGRAL 119W') ? inv.vesselFlightNo : '';
+  const containerNo = (inv.containerNo && inv.containerNo !== 'ONEU90399086') ? inv.containerNo : '';
+  const sealNo = (inv.sealNo && inv.sealNo !== 'IN567892') ? inv.sealNo : '';
+  const scientificName = (inv.scientificName && inv.scientificName !== 'RASTRELLIGER KANAGURTA') ? inv.scientificName : '';
+  const shippingMarks = (inv.shippingMarks && inv.shippingMarks !== 'MERIT D.S') ? inv.shippingMarks : '';
+  const commodityDescription = (inv.commodityDescription && inv.commodityDescription !== 'FROZEN SEAFOOD') ? inv.commodityDescription : '';
+  const packingDescription = (inv.packingDescription && inv.packingDescription !== '1X10KG') ? inv.packingDescription : '';
 
   const totalCartons = inv.totalCartons !== undefined ? inv.totalCartons : lineItems.reduce((acc, l) => acc + (l.cartonsCount || 0), 0);
   const totalWeight = inv.totalWeightKg !== undefined ? inv.totalWeightKg : lineItems.reduce((acc, l) => acc + (l.weightKg || 0), 0);
@@ -356,7 +368,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.vesselFlightNo || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(vesselFlightNo)}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -453,19 +465,19 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:tcPr><w:tcW w:w="5505" w:type="dxa"/><w:gridSpan w:val="5"/></w:tcPr>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>COMMODITY: ${escapeXml(inv.commodityDescription || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>COMMODITY: ${escapeXml(commodityDescription)}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>PACKING: ${escapeXml(inv.packingDescription || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>PACKING: ${escapeXml(packingDescription)}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SCIENTIFIC NAME: ${escapeXml(inv.scientificName || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SCIENTIFIC NAME: ${escapeXml(scientificName)}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SHIPPING MARK: ${escapeXml(inv.shippingMarks || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SHIPPING MARK: ${escapeXml(shippingMarks)}</w:t></w:r>
       </w:p>
     </w:tc>
     <w:tc>
@@ -585,8 +597,8 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:tcPr><w:tcW w:w="7555" w:type="dxa"/><w:gridSpan w:val="9"/></w:tcPr>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">Container Number :  ${escapeXml(inv.containerNo || '')}</w:t></w:r>
-        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">      Seal Number :  ${escapeXml(inv.sealNo || '')}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">Container Number :  ${escapeXml(containerNo)}</w:t></w:r>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">      Seal Number :  ${escapeXml(sealNo)}</w:t></w:r>
       </w:p>
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>

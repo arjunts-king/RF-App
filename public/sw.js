@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V5 - Decoupled Expense & Yield Batches)
-const CACHE_VERSION = 'seafood-pwa-v5';
+// Seafood Purchase App - Offline PWA Service Worker (V6 - Realized INR & Doc Cleanup)
+const CACHE_VERSION = 'seafood-pwa-v6';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -35,9 +35,9 @@ self.addEventListener('fetch', (event) => {
   const isNavigation = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html');
 
   if (isNavigation) {
-    // Network-first for HTML documents to always fetch latest deployed release
+    // Force reload on navigation to bypass browser HTTP cache (max-age=600) and always get latest index.html
     event.respondWith(
-      fetch(event.request)
+      fetch(new Request(event.request, { cache: 'reload' }))
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();

@@ -37,10 +37,15 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const orderDate = invoice.orderDate || '';
   const otherReferences = invoice.otherReferences || '';
 
-  const consigneeName = invoice.consigneeName || foundConsignee?.name || '';
-  const consigneeAddress = invoice.consigneeAddress || foundConsignee?.address || '';
-  const buyerName = invoice.buyerName || foundBuyer?.name || '';
-  const buyerAddress = invoice.buyerAddress || foundBuyer?.address || '';
+  const rawConsigneeName = invoice.consigneeName || foundConsignee?.name || '';
+  const consigneeName = rawConsigneeName !== 'John Trading Co.,' ? rawConsigneeName : '';
+  const rawConsigneeAddress = invoice.consigneeAddress || foundConsignee?.address || '';
+  const consigneeAddress = !rawConsigneeAddress.includes('Bangkok 10110') ? rawConsigneeAddress : '';
+
+  const rawBuyerName = invoice.buyerName || foundBuyer?.name || '';
+  const buyerName = rawBuyerName !== 'ABC Pvt. Ltd.' ? rawBuyerName : '';
+  const rawBuyerAddress = invoice.buyerAddress || foundBuyer?.address || '';
+  const buyerAddress = rawBuyerAddress !== 'Bangkok, Thailand' ? rawBuyerAddress : '';
 
   const countryOfOrigin = invoice.countryOfOrigin || '';
   const countryOfDestination = invoice.countryOfDestination || foundConsignee?.country || foundPod?.country || '';
@@ -48,18 +53,18 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const placeOfReceipt = invoice.placeOfReceipt || '';
   const termsOfPayment = invoice.termsOfPayment || '';
   const priceTerms = invoice.priceTerms || '';
-  const vesselFlightNo = invoice.vesselFlightNo || '';
+  const vesselFlightNo = invoice.vesselFlightNo && invoice.vesselFlightNo !== 'MOGRAL 119W' ? invoice.vesselFlightNo : '';
   const portOfLoading = invoice.portOfLoading || (foundPol ? `${foundPol.name}, ${foundPol.country}` : '');
   const portOfDischarge = invoice.portOfDischarge || foundPod?.name || '';
   const finalDestination = invoice.finalDestination || (foundDest ? `${foundDest.name}, ${foundDest.country}` : '');
   const currency = invoice.currency || 'USD';
 
-  const commodityDescription = invoice.commodityDescription || '';
-  const packingDescription = invoice.packingDescription || '';
-  const scientificName = invoice.scientificName || '';
-  const shippingMarks = invoice.shippingMarks || '';
-  const containerNo = invoice.containerNo || '';
-  const sealNo = invoice.sealNo || '';
+  const commodityDescription = invoice.commodityDescription && invoice.commodityDescription !== 'FROZEN SEAFOOD' ? invoice.commodityDescription : '';
+  const packingDescription = invoice.packingDescription && invoice.packingDescription !== '1X10KG' ? invoice.packingDescription : '';
+  const scientificName = invoice.scientificName && invoice.scientificName !== 'RASTRELLIGER KANAGURTA' ? invoice.scientificName : '';
+  const shippingMarks = invoice.shippingMarks && invoice.shippingMarks !== 'MERIT D.S' ? invoice.shippingMarks : '';
+  const containerNo = invoice.containerNo && invoice.containerNo !== 'ONEU90399086' ? invoice.containerNo : '';
+  const sealNo = invoice.sealNo && invoice.sealNo !== 'IN567892' ? invoice.sealNo : '';
 
   const lineItems = invoice.lineItems || [];
   const totalCartons = invoice.totalCartons !== undefined

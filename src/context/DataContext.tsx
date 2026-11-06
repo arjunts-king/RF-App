@@ -482,7 +482,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}sales_invoices`);
-    return saved ? JSON.parse(saved) : INITIAL_SALES_INVOICES;
+    let list: SalesInvoice[] = saved ? JSON.parse(saved) : INITIAL_SALES_INVOICES;
+    if (list && list.length > 0) {
+      list = list.map((inv) => {
+        const clean = { ...inv };
+        // Sanitize legacy mock defaults stored in previously created invoices
+        if (clean.containerNo === 'ONEU90399086') clean.containerNo = undefined;
+        if (clean.sealNo === 'IN567892') clean.sealNo = undefined;
+        if (clean.vesselFlightNo === 'MOGRAL 119W') clean.vesselFlightNo = undefined;
+        if (clean.scientificName === 'RASTRELLIGER KANAGURTA') clean.scientificName = undefined;
+        if (clean.shippingMarks === 'MERIT D.S') clean.shippingMarks = undefined;
+        if (clean.consigneeName === 'John Trading Co.,') clean.consigneeName = undefined;
+        if (clean.buyerName === 'ABC Pvt. Ltd.') clean.buyerName = undefined;
+        if (clean.commodityDescription === 'FROZEN SEAFOOD') clean.commodityDescription = undefined;
+        if (clean.packingDescription === '1X10KG') clean.packingDescription = undefined;
+        if (!clean.totalRealizedCurrency || clean.totalRealizedCurrency <= 0) {
+          clean.totalRealizedINR = 0;
+        }
+        return clean;
+      });
+    }
+    return list;
   });
 
   const [slabTolerancePct, setSlabTolerancePct] = useState<number>(() => {

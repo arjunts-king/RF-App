@@ -5,6 +5,14 @@ import './index.css';
 
 // Register service worker for offline PWA functionality
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  let isRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`)
