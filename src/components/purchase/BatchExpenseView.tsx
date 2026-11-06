@@ -17,21 +17,21 @@ export const BatchExpenseView: React.FC = () => {
   // Mode: independent Expense Batching vs independent Yield Batching
   const [activeTab, setActiveTab] = useState<'expenses' | 'yield'>('expenses');
 
-  // Distinct Expense Batches (support expenseBatchNo and legacy batchNo fallback)
+  // Distinct Expense Batches: STRICTLY expenseBatchNo only (never contaminated by yield batches)
   const expenseBatches = Array.from(
     new Set(
       purchases
-        .filter((p) => (p.expenseBatchNo || p.batchNo) && !p.isVoided)
-        .map((p) => (p.expenseBatchNo || p.batchNo)!)
+        .filter((p) => Boolean(p.expenseBatchNo) && !p.isVoided)
+        .map((p) => p.expenseBatchNo!)
     )
   );
 
-  // Distinct Yield Batches (support yieldBatchNo and legacy batchNo fallback)
+  // Distinct Yield Batches: STRICTLY yieldBatchNo only (never contaminated by expense batches)
   const yieldBatches = Array.from(
     new Set(
       purchases
-        .filter((p) => (p.yieldBatchNo || p.batchNo) && !p.isVoided)
-        .map((p) => (p.yieldBatchNo || p.batchNo)!)
+        .filter((p) => Boolean(p.yieldBatchNo) && !p.isVoided)
+        .map((p) => p.yieldBatchNo!)
     )
   );
 
@@ -63,7 +63,7 @@ export const BatchExpenseView: React.FC = () => {
   // 1. EXPENSE BATCH DATA & METRICS
   // --------------------------------------------------------------------------
   const expBatchPurchases = purchases.filter(
-    (p) => (p.expenseBatchNo === selectedExpenseBatch || p.batchNo === selectedExpenseBatch) && !p.isVoided
+    (p) => p.expenseBatchNo === selectedExpenseBatch && !p.isVoided
   );
   const totalExpBatchWeight = expBatchPurchases.reduce((sum, p) => sum + p.weightKg, 0);
   const totalExpBatchCost = expBatchPurchases.reduce((sum, p) => sum + p.totalCost, 0);
@@ -93,7 +93,7 @@ export const BatchExpenseView: React.FC = () => {
   // 2. YIELD BATCH DATA & METRICS
   // --------------------------------------------------------------------------
   const yldBatchPurchases = purchases.filter(
-    (p) => (p.yieldBatchNo === selectedYieldBatch || p.batchNo === selectedYieldBatch) && !p.isVoided
+    (p) => p.yieldBatchNo === selectedYieldBatch && !p.isVoided
   );
   const totalYldBatchWeight = yldBatchPurchases.reduce((sum, p) => sum + p.weightKg, 0);
   const totalYldBatchCost = yldBatchPurchases.reduce((sum, p) => sum + p.totalCost, 0);

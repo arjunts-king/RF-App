@@ -166,7 +166,7 @@ export function allocateBatchExpenses(purchasesInBatch: Purchase[]): {
     // Only warn about duplicate entry if the batch is not yet allocated
     const isAlreadyAllocated = activeRows.length > 0 && activeRows.every((p) => p.isBatchAllocated);
     if (!isAlreadyAllocated && rowsWithKeyCount > 1) {
-      const batchIdent = activeRows[0].expenseBatchNo || activeRows[0].batchNo || 'batch';
+      const batchIdent = activeRows[0].expenseBatchNo || 'batch';
       warnings.push(
         `Data Quality Warning: Expense head "${key}" was entered on ${rowsWithKeyCount} separate rows in expense batch "${batchIdent}". Check if it was entered twice by mistake.`
       );

@@ -204,7 +204,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
       HarbourLocation: locationMap.get(p.locationId)?.name || 'N/A',
       InvoiceNo: p.invoiceNo || 'N/A',
-      ExpenseBatchNo: p.expenseBatchNo || p.batchNo || 'None',
+      ExpenseBatchNo: p.expenseBatchNo || 'None',
       YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
@@ -296,7 +296,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       supplierId: p.supplierId,
       locationId: p.locationId,
       invoiceNo: p.invoiceNo || '',
-      expenseBatchNo: p.expenseBatchNo || p.batchNo || '',
+      expenseBatchNo: p.expenseBatchNo || '',
       yieldBatchNo: p.yieldBatchNo || '',
       batchNo: p.batchNo || '',
       speciesId: p.speciesId,
@@ -346,7 +346,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         invoiceNo: editForm.invoiceNo,
         expenseBatchNo: editForm.expenseBatchNo.trim() || undefined,
         yieldBatchNo: editForm.yieldBatchNo.trim() || undefined,
-        batchNo: editForm.batchNo.trim() || editForm.expenseBatchNo.trim() || editForm.yieldBatchNo.trim() || undefined,
+        batchNo: editForm.batchNo.trim() || undefined,
         speciesId: editForm.speciesId,
         gradeId: editForm.gradeId,
         sizeId: editForm.sizeId,
@@ -392,7 +392,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
       HarbourLocation: locationMap.get(p.locationId)?.name || 'N/A',
       InvoiceNo: p.invoiceNo || 'N/A',
-      ExpenseBatchNo: p.expenseBatchNo || p.batchNo || 'None',
+      ExpenseBatchNo: p.expenseBatchNo || 'None',
       YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
@@ -989,7 +989,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               <div>
                 <span className="text-ink-500 block">Expense Batch</span>
                 <span className="font-bold text-amber-700 text-sm">
-                  {selectedPurchase.expenseBatchNo || selectedPurchase.batchNo || 'Single Product'}
+                  {selectedPurchase.expenseBatchNo || 'Single Product'}
                 </span>
               </div>
               <div>
@@ -1104,7 +1104,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                   <div className="flex items-center gap-1.5">
                     {selectedPurchase.isBatchYieldAllocated && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-2xs">
-                        Batch {selectedPurchase.batchNo} Pool
+                        Yield Batch {selectedPurchase.yieldBatchNo || selectedPurchase.batchNo} Pool
                       </span>
                     )}
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">

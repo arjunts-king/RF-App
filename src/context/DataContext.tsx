@@ -371,9 +371,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let list: Purchase[] = saved ? JSON.parse(saved) : INITIAL_PURCHASES;
     if (list && list.length > 0) {
       list = list.map((p) => {
-        if (!p.expenseBreakdown || Object.keys(p.expenseBreakdown).length === 0) return p;
+        // Sanitize legacy bug where batchNo was conflated with yieldBatchNo and triggered erroneous batch expense allocation
+        let cleanP = p;
+        if (cleanP.yieldBatchNo && !cleanP.expenseBatchNo && cleanP.batchNo === cleanP.yieldBatchNo) {
+          cleanP = { ...cleanP, batchNo: undefined, isBatchAllocated: false };
+        }
+        if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
 
-        const eb = { ...p.expenseBreakdown };
+        const eb = { ...cleanP.expenseBreakdown };
         let modified = false;
 
         // Detect any keys that correspond to "Other Expenses"
@@ -1239,8 +1244,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     const expenseBatchNo = purchaseData.expenseBatchNo?.trim() || (!purchaseData.yieldBatchNo && purchaseData.batchNo ? purchaseData.batchNo.trim() : undefined);
-    const yieldBatchNo = purchaseData.yieldBatchNo?.trim() || undefined;
-    const batchNo = purchaseData.batchNo?.trim() || expenseBatchNo || yieldBatchNo || undefined;
+    const yieldBatchNo = purchaseData.yieldBatchNo?.trim() || (!purchaseData.expenseBatchNo && purchaseData.batchNo ? purchaseData.batchNo.trim() : undefined);
+    const batchNo = purchaseData.batchNo?.trim() || undefined;
 
     const newPurchase: Purchase = {
       id: `pur-${Date.now()}`,
@@ -1299,9 +1304,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let allPurchases = [...purchases, newPurchase];
 
     // 1. Independent Expense Batch Apportionment: Only apportion expenses across lots sharing this expenseBatchNo
-    const expBatchId = newPurchase.expenseBatchNo || newPurchase.batchNo;
+    const expBatchId = newPurchase.expenseBatchNo;
     if (expBatchId) {
-      const expBatchRows = allPurchases.filter((p) => (p.expenseBatchNo || p.batchNo) === expBatchId && !p.isVoided);
+      const expBatchRows = allPurchases.filter((p) => p.expenseBatchNo === expBatchId && !p.isVoided);
       if (expBatchRows.length > 1) {
         const { updatedPurchases: expUpdated, warnings: expWarnings } = allocateBatchExpenses(expBatchRows);
         warnings.push(...expWarnings);
@@ -1372,7 +1377,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const expenseBatchNo = updates.expenseBatchNo !== undefined ? (updates.expenseBatchNo?.trim() || undefined) : existing.expenseBatchNo;
     const yieldBatchNo = updates.yieldBatchNo !== undefined ? (updates.yieldBatchNo?.trim() || undefined) : existing.yieldBatchNo;
-    const batchNo = updates.batchNo !== undefined ? (updates.batchNo?.trim() || undefined) : (expenseBatchNo || yieldBatchNo || existing.batchNo);
+    const batchNo = updates.batchNo !== undefined ? (updates.batchNo?.trim() || undefined) : existing.batchNo;
 
     const updatedPurchase: Purchase = {
       ...existing,
@@ -1393,13 +1398,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Independent Expense Batch Re-apportionment: only re-pool expenses
     const affectedExpBatches = new Set<string>();
-    const oldExp = existing.expenseBatchNo || existing.batchNo;
-    const newExp = updatedPurchase.expenseBatchNo || updatedPurchase.batchNo;
+    const oldExp = existing.expenseBatchNo;
+    const newExp = updatedPurchase.expenseBatchNo;
     if (oldExp) affectedExpBatches.add(oldExp);
     if (newExp) affectedExpBatches.add(newExp);
 
     affectedExpBatches.forEach((bId) => {
-      const expRows = allPurchases.filter((p) => (p.expenseBatchNo || p.batchNo) === bId && !p.isVoided);
+      const expRows = allPurchases.filter((p) => p.expenseBatchNo === bId && !p.isVoided);
       if (expRows.length > 1) {
         const { updatedPurchases: expUpdated } = allocateBatchExpenses(expRows);
         const expMap = new Map(expUpdated.map((p) => [p.id, p]));
@@ -1452,9 +1457,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     let allPurchases = purchases.map((p) => (p.id === id ? voidedPurchase : p));
 
-    const expBatch = existing.expenseBatchNo || existing.batchNo;
+    const expBatch = existing.expenseBatchNo;
     if (expBatch) {
-      const remainingExpRows = allPurchases.filter((p) => (p.expenseBatchNo || p.batchNo) === expBatch && !p.isVoided);
+      const remainingExpRows = allPurchases.filter((p) => p.expenseBatchNo === expBatch && !p.isVoided);
       if (remainingExpRows.length > 0) {
         const { updatedPurchases } = allocateBatchExpenses(remainingExpRows);
         const expMap = new Map(updatedPurchases.map((p) => [p.id, p]));
@@ -1487,9 +1492,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     let allPurchases = purchases.filter((p) => p.id !== id);
 
-    const expBatch = existing.expenseBatchNo || existing.batchNo;
+    const expBatch = existing.expenseBatchNo;
     if (expBatch) {
-      const remainingExpRows = allPurchases.filter((p) => (p.expenseBatchNo || p.batchNo) === expBatch && !p.isVoided);
+      const remainingExpRows = allPurchases.filter((p) => p.expenseBatchNo === expBatch && !p.isVoided);
       if (remainingExpRows.length > 0) {
         const { updatedPurchases } = allocateBatchExpenses(remainingExpRows);
         const expMap = new Map(updatedPurchases.map((p) => [p.id, p]));
@@ -1783,7 +1788,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const recalculateExpenseBatch = (expenseBatchNo: string) => {
-    const batchRows = purchases.filter((p) => (p.expenseBatchNo === expenseBatchNo || p.batchNo === expenseBatchNo) && !p.isVoided);
+    const batchRows = purchases.filter((p) => p.expenseBatchNo === expenseBatchNo && !p.isVoided);
     if (batchRows.length === 0) {
       showToast(`No active lots found for expense batch ${expenseBatchNo}.`, 'warning');
       return;
@@ -1802,13 +1807,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const recalculateBatch = (batchNo: string) => {
     let matched = false;
-    const expRows = purchases.filter((p) => (p.expenseBatchNo === batchNo || p.batchNo === batchNo) && !p.isVoided);
+    const expRows = purchases.filter((p) => p.expenseBatchNo === batchNo && !p.isVoided);
     if (expRows.length > 0) {
       recalculateExpenseBatch(batchNo);
       matched = true;
     }
 
-    const yldRows = purchases.filter((p) => (p.yieldBatchNo === batchNo || p.batchNo === batchNo) && !p.isVoided);
+    const yldRows = purchases.filter((p) => p.yieldBatchNo === batchNo && !p.isVoided);
     if (yldRows.length > 0) {
       allocateBatchYieldContext(batchNo);
       matched = true;
@@ -1824,7 +1829,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     batchYieldWeightKg?: number,
     batchYieldPct?: number
   ): { success: boolean; message: string } => {
-    const batchRows = purchases.filter((p) => (p.yieldBatchNo === batchNo || p.batchNo === batchNo) && !p.isVoided);
+    const batchRows = purchases.filter((p) => p.yieldBatchNo === batchNo && !p.isVoided);
     if (batchRows.length === 0) {
       showToast(`No active lots found for yield batch ${batchNo}.`, 'warning');
       return { success: false, message: `No active lots found for yield batch ${batchNo}.` };
@@ -1856,14 +1861,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const clearBatchYieldContext = (batchNo: string): { success: boolean; message: string } => {
-    const batchRows = purchases.filter((p) => (p.yieldBatchNo === batchNo || p.batchNo === batchNo) && !p.isVoided);
+    const batchRows = purchases.filter((p) => p.yieldBatchNo === batchNo && !p.isVoided);
     if (batchRows.length === 0) {
       return { success: false, message: `No active lots found for yield batch ${batchNo}.` };
     }
 
     setPurchases((prev) =>
       prev.map((p) => {
-        if ((p.yieldBatchNo === batchNo || p.batchNo === batchNo) && !p.isVoided) {
+        if (p.yieldBatchNo === batchNo && !p.isVoided) {
           const { isBatchYieldAllocated, batchYieldWeightKg, batchYieldPct, yieldWeightKg, yieldPct, ...rest } = p;
           return {
             ...rest,
@@ -4082,9 +4087,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'lot'
       ]) || '').trim();
 
+      // STRICT: expenseBatchNo only from expense batch columns (or legacy batch if no yield batch was provided)
       const expenseBatchNo = rawExpenseBatch || (!rawYieldBatch && rawLegacyBatch ? rawLegacyBatch : undefined);
-      const yieldBatchNo = rawYieldBatch || undefined;
-      const batchNo = rawLegacyBatch || expenseBatchNo || yieldBatchNo || undefined;
+      // STRICT: yieldBatchNo only from yield batch columns (or legacy batch if no expense batch was provided)
+      const yieldBatchNo = rawYieldBatch || (!rawExpenseBatch && rawLegacyBatch ? rawLegacyBatch : undefined);
+      // Generic batchNo should only be legacy batch if present, never auto-assigned from yieldBatchNo
+      const batchNo = rawLegacyBatch || undefined;
 
       const remarks = String(getFlexibleValue(row, ['remarks', 'notes', 'comments']) || '');
 
@@ -4413,7 +4421,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // If rows share the same expenseBatchNo, apportion ONLY landing expenses by Kg (yield untouched)
     const expBatchGroups = new Map<string, Purchase[]>();
     newPurchases.forEach((p) => {
-      const bKey = p.expenseBatchNo || p.batchNo;
+      const bKey = p.expenseBatchNo; // STRICT: ONLY p.expenseBatchNo! Never fallback to batchNo!
       if (bKey) {
         const cur = expBatchGroups.get(bKey) || [];
         cur.push(p);

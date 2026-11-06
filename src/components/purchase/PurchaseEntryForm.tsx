@@ -228,7 +228,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       invoiceNo,
       expenseBatchNo: expenseBatchNo.trim() || undefined,
       yieldBatchNo: yieldBatchNo.trim() || undefined,
-      batchNo: batchNo.trim() || expenseBatchNo.trim() || yieldBatchNo.trim() || undefined,
+      batchNo: batchNo.trim() || undefined,
       speciesId,
       gradeId,
       sizeId,
@@ -759,9 +759,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
             <span className="text-[11px] font-medium text-amber-700">
               {expenseBatchNo
                 ? `Will be apportioned across Expense Batch ${expenseBatchNo}`
-                : batchNo
-                ? `Will be apportioned across Batch ${batchNo}`
-                : 'Direct row expenses'}
+                : 'Direct lot landing expenses (no expense batch pooling)'}
             </span>
           </div>
 

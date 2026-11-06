@@ -1447,6 +1447,104 @@ test('Purchase post-procurement payment settlement & balance deduction logic', (
   assert.equal(updatedFifo[1].paymentStatus, 'Partially Paid');
 });
 
+test('Decoupled Batching: Yield-only batch rows NEVER trigger expense batch allocation; landing expenses stay row-level direct costs', () => {
+  // Simulate two purchase rows imported or entered with ONLY yieldBatchNo
+  const rowA = {
+    id: 'pur-yld-1',
+    purchaseId: 'PUR-Y1',
+    yieldBatchNo: 'YB-SEPARATE-100',
+    expenseBatchNo: undefined,
+    batchNo: undefined,
+    weightKg: 2000,
+    grossPurchaseValue: 620000,
+    purchaseValue: 620000,
+    expenseBreakdown: { 'ice': 1200, 'transport': 2500, 'commission': 1500 },
+    totalExpenses: 5200,
+    totalCost: 625200,
+    isVoided: false,
+    isBatchAllocated: false
+  };
+
+  const rowB = {
+    id: 'pur-yld-2',
+    purchaseId: 'PUR-Y2',
+    yieldBatchNo: 'YB-SEPARATE-100',
+    expenseBatchNo: undefined,
+    batchNo: undefined,
+    weightKg: 3000,
+    grossPurchaseValue: 900000,
+    purchaseValue: 900000,
+    expenseBreakdown: { 'ice': 3000, 'transport': 4500, 'commission': 2500 },
+    totalExpenses: 10000,
+    totalCost: 910000,
+    isVoided: false,
+    isBatchAllocated: false
+  };
+
+  const purchases = [rowA, rowB];
+
+  // 1. Verify Expense Batch Grouping Logic: ONLY rows with p.expenseBatchNo are grouped
+  const expBatchGroups = new Map();
+  purchases.forEach((p) => {
+    const bKey = p.expenseBatchNo; // STRICT: ONLY expenseBatchNo!
+    if (bKey) {
+      const cur = expBatchGroups.get(bKey) || [];
+      cur.push(p);
+      expBatchGroups.set(bKey, cur);
+    }
+  });
+
+  // Absolutely NO expense batch group should exist for YB-SEPARATE-100!
+  assert.equal(expBatchGroups.size, 0);
+  assert.equal(expBatchGroups.has('YB-SEPARATE-100'), false);
+
+  // 2. Verify Expense Batches list for UI:
+  const expenseBatches = Array.from(
+    new Set(
+      purchases
+        .filter((p) => Boolean(p.expenseBatchNo) && !p.isVoided)
+        .map((p) => p.expenseBatchNo)
+    )
+  );
+  assert.deepEqual(expenseBatches, []);
+
+  // 3. Verify Yield Batches list for UI:
+  const yieldBatches = Array.from(
+    new Set(
+      purchases
+        .filter((p) => Boolean(p.yieldBatchNo) && !p.isVoided)
+        .map((p) => p.yieldBatchNo)
+    )
+  );
+  assert.deepEqual(yieldBatches, ['YB-SEPARATE-100']);
+
+  // 4. Apportion Yield across the batch (50% recovery = 2,500 Kg finished meat)
+  const { updatedPurchases: yieldUpdated } = allocateYieldBatch(purchases, 2500);
+
+  // Yield was apportioned: rowA gets 40% (1,000 Kg), rowB gets 60% (1,500 Kg)
+  const resA = yieldUpdated.find((p) => p.id === 'pur-yld-1');
+  const resB = yieldUpdated.find((p) => p.id === 'pur-yld-2');
+
+  assert.equal(resA.yieldWeightKg, 1000);
+  assert.equal(resB.yieldWeightKg, 1500);
+  assert.equal(resA.isBatchYieldAllocated, true);
+  assert.equal(resB.isBatchYieldAllocated, true);
+
+  // CRITICAL: Expenses MUST remain completely un-pooled and un-apportioned!
+  assert.equal(resA.totalExpenses, 5200);
+  assert.equal(resA.expenseBreakdown['ice'], 1200);
+  assert.equal(resA.expenseBreakdown['transport'], 2500);
+  assert.equal(resA.expenseBreakdown['commission'], 1500);
+  assert.equal(resA.isBatchAllocated, false);
+
+  assert.equal(resB.totalExpenses, 10000);
+  assert.equal(resB.expenseBreakdown['ice'], 3000);
+  assert.equal(resB.expenseBreakdown['transport'], 4500);
+  assert.equal(resB.expenseBreakdown['commission'], 2500);
+  assert.equal(resB.isBatchAllocated, false);
+});
+
+
 
 
 
