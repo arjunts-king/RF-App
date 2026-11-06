@@ -376,6 +376,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (cleanP.yieldBatchNo && !cleanP.expenseBatchNo && cleanP.batchNo === cleanP.yieldBatchNo) {
           cleanP = { ...cleanP, batchNo: undefined, isBatchAllocated: false };
         }
+        // Sanitize legacy bug where batchYieldWeightKg / yieldWeightKg was erroneously parsed as expenseBatchNo
+        if (
+          cleanP.expenseBatchNo &&
+          !isNaN(Number(cleanP.expenseBatchNo)) &&
+          (Number(cleanP.expenseBatchNo) === cleanP.batchYieldWeightKg ||
+            Number(cleanP.expenseBatchNo) === cleanP.yieldWeightKg)
+        ) {
+          cleanP = { ...cleanP, expenseBatchNo: undefined, isBatchAllocated: false };
+        }
         if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
 
         const eb = { ...cleanP.expenseBreakdown };
@@ -1243,8 +1252,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       yieldWeightKg: purchaseData.yieldWeightKg ? Number(purchaseData.yieldWeightKg) : undefined
     });
 
-    const expenseBatchNo = purchaseData.expenseBatchNo?.trim() || (!purchaseData.yieldBatchNo && purchaseData.batchNo ? purchaseData.batchNo.trim() : undefined);
-    const yieldBatchNo = purchaseData.yieldBatchNo?.trim() || (!purchaseData.expenseBatchNo && purchaseData.batchNo ? purchaseData.batchNo.trim() : undefined);
+    const expenseBatchNo = purchaseData.expenseBatchNo?.trim() || undefined;
+    const yieldBatchNo = purchaseData.yieldBatchNo?.trim() || undefined;
     const batchNo = purchaseData.batchNo?.trim() || undefined;
 
     const newPurchase: Purchase = {
@@ -4082,16 +4091,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const rawLegacyBatch = String(getFlexibleValue(row, [
         'batchno',
-        'batch',
+        'batchnumber',
         'lotno',
-        'lot'
+        'lotnumber',
+        'batchcode',
+        'lotcode'
       ]) || '').trim();
 
-      // STRICT: expenseBatchNo only from expense batch columns (or legacy batch if no yield batch was provided)
-      const expenseBatchNo = rawExpenseBatch || (!rawYieldBatch && rawLegacyBatch ? rawLegacyBatch : undefined);
-      // STRICT: yieldBatchNo only from yield batch columns (or legacy batch if no expense batch was provided)
-      const yieldBatchNo = rawYieldBatch || (!rawExpenseBatch && rawLegacyBatch ? rawLegacyBatch : undefined);
-      // Generic batchNo should only be legacy batch if present, never auto-assigned from yieldBatchNo
+      // STRICT: expenseBatchNo ONLY from explicit expense batch columns (never fall back to legacy/weight columns)
+      const expenseBatchNo = rawExpenseBatch || undefined;
+      // STRICT: yieldBatchNo ONLY from explicit yield batch columns (never fall back to legacy/weight columns)
+      const yieldBatchNo = rawYieldBatch || undefined;
+      // Generic batchNo should only be legacy batch if present
       const batchNo = rawLegacyBatch || undefined;
 
       const remarks = String(getFlexibleValue(row, ['remarks', 'notes', 'comments']) || '');

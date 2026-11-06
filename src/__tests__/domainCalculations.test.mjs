@@ -1544,6 +1544,58 @@ test('Decoupled Batching: Yield-only batch rows NEVER trigger expense batch allo
   assert.equal(resB.isBatchAllocated, false);
 });
 
+test('Decoupled Batching: Excel import extraction strictly isolates Expense Batch No and never extracts numeric yield weights as expense batches', () => {
+  // Row 1: Explicit Expense Batch EXP-001 with yield metrics
+  const row1 = {
+    'Purchase Date (DD-MM-YYYY)': '20-10-2026',
+    'Expense Batch No': 'EXP-001',
+    'Yield Batch No': 'YLD-001',
+    'Batch Yield Weight (Kg)': 1234,
+    'Batch Yield %': 0.4875,
+    'Weight (Kg)': 2531
+  };
+
+  // Row 2: NO Expense Batch, NO Yield Batch, but has Batch Yield Weight (Kg)
+  const row2 = {
+    'Purchase Date (DD-MM-YYYY)': '20-10-2026',
+    'Expense Batch No': '',
+    'Yield Batch No': '',
+    'Batch Yield Weight (Kg)': 1754,
+    'Batch Yield %': 0.52,
+    'Weight (Kg)': 3373
+  };
+
+  const rawExpense1 = String(getFlexibleValue(row1, [
+    'expensebatchno',
+    'expensebatch',
+    'expbatchno',
+    'expbatch',
+    'expensepool',
+    'costbatch',
+    'landingexpensebatch'
+  ]) || '').trim();
+
+  const rawExpense2 = String(getFlexibleValue(row2, [
+    'expensebatchno',
+    'expensebatch',
+    'expbatchno',
+    'expbatch',
+    'expensepool',
+    'costbatch',
+    'landingexpensebatch'
+  ]) || '').trim();
+
+  const expenseBatch1 = rawExpense1 || undefined;
+  const expenseBatch2 = rawExpense2 || undefined;
+
+  assert.equal(expenseBatch1, 'EXP-001');
+  assert.equal(expenseBatch2, undefined);
+
+  // Ensure Batch Yield Weight (1754) is NEVER assigned as an expense batch!
+  assert.notEqual(expenseBatch2, '1754');
+});
+
+
 
 
 
