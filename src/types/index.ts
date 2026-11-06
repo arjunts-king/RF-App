@@ -141,6 +141,8 @@ export interface Purchase {
   locationId: string;
   invoiceNo: string;
   batchNo?: string;
+  expenseBatchNo?: string; // Grouping identifier for shared landing expenses apportionment
+  yieldBatchNo?: string; // Grouping identifier for shared processing yield apportionment
 
   // Product specification
   speciesId: string;

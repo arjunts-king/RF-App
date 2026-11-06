@@ -32,7 +32,7 @@ export function getFlexibleValue(row: Record<string, any>, candidateKeys: string
   for (const [key, val] of Object.entries(row)) {
     const norm = normalizeKey(key);
     for (const cand of normalizedCandidateKeys) {
-      if (cand.length >= 4 && (norm.includes(cand) || cand.includes(norm))) {
+      if (cand.length >= 3 && norm.includes(cand)) {
         if (val !== undefined && val !== null && String(val).trim() !== '') {
           return typeof val === 'string' ? val.trim() : val;
         }

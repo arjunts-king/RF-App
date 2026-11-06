@@ -689,6 +689,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Medium',
       'Count Code or Name': '20/30',
       'Weight (Kg)': 5000,
+      'Expense Batch No': 'EXP-OCT-01',
+      'Yield Batch No': 'YLD-OCT-01',
       'Batch No': 'BATCH-OCT-01',
       'Yield Weight (Kg)': 3640,
       'Yield %': 52,
@@ -713,7 +715,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row1['Total Purchase Value (including landing costs)'] = 1900000 + totalExp1;
     row1['Amount Paid Now (INR)'] = 50000;
     row1['Invoice / Bill No'] = 'INV-2026-88';
-    row1['Remarks'] = 'Batch OCT-01 (5,000 Kg of 7,000 Kg total). When same Batch No is given, both expenses and yield are automatically apportioned by Kg.';
+    row1['Remarks'] = 'Expense Batch EXP-OCT-01 and Yield Batch YLD-OCT-01 (5,000 Kg of 7,000 Kg). Expenses pool with EXP-OCT-01; yield pools with YLD-OCT-01.';
 
     const row2: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',
@@ -724,6 +726,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Small',
       'Count Code or Name': '31/40',
       'Weight (Kg)': 2000,
+      'Expense Batch No': 'EXP-OCT-01',
+      'Yield Batch No': 'YLD-OCT-01',
       'Batch No': 'BATCH-OCT-01',
       'Yield Weight (Kg)': '',
       'Yield %': '',
@@ -744,7 +748,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row2['Total Purchase Value (including landing costs)'] = 620000;
     row2['Amount Paid Now (INR)'] = 20000;
     row2['Invoice / Bill No'] = 'INV-2026-88';
-    row2['Remarks'] = 'Batch OCT-01 (2,000 Kg of 7,000 Kg total). Same Batch No: automatically receives 2000/7000 (28.57%) of pooled expenses & 1,040 Kg yield.';
+    row2['Remarks'] = 'Same Expense Batch EXP-OCT-01 (receives 2000/7000 = 28.57% of expenses) & Yield Batch YLD-OCT-01 (receives 1,040 Kg yield).';
 
     const row3: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '19-10-2026',
@@ -755,6 +759,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': 'Large',
       'Count Code or Name': '',
       'Weight (Kg)': 820,
+      'Expense Batch No': 'EXP-OCT-02',
+      'Yield Batch No': '',
       'Batch No': '',
       'Batch Yield Weight (Kg)': '',
       'Batch Yield %': '',
@@ -778,7 +784,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row3['Total Purchase Value (including landing costs)'] = 213200 + totalExp3;
     row3['Amount Paid Now (INR)'] = 0;
     row3['Invoice / Bill No'] = 'BILL-904';
-    row3['Remarks'] = 'Individual lot yield (533 Kg from 820 Kg raw, 65% recovery)';
+    row3['Remarks'] = 'Only Expense Batch EXP-OCT-02 is set: landing expenses apportion across this expense batch only; yield is direct lot yield.';
 
     const row4: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '20-10-2026',
@@ -789,9 +795,11 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Code or Name': '6/10 & 10/20',
       'Count Code or Name': '',
       'Weight (Kg)': 2000,
+      'Expense Batch No': '',
+      'Yield Batch No': 'YLD-OCT-02',
       'Batch No': '',
-      'Batch Yield Weight (Kg)': '',
-      'Batch Yield %': '',
+      'Batch Yield Weight (Kg)': 1020,
+      'Batch Yield %': 51,
       'Yield Weight (Kg)': 1020,
       'Yield %': 51,
       'Rate per Kg (INR)': 310,
@@ -811,7 +819,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     row4['Total Purchase Value (including landing costs)'] = 620000 + totalExp4;
     row4['Amount Paid Now (INR)'] = 200000;
     row4['Invoice / Bill No'] = 'INV-MIX-2026';
-    row4['Remarks'] = '2000 kg total of both 6/10 and 10/20 size (dual size combined catch without distinction)';
+    row4['Remarks'] = 'Only Yield Batch YLD-OCT-02 is set: finished meat yield apportions across this yield batch; expenses remain direct row costs.';
 
     const ws = XLSX.utils.json_to_sheet([row1, row2, row3, row4]);
     XLSX.utils.book_append_sheet(wb, ws, 'Purchases');
@@ -923,6 +931,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Name': 'Medium',
       'Count Name': '21/25',
       'Weight (Kg)': 3000,
+      'Expense Batch No': 'EXP-BATCH-01',
+      'Yield Batch No': 'YLD-BATCH-01',
       'Batch No': 'BATCH-01',
       'Yield Weight (Kg)': 2600,
       'Yield %': 52,
@@ -944,7 +954,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     purchasesRow1['Total Purchase Value (including landing costs)'] = 1138800 + totalExpMulti1;
     purchasesRow1['Amount Paid'] = 50000;
     purchasesRow1['Invoice No'] = 'INV-2026-88';
-    purchasesRow1['Remarks'] = 'Batch 01 (3000 Kg of 5000 Kg). Both landing expenses and yield automatically apportioned by Kg across BATCH-01.';
+    purchasesRow1['Remarks'] = 'Batch 01 (3000 Kg of 5000 Kg). Expense Batch EXP-BATCH-01 pools landing expenses; Yield Batch YLD-BATCH-01 pools finished yield.';
 
     const purchasesRow2: Record<string, any> = {
       'Purchase Date (DD-MM-YYYY)': '18-10-2026',
@@ -955,6 +965,8 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       'Size Name': 'Small',
       'Count Name': '31/40',
       'Weight (Kg)': 2000,
+      'Expense Batch No': 'EXP-BATCH-01',
+      'Yield Batch No': 'YLD-BATCH-01',
       'Batch No': 'BATCH-01',
       'Yield Weight (Kg)': '',
       'Yield %': '',
@@ -972,7 +984,7 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
     purchasesRow2['Total Purchase Value (including landing costs)'] = 640000;
     purchasesRow2['Amount Paid'] = 20000;
     purchasesRow2['Invoice No'] = 'INV-2026-88';
-    purchasesRow2['Remarks'] = 'Batch 01 (2000 Kg of 5000 Kg). Same Batch No: automatically receives 40% of pooled expenses and 1,040 Kg yield.';
+    purchasesRow2['Remarks'] = 'Batch 01 (2000 Kg of 5000 Kg). Same Expense Batch: receives 40% of pooled expenses; same Yield Batch: receives 40% of yield.';
 
     const wsPur = XLSX.utils.json_to_sheet([purchasesRow1, purchasesRow2]);
     XLSX.utils.book_append_sheet(wb, wsPur, 'Purchases');

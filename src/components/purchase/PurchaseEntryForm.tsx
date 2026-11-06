@@ -30,6 +30,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
   const [supplierId, setSupplierId] = useState<string>('');
   const [locationId, setLocationId] = useState<string>('');
   const [invoiceNo, setInvoiceNo] = useState<string>('');
+  const [expenseBatchNo, setExpenseBatchNo] = useState<string>('');
+  const [yieldBatchNo, setYieldBatchNo] = useState<string>('');
   const [batchNo, setBatchNo] = useState<string>('');
 
   const [speciesId, setSpeciesId] = useState<string>('');
@@ -143,6 +145,8 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
     setSupplierId('');
     setLocationId('');
     setInvoiceNo('');
+    setExpenseBatchNo('');
+    setYieldBatchNo('');
     setBatchNo('');
     setSpeciesId('');
     setGradeId('');
@@ -222,7 +226,9 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       supplierId,
       locationId,
       invoiceNo,
-      batchNo: batchNo.trim() || undefined,
+      expenseBatchNo: expenseBatchNo.trim() || undefined,
+      yieldBatchNo: yieldBatchNo.trim() || undefined,
+      batchNo: batchNo.trim() || expenseBatchNo.trim() || yieldBatchNo.trim() || undefined,
       speciesId,
       gradeId,
       sizeId,
@@ -255,7 +261,13 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
       <PageHeader
         title="Harbour purchase entry"
         description="One form, one save action. Record raw seafood weighment, dynamic landing expenses, joint batch cost pool and payment terms."
-        badge={batchNo ? `Batch Pool: ${batchNo}` : 'Field Form'}
+        badge={
+          expenseBatchNo || yieldBatchNo
+            ? `Batches: ${[expenseBatchNo && `Expense: ${expenseBatchNo}`, yieldBatchNo && `Yield: ${yieldBatchNo}`].filter(Boolean).join(' | ')}`
+            : batchNo
+            ? `Batch Pool: ${batchNo}`
+            : 'Field Form'
+        }
         secondaryActions={[
           {
             label: 'Reset form',
@@ -350,16 +362,37 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink-700 mb-1">
-                Batch No. <span className="text-[10px] text-ink-500 font-normal">(Shared Expense Pool)</span>
+              <label className="block text-xs font-semibold text-amber-900 mb-1 flex items-center justify-between">
+                <span>Expense Batch No.</span>
+                <span className="text-[10px] text-amber-800 font-bold bg-amber-100/80 px-1.5 py-0.2 rounded border border-amber-300">Shared Expense Pool</span>
               </label>
               <input
                 type="text"
-                placeholder="e.g. BATCH-OCT19-A"
-                value={batchNo}
-                onChange={(e) => setBatchNo(e.target.value)}
-                className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
+                placeholder="e.g. EXP-OCT19-A"
+                value={expenseBatchNo}
+                onChange={(e) => setExpenseBatchNo(e.target.value)}
+                className="w-full text-xs font-medium px-3 py-2 bg-amber-50/40 border border-amber-200 rounded-xl focus:bg-white focus:border-amber-600 focus:ring-1 focus:ring-amber-600 outline-none transition"
               />
+              <span className="text-[10px] text-ink-500 block mt-0.5">
+                Apportions freight, ice, dalali by Kg across this expense batch only.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-emerald-900 mb-1 flex items-center justify-between">
+                <span>Yield Batch No.</span>
+                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100/80 px-1.5 py-0.2 rounded border border-emerald-300">Shared Meat Yield</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. YLD-OCT19-A"
+                value={yieldBatchNo}
+                onChange={(e) => setYieldBatchNo(e.target.value)}
+                className="w-full text-xs font-medium px-3 py-2 bg-emerald-50/40 border border-emerald-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none transition"
+              />
+              <span className="text-[10px] text-ink-500 block mt-0.5">
+                Apportions whole-batch meat yield weight & % recovery by Kg across this yield batch only.
+              </span>
             </div>
           </div>
         </div>
@@ -636,11 +669,11 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                 </p>
               )}
 
-              {batchNo.trim() && (
+              {(yieldBatchNo.trim() || batchNo.trim()) && (
                 <div className="text-[11px] text-emerald-800 bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Batch Procurement Active ({batchNo.trim()}):</strong> If finished yield is measured for the whole batch pool rather than per lot, you can leave this lot yield blank and allocate the whole-batch yield in the <strong>Batch Expenses &amp; Yield Engine</strong> or via the Excel Import Template.
+                    <strong>Yield Batch Active ({(yieldBatchNo || batchNo).trim()}):</strong> If finished yield is measured for the entire yield batch pool, you can leave this lot yield blank and allocate the whole-batch yield in the <strong>Yield Batch Processing Engine</strong>. Expenses are NOT affected.
                   </span>
                 </div>
               )}
@@ -723,8 +756,12 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
               <Layers className="w-4 h-4" />
               4. Direct Landing & Procurement Expenses
             </h3>
-            <span className="text-[11px] text-ink-500">
-              {batchNo ? 'Will be proportionally allocated across batch' : 'Direct row expenses'}
+            <span className="text-[11px] font-medium text-amber-700">
+              {expenseBatchNo
+                ? `Will be apportioned across Expense Batch ${expenseBatchNo}`
+                : batchNo
+                ? `Will be apportioned across Batch ${batchNo}`
+                : 'Direct row expenses'}
             </span>
           </div>
 

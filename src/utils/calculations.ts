@@ -166,8 +166,9 @@ export function allocateBatchExpenses(purchasesInBatch: Purchase[]): {
     // Only warn about duplicate entry if the batch is not yet allocated
     const isAlreadyAllocated = activeRows.length > 0 && activeRows.every((p) => p.isBatchAllocated);
     if (!isAlreadyAllocated && rowsWithKeyCount > 1) {
+      const batchIdent = activeRows[0].expenseBatchNo || activeRows[0].batchNo || 'batch';
       warnings.push(
-        `Data Quality Warning: Expense head "${key}" was entered on ${rowsWithKeyCount} separate rows in batch "${activeRows[0].batchNo}". Check if it was entered twice by mistake.`
+        `Data Quality Warning: Expense head "${key}" was entered on ${rowsWithKeyCount} separate rows in expense batch "${batchIdent}". Check if it was entered twice by mistake.`
       );
     }
   });
@@ -368,6 +369,12 @@ export function allocateBatchCombined(
     warnings: [...expWarnings, ...yieldWarnings]
   };
 }
+
+/**
+ * Explicit standalone aliases for decoupled Expense Batch and Yield Batch processing
+ */
+export const allocateExpenseBatch = allocateBatchExpenses;
+export const allocateYieldBatch = allocateBatchYield;
 
 /**
  * Format Indian Currency (INR ₹)

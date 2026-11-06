@@ -74,6 +74,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     supplierId: '',
     locationId: '',
     invoiceNo: '',
+    expenseBatchNo: '',
+    yieldBatchNo: '',
     batchNo: '',
     speciesId: '',
     gradeId: '',
@@ -125,7 +127,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       const q = searchTerm.toLowerCase();
       const matchId = p.purchaseId.toLowerCase().includes(q);
       const matchInvoice = p.invoiceNo?.toLowerCase().includes(q);
-      const matchBatch = p.batchNo?.toLowerCase().includes(q);
+      const matchBatch = p.batchNo?.toLowerCase().includes(q) || p.expenseBatchNo?.toLowerCase().includes(q) || p.yieldBatchNo?.toLowerCase().includes(q);
       const matchSupplier = supplierMap.get(p.supplierId)?.name.toLowerCase().includes(q);
       const matchSpecies = speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
       const secSzName = p.secondarySizeId ? sizeMap.get(p.secondarySizeId)?.name.toLowerCase() : '';
@@ -200,6 +202,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
       HarbourLocation: locationMap.get(p.locationId)?.name || 'N/A',
       InvoiceNo: p.invoiceNo || 'N/A',
+      ExpenseBatchNo: p.expenseBatchNo || p.batchNo || 'None',
+      YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
@@ -231,6 +235,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       { key: 'Supplier', label: 'Supplier Name' },
       { key: 'HarbourLocation', label: 'Landing Centre' },
       { key: 'InvoiceNo', label: 'Invoice No' },
+      { key: 'ExpenseBatchNo', label: 'Expense Batch No' },
+      { key: 'YieldBatchNo', label: 'Yield Batch No' },
       { key: 'BatchNo', label: 'Batch No' },
       { key: 'Species', label: 'Species' },
       { key: 'Grade', label: 'Grade' },
@@ -288,6 +294,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       supplierId: p.supplierId,
       locationId: p.locationId,
       invoiceNo: p.invoiceNo || '',
+      expenseBatchNo: p.expenseBatchNo || p.batchNo || '',
+      yieldBatchNo: p.yieldBatchNo || '',
       batchNo: p.batchNo || '',
       speciesId: p.speciesId,
       gradeId: p.gradeId || '',
@@ -334,7 +342,9 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         supplierId: editForm.supplierId,
         locationId: editForm.locationId,
         invoiceNo: editForm.invoiceNo,
-        batchNo: editForm.batchNo.trim() || undefined,
+        expenseBatchNo: editForm.expenseBatchNo.trim() || undefined,
+        yieldBatchNo: editForm.yieldBatchNo.trim() || undefined,
+        batchNo: editForm.batchNo.trim() || editForm.expenseBatchNo.trim() || editForm.yieldBatchNo.trim() || undefined,
         speciesId: editForm.speciesId,
         gradeId: editForm.gradeId,
         sizeId: editForm.sizeId,
@@ -380,6 +390,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
       HarbourLocation: locationMap.get(p.locationId)?.name || 'N/A',
       InvoiceNo: p.invoiceNo || 'N/A',
+      ExpenseBatchNo: p.expenseBatchNo || p.batchNo || 'None',
+      YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
       Species: speciesMap.get(p.speciesId)?.name || 'N/A',
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
@@ -414,6 +426,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       { key: 'Supplier', label: 'Supplier Name' },
       { key: 'HarbourLocation', label: 'Landing Centre' },
       { key: 'InvoiceNo', label: 'Invoice No' },
+      { key: 'ExpenseBatchNo', label: 'Expense Batch No' },
+      { key: 'YieldBatchNo', label: 'Yield Batch No' },
       { key: 'BatchNo', label: 'Batch No' },
       { key: 'Species', label: 'Species' },
       { key: 'Grade', label: 'Grade' },
@@ -680,9 +694,25 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                         />
                       </td>
                       <td className="py-3 px-4 font-bold text-rose-700 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           {p.purchaseId}
-                          {p.batchNo && (
+                          {p.expenseBatchNo && (
+                            <span
+                              className="px-1.5 py-0.2 rounded text-[9px] bg-amber-50 text-amber-800 border border-amber-200 font-bold"
+                              title={`Expense Batch: ${p.expenseBatchNo}`}
+                            >
+                              Exp: {p.expenseBatchNo}
+                            </span>
+                          )}
+                          {p.yieldBatchNo && (
+                            <span
+                              className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold"
+                              title={`Yield Batch: ${p.yieldBatchNo}`}
+                            >
+                              Yld: {p.yieldBatchNo}
+                            </span>
+                          )}
+                          {!p.expenseBatchNo && !p.yieldBatchNo && p.batchNo && (
                             <span title={`Shared Batch: ${p.batchNo}`}>
                               <Layers className="w-3.5 h-3.5 text-amber-600" />
                             </span>
@@ -924,7 +954,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
               <div>
                 <span className="text-ink-500 block">Purchase Date</span>
                 <span className="font-bold text-ink-900 text-sm">{selectedPurchase.purchaseDate}</span>
@@ -938,8 +968,16 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                 <span className="font-bold text-ink-900 text-sm">{selectedPurchase.invoiceNo || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-ink-500 block">Batch Pool</span>
-                <span className="font-bold text-rose-700 text-sm">{selectedPurchase.batchNo || 'Single Product'}</span>
+                <span className="text-ink-500 block">Expense Batch</span>
+                <span className="font-bold text-amber-700 text-sm">
+                  {selectedPurchase.expenseBatchNo || selectedPurchase.batchNo || 'Single Product'}
+                </span>
+              </div>
+              <div>
+                <span className="text-ink-500 block">Yield Batch</span>
+                <span className="font-bold text-emerald-700 text-sm">
+                  {selectedPurchase.yieldBatchNo || 'Individual Lot'}
+                </span>
               </div>
             </div>
 
@@ -1399,7 +1437,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-semibold text-ink-700 mb-1">Invoice / Weighment Slip #</label>
               <input
@@ -1411,13 +1449,23 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               />
             </div>
             <div>
-              <label className="block font-semibold text-ink-700 mb-1">Batch / Lot # (Optional)</label>
+              <label className="block font-semibold text-amber-900 mb-1">Expense Batch #</label>
               <input
                 type="text"
-                value={editForm.batchNo}
-                onChange={(e) => setEditForm({ ...editForm, batchNo: e.target.value })}
-                placeholder="e.g. BATCH-2026-04"
-                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
+                value={editForm.expenseBatchNo}
+                onChange={(e) => setEditForm({ ...editForm, expenseBatchNo: e.target.value })}
+                placeholder="e.g. EXP-2026-04"
+                className="w-full p-2 bg-amber-50/40 border border-amber-200 rounded-xl focus:bg-white focus:border-amber-600 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-emerald-900 mb-1">Yield Batch #</label>
+              <input
+                type="text"
+                value={editForm.yieldBatchNo}
+                onChange={(e) => setEditForm({ ...editForm, yieldBatchNo: e.target.value })}
+                placeholder="e.g. YLD-2026-04"
+                className="w-full p-2 bg-emerald-50/40 border border-emerald-200 rounded-xl focus:bg-white focus:border-emerald-600 outline-none"
               />
             </div>
           </div>

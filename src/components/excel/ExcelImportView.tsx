@@ -855,6 +855,8 @@ export const ExcelImportView: React.FC<{
         'Due Date': p.dueDate,
         'Payment Status': p.paymentStatus,
         'Invoice No': p.invoiceNo,
+        'Expense Batch No': p.expenseBatchNo || p.batchNo || '',
+        'Yield Batch No': p.yieldBatchNo || '',
         'Batch No': p.batchNo || '',
         'Batch Yield Weight (Kg)': p.batchYieldWeightKg ?? '',
         'Batch Yield %': p.batchYieldPct ? `${p.batchYieldPct}%` : '',

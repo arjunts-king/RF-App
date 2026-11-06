@@ -6,6 +6,9 @@ import {
   computePurchaseFields,
   allocateBatchCombined,
   allocateBatchExpenses,
+  allocateBatchYield,
+  allocateExpenseBatch,
+  allocateYieldBatch,
   getIndianFinancialYear,
   calculateDueDate,
   derivePaymentStatus,
@@ -1088,6 +1091,265 @@ test('Dashboard Multi-Filters: Multi-species, multi-supplier, and multi-criteria
   assert.equal(matchedCustomers.length, 1);
   assert.equal(matchedCustomers[0].id, 'inv2');
 });
+
+// ============================================================================
+// SUITE 9: Independent Expense Batch and Yield Batch Processing
+// ============================================================================
+
+test('Decoupled Batching: allocateExpenseBatch apportions expenses without modifying yield', () => {
+  const lot1 = {
+    id: 'exp-lot-1',
+    purchaseId: 'PUR-00101',
+    expenseBatchNo: 'EB-2026-X',
+    weightKg: 400,
+    purchaseValue: 160000,
+    grossPurchaseValue: 160000,
+    expenseBreakdown: { 'transport': 6000, 'ice': 2000 },
+    totalExpenses: 8000,
+    totalCost: 168000,
+    amountPaid: 50000,
+    yieldWeightKg: 220,
+    yieldPct: 55,
+    isVoided: false
+  };
+
+  const lot2 = {
+    id: 'exp-lot-2',
+    purchaseId: 'PUR-00102',
+    expenseBatchNo: 'EB-2026-X',
+    weightKg: 600,
+    purchaseValue: 240000,
+    grossPurchaseValue: 240000,
+    expenseBreakdown: {},
+    totalExpenses: 0,
+    totalCost: 240000,
+    amountPaid: 0,
+    yieldWeightKg: 330,
+    yieldPct: 55,
+    isVoided: false
+  };
+
+  // Run expense apportionment ONLY
+  const { updatedPurchases, warnings } = allocateExpenseBatch([lot1, lot2]);
+  assert.equal(warnings.length, 0);
+  assert.equal(updatedPurchases.length, 2);
+
+  const u1 = updatedPurchases.find((p) => p.id === 'exp-lot-1');
+  const u2 = updatedPurchases.find((p) => p.id === 'exp-lot-2');
+
+  // Total expense pool = 8000 (transport: 6000, ice: 2000)
+  // Lot 1 (40% weight share) -> transport: 2400, ice: 800, total: 3200
+  // Lot 2 (60% weight share) -> transport: 3600, ice: 1200, total: 4800
+  assert.equal(u1.expenseBreakdown['transport'], 2400);
+  assert.equal(u2.expenseBreakdown['transport'], 3600);
+  assert.equal(u1.expenseBreakdown['ice'], 800);
+  assert.equal(u2.expenseBreakdown['ice'], 1200);
+  assert.equal(u1.totalExpenses, 3200);
+  assert.equal(u2.totalExpenses, 4800);
+  assert.equal(u1.totalCost, 163200);
+  assert.equal(u2.totalCost, 244800);
+  assert.equal(u1.isBatchAllocated, true);
+  assert.equal(u2.isBatchAllocated, true);
+
+  // CRITICAL REQUIREMENT: Yield fields MUST be untouched and uncorrupted!
+  assert.equal(u1.yieldWeightKg, 220);
+  assert.equal(u1.yieldPct, 55);
+  assert.equal(u2.yieldWeightKg, 330);
+  assert.equal(u2.yieldPct, 55);
+  assert.equal(u1.isBatchYieldAllocated, undefined);
+  assert.equal(u2.isBatchYieldAllocated, undefined);
+});
+
+test('Decoupled Batching: allocateYieldBatch apportions yield without modifying expenses or cost', () => {
+  const lotA = {
+    id: 'yld-lot-a',
+    purchaseId: 'PUR-00201',
+    yieldBatchNo: 'YB-2026-Z',
+    weightKg: 500,
+    purchaseValue: 200000,
+    grossPurchaseValue: 200000,
+    expenseBreakdown: { 'freight': 3500 },
+    totalExpenses: 3500,
+    totalCost: 203500,
+    effectiveRatePerKg: 407,
+    amountPaid: 100000,
+    balancePayable: 103500,
+    paymentStatus: 'Partially Paid',
+    isVoided: false
+  };
+
+  const lotB = {
+    id: 'yld-lot-b',
+    purchaseId: 'PUR-00202',
+    yieldBatchNo: 'YB-2026-Z',
+    weightKg: 500,
+    purchaseValue: 180000,
+    grossPurchaseValue: 180000,
+    expenseBreakdown: { 'ice': 1200 },
+    totalExpenses: 1200,
+    totalCost: 181200,
+    effectiveRatePerKg: 362.4,
+    amountPaid: 0,
+    balancePayable: 181200,
+    paymentStatus: 'Unpaid',
+    isVoided: false
+  };
+
+  // Allocate 520 Kg finished meat yield across the 1,000 Kg raw intake (52% recovery)
+  const { updatedPurchases, warnings } = allocateYieldBatch([lotA, lotB], 520);
+  assert.equal(warnings.length, 0);
+
+  const resA = updatedPurchases.find((p) => p.id === 'yld-lot-a');
+  const resB = updatedPurchases.find((p) => p.id === 'yld-lot-b');
+
+  // Finished yield apportioned 50% / 50%
+  assert.equal(resA.yieldWeightKg, 260);
+  assert.equal(resB.yieldWeightKg, 260);
+  assert.equal(resA.yieldPct, 52);
+  assert.equal(resB.yieldPct, 52);
+  assert.equal(resA.batchYieldWeightKg, 520);
+  assert.equal(resB.batchYieldWeightKg, 520);
+  assert.equal(resA.batchYieldPct, 52);
+  assert.equal(resB.batchYieldPct, 52);
+  assert.equal(resA.isBatchYieldAllocated, true);
+  assert.equal(resB.isBatchYieldAllocated, true);
+
+  // CRITICAL REQUIREMENT: Expenses, Costs, and Payment status MUST NOT be touched!
+  assert.equal(resA.totalExpenses, 3500);
+  assert.equal(resB.totalExpenses, 1200);
+  assert.equal(resA.expenseBreakdown['freight'], 3500);
+  assert.equal(resB.expenseBreakdown['ice'], 1200);
+  assert.equal(resA.totalCost, 203500);
+  assert.equal(resB.totalCost, 181200);
+  assert.equal(resA.effectiveRatePerKg, 407);
+  assert.equal(resB.effectiveRatePerKg, 362.4);
+  assert.equal(resA.balancePayable, 103500);
+  assert.equal(resB.balancePayable, 181200);
+  assert.equal(resA.isBatchAllocated, undefined);
+  assert.equal(resB.isBatchAllocated, undefined);
+});
+
+test('Decoupled Batching: Transaction with separate Expense Batch and Yield Batch operates independently across different peer groups', () => {
+  // Tx1: in Expense Batch EB-99 AND in Yield Batch YB-88
+  const tx1 = {
+    id: 'tx-1',
+    expenseBatchNo: 'EB-99',
+    yieldBatchNo: 'YB-88',
+    weightKg: 200,
+    grossPurchaseValue: 80000,
+    purchaseValue: 80000,
+    expenseBreakdown: { 'transport': 10000 },
+    totalExpenses: 10000,
+    totalCost: 90000,
+    isVoided: false
+  };
+
+  // Tx2: shares Expense Batch EB-99 with Tx1, but has NO Yield Batch
+  const tx2 = {
+    id: 'tx-2',
+    expenseBatchNo: 'EB-99',
+    yieldBatchNo: undefined,
+    weightKg: 800,
+    grossPurchaseValue: 320000,
+    purchaseValue: 320000,
+    expenseBreakdown: {},
+    totalExpenses: 0,
+    totalCost: 320000,
+    isVoided: false
+  };
+
+  // Tx3: shares Yield Batch YB-88 with Tx1, but has NO Expense Batch
+  const tx3 = {
+    id: 'tx-3',
+    expenseBatchNo: undefined,
+    yieldBatchNo: 'YB-88',
+    weightKg: 300,
+    grossPurchaseValue: 120000,
+    purchaseValue: 120000,
+    expenseBreakdown: { 'local_ice': 1500 },
+    totalExpenses: 1500,
+    totalCost: 121500,
+    isVoided: false
+  };
+
+  // 1. Apportion Expense Batch EB-99 (Tx1 & Tx2: total 1,000 kg, 20% & 80%)
+  const { updatedPurchases: expAllocated } = allocateExpenseBatch([tx1, tx2]);
+  const expTx1 = expAllocated.find((p) => p.id === 'tx-1');
+  const expTx2 = expAllocated.find((p) => p.id === 'tx-2');
+
+  assert.equal(expTx1.totalExpenses, 2000); // 20% of 10,000
+  assert.equal(expTx2.totalExpenses, 8000); // 80% of 10,000
+  assert.equal(expTx1.totalCost, 82000);
+  assert.equal(expTx2.totalCost, 328000);
+  // Yield is untouched
+  assert.equal(expTx1.isBatchYieldAllocated, undefined);
+  assert.equal(expTx2.isBatchYieldAllocated, undefined);
+
+  // 2. Apportion Yield Batch YB-88 (Tx1 & Tx3: total 500 kg, 200 kg = 40%, 300 kg = 60%)
+  // Provide 250 Kg finished meat yield (50% recovery)
+  const { updatedPurchases: yldAllocated } = allocateYieldBatch([expTx1, tx3], 250);
+  const finalTx1 = yldAllocated.find((p) => p.id === 'tx-1');
+  const finalTx3 = yldAllocated.find((p) => p.id === 'tx-3');
+
+  // Tx1 gets 40% of 250 Kg = 100 Kg yield
+  assert.equal(finalTx1.yieldWeightKg, 100);
+  assert.equal(finalTx1.yieldPct, 50);
+  assert.equal(finalTx1.isBatchYieldAllocated, true);
+  // Tx1 retains its apportioned expenses from EB-99!
+  assert.equal(finalTx1.totalExpenses, 2000);
+  assert.equal(finalTx1.totalCost, 82000);
+
+  // Tx3 gets 60% of 250 Kg = 150 Kg yield
+  assert.equal(finalTx3.yieldWeightKg, 150);
+  assert.equal(finalTx3.yieldPct, 50);
+  assert.equal(finalTx3.isBatchYieldAllocated, true);
+  // Tx3 retains its direct expenses (local_ice: 1500) and was NOT pooled with EB-99!
+  assert.equal(finalTx3.totalExpenses, 1500);
+  assert.equal(finalTx3.totalCost, 121500);
+});
+
+test('Excel Import Normalization: Flexible recognition of Expense Batch No and Yield Batch No', () => {
+  const rowWithAliases = {
+    'Expense Batch No': 'EB-OCT-401',
+    'Yield Batch No': 'YB-OCT-902',
+    'Weight (Kg)': 1500
+  };
+
+  const expBatchVal = getFlexibleValue(rowWithAliases, [
+    'expensebatchno',
+    'expensebatch',
+    'expbatchno',
+    'expbatch',
+    'expensepool',
+    'landingexpensebatch'
+  ]);
+  assert.equal(expBatchVal, 'EB-OCT-401');
+
+  const yldBatchVal = getFlexibleValue(rowWithAliases, [
+    'yieldbatchno',
+    'yieldbatch',
+    'recoverybatch',
+    'processingbatch',
+    'batchyieldno',
+    'procyieldbatch'
+  ]);
+  assert.equal(yldBatchVal, 'YB-OCT-902');
+
+  // Backwards compatibility with legacy Batch No
+  const legacyRow = {
+    'Batch No': 'BATCH-LEGACY-01',
+    'Weight (Kg)': 2000
+  };
+  const legacyExpBatch = getFlexibleValue(legacyRow, ['expensebatchno', 'expensebatch']);
+  assert.equal(legacyExpBatch, undefined);
+  const legacyBatchNo = getFlexibleValue(legacyRow, ['batchno', 'batch', 'lotno', 'lot']);
+  assert.equal(legacyBatchNo, 'BATCH-LEGACY-01');
+
+  // When expenseBatch is undefined, legacy batchNo serves as expense batch fallback
+  const resolvedExpBatch = legacyExpBatch || legacyBatchNo;
+  assert.equal(resolvedExpBatch, 'BATCH-LEGACY-01');
+});
+
 
 
 
