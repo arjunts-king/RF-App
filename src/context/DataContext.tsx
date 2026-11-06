@@ -372,18 +372,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (list && list.length > 0) {
       list = list.map((p) => {
         // Sanitize legacy bug where batchNo was conflated with yieldBatchNo and triggered erroneous batch expense allocation
-        let cleanP = p;
+        let cleanP = { ...p };
         if (cleanP.yieldBatchNo && !cleanP.expenseBatchNo && cleanP.batchNo === cleanP.yieldBatchNo) {
-          cleanP = { ...cleanP, batchNo: undefined, isBatchAllocated: false };
+          cleanP.batchNo = undefined;
+          cleanP.isBatchAllocated = false;
         }
         // Sanitize legacy bug where batchYieldWeightKg / yieldWeightKg was erroneously parsed as expenseBatchNo
         if (
           cleanP.expenseBatchNo &&
-          !isNaN(Number(cleanP.expenseBatchNo)) &&
-          (Number(cleanP.expenseBatchNo) === cleanP.batchYieldWeightKg ||
+          (!isNaN(Number(cleanP.expenseBatchNo)) ||
+            Number(cleanP.expenseBatchNo) === cleanP.batchYieldWeightKg ||
             Number(cleanP.expenseBatchNo) === cleanP.yieldWeightKg)
         ) {
-          cleanP = { ...cleanP, expenseBatchNo: undefined, isBatchAllocated: false };
+          cleanP.expenseBatchNo = undefined;
+          cleanP.isBatchAllocated = false;
         }
         if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
 
@@ -421,16 +423,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (modified) {
           const totalExpenses = Number(Object.values(eb).reduce((sum, v) => sum + (Number(v) || 0), 0).toFixed(2));
-          const grossPurchaseValue = Number(p.grossPurchaseValue ?? (p.purchaseValue - (p.damageAmount || 0))) || 0;
+          const grossPurchaseValue = Number(cleanP.grossPurchaseValue ?? (cleanP.purchaseValue - (cleanP.damageAmount || 0))) || 0;
           const totalCost = Number((grossPurchaseValue + totalExpenses).toFixed(2));
-          const effectiveRatePerKg = p.weightKg > 0 ? Number((totalCost / p.weightKg).toFixed(2)) : 0;
-          const amountPaid = Number(p.amountPaid) || 0;
+          const effectiveRatePerKg = cleanP.weightKg > 0 ? Number((totalCost / cleanP.weightKg).toFixed(2)) : 0;
+          const amountPaid = Number(cleanP.amountPaid) || 0;
           const balancePayable = Number(Math.max(0, totalCost - amountPaid).toFixed(2));
           const paymentStatus: PaymentStatus =
             amountPaid === 0 ? 'Unpaid' : amountPaid >= totalCost ? 'Fully Paid' : 'Partially Paid';
 
           return {
-            ...p,
+            ...cleanP,
             expenseBreakdown: eb,
             totalExpenses,
             totalCost,
@@ -439,7 +441,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             paymentStatus
           };
         }
-        return p;
+        return cleanP;
       });
     }
     return list;

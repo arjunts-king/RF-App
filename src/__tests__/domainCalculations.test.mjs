@@ -1595,6 +1595,29 @@ test('Decoupled Batching: Excel import extraction strictly isolates Expense Batc
   assert.notEqual(expenseBatch2, '1754');
 });
 
+test('Decoupled Batching: BatchExpenseView ignores numeric yield weights and displays strictly explicit expense batches', () => {
+  const purchases = [
+    { id: '1', expenseBatchNo: 'EXP-001', isVoided: false },
+    { id: '2', expenseBatchNo: 'EXP-002', isVoided: false },
+    { id: '3', expenseBatchNo: '1234', isVoided: false }, // Legacy erroneous numeric weight
+    { id: '4', expenseBatchNo: '552', isVoided: false },  // Legacy erroneous numeric weight
+    { id: '5', expenseBatchNo: undefined, isVoided: false }
+  ];
+
+  const expenseBatches = Array.from(
+    new Set(
+      purchases
+        .filter((p) => Boolean(p.expenseBatchNo) && isNaN(Number(p.expenseBatchNo)) && !p.isVoided)
+        .map((p) => p.expenseBatchNo)
+    )
+  );
+
+  assert.deepEqual(expenseBatches, ['EXP-001', 'EXP-002']);
+  assert.equal(expenseBatches.includes('1234'), false);
+  assert.equal(expenseBatches.includes('552'), false);
+});
+
+
 
 
 

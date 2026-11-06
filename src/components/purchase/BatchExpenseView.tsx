@@ -17,11 +17,11 @@ export const BatchExpenseView: React.FC = () => {
   // Mode: independent Expense Batching vs independent Yield Batching
   const [activeTab, setActiveTab] = useState<'expenses' | 'yield'>('expenses');
 
-  // Distinct Expense Batches: STRICTLY expenseBatchNo only (never contaminated by yield batches)
+  // Distinct Expense Batches: STRICTLY expenseBatchNo only (never numeric yield weights or yield batches)
   const expenseBatches = Array.from(
     new Set(
       purchases
-        .filter((p) => Boolean(p.expenseBatchNo) && !p.isVoided)
+        .filter((p) => Boolean(p.expenseBatchNo) && isNaN(Number(p.expenseBatchNo)) && !p.isVoided)
         .map((p) => p.expenseBatchNo!)
     )
   );
