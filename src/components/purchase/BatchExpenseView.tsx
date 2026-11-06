@@ -24,7 +24,7 @@ export const BatchExpenseView: React.FC = () => {
         .filter((p) => Boolean(p.expenseBatchNo) && isNaN(Number(p.expenseBatchNo)) && !p.isVoided)
         .map((p) => p.expenseBatchNo!)
     )
-  );
+  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   // Distinct Yield Batches: STRICTLY yieldBatchNo only (never contaminated by expense batches)
   const yieldBatches = Array.from(
@@ -33,7 +33,7 @@ export const BatchExpenseView: React.FC = () => {
         .filter((p) => Boolean(p.yieldBatchNo) && !p.isVoided)
         .map((p) => p.yieldBatchNo!)
     )
-  );
+  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   const [selectedExpenseBatch, setSelectedExpenseBatch] = useState<string>(expenseBatches[0] || '');
   const [selectedYieldBatch, setSelectedYieldBatch] = useState<string>(yieldBatches[0] || '');

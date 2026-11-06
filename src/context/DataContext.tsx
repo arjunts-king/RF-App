@@ -387,6 +387,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           cleanP.expenseBatchNo = undefined;
           cleanP.isBatchAllocated = false;
         }
+        if (cleanP.batchNo && !isNaN(Number(cleanP.batchNo))) {
+          cleanP.batchNo = undefined;
+        }
         if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
 
         const eb = { ...cleanP.expenseBreakdown };
