@@ -1617,6 +1617,105 @@ test('Decoupled Batching: BatchExpenseView ignores numeric yield weights and dis
   assert.equal(expenseBatches.includes('552'), false);
 });
 
+test('Sales Excel Import Extraction: extracts line items, sizes, cartons, weights, rates, and amounts seamlessly', () => {
+  const row1 = {
+    'SalesOrder Number': 'RF/EXP/01/26-27',
+    'Order Date': 46140,
+    'Customer Name': 'QINGDAO FRESHNESS LEADER INTERNATIONAL TRADE CO LTD',
+    'Billing Country': 'China',
+    'GST Treatment': 'overseas',
+    'Item Name': 'FROZEN VANAMEI PVPD',
+    'Item Desc': '71/90 200 CASES',
+    'QuantityOrdered': 2400,
+    'Item Price': 6.3,
+    'Item Total': 15120,
+    'HSN/SAC': '03061790'
+  };
+
+  const row2 = {
+    'SalesOrder Number': 'RF/EXP/02/26-27',
+    'Item Name': 'Frozen Leather Jacket 50/100',
+    'Item Desc': 'PACKING: 1X10 KGS (BLAST FROZEN)',
+    'QuantityOrdered': 10000,
+    'Item Price': 2.8,
+    'Item Total': 28000,
+    'HSN/SAC': '03038999'
+  };
+
+  const row3 = {
+    'SalesOrder Number': 'RF/EXP/03/26-27',
+    'Item Name': 'Frozen Squid Semi Needle A Grade U/3',
+    'Item Desc': 'No. of Cartons: 1202',
+    'QuantityOrdered': 14424,
+    'Item Price': 4.5,
+    'Item Total': 64908,
+    'HSN/SAC': '03074310'
+  };
+
+  // Test row 1 extraction
+  const invNo1 = getFlexibleValue(row1, ['salesordernumber', 'invoiceno', 'invoice']);
+  assert.equal(invNo1, 'RF/EXP/01/26-27');
+
+  const weight1 = parseFloat(getFlexibleValue(row1, ['quantityordered', 'netweightkg', 'weight']));
+  assert.equal(weight1, 2400);
+
+  const price1 = parseFloat(getFlexibleValue(row1, ['itemprice', 'rateperkg', 'price']));
+  assert.equal(price1, 6.3);
+
+  const total1 = parseFloat(getFlexibleValue(row1, ['itemtotal', 'amountcurrency']));
+  assert.equal(total1, 15120);
+
+  // Size parsing from Desc
+  const sizeMatch1 = String(row1['Item Desc']).match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+  assert.equal(sizeMatch1 ? sizeMatch1[1] : null, '71/90');
+
+  // Cartons parsing from Desc
+  const ctnMatch1 = String(row1['Item Desc']).match(/(\d+)\s*(?:cases|case|cartons|carton|ctns|ctn|boxes|box|pkgs|pkg)/i);
+  assert.equal(ctnMatch1 ? parseInt(ctnMatch1[1], 10) : 0, 200);
+
+  // Test row 2 size parsing from Name & cartons from packing
+  const sizeMatch2 = String(row2['Item Name']).match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+  assert.equal(sizeMatch2 ? sizeMatch2[1] : null, '50/100');
+
+  const packMatch2 = String(row2['Item Desc']).match(/PACKING:\s*(\d+)\s*[xX]\s*(\d+)\s*KG/i);
+  const blockKg2 = packMatch2 ? parseInt(packMatch2[1], 10) * parseInt(packMatch2[2], 10) : 0;
+  assert.equal(blockKg2, 10);
+  const cartons2 = Math.round(row2['QuantityOrdered'] / blockKg2);
+  assert.equal(cartons2, 1000);
+
+  // Test row 3 size parsing (U/3) & cartons from No. of Cartons
+  const sizeMatch3 = String(row3['Item Name']).match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+  assert.equal(sizeMatch3 ? sizeMatch3[1] : null, 'U/3');
+
+  const ctnMatch3 = String(row3['Item Desc']).match(/(?:No\.?\s*of\s*Cartons|Total\s*Cartons)\s*[:=]\s*(\d+)/i);
+  assert.equal(ctnMatch3 ? parseInt(ctnMatch3[1], 10) : 0, 1202);
+});
+
+test('Customer Model: Overseas Customer defaults with GST Exempt export supply status', () => {
+  const newOverseasCust = {
+    id: 'cust-1',
+    code: 'CUST-001',
+    name: 'QINGDAO FRESHNESS LEADER INTERNATIONAL TRADE CO LTD',
+    customerType: 'Overseas',
+    gstTreatment: 'Overseas (GST Exempt Export Supply)',
+    isGstExempt: true,
+    address: 'Qingdao, China',
+    country: 'China',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    taxId: '',
+    bankDetails: '',
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+
+  assert.equal(newOverseasCust.customerType, 'Overseas');
+  assert.equal(newOverseasCust.isGstExempt, true);
+  assert.equal(newOverseasCust.gstTreatment, 'Overseas (GST Exempt Export Supply)');
+  assert.equal(Boolean(newOverseasCust.taxId), false); // No GSTIN required for overseas
+});
+
 
 
 

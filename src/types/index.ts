@@ -337,16 +337,21 @@ export interface DailyProcessingEntry {
 
 export type SalesCurrency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'INR' | 'AED' | 'SGD';
 
+export type CustomerType = 'Overseas' | 'Domestic';
+
 export interface Customer {
   id: string;
   code: string; // e.g. "CUST-001"
   name: string; // Consignee / Buyer trade name
+  customerType?: CustomerType; // Overseas Customer (Export) vs Domestic Customer
+  gstTreatment?: string; // e.g. "Overseas (GST Exempt Export Supply)", "Zero-Rated Export", "Domestic Regular GST"
+  isGstExempt?: boolean; // True for overseas customers (export is an exempt/zero-rated supply under GST)
   address: string;
   country: string; // Destination country, e.g. "USA", "Japan", "Netherlands"
   contactPerson: string;
   phone: string;
   email: string;
-  taxId: string; // Buyer's GSTIN / Tax ID / US FEIN / VAT
+  taxId: string; // Buyer's Foreign Tax ID / US FEIN / VAT / GSTIN (No GSTIN for overseas)
   bankDetails: string; // Bank details for inward remittance realization (SWIFT / IBAN / Account)
   active: boolean;
   createdAt: string;

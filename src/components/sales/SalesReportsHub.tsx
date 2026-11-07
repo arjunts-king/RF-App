@@ -272,7 +272,7 @@ export const SalesReportsHub: React.FC = () => {
   // Check 1: Missing Data & Zero Values
   activeInvoices.forEach((inv) => {
     const cust = customerMap.get(inv.consigneeId);
-    if (!cust?.taxId) {
+    if (!cust?.taxId && cust?.customerType === 'Domestic' && !cust?.isGstExempt) {
       exceptionItems.push({
         id: `exc-tax-${inv.id}`,
         type: 'Missing Data',

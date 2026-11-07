@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
 import { StatusBadge } from '../common/StatusBadge';
-import { Customer } from '../../types';
+import { Customer, CustomerType } from '../../types';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
   Users,
@@ -31,6 +31,7 @@ export const CustomerManager: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Overseas' | 'Domestic'>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
@@ -42,6 +43,9 @@ export const CustomerManager: React.FC = () => {
   // Form State
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [customerType, setCustomerType] = useState<CustomerType>('Overseas');
+  const [gstTreatment, setGstTreatment] = useState('Overseas (GST Exempt Export Supply)');
+  const [isGstExempt, setIsGstExempt] = useState(true);
   const [address, setAddress] = useState('');
   const [country, setCountry] = useState('United States');
   const [contactPerson, setContactPerson] = useState('');
@@ -54,6 +58,8 @@ export const CustomerManager: React.FC = () => {
   const countries = Array.from(new Set(customers.map((c) => c.country).filter(Boolean))).sort();
 
   const filteredCustomers = customers.filter((c) => {
+    if (typeFilter === 'Overseas' && c.customerType === 'Domestic') return false;
+    if (typeFilter === 'Domestic' && c.customerType !== 'Domestic') return false;
     if (countryFilter && c.country !== countryFilter) return false;
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
@@ -62,7 +68,9 @@ export const CustomerManager: React.FC = () => {
       const matchCountry = c.country.toLowerCase().includes(q);
       const matchContact = c.contactPerson.toLowerCase().includes(q);
       const matchTax = c.taxId.toLowerCase().includes(q);
-      return matchName || matchCode || matchCountry || matchContact || matchTax;
+      const matchType = (c.customerType || 'Overseas').toLowerCase().includes(q);
+      const matchGst = (c.gstTreatment || '').toLowerCase().includes(q);
+      return matchName || matchCode || matchCountry || matchContact || matchTax || matchType || matchGst;
     }
     return true;
   });
@@ -71,6 +79,9 @@ export const CustomerManager: React.FC = () => {
     setEditingId(null);
     setCode(`CUST-${String(customers.length + 1).padStart(3, '0')}`);
     setName('');
+    setCustomerType('Overseas');
+    setGstTreatment('Overseas (GST Exempt Export Supply)');
+    setIsGstExempt(true);
     setAddress('');
     setCountry('United States');
     setContactPerson('');
@@ -85,6 +96,9 @@ export const CustomerManager: React.FC = () => {
     setEditingId(c.id);
     setCode(c.code);
     setName(c.name);
+    setCustomerType(c.customerType || 'Overseas');
+    setGstTreatment(c.gstTreatment || (c.customerType === 'Domestic' ? 'Domestic Regular GST' : 'Overseas (GST Exempt Export Supply)'));
+    setIsGstExempt(c.isGstExempt !== undefined ? c.isGstExempt : true);
     setAddress(c.address);
     setCountry(c.country);
     setContactPerson(c.contactPerson);
@@ -103,6 +117,9 @@ export const CustomerManager: React.FC = () => {
       updateCustomer(editingId, {
         code: code.trim(),
         name: name.trim(),
+        customerType,
+        gstTreatment: gstTreatment.trim(),
+        isGstExempt,
         address: address.trim(),
         country: country.trim(),
         contactPerson: contactPerson.trim(),
@@ -115,6 +132,9 @@ export const CustomerManager: React.FC = () => {
       addCustomer({
         code: code.trim(),
         name: name.trim(),
+        customerType,
+        gstTreatment: gstTreatment.trim(),
+        isGstExempt,
         address: address.trim(),
         country: country.trim(),
         contactPerson: contactPerson.trim(),
@@ -164,6 +184,9 @@ export const CustomerManager: React.FC = () => {
     const data = selectedCusts.map((c) => ({
       Code: c.code,
       Name: c.name,
+      CustomerType: c.customerType || 'Overseas',
+      GSTTreatment: c.gstTreatment || 'Overseas (GST Exempt Export Supply)',
+      GSTExempt: (c.isGstExempt ?? true) ? 'Yes (Export Exempt)' : 'No',
       Country: c.country,
       Address: c.address,
       ContactPerson: c.contactPerson,
@@ -177,12 +200,15 @@ export const CustomerManager: React.FC = () => {
     const csv = convertToCSV(data, [
       { key: 'Code', label: 'Customer Code' },
       { key: 'Name', label: 'Customer Name' },
+      { key: 'CustomerType', label: 'Customer Type' },
+      { key: 'GSTTreatment', label: 'GST Treatment' },
+      { key: 'GSTExempt', label: 'GST Exempt Supply' },
       { key: 'Country', label: 'Country' },
       { key: 'Address', label: 'Address' },
       { key: 'ContactPerson', label: 'Contact Person' },
       { key: 'Phone', label: 'Phone' },
       { key: 'Email', label: 'Email' },
-      { key: 'TaxID', label: 'Tax ID / GSTIN' },
+      { key: 'TaxID', label: 'Tax ID / Foreign Registration' },
       { key: 'BankDetails', label: 'Realization Bank Details' },
       { key: 'Active', label: 'Active Status' }
     ]);
@@ -205,6 +231,9 @@ export const CustomerManager: React.FC = () => {
     const data = customers.map((c) => ({
       Code: c.code,
       Name: c.name,
+      CustomerType: c.customerType || 'Overseas',
+      GSTTreatment: c.gstTreatment || 'Overseas (GST Exempt Export Supply)',
+      GSTExempt: (c.isGstExempt ?? true) ? 'Yes (Export Exempt)' : 'No',
       Country: c.country,
       Address: c.address,
       ContactPerson: c.contactPerson,
@@ -218,12 +247,15 @@ export const CustomerManager: React.FC = () => {
     const csv = convertToCSV(data, [
       { key: 'Code', label: 'Customer Code' },
       { key: 'Name', label: 'Customer Name' },
+      { key: 'CustomerType', label: 'Customer Type' },
+      { key: 'GSTTreatment', label: 'GST Treatment' },
+      { key: 'GSTExempt', label: 'GST Exempt Supply' },
       { key: 'Country', label: 'Country' },
       { key: 'Address', label: 'Address' },
       { key: 'ContactPerson', label: 'Contact Person' },
       { key: 'Phone', label: 'Phone' },
       { key: 'Email', label: 'Email' },
-      { key: 'TaxID', label: 'Tax ID / GSTIN' },
+      { key: 'TaxID', label: 'Tax ID / Foreign Registration' },
       { key: 'BankDetails', label: 'Realization Bank Details' },
       { key: 'Active', label: 'Active Status' }
     ]);
@@ -299,6 +331,16 @@ export const CustomerManager: React.FC = () => {
           </div>
 
           <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as any)}
+            className="text-xs font-semibold px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
+          >
+            <option value="All">All Customer Types</option>
+            <option value="Overseas">Overseas (GST Exempt)</option>
+            <option value="Domestic">Domestic Customers</option>
+          </select>
+
+          <select
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
             className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
@@ -366,13 +408,23 @@ export const CustomerManager: React.FC = () => {
                     className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
                   />
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
                         {c.code}
                       </span>
                       <span className="text-[11px] font-semibold text-ink-500 flex items-center gap-1">
                         <Globe className="w-3 h-3 text-ink-400" />
                         {c.country}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                          c.customerType === 'Domestic'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}
+                      >
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        {c.customerType === 'Domestic' ? 'Domestic Customer' : 'Overseas Customer (GST Exempt)'}
                       </span>
                     </div>
                     <h3 className="text-sm font-bold text-ink-900 mt-2 leading-snug">{c.name}</h3>
@@ -402,6 +454,12 @@ export const CustomerManager: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-xs text-ink-700 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-ink-600 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">
+                  GST: <strong className="text-emerald-800 font-semibold">{c.gstTreatment || (c.customerType === 'Domestic' ? 'Domestic Regular GST' : 'Overseas (GST Exempt Export Supply)')}</strong>
+                </span>
+              </div>
               {c.contactPerson && (
                 <div className="flex items-center gap-2 text-ink-600">
                   <Building className="w-3.5 h-3.5 text-ink-400 shrink-0" />
@@ -420,12 +478,13 @@ export const CustomerManager: React.FC = () => {
                   <span className="truncate">{c.email}</span>
                 </div>
               )}
-              {c.taxId && (
-                <div className="flex items-center gap-2 text-ink-600 font-mono text-[11px]">
-                  <ShieldCheck className="w-3.5 h-3.5 text-ink-400 shrink-0" />
-                  <span className="truncate">Tax ID: {c.taxId}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-ink-600 font-mono text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-ink-400 shrink-0" />
+                <span className="truncate">
+                  {c.customerType === 'Domestic' ? 'GSTIN: ' : 'Foreign Tax ID: '}
+                  {c.taxId ? c.taxId : (c.customerType === 'Domestic' ? 'Not Provided' : 'N/A (GST Exempt Overseas)')}
+                </span>
+              </div>
               {c.bankDetails && (
                 <div className="flex items-start gap-2 text-ink-600 text-[11px] bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                   <CreditCard className="w-3.5 h-3.5 text-ink-400 shrink-0 mt-0.5" />
@@ -509,6 +568,61 @@ export const CustomerManager: React.FC = () => {
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
+          {/* Customer Classification & GST Status Selection */}
+          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+            <label className="block text-[11px] font-bold text-ink-700">
+              Customer Classification &amp; GST Regime <span className="text-rose-600">*</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerType('Overseas');
+                  setGstTreatment('Overseas (GST Exempt Export Supply)');
+                  setIsGstExempt(true);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition flex items-start gap-2.5 ${
+                  customerType === 'Overseas'
+                    ? 'bg-rose-50/80 border-rose-400 ring-1 ring-rose-400 text-rose-950 font-bold'
+                    : 'bg-white border-gray-200 text-ink-700 hover:bg-gray-100'
+                }`}
+              >
+                <Globe className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold flex items-center gap-1.5">
+                    <span>Overseas Customer (Export)</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-extrabold">GST EXEMPT</span>
+                  </div>
+                  <div className="text-[10px] text-ink-500 font-normal mt-0.5">
+                    Export of goods is zero-rated/exempt from GST. No Indian GSTIN required.
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerType('Domestic');
+                  setGstTreatment('Domestic Regular GST');
+                  setIsGstExempt(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition flex items-start gap-2.5 ${
+                  customerType === 'Domestic'
+                    ? 'bg-rose-50/80 border-rose-400 ring-1 ring-rose-400 text-rose-950 font-bold'
+                    : 'bg-white border-gray-200 text-ink-700 hover:bg-gray-100'
+                }`}
+              >
+                <Building className="w-4 h-4 text-ink-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold">Domestic Customer (Local)</div>
+                  <div className="text-[10px] text-ink-500 font-normal mt-0.5">
+                    Domestic buyer or merchant exporter operating with local Indian GSTIN.
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 mb-1">
@@ -539,6 +653,41 @@ export const CustomerManager: React.FC = () => {
             </div>
           </div>
 
+          {/* GST Treatment & Exemption Settings */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                GST Treatment
+              </label>
+              <select
+                value={gstTreatment}
+                onChange={(e) => setGstTreatment(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-400"
+              >
+                <option value="Overseas (GST Exempt Export Supply)">Overseas (GST Exempt Export Supply)</option>
+                <option value="Zero-Rated Export with LUT / Bond">Zero-Rated Export with LUT / Bond</option>
+                <option value="SEZ Unit / Developer (Zero-Rated)">SEZ Unit / Developer (Zero-Rated)</option>
+                <option value="Domestic Regular GST">Domestic Regular GST</option>
+                <option value="Deemed Export (Exempt)">Deemed Export (Exempt)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col justify-end">
+              <label className="flex items-center gap-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isGstExempt}
+                  onChange={(e) => setIsGstExempt(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-emerald-900 block">GST Exempt / Zero-Rated Supply</span>
+                  <span className="text-[10px] text-emerald-700">Seafood export is exempt/zero-rated under GST</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-ink-700 mb-1">Country</label>
@@ -553,12 +702,14 @@ export const CustomerManager: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">Tax ID / VAT / GSTIN</label>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                {customerType === 'Domestic' ? 'GSTIN (Goods and Services Tax ID)' : 'Foreign Tax ID / VAT / US EIN (Optional for Overseas)'}
+              </label>
               <input
                 type="text"
                 value={taxId}
                 onChange={(e) => setTaxId(e.target.value)}
-                placeholder="e.g. US-EIN-99281938"
+                placeholder={customerType === 'Domestic' ? 'e.g. 32AAAAA0000A1Z5' : 'e.g. US-EIN-99281938 or N/A (Overseas)'}
                 className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400 font-mono text-[11px]"
               />
             </div>

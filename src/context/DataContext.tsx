@@ -18,6 +18,7 @@ import {
   SlabType,
   DailyProcessingEntry,
   Customer,
+  CustomerType,
   PortMaster,
   SalesInvoice,
   SalesInvoiceLine,
@@ -238,7 +239,7 @@ interface DataContextType {
   bulkImportSalesInvoices: (
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
-  ) => { added: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number };
+  ) => { added: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number; createdSizes?: number };
   bulkImportSalesRealizations: (
     rawRows: Record<string, any>[]
   ) => { updated: number; errors: string[] };
@@ -467,7 +468,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}customers`);
-    return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+    const rawList: Customer[] = saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+    // Default all customers to Overseas Customers with GST Exempt export supply status
+    return rawList.map((c) => ({
+      ...c,
+      customerType: c.customerType || 'Overseas',
+      gstTreatment: c.gstTreatment || 'Overseas (GST Exempt Export Supply)',
+      isGstExempt: c.isGstExempt !== undefined ? c.isGstExempt : true
+    }));
   });
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
@@ -1004,7 +1012,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       showToast('Unauthorized: Only Master Accountant and Admin can manage Customers.', 'error');
       return;
     }
+    const customerType = customerData.customerType || 'Overseas';
+    const isGstExempt = customerData.isGstExempt !== undefined ? customerData.isGstExempt : customerType === 'Overseas';
+    const gstTreatment = customerData.gstTreatment || (customerType === 'Overseas' ? 'Overseas (GST Exempt Export Supply)' : 'Domestic Regular GST');
     const newCustomer: Customer = {
+      customerType,
+      isGstExempt,
+      gstTreatment,
       ...customerData,
       id: `cust-${Date.now()}`,
       createdAt: new Date().toISOString()
@@ -1073,6 +1087,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const taxId = String(getFlexibleValue(row, ['taxid', 'gstin', 'vat', 'fein']) || '').trim();
       const bankDetails = String(getFlexibleValue(row, ['bankdetails', 'bank', 'swift']) || '').trim();
 
+      const rawType = String(getFlexibleValue(row, ['customertype', 'type', 'clienttype']) || '').trim().toLowerCase();
+      const customerType: CustomerType = rawType.includes('domestic') || rawType.includes('local') ? 'Domestic' : 'Overseas';
+      const defaultGstTreatment = customerType === 'Domestic' ? 'Domestic Regular GST' : 'Overseas (GST Exempt Export Supply)';
+      const gstTreatment = String(getFlexibleValue(row, ['gsttreatment', 'supplytype', 'taxexemption']) || defaultGstTreatment).trim();
+      const rawExempt = getFlexibleValue(row, ['isgstexempt', 'gstexempt', 'exempt']);
+      const isGstExempt = rawExempt !== undefined ? (String(rawExempt).toLowerCase() === 'true' || String(rawExempt).toLowerCase() === 'yes' || String(rawExempt) === '1') : customerType === 'Overseas';
+
       const existingIdx = currentList.findIndex(
         (c) => c.code.toLowerCase() === code.toLowerCase() || c.name.toLowerCase() === name.toLowerCase()
       );
@@ -1081,6 +1102,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentList[existingIdx] = {
           ...currentList[existingIdx],
           name,
+          customerType,
+          gstTreatment,
+          isGstExempt,
           country,
           address,
           contactPerson,
@@ -1096,6 +1120,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: `cust-${Date.now()}-${idx}`,
           code,
           name,
+          customerType,
+          gstTreatment,
+          isGstExempt,
           country,
           address,
           contactPerson,
@@ -4791,6 +4818,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let createdCustomers = 0;
     let createdPorts = 0;
     let createdSpecies = 0;
+    let createdSizes = 0;
     const errors: string[] = [];
     const newInvoices: SalesInvoice[] = [];
 
@@ -4812,9 +4840,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
       if (!hasData) return;
 
-      const rawInvNo = String(getFlexibleValue(row, ['invoiceno', 'invoice', 'billno', 'exportinvoiceno', 'invoicenumber']) || '').trim();
-      const rawDate = formatExcelDate(getFlexibleValue(row, ['invoicedate', 'date', 'billdate', 'shippingdate']));
-      const rawCust = String(getFlexibleValue(row, ['customer', 'consignee', 'customername', 'buyer', 'client', 'buyername']) || '').trim();
+      const rawInvNo = String(
+        getFlexibleValue(row, [
+          'salesordernumber',
+          'salesorderno',
+          'salesorder',
+          'salesorderid',
+          'invoiceno',
+          'invoicenumber',
+          'invoice',
+          'exportinvoiceno',
+          'billno',
+          'ordernumber',
+          'orderno',
+          'order',
+          'referenceno',
+          'reference'
+        ]) || ''
+      ).trim();
+      const rawDate = formatExcelDate(
+        getFlexibleValue(row, [
+          'orderdate',
+          'salesorderdate',
+          'invoicedate',
+          'date',
+          'billdate',
+          'shippingdate',
+          'expectedshipmentdate'
+        ])
+      );
+      const rawCust = String(
+        getFlexibleValue(row, [
+          'customername',
+          'customer',
+          'consignee',
+          'buyername',
+          'buyer',
+          'client',
+          'shippingpartytradername',
+          'shippingpartylegalname',
+          'company'
+        ]) || ''
+      ).trim();
 
       let groupKey = '';
 
@@ -4850,10 +4917,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     Object.entries(invoiceGroups).forEach(([invNoKey, group]) => {
       const { headerRow, rows } = group;
 
-      const rawDate = getFlexibleValue(headerRow, ['invoicedate', 'date', 'billdate', 'shippingdate']);
+      const rawDate = getFlexibleValue(headerRow, [
+        'orderdate',
+        'salesorderdate',
+        'invoicedate',
+        'date',
+        'billdate',
+        'shippingdate',
+        'expectedshipmentdate'
+      ]);
       const invoiceDate = formatExcelDate(rawDate);
 
-      const rawCust = String(getFlexibleValue(headerRow, ['customer', 'consignee', 'customername', 'buyer', 'client', 'buyername']) || '').trim();
+      const rawCust = String(
+        getFlexibleValue(headerRow, [
+          'customername',
+          'customer',
+          'consignee',
+          'buyername',
+          'buyer',
+          'client',
+          'shippingpartytradername',
+          'shippingpartylegalname',
+          'company'
+        ]) || ''
+      ).trim();
       let matchedCust = mutableCustomers.find(
         (c) => c.code.toLowerCase() === rawCust.toLowerCase() || c.name.toLowerCase() === rawCust.toLowerCase()
       );
@@ -4861,16 +4948,37 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         matchedCust = mutableCustomers.find((c) => c.name.toLowerCase().includes(rawCust.toLowerCase()) || rawCust.toLowerCase().includes(c.name.toLowerCase()));
       }
       if (!matchedCust && rawCust && autoCreateMaster) {
+        const destCountry = String(
+          getFlexibleValue(headerRow, [
+            'billingcountry',
+            'shippingcountry',
+            'destinationcountry',
+            'country'
+          ]) || 'Global Export'
+        ).trim();
+
+        const billAddr = String(getFlexibleValue(headerRow, ['billingaddress', 'shippingaddress', 'customeraddress', 'address']) || '').trim();
+        const billStreet2 = String(getFlexibleValue(headerRow, ['billingstreet2', 'shippingstreet2', 'street2']) || '').trim();
+        const billCity = String(getFlexibleValue(headerRow, ['billingcity', 'shippingcity', 'city']) || '').trim();
+        const billState = String(getFlexibleValue(headerRow, ['billingstate', 'shippingstate', 'state']) || '').trim();
+        const billCode = String(getFlexibleValue(headerRow, ['billingcode', 'shippingcode', 'zip', 'postalcode']) || '').trim();
+
+        const addrParts = [billAddr, billStreet2, billCity, billState, billCode, destCountry].filter(Boolean);
+        const fullAddress = addrParts.join(', ');
+
         const newCust: Customer = {
           id: `cust-${Date.now()}-${mutableCustomers.length + 1}`,
           code: `CUST-${String(mutableCustomers.length + 1).padStart(3, '0')}`,
           name: rawCust,
-          address: String(getFlexibleValue(headerRow, ['customeraddress', 'address']) || ''),
-          country: String(getFlexibleValue(headerRow, ['destinationcountry', 'country']) || 'Global Export'),
+          customerType: 'Overseas',
+          gstTreatment: 'Overseas (GST Exempt Export Supply)',
+          isGstExempt: true,
+          address: fullAddress,
+          country: destCountry,
           contactPerson: '',
-          phone: '',
+          phone: String(getFlexibleValue(headerRow, ['billingphone', 'shippingphone', 'phone', 'mobile']) || '').trim(),
           email: '',
-          taxId: '',
+          taxId: String(getFlexibleValue(headerRow, ['taxid', 'vat', 'fein']) || '').trim(),
           bankDetails: '',
           active: true,
           createdAt: new Date().toISOString()
@@ -5002,33 +5110,59 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const candidates: ParsedCandidate[] = [];
 
       rows.forEach(({ row, rowNum }) => {
+        const rawItemDesc = String(getFlexibleValue(row, ['itemdesc', 'description', 'desc', 'sku']) || '').trim();
         const rawSpec = String(
           getFlexibleValue(row, [
+            'itemname',
             'productnameexportreadyname',
             'productname',
-            'product',
             'exportproduct',
             'species',
             'speciesname',
             'item',
-            'description'
+            'commodity'
           ]) || ''
         ).trim();
+
+        // Extract Grade/Size: check explicit column, then Item Desc, then Item Name
+        let extractedSize = String(getFlexibleValue(row, ['size', 'sizename', 'gradesize', 'grade']) || '').trim();
+        if (!extractedSize && rawItemDesc) {
+          const sizeMatch = rawItemDesc.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+          if (sizeMatch) extractedSize = sizeMatch[1].toUpperCase();
+        }
+        if (!extractedSize && rawSpec) {
+          const sizeMatch = rawSpec.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+          if (sizeMatch) extractedSize = sizeMatch[1].toUpperCase();
+        }
+
+        // Clean species name if trailing size exists (e.g. "Frozen Leather Jacket 50/100" -> "Frozen Leather Jacket")
+        let cleanSpec = rawSpec;
+        if (extractedSize) {
+          cleanSpec = rawSpec.replace(new RegExp(`\\s*\\b${extractedSize.replace('/', '\\/')}\\b\\s*$`, 'i'), '').trim() || rawSpec;
+        }
+
         const rawPurchaseSpec = String(
           getFlexibleValue(row, ['purchasespecies', 'purchasespeciesname', 'rawspecies', 'rawspeciesname']) || ''
         ).trim();
+
         let matchedSpec = mutableSpecies.find(
-          (sp) => sp.code.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase() === rawSpec.toLowerCase() || sp.name.toLowerCase().includes(rawSpec.toLowerCase())
+          (sp) => sp.code.toLowerCase() === cleanSpec.toLowerCase() ||
+                  sp.name.toLowerCase() === cleanSpec.toLowerCase() ||
+                  sp.name.toLowerCase() === rawSpec.toLowerCase() ||
+                  sp.name.toLowerCase().includes(cleanSpec.toLowerCase()) ||
+                  cleanSpec.toLowerCase().includes(sp.name.toLowerCase())
         );
-        if (!matchedSpec && rawSpec && autoCreateMaster) {
+
+        if (!matchedSpec && (cleanSpec || rawSpec) && autoCreateMaster) {
+          const specNameToUse = cleanSpec || rawSpec;
           const newSpec: Species = {
             id: `sp-${Date.now()}-${mutableSpecies.length + 1}`,
-            code: rawSpec.substring(0, 3).toUpperCase(),
-            name: rawSpec,
+            code: specNameToUse.substring(0, 3).toUpperCase(),
+            name: specNameToUse,
             rawSpeciesName: rawPurchaseSpec || undefined,
             scientificName: '',
             category: 'Export Finish',
-            hsCode: String(getFlexibleValue(row, ['hscode', 'hs']) || '03061790'),
+            hsCode: String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hs', 'sac']) || '03061790'),
             active: true
           };
           mutableSpecies.push(newSpec);
@@ -5036,30 +5170,91 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           createdSpecies++;
         }
         const speciesId = matchedSpec?.id || mutableSpecies[0]?.id || '';
-        const hsCode = String(getFlexibleValue(row, ['hscode', 'hs']) || matchedSpec?.hsCode || '03061790');
+        const hsCode = String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hs', 'sac']) || matchedSpec?.hsCode || '03061790');
 
-        const rawSize = String(getFlexibleValue(row, ['size', 'sizename']) || '').trim();
-        const matchedSize = mutableSizes.find((sz) => sz.name.toLowerCase().includes(rawSize.toLowerCase()));
+        let matchedSize = extractedSize
+          ? mutableSizes.find((sz) => sz.name.toLowerCase() === extractedSize.toLowerCase() || sz.code.toLowerCase() === extractedSize.toLowerCase() || sz.name.toLowerCase().includes(extractedSize.toLowerCase()))
+          : undefined;
+
+        if (!matchedSize && extractedSize && autoCreateMaster) {
+          const newSize: Size = {
+            id: `size-${Date.now()}-${mutableSizes.length + 1}`,
+            code: extractedSize.toUpperCase().replace(/\s+/g, '-'),
+            name: extractedSize,
+            description: `Grade / Size ${extractedSize}`,
+            active: true
+          };
+          mutableSizes.push(newSize);
+          matchedSize = newSize;
+          createdSizes++;
+        }
         const sizeId = matchedSize?.id || mutableSizes[0]?.id || '';
 
         const rawCount = String(getFlexibleValue(row, ['count', 'countname']) || '').trim();
         const matchedCount = mutableCounts.find((c) => c.name.toLowerCase().includes(rawCount.toLowerCase()));
         const countId = matchedCount?.id || undefined;
 
-        const rawCartons = parseFloat(getFlexibleValue(row, ['cartonscount', 'cartons', 'boxes', 'cases', 'pkgs']) || '0');
-        const cartonsCount = !isNaN(rawCartons) ? Math.round(rawCartons) : 0;
-
-        const rawWeight = parseFloat(getFlexibleValue(row, ['netweightkg', 'weightkg', 'netweight', 'weight', 'qtykg']) || '');
+        const rawWeight = parseFloat(getFlexibleValue(row, [
+          'quantityordered',
+          'quantityinvoiced',
+          'quantity',
+          'qty',
+          'netweightkg',
+          'weightkg',
+          'netweight',
+          'weight',
+          'qtykg'
+        ]) || '');
         if (isNaN(rawWeight) || rawWeight <= 0) {
           errors.push(`Row ${rowNum} (${invNoKey}): Net Weight (Kg) is missing or must be greater than 0.`);
           return;
         }
         const weightKg = Number(rawWeight.toFixed(2));
 
-        const rawRate = parseFloat(getFlexibleValue(row, ['rateperkg', 'rate', 'priceperkg', 'unitprice']) || '0');
+        // Extract Cartons Count
+        let cartonsCount = 0;
+        const rawCartons = parseFloat(getFlexibleValue(row, ['cartonscount', 'cartons', 'boxes', 'cases', 'pkgs', 'packages']) || '');
+        if (!isNaN(rawCartons) && rawCartons > 0) {
+          cartonsCount = Math.round(rawCartons);
+        } else if (rawItemDesc) {
+          const ctnMatch = rawItemDesc.match(/(\d+)\s*(?:cases|case|cartons|carton|ctns|ctn|boxes|box|pkgs|pkg)/i) ||
+                           rawItemDesc.match(/(?:No\.?\s*of\s*Cartons|Total\s*Cartons)\s*[:=]\s*(\d+)/i);
+          if (ctnMatch) {
+            cartonsCount = parseInt(ctnMatch[1], 10);
+          } else {
+            const packMatch = rawItemDesc.match(/PACKING:\s*(\d+)\s*[xX]\s*(\d+)\s*KG/i);
+            const packSingleMatch = rawItemDesc.match(/PACKING:\s*(\d+)\s*KG/i);
+            if (packMatch && weightKg > 0) {
+              const blockKg = parseInt(packMatch[1], 10) * parseInt(packMatch[2], 10);
+              if (blockKg > 0) cartonsCount = Math.round(weightKg / blockKg);
+            } else if (packSingleMatch && weightKg > 0) {
+              const blockKg = parseInt(packSingleMatch[1], 10);
+              if (blockKg > 0) cartonsCount = Math.round(weightKg / blockKg);
+            }
+          }
+        }
+
+        const rawRate = parseFloat(getFlexibleValue(row, [
+          'itemprice',
+          'price',
+          'unitprice',
+          'rateperkg',
+          'rate',
+          'priceperkg'
+        ]) || '0');
         const ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(2)) : 0;
 
-        const amountCurrency = Number((weightKg * ratePerKg).toFixed(2));
+        const rawLineTotal = parseFloat(getFlexibleValue(row, [
+          'itemtotal',
+          'totalitemamount',
+          'linetotal',
+          'lineamount',
+          'amountcurrency',
+          'amount'
+        ]) || '');
+        const amountCurrency = !isNaN(rawLineTotal) && rawLineTotal > 0
+          ? Number(rawLineTotal.toFixed(2))
+          : Number((weightKg * ratePerKg).toFixed(2));
 
         const rawSalesUsdVal = parseFloat(getFlexibleValue(row, salesValUsdCandidateKeys) || '');
         const rowSalesUsd = !isNaN(rawSalesUsdVal) && rawSalesUsdVal > 0 ? Number(rawSalesUsdVal.toFixed(2)) : null;
@@ -5102,7 +5297,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             fobValueCurrency: amountCurrency,
             fobValueINR: Number((amountCurrency * exchangeRate).toFixed(2)),
             purchaseValueCurrency: rowPurUsd || undefined,
-            purchaseValueINR: rowPurInr || undefined
+            purchaseValueINR: rowPurInr || undefined,
+            productDescription: rawSpec || matchedSpec?.name || 'FROZEN SEAFOOD',
+            gradeSize: extractedSize || undefined
           },
           rowSalesUsd,
           rowFobUsd,
@@ -5354,7 +5551,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const invRecord: SalesInvoice = {
         id: `inv-${Date.now()}-${newInvoices.length}-${Math.random().toString(36).substr(2, 5)}`,
-        invoiceNo: String(getFlexibleValue(headerRow, ['invoiceno', 'invoice', 'billno']) || invNoKey).trim(),
+        invoiceNo: String(
+          getFlexibleValue(headerRow, [
+            'salesordernumber',
+            'salesorderno',
+            'salesorder',
+            'invoiceno',
+            'invoicenumber',
+            'invoice',
+            'exportinvoiceno',
+            'billno'
+          ]) || invNoKey
+        ).trim(),
         invoiceDate,
         financialYear: businessSettings.financialYear,
         consigneeId,
@@ -5417,13 +5625,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (createdCustomers > 0) setCustomers([...mutableCustomers]);
       if (createdPorts > 0) setPorts([...mutablePorts]);
       if (createdSpecies > 0) setSpecies([...mutableSpecies]);
+      if (createdSizes > 0) setSizes([...mutableSizes]);
 
       logAudit('CREATE', 'SALES_INVOICE', `Excel bulk import: ${newInvoices.length} sales invoices imported`, {
         newValues: {
           importedCount: newInvoices.length,
           createdCustomers,
           createdPorts,
-          createdSpecies
+          createdSpecies,
+          createdSizes
         }
       });
 
@@ -5435,7 +5645,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       errors,
       createdCustomers,
       createdPorts,
-      createdSpecies
+      createdSpecies,
+      createdSizes
     };
   };
 
