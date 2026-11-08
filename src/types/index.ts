@@ -468,6 +468,7 @@ export interface SalesInvoice {
   amountInWords?: string;
   factoryNameAndAddress?: string;
   factoryApprovalNumber?: string;
+  chinaRegistrationNumber?: string;
   billOfLadingNo?: string;
   declarationText?: string;
   signatoryCompany?: string;

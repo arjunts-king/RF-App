@@ -307,7 +307,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
-  const SALES_DATASET_VERSION = 'v71_pure_uploaded_invoices_v3';
+  const SALES_DATASET_VERSION = 'v71_pure_uploaded_invoices_v4';
 
   const [species, setSpecies] = useState<Species[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
