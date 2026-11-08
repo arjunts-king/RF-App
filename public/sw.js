@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V14 - Mild Red Liquid White Glass Dashboards)
-const CACHE_VERSION = 'seafood-pwa-v14';
+// Seafood Purchase App - Offline PWA Service Worker (V15 - Authentic FOB Valuation & Template Derivation)
+const CACHE_VERSION = 'seafood-pwa-v15';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -1168,12 +1168,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/01/26-27",
     "otherReferences": "RF/EXP/01/26-27",
     "currency": "USD",
-    "exchangeRate": 94.580535,
+    "exchangeRate": 92.5,
     "termsOfPayment": "Due on Receipt",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "2780281",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CINF18PP2309060037",
@@ -1187,9 +1187,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1800,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 127320,
-    "totalFobValueCurrency": 127320,
-    "totalFobValueINR": 12041993.72,
-    "estimatedAmountINR": 12041993.72,
+    "totalFobValueCurrency": 125570,
+    "totalFobValueINR": 11615225,
+    "estimatedAmountINR": 11777100,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 127320,
@@ -1211,8 +1211,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 6.3,
         "amountCurrency": 15120,
-        "fobValueCurrency": 15120,
-        "fobValueINR": 1430057.69
+        "fobValueCurrency": 14912.18,
+        "fobValueINR": 1379376.39
       },
       {
         "id": "line-rf-exp-01-26-27-2",
@@ -1225,8 +1225,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3600,
         "ratePerKg": 6.1,
         "amountCurrency": 21960,
-        "fobValueCurrency": 21960,
-        "fobValueINR": 2076988.55
+        "fobValueCurrency": 21658.16,
+        "fobValueINR": 2003380
       },
       {
         "id": "line-rf-exp-01-26-27-3",
@@ -1239,8 +1239,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 6,
         "amountCurrency": 14400,
-        "fobValueCurrency": 14400,
-        "fobValueINR": 1361959.7
+        "fobValueCurrency": 14202.07,
+        "fobValueINR": 1313691.8
       },
       {
         "id": "line-rf-exp-01-26-27-4",
@@ -1253,8 +1253,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6000,
         "ratePerKg": 5.8,
         "amountCurrency": 34800,
-        "fobValueCurrency": 34800,
-        "fobValueINR": 3291402.62
+        "fobValueCurrency": 34321.68,
+        "fobValueINR": 3174755.18
       },
       {
         "id": "line-rf-exp-01-26-27-5",
@@ -1267,8 +1267,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7200,
         "ratePerKg": 5.7,
         "amountCurrency": 41040,
-        "fobValueCurrency": 41040,
-        "fobValueINR": 3881585.16
+        "fobValueCurrency": 40475.91,
+        "fobValueINR": 3744021.63
       }
     ]
   },
@@ -1300,12 +1300,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/02/26-27",
     "otherReferences": "QDFL-RF/03/2026-27",
     "currency": "USD",
-    "exchangeRate": 94.966762,
+    "exchangeRate": 92.5,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "2835195",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -1319,9 +1319,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 125430,
-    "totalFobValueCurrency": 125430,
-    "totalFobValueINR": 11911680.96,
-    "estimatedAmountINR": 11911680.96,
+    "totalFobValueCurrency": 123680,
+    "totalFobValueINR": 11440400,
+    "estimatedAmountINR": 11602275,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 125430,
@@ -1343,8 +1343,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3000,
         "ratePerKg": 6.1,
         "amountCurrency": 18300,
-        "fobValueCurrency": 18300,
-        "fobValueINR": 1737891.74
+        "fobValueCurrency": 18044.68,
+        "fobValueINR": 1669132.74
       },
       {
         "id": "line-rf-exp-02-26-27-2",
@@ -1357,8 +1357,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 11100,
         "ratePerKg": 5.8,
         "amountCurrency": 64380,
-        "fobValueCurrency": 64380,
-        "fobValueINR": 6113960.14
+        "fobValueCurrency": 63481.77,
+        "fobValueINR": 5872063.72
       },
       {
         "id": "line-rf-exp-02-26-27-3",
@@ -1371,8 +1371,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7500,
         "ratePerKg": 5.7,
         "amountCurrency": 42750,
-        "fobValueCurrency": 42750,
-        "fobValueINR": 4059829.08
+        "fobValueCurrency": 42153.55,
+        "fobValueINR": 3899203.54
       }
     ]
   },
@@ -1404,12 +1404,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/03/26-27",
     "otherReferences": "SO-00004",
     "currency": "USD",
-    "exchangeRate": 95.066071,
+    "exchangeRate": 95.4,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "3742770",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -1423,9 +1423,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 126038.4,
-    "totalFobValueCurrency": 126038.4,
-    "totalFobValueINR": 11981975.48,
-    "estimatedAmountINR": 11981975.48,
+    "totalFobValueCurrency": 124138.4,
+    "totalFobValueINR": 11842011.44,
+    "estimatedAmountINR": 12024063.36,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 126038.4,
@@ -1447,8 +1447,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3312,
         "ratePerKg": 6.1,
         "amountCurrency": 20203.2,
-        "fobValueCurrency": 20203.2,
-        "fobValueINR": 1920638.85
+        "fobValueCurrency": 19898.64,
+        "fobValueINR": 1898203.45
       },
       {
         "id": "line-rf-exp-03-26-27-2",
@@ -1461,8 +1461,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6648,
         "ratePerKg": 5.9,
         "amountCurrency": 39223.2,
-        "fobValueCurrency": 39223.2,
-        "fobValueINR": 3728795.52
+        "fobValueCurrency": 38631.92,
+        "fobValueINR": 3685238.65
       },
       {
         "id": "line-rf-exp-03-26-27-3",
@@ -1475,8 +1475,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2640,
         "ratePerKg": 5.8,
         "amountCurrency": 15312,
-        "fobValueCurrency": 15312,
-        "fobValueINR": 1455651.68
+        "fobValueCurrency": 15081.18,
+        "fobValueINR": 1438647.9
       },
       {
         "id": "line-rf-exp-03-26-27-4",
@@ -1489,8 +1489,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9000,
         "ratePerKg": 5.7,
         "amountCurrency": 51300,
-        "fobValueCurrency": 51300,
-        "fobValueINR": 4876889.44
+        "fobValueCurrency": 50526.66,
+        "fobValueINR": 4819921.44
       }
     ]
   },
@@ -1522,12 +1522,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/04/26-27",
     "otherReferences": "SO-00003",
     "currency": "USD",
-    "exchangeRate": 95.066071,
+    "exchangeRate": 95.4,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "3718361",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -1541,9 +1541,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2500,
     "totalWeightKg": 25000,
     "totalAmountCurrency": 86520,
-    "totalFobValueCurrency": 86520,
-    "totalFobValueINR": 8225116.46,
-    "estimatedAmountINR": 8225116.46,
+    "totalFobValueCurrency": 84420,
+    "totalFobValueINR": 8049447,
+    "estimatedAmountINR": 8254008,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 86520,
@@ -1565,8 +1565,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1000,
         "ratePerKg": 5.2,
         "amountCurrency": 5200,
-        "fobValueCurrency": 5200,
-        "fobValueINR": 494343.57
+        "fobValueCurrency": 5073.79,
+        "fobValueINR": 483785.53
       },
       {
         "id": "line-rf-exp-04-26-27-2",
@@ -1579,8 +1579,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3500,
         "ratePerKg": 5.1,
         "amountCurrency": 17850,
-        "fobValueCurrency": 17850,
-        "fobValueINR": 1696929.37
+        "fobValueCurrency": 17416.75,
+        "fobValueINR": 1660686.88
       },
       {
         "id": "line-rf-exp-04-26-27-3",
@@ -1593,8 +1593,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1500,
         "ratePerKg": 5,
         "amountCurrency": 7500,
-        "fobValueCurrency": 7500,
-        "fobValueINR": 712995.53
+        "fobValueCurrency": 7317.96,
+        "fobValueINR": 697767.6
       },
       {
         "id": "line-rf-exp-04-26-27-4",
@@ -1607,8 +1607,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1500,
         "ratePerKg": 4.2,
         "amountCurrency": 6300,
-        "fobValueCurrency": 6300,
-        "fobValueINR": 598916.25
+        "fobValueCurrency": 6147.09,
+        "fobValueINR": 586124.78
       },
       {
         "id": "line-rf-exp-04-26-27-5",
@@ -1621,8 +1621,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3000,
         "ratePerKg": 3.6,
         "amountCurrency": 10800,
-        "fobValueCurrency": 10800,
-        "fobValueINR": 1026713.57
+        "fobValueCurrency": 10537.86,
+        "fobValueINR": 1004785.34
       },
       {
         "id": "line-rf-exp-04-26-27-6",
@@ -1635,8 +1635,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6500,
         "ratePerKg": 3.1,
         "amountCurrency": 20150,
-        "fobValueCurrency": 20150,
-        "fobValueINR": 1915581.33
+        "fobValueCurrency": 19660.92,
+        "fobValueINR": 1874668.94
       },
       {
         "id": "line-rf-exp-04-26-27-7",
@@ -1649,8 +1649,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2500,
         "ratePerKg": 2.7,
         "amountCurrency": 6750,
-        "fobValueCurrency": 6750,
-        "fobValueINR": 641695.98
+        "fobValueCurrency": 6586.17,
+        "fobValueINR": 627990.84
       },
       {
         "id": "line-rf-exp-04-26-27-8",
@@ -1663,8 +1663,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 500,
         "ratePerKg": 2.4,
         "amountCurrency": 1200,
-        "fobValueCurrency": 1200,
-        "fobValueINR": 114079.29
+        "fobValueCurrency": 1170.87,
+        "fobValueINR": 111642.82
       },
       {
         "id": "line-rf-exp-04-26-27-9",
@@ -1677,8 +1677,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 500,
         "ratePerKg": 1.95,
         "amountCurrency": 975,
-        "fobValueCurrency": 975,
-        "fobValueINR": 92689.42
+        "fobValueCurrency": 951.33,
+        "fobValueINR": 90709.79
       },
       {
         "id": "line-rf-exp-04-26-27-10",
@@ -1691,8 +1691,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2250,
         "ratePerKg": 2.3,
         "amountCurrency": 5175,
-        "fobValueCurrency": 5175,
-        "fobValueINR": 491966.92
+        "fobValueCurrency": 5049.39,
+        "fobValueINR": 481459.64
       },
       {
         "id": "line-rf-exp-04-26-27-11",
@@ -1705,8 +1705,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 600,
         "ratePerKg": 2.4,
         "amountCurrency": 1440,
-        "fobValueCurrency": 1440,
-        "fobValueINR": 136895.14
+        "fobValueCurrency": 1405.05,
+        "fobValueINR": 133971.38
       },
       {
         "id": "line-rf-exp-04-26-27-12",
@@ -1719,8 +1719,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 350,
         "ratePerKg": 1.6,
         "amountCurrency": 560,
-        "fobValueCurrency": 560,
-        "fobValueINR": 53237
+        "fobValueCurrency": 546.41,
+        "fobValueINR": 52099.98
       },
       {
         "id": "line-rf-exp-04-26-27-13",
@@ -1733,8 +1733,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1100,
         "ratePerKg": 2,
         "amountCurrency": 2200,
-        "fobValueCurrency": 2200,
-        "fobValueINR": 209145.36
+        "fobValueCurrency": 2146.6,
+        "fobValueINR": 204678.5
       },
       {
         "id": "line-rf-exp-04-26-27-14",
@@ -1747,8 +1747,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 200,
         "ratePerKg": 2.1,
         "amountCurrency": 420,
-        "fobValueCurrency": 420,
-        "fobValueINR": 39927.75
+        "fobValueCurrency": 409.81,
+        "fobValueINR": 39074.98
       }
     ]
   },
@@ -1780,12 +1780,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/05/26-27",
     "otherReferences": "SO-00005",
     "currency": "USD",
-    "exchangeRate": 95.730423,
+    "exchangeRate": 95.4,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "3816901",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -1799,9 +1799,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2500,
     "totalWeightKg": 25000,
     "totalAmountCurrency": 85244,
-    "totalFobValueCurrency": 85244,
-    "totalFobValueINR": 8160444.18,
-    "estimatedAmountINR": 8160444.18,
+    "totalFobValueCurrency": 83144,
+    "totalFobValueINR": 7927780.4,
+    "estimatedAmountINR": 8132277.6,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 85244,
@@ -1823,8 +1823,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1000,
         "ratePerKg": 5.1,
         "amountCurrency": 5100,
-        "fobValueCurrency": 5100,
-        "fobValueINR": 488225.16
+        "fobValueCurrency": 4974.36,
+        "fobValueINR": 474305.29
       },
       {
         "id": "line-rf-exp-05-26-27-2",
@@ -1837,8 +1837,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2100,
         "ratePerKg": 5.1,
         "amountCurrency": 10710,
-        "fobValueCurrency": 10710,
-        "fobValueINR": 1025272.83
+        "fobValueCurrency": 10446.16,
+        "fobValueINR": 996041.11
       },
       {
         "id": "line-rf-exp-05-26-27-3",
@@ -1851,8 +1851,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1400,
         "ratePerKg": 5.1,
         "amountCurrency": 7140,
-        "fobValueCurrency": 7140,
-        "fobValueINR": 683515.22
+        "fobValueCurrency": 6964.1,
+        "fobValueINR": 664027.4
       },
       {
         "id": "line-rf-exp-05-26-27-4",
@@ -1865,8 +1865,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1500,
         "ratePerKg": 4.75,
         "amountCurrency": 7125,
-        "fobValueCurrency": 7125,
-        "fobValueINR": 682079.26
+        "fobValueCurrency": 6949.47,
+        "fobValueINR": 662632.39
       },
       {
         "id": "line-rf-exp-05-26-27-5",
@@ -1879,8 +1879,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1500,
         "ratePerKg": 4.35,
         "amountCurrency": 6525,
-        "fobValueCurrency": 6525,
-        "fobValueINR": 624641.01
+        "fobValueCurrency": 6364.26,
+        "fobValueINR": 606831.77
       },
       {
         "id": "line-rf-exp-05-26-27-6",
@@ -1893,8 +1893,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3000,
         "ratePerKg": 3.6,
         "amountCurrency": 10800,
-        "fobValueCurrency": 10800,
-        "fobValueINR": 1033888.57
+        "fobValueCurrency": 10533.94,
+        "fobValueINR": 1004411.2
       },
       {
         "id": "line-rf-exp-05-26-27-7",
@@ -1907,8 +1907,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6500,
         "ratePerKg": 2.95,
         "amountCurrency": 19175,
-        "fobValueCurrency": 19175,
-        "fobValueINR": 1835630.86
+        "fobValueCurrency": 18702.62,
+        "fobValueINR": 1783294.88
       },
       {
         "id": "line-rf-exp-05-26-27-8",
@@ -1921,8 +1921,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2500,
         "ratePerKg": 2.65,
         "amountCurrency": 6625,
-        "fobValueCurrency": 6625,
-        "fobValueINR": 634214.05
+        "fobValueCurrency": 6461.79,
+        "fobValueINR": 616131.87
       },
       {
         "id": "line-rf-exp-05-26-27-9",
@@ -1935,8 +1935,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 500,
         "ratePerKg": 2.45,
         "amountCurrency": 1225,
-        "fobValueCurrency": 1225,
-        "fobValueINR": 117269.77
+        "fobValueCurrency": 1194.82,
+        "fobValueINR": 113926.27
       },
       {
         "id": "line-rf-exp-05-26-27-10",
@@ -1949,8 +1949,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 500,
         "ratePerKg": 1.9,
         "amountCurrency": 950,
-        "fobValueCurrency": 950,
-        "fobValueINR": 90943.9
+        "fobValueCurrency": 926.6,
+        "fobValueINR": 88350.99
       },
       {
         "id": "line-rf-exp-05-26-27-11",
@@ -1963,8 +1963,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2320,
         "ratePerKg": 2.3,
         "amountCurrency": 5336,
-        "fobValueCurrency": 5336,
-        "fobValueINR": 510817.54
+        "fobValueCurrency": 5204.55,
+        "fobValueINR": 496253.53
       },
       {
         "id": "line-rf-exp-05-26-27-12",
@@ -1977,8 +1977,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 440,
         "ratePerKg": 2.5,
         "amountCurrency": 1100,
-        "fobValueCurrency": 1100,
-        "fobValueINR": 105303.47
+        "fobValueCurrency": 1072.9,
+        "fobValueINR": 102301.14
       },
       {
         "id": "line-rf-exp-05-26-27-13",
@@ -1991,8 +1991,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 350,
         "ratePerKg": 1.7,
         "amountCurrency": 595,
-        "fobValueCurrency": 595,
-        "fobValueINR": 56959.6
+        "fobValueCurrency": 580.34,
+        "fobValueINR": 55335.62
       },
       {
         "id": "line-rf-exp-05-26-27-14",
@@ -2005,8 +2005,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1100,
         "ratePerKg": 2,
         "amountCurrency": 2200,
-        "fobValueCurrency": 2200,
-        "fobValueINR": 210606.93
+        "fobValueCurrency": 2145.8,
+        "fobValueINR": 204602.28
       },
       {
         "id": "line-rf-exp-05-26-27-15",
@@ -2019,8 +2019,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 290,
         "ratePerKg": 2.2,
         "amountCurrency": 638,
-        "fobValueCurrency": 638,
-        "fobValueINR": 61076.01
+        "fobValueCurrency": 622.29,
+        "fobValueINR": 59334.66
       }
     ]
   },
@@ -2052,12 +2052,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/06/26-27",
     "otherReferences": "SO-00006",
     "currency": "USD",
-    "exchangeRate": 95.757924,
+    "exchangeRate": 95.4,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "3551553",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2071,9 +2071,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2136,
     "totalWeightKg": 21366.6,
     "totalAmountCurrency": 92980.2,
-    "totalFobValueCurrency": 92980.2,
-    "totalFobValueINR": 8903590.93,
-    "estimatedAmountINR": 8903590.93,
+    "totalFobValueCurrency": 91180.2,
+    "totalFobValueINR": 8694032.07,
+    "estimatedAmountINR": 8870311.08,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 92980.2,
@@ -2095,8 +2095,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1260,
         "ratePerKg": 6.2,
         "amountCurrency": 7812,
-        "fobValueCurrency": 7812,
-        "fobValueINR": 748060.9
+        "fobValueCurrency": 7660.77,
+        "fobValueINR": 730454.21
       },
       {
         "id": "line-rf-exp-06-26-27-2",
@@ -2109,8 +2109,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1836,
         "ratePerKg": 6,
         "amountCurrency": 11016,
-        "fobValueCurrency": 11016,
-        "fobValueINR": 1054869.29
+        "fobValueCurrency": 10802.74,
+        "fobValueINR": 1030041.42
       },
       {
         "id": "line-rf-exp-06-26-27-3",
@@ -2123,8 +2123,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1020,
         "ratePerKg": 4.5,
         "amountCurrency": 4590,
-        "fobValueCurrency": 4590,
-        "fobValueINR": 439528.87
+        "fobValueCurrency": 4501.14,
+        "fobValueINR": 429183.93
       },
       {
         "id": "line-rf-exp-06-26-27-4",
@@ -2137,8 +2137,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7404,
         "ratePerKg": 4.3,
         "amountCurrency": 31837.2,
-        "fobValueCurrency": 31837.2,
-        "fobValueINR": 3048664.18
+        "fobValueCurrency": 31220.86,
+        "fobValueINR": 2976909.47
       },
       {
         "id": "line-rf-exp-06-26-27-5",
@@ -2151,8 +2151,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 744,
         "ratePerKg": 4,
         "amountCurrency": 2976,
-        "fobValueCurrency": 2976,
-        "fobValueINR": 284975.58
+        "fobValueCurrency": 2918.39,
+        "fobValueINR": 278268.27
       },
       {
         "id": "line-rf-exp-06-26-27-6",
@@ -2165,8 +2165,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 397.8,
         "ratePerKg": 4.2,
         "amountCurrency": 1670.76,
-        "fobValueCurrency": 1670.76,
-        "fobValueINR": 159988.51
+        "fobValueCurrency": 1638.42,
+        "fobValueINR": 156222.95
       },
       {
         "id": "line-rf-exp-06-26-27-7",
@@ -2179,8 +2179,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8704.8,
         "ratePerKg": 3.8,
         "amountCurrency": 33078.24,
-        "fobValueCurrency": 33078.24,
-        "fobValueINR": 3167503.59
+        "fobValueCurrency": 32437.88,
+        "fobValueINR": 3092951.82
       }
     ]
   },
@@ -2212,12 +2212,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/07/26-27",
     "otherReferences": "SO-00007",
     "currency": "USD",
-    "exchangeRate": 95.356155,
+    "exchangeRate": 94.9,
     "termsOfPayment": "Net 30",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "3893922",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2232,8 +2232,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalWeightKg": 24830,
     "totalAmountCurrency": 91864.5,
     "totalFobValueCurrency": 91864.5,
-    "totalFobValueINR": 8759845.5,
-    "estimatedAmountINR": 8759845.5,
+    "totalFobValueINR": 8518561.05,
+    "estimatedAmountINR": 8717941.05,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 91864.5,
@@ -2256,7 +2256,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 5.2,
         "amountCurrency": 156,
         "fobValueCurrency": 156,
-        "fobValueINR": 14875.56
+        "fobValueINR": 14465.82
       },
       {
         "id": "line-rf-exp-07-26-27-2",
@@ -2270,7 +2270,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 5.2,
         "amountCurrency": 2028,
         "fobValueCurrency": 2028,
-        "fobValueINR": 193382.28
+        "fobValueINR": 188055.69
       },
       {
         "id": "line-rf-exp-07-26-27-3",
@@ -2284,7 +2284,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 5.05,
         "amountCurrency": 29391,
         "fobValueCurrency": 29391,
-        "fobValueINR": 2802612.75
+        "fobValueINR": 2725416.54
       },
       {
         "id": "line-rf-exp-07-26-27-4",
@@ -2298,7 +2298,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 4.25,
         "amountCurrency": 18147.5,
         "fobValueCurrency": 18147.5,
-        "fobValueINR": 1730475.82
+        "fobValueINR": 1682810.95
       },
       {
         "id": "line-rf-exp-07-26-27-5",
@@ -2312,7 +2312,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 3.7,
         "amountCurrency": 2886,
         "fobValueCurrency": 2886,
-        "fobValueINR": 275197.86
+        "fobValueINR": 267617.71
       },
       {
         "id": "line-rf-exp-07-26-27-6",
@@ -2326,7 +2326,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 3.15,
         "amountCurrency": 19341,
         "fobValueCurrency": 19341,
-        "fobValueINR": 1844283.39
+        "fobValueINR": 1793483.76
       },
       {
         "id": "line-rf-exp-07-26-27-7",
@@ -2340,7 +2340,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 2.75,
         "amountCurrency": 16362.5,
         "fobValueCurrency": 16362.5,
-        "fobValueINR": 1560265.09
+        "fobValueINR": 1517288.56
       },
       {
         "id": "line-rf-exp-07-26-27-8",
@@ -2354,7 +2354,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "ratePerKg": 2.45,
         "amountCurrency": 3552.5,
         "fobValueCurrency": 3552.5,
-        "fobValueINR": 338752.74
+        "fobValueINR": 329422.02
       }
     ]
   },
@@ -2386,12 +2386,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/08/26-27",
     "otherReferences": "SO-00008",
     "currency": "USD",
-    "exchangeRate": 94.437624,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "4438991",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2405,9 +2405,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 129300,
-    "totalFobValueCurrency": 129300,
-    "totalFobValueINR": 12210784.78,
-    "estimatedAmountINR": 12210784.78,
+    "totalFobValueCurrency": 127500,
+    "totalFobValueINR": 11934000,
+    "estimatedAmountINR": 12102480,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 129300,
@@ -2429,8 +2429,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3600,
         "ratePerKg": 6.2,
         "amountCurrency": 22320,
-        "fobValueCurrency": 22320,
-        "fobValueINR": 2107847.77
+        "fobValueCurrency": 22009.28,
+        "fobValueINR": 2060068.68
       },
       {
         "id": "line-rf-exp-08-26-27-2",
@@ -2443,8 +2443,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1800,
         "ratePerKg": 6.1,
         "amountCurrency": 10980,
-        "fobValueCurrency": 10980,
-        "fobValueINR": 1036925.11
+        "fobValueCurrency": 10827.15,
+        "fobValueINR": 1013420.88
       },
       {
         "id": "line-rf-exp-08-26-27-3",
@@ -2457,8 +2457,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4200,
         "ratePerKg": 6,
         "amountCurrency": 25200,
-        "fobValueCurrency": 25200,
-        "fobValueINR": 2379828.12
+        "fobValueCurrency": 24849.19,
+        "fobValueINR": 2325883.99
       },
       {
         "id": "line-rf-exp-08-26-27-4",
@@ -2471,8 +2471,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6000,
         "ratePerKg": 5.9,
         "amountCurrency": 35400,
-        "fobValueCurrency": 35400,
-        "fobValueINR": 3343091.89
+        "fobValueCurrency": 34907.19,
+        "fobValueINR": 3267313.23
       },
       {
         "id": "line-rf-exp-08-26-27-5",
@@ -2485,8 +2485,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6000,
         "ratePerKg": 5.9,
         "amountCurrency": 35400,
-        "fobValueCurrency": 35400,
-        "fobValueINR": 3343091.89
+        "fobValueCurrency": 34907.19,
+        "fobValueINR": 3267313.22
       }
     ]
   },
@@ -2518,12 +2518,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/09/26-27",
     "otherReferences": "SO-00009",
     "currency": "USD",
-    "exchangeRate": 94.860241,
+    "exchangeRate": 93.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "4831969",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2537,9 +2537,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1920,
     "totalWeightKg": 19200,
     "totalAmountCurrency": 90240,
-    "totalFobValueCurrency": 90240,
-    "totalFobValueINR": 8560188.15,
-    "estimatedAmountINR": 8560188.15,
+    "totalFobValueCurrency": 88212.99,
+    "totalFobValueINR": 8247915,
+    "estimatedAmountINR": 8437440,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 90240,
@@ -2561,8 +2561,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19200,
         "ratePerKg": 4.7,
         "amountCurrency": 90240,
-        "fobValueCurrency": 90240,
-        "fobValueINR": 8560188.15
+        "fobValueCurrency": 88212.99,
+        "fobValueINR": 8247915
       }
     ]
   },
@@ -2594,12 +2594,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/10/26-27",
     "otherReferences": "SO-00010",
     "currency": "USD",
-    "exchangeRate": 95.465394,
+    "exchangeRate": 93.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "4905881",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2613,9 +2613,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 127908,
-    "totalFobValueCurrency": 127908,
-    "totalFobValueINR": 12210787.62,
-    "estimatedAmountINR": 12210787.62,
+    "totalFobValueCurrency": 126022,
+    "totalFobValueINR": 11783057,
+    "estimatedAmountINR": 11959398,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 127908,
@@ -2637,8 +2637,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1200,
         "ratePerKg": 6.15,
         "amountCurrency": 7380,
-        "fobValueCurrency": 7380,
-        "fobValueINR": 704534.61
+        "fobValueCurrency": 7271.18,
+        "fobValueINR": 679855.53
       },
       {
         "id": "line-rf-exp-10-26-27-2",
@@ -2651,8 +2651,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3456,
         "ratePerKg": 6.05,
         "amountCurrency": 20908.8,
-        "fobValueCurrency": 20908.8,
-        "fobValueINR": 1996066.83
+        "fobValueCurrency": 20600.5,
+        "fobValueINR": 1926146.78
       },
       {
         "id": "line-rf-exp-10-26-27-3",
@@ -2665,8 +2665,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4968,
         "ratePerKg": 5.95,
         "amountCurrency": 29559.6,
-        "fobValueCurrency": 29559.6,
-        "fobValueINR": 2821918.86
+        "fobValueCurrency": 29123.74,
+        "fobValueINR": 2723070.11
       },
       {
         "id": "line-rf-exp-10-26-27-4",
@@ -2679,8 +2679,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3552,
         "ratePerKg": 5.85,
         "amountCurrency": 20779.2,
-        "fobValueCurrency": 20779.2,
-        "fobValueINR": 1983694.52
+        "fobValueCurrency": 20472.81,
+        "fobValueINR": 1914207.85
       },
       {
         "id": "line-rf-exp-10-26-27-5",
@@ -2693,8 +2693,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8424,
         "ratePerKg": 5.85,
         "amountCurrency": 49280.4,
-        "fobValueCurrency": 49280.4,
-        "fobValueINR": 4704572.8
+        "fobValueCurrency": 48553.77,
+        "fobValueINR": 4539776.73
       }
     ]
   },
@@ -2726,12 +2726,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/11/26-27",
     "otherReferences": "SO-00011",
     "currency": "USD",
-    "exchangeRate": 95.328885,
+    "exchangeRate": 93.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "4910245",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -2745,9 +2745,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2595,
     "totalWeightKg": 25950,
     "totalAmountCurrency": 83154.5,
-    "totalFobValueCurrency": 83154.5,
-    "totalFobValueINR": 7927025.77,
-    "estimatedAmountINR": 7927025.77,
+    "totalFobValueCurrency": 81068.5,
+    "totalFobValueINR": 7579904.75,
+    "estimatedAmountINR": 7774945.75,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 83154.5,
@@ -2769,8 +2769,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 150,
         "ratePerKg": 5.1,
         "amountCurrency": 765,
-        "fobValueCurrency": 765,
-        "fobValueINR": 72926.6
+        "fobValueCurrency": 745.81,
+        "fobValueINR": 69733.17
       },
       {
         "id": "line-rf-exp-11-26-27-2",
@@ -2783,8 +2783,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2840,
         "ratePerKg": 4.6,
         "amountCurrency": 13064,
-        "fobValueCurrency": 13064,
-        "fobValueINR": 1245376.55
+        "fobValueCurrency": 12736.28,
+        "fobValueINR": 1190842.05
       },
       {
         "id": "line-rf-exp-11-26-27-3",
@@ -2797,8 +2797,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8040,
         "ratePerKg": 4.1,
         "amountCurrency": 32964,
-        "fobValueCurrency": 32964,
-        "fobValueINR": 3142421.37
+        "fobValueCurrency": 32137.07,
+        "fobValueINR": 3004816.1
       },
       {
         "id": "line-rf-exp-11-26-27-4",
@@ -2811,8 +2811,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2050,
         "ratePerKg": 3.55,
         "amountCurrency": 7277.5,
-        "fobValueCurrency": 7277.5,
-        "fobValueINR": 693755.96
+        "fobValueCurrency": 7094.94,
+        "fobValueINR": 663376.69
       },
       {
         "id": "line-rf-exp-11-26-27-5",
@@ -2825,8 +2825,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 660,
         "ratePerKg": 2.9,
         "amountCurrency": 1914,
-        "fobValueCurrency": 1914,
-        "fobValueINR": 182459.49
+        "fobValueCurrency": 1865.99,
+        "fobValueINR": 174469.66
       },
       {
         "id": "line-rf-exp-11-26-27-6",
@@ -2839,8 +2839,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 520,
         "ratePerKg": 2.6,
         "amountCurrency": 1352,
-        "fobValueCurrency": 1352,
-        "fobValueINR": 128884.65
+        "fobValueCurrency": 1318.08,
+        "fobValueINR": 123240.85
       },
       {
         "id": "line-rf-exp-11-26-27-7",
@@ -2853,8 +2853,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 90,
         "ratePerKg": 2.5,
         "amountCurrency": 225,
-        "fobValueCurrency": 225,
-        "fobValueINR": 21449
+        "fobValueCurrency": 219.36,
+        "fobValueINR": 20509.76
       },
       {
         "id": "line-rf-exp-11-26-27-8",
@@ -2867,8 +2867,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 930,
         "ratePerKg": 1.8,
         "amountCurrency": 1674,
-        "fobValueCurrency": 1674,
-        "fobValueINR": 159580.55
+        "fobValueCurrency": 1632.01,
+        "fobValueINR": 152592.59
       },
       {
         "id": "line-rf-exp-11-26-27-9",
@@ -2881,8 +2881,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4980,
         "ratePerKg": 2.15,
         "amountCurrency": 10707,
-        "fobValueCurrency": 10707,
-        "fobValueINR": 1020686.37
+        "fobValueCurrency": 10438.41,
+        "fobValueINR": 975990.96
       },
       {
         "id": "line-rf-exp-11-26-27-10",
@@ -2895,8 +2895,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 640,
         "ratePerKg": 2.45,
         "amountCurrency": 1568,
-        "fobValueCurrency": 1568,
-        "fobValueINR": 149475.69
+        "fobValueCurrency": 1528.67,
+        "fobValueINR": 142930.22
       },
       {
         "id": "line-rf-exp-11-26-27-11",
@@ -2909,8 +2909,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 100,
         "ratePerKg": 2.45,
         "amountCurrency": 245,
-        "fobValueCurrency": 245,
-        "fobValueINR": 23355.58
+        "fobValueCurrency": 238.85,
+        "fobValueINR": 22332.85
       },
       {
         "id": "line-rf-exp-11-26-27-12",
@@ -2923,8 +2923,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 140,
         "ratePerKg": 1.1,
         "amountCurrency": 154,
-        "fobValueCurrency": 154,
-        "fobValueINR": 14680.65
+        "fobValueCurrency": 150.14,
+        "fobValueINR": 14037.79
       },
       {
         "id": "line-rf-exp-11-26-27-13",
@@ -2937,8 +2937,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 320,
         "ratePerKg": 1.55,
         "amountCurrency": 496,
-        "fobValueCurrency": 496,
-        "fobValueINR": 47283.13
+        "fobValueCurrency": 483.56,
+        "fobValueINR": 45212.62
       },
       {
         "id": "line-rf-exp-11-26-27-14",
@@ -2951,8 +2951,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1920,
         "ratePerKg": 1.9,
         "amountCurrency": 3648,
-        "fobValueCurrency": 3648,
-        "fobValueINR": 347759.77
+        "fobValueCurrency": 3556.49,
+        "fobValueINR": 332531.52
       },
       {
         "id": "line-rf-exp-11-26-27-15",
@@ -2965,8 +2965,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 240,
         "ratePerKg": 2,
         "amountCurrency": 480,
-        "fobValueCurrency": 480,
-        "fobValueINR": 45757.86
+        "fobValueCurrency": 467.96,
+        "fobValueINR": 43754.15
       },
       {
         "id": "line-rf-exp-11-26-27-16",
@@ -2979,8 +2979,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 50,
         "ratePerKg": 2,
         "amountCurrency": 100,
-        "fobValueCurrency": 100,
-        "fobValueINR": 9532.89
+        "fobValueCurrency": 97.49,
+        "fobValueINR": 9115.45
       },
       {
         "id": "line-rf-exp-11-26-27-17",
@@ -2993,8 +2993,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 410,
         "ratePerKg": 1.5,
         "amountCurrency": 615,
-        "fobValueCurrency": 615,
-        "fobValueINR": 58627.26
+        "fobValueCurrency": 599.57,
+        "fobValueINR": 56060
       },
       {
         "id": "line-rf-exp-11-26-27-18",
@@ -3007,8 +3007,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1430,
         "ratePerKg": 3.1,
         "amountCurrency": 4433,
-        "fobValueCurrency": 4433,
-        "fobValueINR": 422592.95
+        "fobValueCurrency": 4321.79,
+        "fobValueINR": 404087.79
       },
       {
         "id": "line-rf-exp-11-26-27-19",
@@ -3021,8 +3021,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 350,
         "ratePerKg": 3.6,
         "amountCurrency": 1260,
-        "fobValueCurrency": 1260,
-        "fobValueINR": 120114.4
+        "fobValueCurrency": 1228.39,
+        "fobValueINR": 114854.64
       },
       {
         "id": "line-rf-exp-11-26-27-20",
@@ -3035,8 +3035,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 60,
         "ratePerKg": 2.3,
         "amountCurrency": 138,
-        "fobValueCurrency": 138,
-        "fobValueINR": 13155.39
+        "fobValueCurrency": 134.54,
+        "fobValueINR": 12579.32
       },
       {
         "id": "line-rf-exp-11-26-27-21",
@@ -3049,8 +3049,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 30,
         "ratePerKg": 2.5,
         "amountCurrency": 75,
-        "fobValueCurrency": 75,
-        "fobValueINR": 7149.67
+        "fobValueCurrency": 73.1,
+        "fobValueINR": 6836.57
       }
     ]
   },
@@ -3082,12 +3082,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/12/26-27",
     "otherReferences": "SO-00012",
     "currency": "USD",
-    "exchangeRate": 96.646371,
+    "exchangeRate": 95.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5142282",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3101,9 +3101,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1920,
     "totalWeightKg": 19200,
     "totalAmountCurrency": 88320,
-    "totalFobValueCurrency": 88320,
-    "totalFobValueINR": 8535807.49,
-    "estimatedAmountINR": 8535807.49,
+    "totalFobValueCurrency": 86353.46,
+    "totalFobValueINR": 8242437.76,
+    "estimatedAmountINR": 8434560,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 88320,
@@ -3125,8 +3125,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19200,
         "ratePerKg": 4.6,
         "amountCurrency": 88320,
-        "fobValueCurrency": 88320,
-        "fobValueINR": 8535807.49
+        "fobValueCurrency": 86353.46,
+        "fobValueINR": 8242437.76
       }
     ]
   },
@@ -3158,12 +3158,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/13/26-27",
     "otherReferences": "SO-00013",
     "currency": "USD",
-    "exchangeRate": 96.237128,
+    "exchangeRate": 95.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5218480",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3177,9 +3177,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 129420,
-    "totalFobValueCurrency": 129420,
-    "totalFobValueINR": 12455009.11,
-    "estimatedAmountINR": 12455009.11,
+    "totalFobValueCurrency": 127470,
+    "totalFobValueINR": 12167011.5,
+    "estimatedAmountINR": 12359610,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 129420,
@@ -3201,8 +3201,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 10800,
         "ratePerKg": 6.1,
         "amountCurrency": 65880,
-        "fobValueCurrency": 65880,
-        "fobValueINR": 6340101.99
+        "fobValueCurrency": 64887.37,
+        "fobValueINR": 6193499.6
       },
       {
         "id": "line-rf-exp-13-26-27-2",
@@ -3215,8 +3215,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 6,
         "amountCurrency": 14400,
-        "fobValueCurrency": 14400,
-        "fobValueINR": 1385814.64
+        "fobValueCurrency": 14183.03,
+        "fobValueINR": 1353770.4
       },
       {
         "id": "line-rf-exp-13-26-27-3",
@@ -3229,8 +3229,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8400,
         "ratePerKg": 5.85,
         "amountCurrency": 49140,
-        "fobValueCurrency": 49140,
-        "fobValueINR": 4729092.47
+        "fobValueCurrency": 48399.6,
+        "fobValueINR": 4619741.5
       }
     ]
   },
@@ -3262,12 +3262,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/14/26-27",
     "otherReferences": "SO-00014",
     "currency": "USD",
-    "exchangeRate": 95.730423,
+    "exchangeRate": 95.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5470521",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3281,9 +3281,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 129960,
-    "totalFobValueCurrency": 129960,
-    "totalFobValueINR": 12441125.77,
-    "estimatedAmountINR": 12441125.77,
+    "totalFobValueCurrency": 128074,
+    "totalFobValueINR": 12224663.3,
+    "estimatedAmountINR": 12411180,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 129960,
@@ -3305,8 +3305,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3600,
         "ratePerKg": 6.2,
         "amountCurrency": 22320,
-        "fobValueCurrency": 22320,
-        "fobValueINR": 2136703.04
+        "fobValueCurrency": 21996.09,
+        "fobValueINR": 2099526.66
       },
       {
         "id": "line-rf-exp-14-26-27-2",
@@ -3319,8 +3319,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7200,
         "ratePerKg": 6.1,
         "amountCurrency": 43920,
-        "fobValueCurrency": 43920,
-        "fobValueINR": 4204480.18
+        "fobValueCurrency": 43282.63,
+        "fobValueINR": 4131326.66
       },
       {
         "id": "line-rf-exp-14-26-27-3",
@@ -3333,8 +3333,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3600,
         "ratePerKg": 6,
         "amountCurrency": 21600,
-        "fobValueCurrency": 21600,
-        "fobValueINR": 2067777.14
+        "fobValueCurrency": 21286.54,
+        "fobValueINR": 2031799.99
       },
       {
         "id": "line-rf-exp-14-26-27-4",
@@ -3347,8 +3347,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7200,
         "ratePerKg": 5.85,
         "amountCurrency": 42120,
-        "fobValueCurrency": 42120,
-        "fobValueINR": 4032165.42
+        "fobValueCurrency": 41508.74,
+        "fobValueINR": 3962009.99
       }
     ]
   },
@@ -3380,12 +3380,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/15/26-27",
     "otherReferences": "SO-00015",
     "currency": "USD",
-    "exchangeRate": 95.319798,
+    "exchangeRate": 95.5,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5629348",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -3398,9 +3398,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1920,
     "totalWeightKg": 19200,
     "totalAmountCurrency": 91200,
-    "totalFobValueCurrency": 91200,
-    "totalFobValueINR": 8693165.58,
-    "estimatedAmountINR": 8693165.58,
+    "totalFobValueCurrency": 89200,
+    "totalFobValueINR": 8514140,
+    "estimatedAmountINR": 8709600,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 91200,
@@ -3422,8 +3422,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19200,
         "ratePerKg": 4.75,
         "amountCurrency": 91200,
-        "fobValueCurrency": 91200,
-        "fobValueINR": 8693165.58
+        "fobValueCurrency": 89200,
+        "fobValueINR": 8514140
       }
     ]
   },
@@ -3455,12 +3455,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/16/26-27",
     "otherReferences": "SO-00016",
     "currency": "USD",
-    "exchangeRate": 95.138426,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5751989",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3474,9 +3474,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1920,
     "totalWeightKg": 19200,
     "totalAmountCurrency": 87360,
-    "totalFobValueCurrency": 87360,
-    "totalFobValueINR": 8311292.9,
-    "estimatedAmountINR": 8311292.9,
+    "totalFobValueCurrency": 85745.3,
+    "totalFobValueINR": 8085781.79,
+    "estimatedAmountINR": 8238048,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 87360,
@@ -3498,8 +3498,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19200,
         "ratePerKg": 4.55,
         "amountCurrency": 87360,
-        "fobValueCurrency": 87360,
-        "fobValueINR": 8311292.9
+        "fobValueCurrency": 85745.3,
+        "fobValueINR": 8085781.79
       }
     ]
   },
@@ -3531,12 +3531,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/17/26-27",
     "otherReferences": "SO-00017",
     "currency": "USD",
-    "exchangeRate": 95.138426,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5761921",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -3549,9 +3549,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2071,
     "totalWeightKg": 20714.4,
     "totalAmountCurrency": 127498.32,
-    "totalFobValueCurrency": 127498.32,
-    "totalFobValueINR": 12129989.48,
-    "estimatedAmountINR": 12129989.48,
+    "totalFobValueCurrency": 125623.32,
+    "totalFobValueINR": 11846279.08,
+    "estimatedAmountINR": 12023091.58,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 127498.32,
@@ -3573,8 +3573,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 572.4,
         "ratePerKg": 7.2,
         "amountCurrency": 4121.28,
-        "fobValueCurrency": 4121.28,
-        "fobValueINR": 392092.09
+        "fobValueCurrency": 4060.67,
+        "fobValueINR": 382921.38
       },
       {
         "id": "line-rf-exp-17-26-27-2",
@@ -3587,8 +3587,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9093.6,
         "ratePerKg": 6.4,
         "amountCurrency": 58199.04,
-        "fobValueCurrency": 58199.04,
-        "fobValueINR": 5536965.06
+        "fobValueCurrency": 57343.16,
+        "fobValueINR": 5407460.04
       },
       {
         "id": "line-rf-exp-17-26-27-3",
@@ -3601,8 +3601,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4168.8,
         "ratePerKg": 5.8,
         "amountCurrency": 24179.04,
-        "fobValueCurrency": 24179.04,
-        "fobValueINR": 2300355.81
+        "fobValueCurrency": 23823.46,
+        "fobValueINR": 2246552.39
       },
       {
         "id": "line-rf-exp-17-26-27-4",
@@ -3615,8 +3615,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 961.2,
         "ratePerKg": 3.8,
         "amountCurrency": 3652.56,
-        "fobValueCurrency": 3652.56,
-        "fobValueINR": 347498.81
+        "fobValueCurrency": 3598.85,
+        "fobValueINR": 339371.1
       },
       {
         "id": "line-rf-exp-17-26-27-5",
@@ -3629,8 +3629,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 54,
         "ratePerKg": 8.3,
         "amountCurrency": 448.2,
-        "fobValueCurrency": 448.2,
-        "fobValueINR": 42641.04
+        "fobValueCurrency": 441.61,
+        "fobValueINR": 41643.7
       },
       {
         "id": "line-rf-exp-17-26-27-6",
@@ -3643,8 +3643,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1576.8,
         "ratePerKg": 7.4,
         "amountCurrency": 11668.32,
-        "fobValueCurrency": 11668.32,
-        "fobValueINR": 1110105.6
+        "fobValueCurrency": 11496.72,
+        "fobValueINR": 1084141.15
       },
       {
         "id": "line-rf-exp-17-26-27-7",
@@ -3657,8 +3657,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2257.2,
         "ratePerKg": 6.5,
         "amountCurrency": 14671.8,
-        "fobValueCurrency": 14671.8,
-        "fobValueINR": 1395851.96
+        "fobValueCurrency": 14456.04,
+        "fobValueINR": 1363204.14
       },
       {
         "id": "line-rf-exp-17-26-27-8",
@@ -3671,8 +3671,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2030.4,
         "ratePerKg": 5.2,
         "amountCurrency": 10558.08,
-        "fobValueCurrency": 10558.08,
-        "fobValueINR": 1004479.11
+        "fobValueCurrency": 10402.81,
+        "fobValueINR": 980985.18
       }
     ]
   },
@@ -3704,12 +3704,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/18/26-27",
     "otherReferences": "SO-00018",
     "currency": "USD",
-    "exchangeRate": 95.438061,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5942301",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3723,9 +3723,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2100,
     "totalWeightKg": 21000,
     "totalAmountCurrency": 124110,
-    "totalFobValueCurrency": 124110,
-    "totalFobValueINR": 11844817.75,
-    "estimatedAmountINR": 11844817.75,
+    "totalFobValueCurrency": 122124,
+    "totalFobValueINR": 11516293.2,
+    "estimatedAmountINR": 11703573,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 124110,
@@ -3747,8 +3747,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4416,
         "ratePerKg": 6,
         "amountCurrency": 26496,
-        "fobValueCurrency": 26496,
-        "fobValueINR": 2528726.86
+        "fobValueCurrency": 26072.01,
+        "fobValueINR": 2458590.8
       },
       {
         "id": "line-rf-exp-18-26-27-2",
@@ -3761,8 +3761,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5784,
         "ratePerKg": 6,
         "amountCurrency": 34704,
-        "fobValueCurrency": 34704,
-        "fobValueINR": 3312082.47
+        "fobValueCurrency": 34148.67,
+        "fobValueINR": 3220219.48
       },
       {
         "id": "line-rf-exp-18-26-27-3",
@@ -3775,8 +3775,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5400,
         "ratePerKg": 5.85,
         "amountCurrency": 31590,
-        "fobValueCurrency": 31590,
-        "fobValueINR": 3014888.35
+        "fobValueCurrency": 31084.5,
+        "fobValueINR": 2931268.25
       },
       {
         "id": "line-rf-exp-18-26-27-4",
@@ -3789,8 +3789,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5400,
         "ratePerKg": 5.8,
         "amountCurrency": 31320,
-        "fobValueCurrency": 31320,
-        "fobValueINR": 2989120.07
+        "fobValueCurrency": 30818.82,
+        "fobValueINR": 2906214.67
       }
     ]
   },
@@ -3822,12 +3822,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/19/26-27",
     "otherReferences": "SO-00019",
     "currency": "USD",
-    "exchangeRate": 95.44717,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5976209",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3841,9 +3841,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2400,
     "totalWeightKg": 24000,
     "totalAmountCurrency": 70560,
-    "totalFobValueCurrency": 70560,
-    "totalFobValueINR": 6734752.32,
-    "estimatedAmountINR": 6734752.32,
+    "totalFobValueCurrency": 68160,
+    "totalFobValueINR": 6427488,
+    "estimatedAmountINR": 6653808,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 70560,
@@ -3865,8 +3865,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 3.75,
         "amountCurrency": 9000,
-        "fobValueCurrency": 9000,
-        "fobValueINR": 859024.53
+        "fobValueCurrency": 8693.88,
+        "fobValueINR": 819832.65
       },
       {
         "id": "line-rf-exp-19-26-27-2",
@@ -3879,8 +3879,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21600,
         "ratePerKg": 2.85,
         "amountCurrency": 61560,
-        "fobValueCurrency": 61560,
-        "fobValueINR": 5875727.79
+        "fobValueCurrency": 59466.12,
+        "fobValueINR": 5607655.35
       }
     ]
   },
@@ -3912,12 +3912,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/20/26-27",
     "otherReferences": "SO-00020",
     "currency": "USD",
-    "exchangeRate": 95.44717,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5977462",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -3931,9 +3931,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2040,
     "totalWeightKg": 20400,
     "totalAmountCurrency": 121034.4,
-    "totalFobValueCurrency": 121034.4,
-    "totalFobValueINR": 11552390.95,
-    "estimatedAmountINR": 11552390.95,
+    "totalFobValueCurrency": 119048.4,
+    "totalFobValueINR": 11226264.12,
+    "estimatedAmountINR": 11413543.92,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 121034.4,
@@ -3955,8 +3955,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5472,
         "ratePerKg": 6.05,
         "amountCurrency": 33105.6,
-        "fobValueCurrency": 33105.6,
-        "fobValueINR": 3159835.83
+        "fobValueCurrency": 32562.38,
+        "fobValueINR": 3070632.89
       },
       {
         "id": "line-rf-exp-20-26-27-2",
@@ -3969,8 +3969,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6000,
         "ratePerKg": 5.95,
         "amountCurrency": 35700,
-        "fobValueCurrency": 35700,
-        "fobValueINR": 3407463.97
+        "fobValueCurrency": 35114.21,
+        "fobValueINR": 3311270.42
       },
       {
         "id": "line-rf-exp-20-26-27-3",
@@ -3983,8 +3983,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8928,
         "ratePerKg": 5.85,
         "amountCurrency": 52228.8,
-        "fobValueCurrency": 52228.8,
-        "fobValueINR": 4985091.15
+        "fobValueCurrency": 51371.81,
+        "fobValueINR": 4844360.81
       }
     ]
   },
@@ -4016,12 +4016,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/21/26-27",
     "otherReferences": "SO-00021",
     "currency": "USD",
-    "exchangeRate": 95.593156,
+    "exchangeRate": 94.3,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "5982911",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4035,9 +4035,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2336,
     "totalWeightKg": 23364,
     "totalAmountCurrency": 42055.2,
-    "totalFobValueCurrency": 42055.2,
-    "totalFobValueINR": 4020189.29,
-    "estimatedAmountINR": 4020189.29,
+    "totalFobValueCurrency": 39915.2,
+    "totalFobValueINR": 3764003.36,
+    "estimatedAmountINR": 3965805.36,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 42055.2,
@@ -4059,8 +4059,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 23364,
         "ratePerKg": 1.8,
         "amountCurrency": 42055.2,
-        "fobValueCurrency": 42055.2,
-        "fobValueINR": 4020189.29
+        "fobValueCurrency": 39915.2,
+        "fobValueINR": 3764003.36
       }
     ]
   },
@@ -4092,12 +4092,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/22/26-27",
     "otherReferences": "SO-00022",
     "currency": "USD",
-    "exchangeRate": 95.675469,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6139641",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4111,9 +4111,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2117,
     "totalWeightKg": 21168,
     "totalAmountCurrency": 114300.72,
-    "totalFobValueCurrency": 114300.72,
-    "totalFobValueINR": 10935774.99,
-    "estimatedAmountINR": 10935774.99,
+    "totalFobValueCurrency": 112160.72,
+    "totalFobValueINR": 10632836.26,
+    "estimatedAmountINR": 10835708.26,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 114300.72,
@@ -4135,8 +4135,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2116.8,
         "ratePerKg": 7.1,
         "amountCurrency": 15029.28,
-        "fobValueCurrency": 15029.28,
-        "fobValueINR": 1437933.41
+        "fobValueCurrency": 14747.89,
+        "fobValueINR": 1398100.32
       },
       {
         "id": "line-rf-exp-22-26-27-2",
@@ -4149,8 +4149,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9352.8,
         "ratePerKg": 6,
         "amountCurrency": 56116.8,
-        "fobValueCurrency": 56116.8,
-        "fobValueINR": 5369001.16
+        "fobValueCurrency": 55066.15,
+        "fobValueINR": 5220271.1
       },
       {
         "id": "line-rf-exp-22-26-27-3",
@@ -4163,8 +4163,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6609.6,
         "ratePerKg": 4.8,
         "amountCurrency": 31726.08,
-        "fobValueCurrency": 31726.08,
-        "fobValueINR": 3035407.58
+        "fobValueCurrency": 31132.09,
+        "fobValueINR": 2951321.86
       },
       {
         "id": "line-rf-exp-22-26-27-4",
@@ -4177,8 +4177,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3088.8,
         "ratePerKg": 3.7,
         "amountCurrency": 11428.56,
-        "fobValueCurrency": 11428.56,
-        "fobValueINR": 1093432.84
+        "fobValueCurrency": 11214.59,
+        "fobValueINR": 1063142.98
       }
     ]
   },
@@ -4210,12 +4210,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/23/26-27",
     "otherReferences": "SO-00023",
     "currency": "USD",
-    "exchangeRate": 95.657165,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6195971",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4229,9 +4229,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2400,
     "totalWeightKg": 24000,
     "totalAmountCurrency": 78600,
-    "totalFobValueCurrency": 78600,
-    "totalFobValueINR": 7518653.17,
-    "estimatedAmountINR": 7518653.17,
+    "totalFobValueCurrency": 76163.88,
+    "totalFobValueINR": 7220335.82,
+    "estimatedAmountINR": 7451280,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 78600,
@@ -4253,8 +4253,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4200,
         "ratePerKg": 4.1,
         "amountCurrency": 17220,
-        "fobValueCurrency": 17220,
-        "fobValueINR": 1647216.38
+        "fobValueCurrency": 16686.29,
+        "fobValueINR": 1581859.83
       },
       {
         "id": "line-rf-exp-23-26-27-2",
@@ -4267,8 +4267,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19800,
         "ratePerKg": 3.1,
         "amountCurrency": 61380,
-        "fobValueCurrency": 61380,
-        "fobValueINR": 5871436.79
+        "fobValueCurrency": 59477.59,
+        "fobValueINR": 5638475.99
       }
     ]
   },
@@ -4300,12 +4300,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/24/26-27",
     "otherReferences": "SO-00024",
     "currency": "USD",
-    "exchangeRate": 95.712098,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6202035",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4319,9 +4319,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2018,
     "totalWeightKg": 20184,
     "totalAmountCurrency": 120756,
-    "totalFobValueCurrency": 120756,
-    "totalFobValueINR": 11557810.11,
-    "estimatedAmountINR": 11557810.11,
+    "totalFobValueCurrency": 118770,
+    "totalFobValueINR": 11259396,
+    "estimatedAmountINR": 11447668.8,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 120756,
@@ -4343,8 +4343,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3720,
         "ratePerKg": 6.1,
         "amountCurrency": 22692,
-        "fobValueCurrency": 22692,
-        "fobValueINR": 2171898.93
+        "fobValueCurrency": 22318.8,
+        "fobValueINR": 2115822.1
       },
       {
         "id": "line-rf-exp-24-26-27-2",
@@ -4357,8 +4357,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9264,
         "ratePerKg": 6,
         "amountCurrency": 55584,
-        "fobValueCurrency": 55584,
-        "fobValueINR": 5320061.26
+        "fobValueCurrency": 54669.84,
+        "fobValueINR": 5182701.21
       },
       {
         "id": "line-rf-exp-24-26-27-3",
@@ -4371,8 +4371,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7200,
         "ratePerKg": 5.9,
         "amountCurrency": 42480,
-        "fobValueCurrency": 42480,
-        "fobValueINR": 4065849.92
+        "fobValueCurrency": 41781.36,
+        "fobValueINR": 3960872.69
       }
     ]
   },
@@ -4404,12 +4404,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/25/26-27",
     "otherReferences": "ZA1603-002-2026",
     "currency": "USD",
-    "exchangeRate": 95.492743,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6314926",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4423,9 +4423,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1808,
     "totalWeightKg": 18084,
     "totalAmountCurrency": 83414.4,
-    "totalFobValueCurrency": 83414.4,
-    "totalFobValueINR": 7965469.86,
-    "estimatedAmountINR": 7965469.86,
+    "totalFobValueCurrency": 81514.4,
+    "totalFobValueINR": 7727565.12,
+    "estimatedAmountINR": 7907685.12,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 83414.4,
@@ -4447,8 +4447,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5964,
         "ratePerKg": 4.75,
         "amountCurrency": 28329,
-        "fobValueCurrency": 28329,
-        "fobValueINR": 2705213.92
+        "fobValueCurrency": 27683.73,
+        "fobValueINR": 2624417.27
       },
       {
         "id": "line-rf-exp-25-26-27-2",
@@ -4461,8 +4461,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3636,
         "ratePerKg": 4.65,
         "amountCurrency": 16907.4,
-        "fobValueCurrency": 16907.4,
-        "fobValueINR": 1614534
+        "fobValueCurrency": 16522.29,
+        "fobValueINR": 1566312.71
       },
       {
         "id": "line-rf-exp-25-26-27-3",
@@ -4475,8 +4475,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8484,
         "ratePerKg": 4.5,
         "amountCurrency": 38178,
-        "fobValueCurrency": 38178,
-        "fobValueINR": 3645721.94
+        "fobValueCurrency": 37308.38,
+        "fobValueINR": 3536835.14
       }
     ]
   },
@@ -4508,12 +4508,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/26/26-27",
     "otherReferences": "SO-00026",
     "currency": "USD",
-    "exchangeRate": 95.419847,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6414820",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4527,9 +4527,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2106,
     "totalWeightKg": 21070.8,
     "totalAmountCurrency": 104036.4,
-    "totalFobValueCurrency": 104036.4,
-    "totalFobValueINR": 9927137.37,
-    "estimatedAmountINR": 9927137.37,
+    "totalFobValueCurrency": 101896.4,
+    "totalFobValueINR": 9659778.72,
+    "estimatedAmountINR": 9862650.72,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 104036.4,
@@ -4551,8 +4551,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 561.6,
         "ratePerKg": 7,
         "amountCurrency": 3931.2,
-        "fobValueCurrency": 3931.2,
-        "fobValueINR": 375114.5
+        "fobValueCurrency": 3850.34,
+        "fobValueINR": 365011.88
       },
       {
         "id": "line-rf-exp-26-26-27-2",
@@ -4565,8 +4565,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7624.8,
         "ratePerKg": 5.85,
         "amountCurrency": 44605.08,
-        "fobValueCurrency": 44605.08,
-        "fobValueINR": 4256209.91
+        "fobValueCurrency": 43687.57,
+        "fobValueINR": 4141581.24
       },
       {
         "id": "line-rf-exp-26-26-27-3",
@@ -4579,8 +4579,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7311.6,
         "ratePerKg": 4.65,
         "amountCurrency": 33998.94,
-        "fobValueCurrency": 33998.94,
-        "fobValueINR": 3244173.65
+        "fobValueCurrency": 33299.59,
+        "fobValueINR": 3156801.25
       },
       {
         "id": "line-rf-exp-26-26-27-4",
@@ -4593,8 +4593,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2818.8,
         "ratePerKg": 3.4,
         "amountCurrency": 9583.92,
-        "fobValueCurrency": 9583.92,
-        "fobValueINR": 914496.18
+        "fobValueCurrency": 9386.78,
+        "fobValueINR": 889866.88
       },
       {
         "id": "line-rf-exp-26-26-27-5",
@@ -4607,8 +4607,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21.6,
         "ratePerKg": 6,
         "amountCurrency": 129.6,
-        "fobValueCurrency": 129.6,
-        "fobValueINR": 12366.41
+        "fobValueCurrency": 126.93,
+        "fobValueINR": 12033.36
       },
       {
         "id": "line-rf-exp-26-26-27-6",
@@ -4621,8 +4621,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1512,
         "ratePerKg": 4.85,
         "amountCurrency": 7333.2,
-        "fobValueCurrency": 7333.2,
-        "fobValueINR": 699732.82
+        "fobValueCurrency": 7182.36,
+        "fobValueINR": 680887.55
       },
       {
         "id": "line-rf-exp-26-26-27-7",
@@ -4635,8 +4635,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1220.4,
         "ratePerKg": 3.65,
         "amountCurrency": 4454.46,
-        "fobValueCurrency": 4454.46,
-        "fobValueINR": 425043.89
+        "fobValueCurrency": 4362.83,
+        "fobValueINR": 413596.56
       }
     ]
   },
@@ -4668,12 +4668,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/27/26-27",
     "otherReferences": "025/IMF/2026",
     "currency": "USD",
-    "exchangeRate": 95.11128,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6448080",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -4687,9 +4687,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2400,
     "totalWeightKg": 24000,
     "totalAmountCurrency": 70800,
-    "totalFobValueCurrency": 70800,
-    "totalFobValueINR": 6733878.62,
-    "estimatedAmountINR": 6733878.62,
+    "totalFobValueCurrency": 68272.42,
+    "totalFobValueINR": 6472225.42,
+    "estimatedAmountINR": 6711840,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 70800,
@@ -4711,8 +4711,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 24000,
         "ratePerKg": 2.95,
         "amountCurrency": 70800,
-        "fobValueCurrency": 70800,
-        "fobValueINR": 6733878.62
+        "fobValueCurrency": 68272.42,
+        "fobValueINR": 6472225.42
       }
     ]
   },
@@ -4744,12 +4744,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/28/26-27",
     "otherReferences": "RF/45/2026-27",
     "currency": "USD",
-    "exchangeRate": 94.840668,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6452753",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -4762,9 +4762,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 44200,
-    "totalFobValueCurrency": 44200,
-    "totalFobValueINR": 4191957.53,
-    "estimatedAmountINR": 4191957.53,
+    "totalFobValueCurrency": 42500,
+    "totalFobValueINR": 4029000,
+    "estimatedAmountINR": 4190160,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 44200,
@@ -4786,8 +4786,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 26000,
         "ratePerKg": 1.7,
         "amountCurrency": 44200,
-        "fobValueCurrency": 44200,
-        "fobValueINR": 4191957.53
+        "fobValueCurrency": 42500,
+        "fobValueINR": 4029000
       }
     ]
   },
@@ -4819,12 +4819,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/29/26-27",
     "otherReferences": "RF/37/2026-27",
     "currency": "USD",
-    "exchangeRate": 94.930701,
+    "exchangeRate": 94.8,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6474198",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -4837,9 +4837,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2500,
     "totalWeightKg": 25000,
     "totalAmountCurrency": 43906.5,
-    "totalFobValueCurrency": 43906.5,
-    "totalFobValueINR": 4168074.82,
-    "estimatedAmountINR": 4168074.82,
+    "totalFobValueCurrency": 42206.5,
+    "totalFobValueINR": 4001176.2,
+    "estimatedAmountINR": 4162336.2,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 43906.5,
@@ -4861,8 +4861,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 10870,
         "ratePerKg": 1.85,
         "amountCurrency": 20109.5,
-        "fobValueCurrency": 20109.5,
-        "fobValueINR": 1909008.93
+        "fobValueCurrency": 19330.89,
+        "fobValueINR": 1832568.13
       },
       {
         "id": "line-rf-exp-29-26-27-2",
@@ -4875,8 +4875,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 13490,
         "ratePerKg": 1.7,
         "amountCurrency": 22933,
-        "fobValueCurrency": 22933,
-        "fobValueINR": 2177045.77
+        "fobValueCurrency": 22045.07,
+        "fobValueINR": 2089872.2
       },
       {
         "id": "line-rf-exp-29-26-27-3",
@@ -4889,8 +4889,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 640,
         "ratePerKg": 1.35,
         "amountCurrency": 864,
-        "fobValueCurrency": 864,
-        "fobValueINR": 82020.13
+        "fobValueCurrency": 830.54,
+        "fobValueINR": 78735.87
       }
     ]
   },
@@ -4922,12 +4922,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/30/26-27",
     "otherReferences": "SO-00030",
     "currency": "USD",
-    "exchangeRate": 94.491165,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6550573",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -4940,9 +4940,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2580,
     "totalWeightKg": 25800,
     "totalAmountCurrency": 45542.5,
-    "totalFobValueCurrency": 45542.5,
-    "totalFobValueINR": 4303363.88,
-    "estimatedAmountINR": 4303363.88,
+    "totalFobValueCurrency": 43842.5,
+    "totalFobValueINR": 4101465.88,
+    "estimatedAmountINR": 4262778,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 45542.5,
@@ -4964,8 +4964,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 11940,
         "ratePerKg": 1.85,
         "amountCurrency": 22089,
-        "fobValueCurrency": 22089,
-        "fobValueINR": 2087215.34
+        "fobValueCurrency": 21264.47,
+        "fobValueINR": 1989290.88
       },
       {
         "id": "line-rf-exp-30-26-27-2",
@@ -4978,8 +4978,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 13550,
         "ratePerKg": 1.7,
         "amountCurrency": 23035,
-        "fobValueCurrency": 23035,
-        "fobValueINR": 2176603.99
+        "fobValueCurrency": 22175.15,
+        "fobValueINR": 2074485.73
       },
       {
         "id": "line-rf-exp-30-26-27-3",
@@ -4992,8 +4992,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 310,
         "ratePerKg": 1.35,
         "amountCurrency": 418.5,
-        "fobValueCurrency": 418.5,
-        "fobValueINR": 39544.55
+        "fobValueCurrency": 402.88,
+        "fobValueINR": 37689.27
       }
     ]
   },
@@ -5025,12 +5025,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/31/26-27",
     "otherReferences": "SBT/ALP-011",
     "currency": "USD",
-    "exchangeRate": 94.410876,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6568581",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -5044,9 +5044,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 49595,
-    "totalFobValueCurrency": 49595,
-    "totalFobValueINR": 4682307.4,
-    "estimatedAmountINR": 4682307.4,
+    "totalFobValueCurrency": 47545,
+    "totalFobValueINR": 4447834.75,
+    "estimatedAmountINR": 4642092,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 49595,
@@ -5068,8 +5068,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 400,
         "ratePerKg": 1.45,
         "amountCurrency": 580,
-        "fobValueCurrency": 580,
-        "fobValueINR": 54758.31
+        "fobValueCurrency": 556.03,
+        "fobValueINR": 52016.21
       },
       {
         "id": "line-rf-exp-31-26-27-2",
@@ -5082,8 +5082,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2600,
         "ratePerKg": 2.1,
         "amountCurrency": 5460,
-        "fobValueCurrency": 5460,
-        "fobValueINR": 515483.38
+        "fobValueCurrency": 5234.31,
+        "fobValueINR": 489669.88
       },
       {
         "id": "line-rf-exp-31-26-27-3",
@@ -5096,8 +5096,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3400,
         "ratePerKg": 2.5,
         "amountCurrency": 8500,
-        "fobValueCurrency": 8500,
-        "fobValueINR": 802492.45
+        "fobValueCurrency": 8148.65,
+        "fobValueINR": 762306.59
       },
       {
         "id": "line-rf-exp-31-26-27-4",
@@ -5110,8 +5110,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 900,
         "ratePerKg": 2.6,
         "amountCurrency": 2340,
-        "fobValueCurrency": 2340,
-        "fobValueINR": 220921.45
+        "fobValueCurrency": 2243.28,
+        "fobValueINR": 209858.52
       },
       {
         "id": "line-rf-exp-31-26-27-5",
@@ -5124,8 +5124,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1200,
         "ratePerKg": 1.1,
         "amountCurrency": 1320,
-        "fobValueCurrency": 1320,
-        "fobValueINR": 124622.36
+        "fobValueCurrency": 1265.44,
+        "fobValueINR": 118381.73
       },
       {
         "id": "line-rf-exp-31-26-27-6",
@@ -5138,8 +5138,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5000,
         "ratePerKg": 1.7,
         "amountCurrency": 8500,
-        "fobValueCurrency": 8500,
-        "fobValueINR": 802492.45
+        "fobValueCurrency": 8148.65,
+        "fobValueINR": 762306.59
       },
       {
         "id": "line-rf-exp-31-26-27-7",
@@ -5152,8 +5152,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6200,
         "ratePerKg": 2.1,
         "amountCurrency": 13020,
-        "fobValueCurrency": 13020,
-        "fobValueINR": 1229229.61
+        "fobValueCurrency": 12481.82,
+        "fobValueINR": 1167674.33
       },
       {
         "id": "line-rf-exp-31-26-27-8",
@@ -5166,8 +5166,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1600,
         "ratePerKg": 2.4,
         "amountCurrency": 3840,
-        "fobValueCurrency": 3840,
-        "fobValueINR": 362537.76
+        "fobValueCurrency": 3681.27,
+        "fobValueINR": 344383.21
       },
       {
         "id": "line-rf-exp-31-26-27-9",
@@ -5180,8 +5180,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 600,
         "ratePerKg": 0.8,
         "amountCurrency": 480,
-        "fobValueCurrency": 480,
-        "fobValueINR": 45317.22
+        "fobValueCurrency": 460.16,
+        "fobValueINR": 43047.9
       },
       {
         "id": "line-rf-exp-31-26-27-10",
@@ -5194,8 +5194,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1500,
         "ratePerKg": 1.25,
         "amountCurrency": 1875,
-        "fobValueCurrency": 1875,
-        "fobValueINR": 177020.39
+        "fobValueCurrency": 1797.5,
+        "fobValueINR": 168155.87
       },
       {
         "id": "line-rf-exp-31-26-27-11",
@@ -5208,8 +5208,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 1.4,
         "amountCurrency": 3360,
-        "fobValueCurrency": 3360,
-        "fobValueINR": 317220.54
+        "fobValueCurrency": 3221.12,
+        "fobValueINR": 301335.31
       },
       {
         "id": "line-rf-exp-31-26-27-12",
@@ -5222,8 +5222,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 200,
         "ratePerKg": 1.6,
         "amountCurrency": 320,
-        "fobValueCurrency": 320,
-        "fobValueINR": 30211.48
+        "fobValueCurrency": 306.77,
+        "fobValueINR": 28698.61
       }
     ]
   },
@@ -5255,12 +5255,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/32/26-27",
     "otherReferences": "RF/48/2026-27",
     "currency": "USD",
-    "exchangeRate": 94.473311,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6612520",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5273,9 +5273,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51161.5,
-    "totalFobValueCurrency": 51161.5,
-    "totalFobValueINR": 4833396.3,
-    "estimatedAmountINR": 4833396.3,
+    "totalFobValueCurrency": 49311.5,
+    "totalFobValueINR": 4613090.83,
+    "estimatedAmountINR": 4788716.4,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 51161.5,
@@ -5297,8 +5297,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1460,
         "ratePerKg": 2.25,
         "amountCurrency": 3285,
-        "fobValueCurrency": 3285,
-        "fobValueINR": 310344.83
+        "fobValueCurrency": 3166.21,
+        "fobValueINR": 296199.36
       },
       {
         "id": "line-rf-exp-32-26-27-2",
@@ -5311,8 +5311,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21970,
         "ratePerKg": 2,
         "amountCurrency": 43940,
-        "fobValueCurrency": 43940,
-        "fobValueINR": 4151157.29
+        "fobValueCurrency": 42351.13,
+        "fobValueINR": 3961948.17
       },
       {
         "id": "line-rf-exp-32-26-27-3",
@@ -5325,8 +5325,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 440,
         "ratePerKg": 1.7,
         "amountCurrency": 748,
-        "fobValueCurrency": 748,
-        "fobValueINR": 70666.04
+        "fobValueCurrency": 720.95,
+        "fobValueINR": 67445.09
       },
       {
         "id": "line-rf-exp-32-26-27-4",
@@ -5339,8 +5339,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 630,
         "ratePerKg": 1.35,
         "amountCurrency": 850.5,
-        "fobValueCurrency": 850.5,
-        "fobValueINR": 80349.55
+        "fobValueCurrency": 819.75,
+        "fobValueINR": 76687.23
       },
       {
         "id": "line-rf-exp-32-26-27-5",
@@ -5353,8 +5353,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 320,
         "ratePerKg": 1.7,
         "amountCurrency": 544,
-        "fobValueCurrency": 544,
-        "fobValueINR": 51393.48
+        "fobValueCurrency": 524.33,
+        "fobValueINR": 49050.97
       },
       {
         "id": "line-rf-exp-32-26-27-6",
@@ -5367,8 +5367,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1080,
         "ratePerKg": 1.55,
         "amountCurrency": 1674,
-        "fobValueCurrency": 1674,
-        "fobValueINR": 158148.32
+        "fobValueCurrency": 1613.47,
+        "fobValueINR": 150939.95
       },
       {
         "id": "line-rf-exp-32-26-27-7",
@@ -5381,8 +5381,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 100,
         "ratePerKg": 1.2,
         "amountCurrency": 120,
-        "fobValueCurrency": 120,
-        "fobValueINR": 11336.8
+        "fobValueCurrency": 115.66,
+        "fobValueINR": 10820.06
       }
     ]
   },
@@ -5414,12 +5414,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/33/26-27",
     "otherReferences": "RF/054/2026-27",
     "currency": "USD",
-    "exchangeRate": 94.795715,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6679240",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5432,9 +5432,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 53022.5,
-    "totalFobValueCurrency": 53022.5,
-    "totalFobValueINR": 5026305.8,
-    "estimatedAmountINR": 5026305.8,
+    "totalFobValueCurrency": 51172.5,
+    "totalFobValueINR": 4787187.38,
+    "estimatedAmountINR": 4962906,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 53022.5,
@@ -5456,8 +5456,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4090,
         "ratePerKg": 2.25,
         "amountCurrency": 9202.5,
-        "fobValueCurrency": 9202.5,
-        "fobValueINR": 872357.57
+        "fobValueCurrency": 8881.42,
+        "fobValueINR": 830856.56
       },
       {
         "id": "line-rf-exp-33-26-27-2",
@@ -5470,8 +5470,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21910,
         "ratePerKg": 2,
         "amountCurrency": 43820,
-        "fobValueCurrency": 43820,
-        "fobValueINR": 4153948.23
+        "fobValueCurrency": 42291.08,
+        "fobValueINR": 3956330.82
       }
     ]
   },
@@ -5503,12 +5503,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/34/26-27",
     "otherReferences": "RF/055/2026-27",
     "currency": "USD",
-    "exchangeRate": 95.077242,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6710279",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5521,9 +5521,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51200,
-    "totalFobValueCurrency": 51200,
-    "totalFobValueINR": 4867954.79,
-    "estimatedAmountINR": 4867954.79,
+    "totalFobValueCurrency": 49450,
+    "totalFobValueINR": 4626047.5,
+    "estimatedAmountINR": 4792320,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 51200,
@@ -5545,8 +5545,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6000,
         "ratePerKg": 2.2,
         "amountCurrency": 13200,
-        "fobValueCurrency": 13200,
-        "fobValueINR": 1255019.59
+        "fobValueCurrency": 12748.83,
+        "fobValueINR": 1192652.87
       },
       {
         "id": "line-rf-exp-34-26-27-2",
@@ -5559,8 +5559,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 20000,
         "ratePerKg": 1.9,
         "amountCurrency": 38000,
-        "fobValueCurrency": 38000,
-        "fobValueINR": 3612935.2
+        "fobValueCurrency": 36701.17,
+        "fobValueINR": 3433394.63
       }
     ]
   },
@@ -5592,12 +5592,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/35/26-27",
     "otherReferences": "035/2026-27/RW",
     "currency": "USD",
-    "exchangeRate": 95.174645,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "MOGRAL 114W",
     "containerNo": "",
-    "billOfLadingNo": "5761921 DTD. 08/08/2026",
+    "billOfLadingNo": "6721259",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5610,9 +5610,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2161,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 149419.08,
-    "totalFobValueCurrency": 149419.08,
-    "totalFobValueINR": 14220907.9,
-    "estimatedAmountINR": 14220907.9,
+    "totalFobValueCurrency": 147569.08,
+    "totalFobValueINR": 13805087.43,
+    "estimatedAmountINR": 13985625.89,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 149419.08,
@@ -5634,8 +5634,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 648,
         "ratePerKg": 7.2,
         "amountCurrency": 4665.6,
-        "fobValueCurrency": 4665.6,
-        "fobValueINR": 444046.82
+        "fobValueCurrency": 4607.83,
+        "fobValueINR": 431062.86
       },
       {
         "id": "line-rf-exp-35-26-27-2",
@@ -5648,8 +5648,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1501.2,
         "ratePerKg": 6.4,
         "amountCurrency": 9607.68,
-        "fobValueCurrency": 9607.68,
-        "fobValueINR": 914407.53
+        "fobValueCurrency": 9488.72,
+        "fobValueINR": 887670.19
       },
       {
         "id": "line-rf-exp-35-26-27-3",
@@ -5662,8 +5662,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1911.6,
         "ratePerKg": 5.8,
         "amountCurrency": 11087.28,
-        "fobValueCurrency": 11087.28,
-        "fobValueINR": 1055227.94
+        "fobValueCurrency": 10950.01,
+        "fobValueINR": 1024372.99
       },
       {
         "id": "line-rf-exp-35-26-27-4",
@@ -5676,8 +5676,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 356.4,
         "ratePerKg": 3.8,
         "amountCurrency": 1354.32,
-        "fobValueCurrency": 1354.32,
-        "fobValueINR": 128896.93
+        "fobValueCurrency": 1337.55,
+        "fobValueINR": 125127.97
       },
       {
         "id": "line-rf-exp-35-26-27-5",
@@ -5690,8 +5690,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4168.8,
         "ratePerKg": 8.2,
         "amountCurrency": 34184.16,
-        "fobValueCurrency": 34184.16,
-        "fobValueINR": 3253465.29
+        "fobValueCurrency": 33760.92,
+        "fobValueINR": 3158333.71
       },
       {
         "id": "line-rf-exp-35-26-27-6",
@@ -5704,8 +5704,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7257.6,
         "ratePerKg": 7.2,
         "amountCurrency": 52254.72,
-        "fobValueCurrency": 52254.72,
-        "fobValueINR": 4973324.43
+        "fobValueCurrency": 51607.74,
+        "fobValueINR": 4827904.03
       },
       {
         "id": "line-rf-exp-35-26-27-7",
@@ -5718,8 +5718,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5756.4,
         "ratePerKg": 6.3,
         "amountCurrency": 36265.32,
-        "fobValueCurrency": 36265.32,
-        "fobValueINR": 3451538.96
+        "fobValueCurrency": 35816.31,
+        "fobValueINR": 3350615.68
       }
     ]
   },
@@ -5751,12 +5751,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/36/26-27",
     "otherReferences": "QDFL-RF/053/2026-27",
     "currency": "USD",
-    "exchangeRate": 95.602294,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6786895",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -5770,9 +5770,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2101,
     "totalWeightKg": 21012,
     "totalAmountCurrency": 126316.8,
-    "totalFobValueCurrency": 126316.8,
-    "totalFobValueINR": 12076175.85,
-    "estimatedAmountINR": 12076175.85,
+    "totalFobValueCurrency": 124566.8,
+    "totalFobValueINR": 11653224.14,
+    "estimatedAmountINR": 11823252.48,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 126316.8,
@@ -5794,8 +5794,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 912,
         "ratePerKg": 6.2,
         "amountCurrency": 5654.4,
-        "fobValueCurrency": 5654.4,
-        "fobValueINR": 540573.61
+        "fobValueCurrency": 5576.06,
+        "fobValueINR": 521640.75
       },
       {
         "id": "line-rf-exp-36-26-27-2",
@@ -5808,8 +5808,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7116,
         "ratePerKg": 6.1,
         "amountCurrency": 43407.6,
-        "fobValueCurrency": 43407.6,
-        "fobValueINR": 4149866.14
+        "fobValueCurrency": 42806.23,
+        "fobValueINR": 4004522.69
       },
       {
         "id": "line-rf-exp-36-26-27-3",
@@ -5822,8 +5822,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 12984,
         "ratePerKg": 5.95,
         "amountCurrency": 77254.8,
-        "fobValueCurrency": 77254.8,
-        "fobValueINR": 7385736.1
+        "fobValueCurrency": 76184.51,
+        "fobValueINR": 7127060.7
       }
     ]
   },
@@ -5855,12 +5855,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/37/26-27",
     "otherReferences": "RF/059/2026-27",
     "currency": "USD",
-    "exchangeRate": 95.602294,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6823706",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5873,9 +5873,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 50950,
-    "totalFobValueCurrency": 50950,
-    "totalFobValueINR": 4870936.88,
-    "estimatedAmountINR": 4870936.88,
+    "totalFobValueCurrency": 49200,
+    "totalFobValueINR": 4602660,
+    "estimatedAmountINR": 4768920,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 50950,
@@ -5897,8 +5897,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1000,
         "ratePerKg": 2.2,
         "amountCurrency": 2200,
-        "fobValueCurrency": 2200,
-        "fobValueINR": 210325.05
+        "fobValueCurrency": 2124.44,
+        "fobValueINR": 198740.96
       },
       {
         "id": "line-rf-exp-37-26-27-2",
@@ -5911,8 +5911,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 25000,
         "ratePerKg": 1.95,
         "amountCurrency": 48750,
-        "fobValueCurrency": 48750,
-        "fobValueINR": 4660611.83
+        "fobValueCurrency": 47075.56,
+        "fobValueINR": 4403919.04
       }
     ]
   },
@@ -5944,12 +5944,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/38/26-27",
     "otherReferences": "RF/057/2026-27",
     "currency": "USD",
-    "exchangeRate": 95.69378,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6816703",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -5962,9 +5962,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1747,
     "totalWeightKg": 17472,
     "totalAmountCurrency": 115315.2,
-    "totalFobValueCurrency": 115315.2,
-    "totalFobValueINR": 11034947.38,
-    "estimatedAmountINR": 11034947.38,
+    "totalFobValueCurrency": 113615.2,
+    "totalFobValueINR": 10628701.96,
+    "estimatedAmountINR": 10793502.72,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 115315.2,
@@ -5986,8 +5986,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 17472,
         "ratePerKg": 6.6,
         "amountCurrency": 115315.2,
-        "fobValueCurrency": 115315.2,
-        "fobValueINR": 11034947.38
+        "fobValueCurrency": 113615.2,
+        "fobValueINR": 10628701.96
       }
     ]
   },
@@ -6019,12 +6019,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/39/26-27",
     "otherReferences": "057/2026-27/RL",
     "currency": "USD",
-    "exchangeRate": 95.978501,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "OTPU6771618",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6888583",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "commodityDescription": "FROZEN SEAFOOD",
@@ -6037,9 +6037,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51265,
-    "totalFobValueCurrency": 51265,
-    "totalFobValueINR": 4920337.85,
-    "estimatedAmountINR": 4920337.85,
+    "totalFobValueCurrency": 49415,
+    "totalFobValueINR": 4622773.25,
+    "estimatedAmountINR": 4798404,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 51265,
@@ -6061,8 +6061,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2260,
         "ratePerKg": 2.2,
         "amountCurrency": 4972,
-        "fobValueCurrency": 4972,
-        "fobValueINR": 477205.11
+        "fobValueCurrency": 4792.58,
+        "fobValueINR": 448345.43
       },
       {
         "id": "line-rf-exp-39-26-27-2",
@@ -6075,8 +6075,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 23740,
         "ratePerKg": 1.95,
         "amountCurrency": 46293,
-        "fobValueCurrency": 46293,
-        "fobValueINR": 4443132.75
+        "fobValueCurrency": 44622.42,
+        "fobValueINR": 4174427.82
       }
     ]
   },
@@ -6108,12 +6108,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/40/26-27",
     "otherReferences": "SBT/ALP-012",
     "currency": "USD",
-    "exchangeRate": 95.941667,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6919102",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -6127,9 +6127,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51535.5,
-    "totalFobValueCurrency": 51535.5,
-    "totalFobValueINR": 4944401.78,
-    "estimatedAmountINR": 4944401.78,
+    "totalFobValueCurrency": 49485.5,
+    "totalFobValueINR": 4629368.53,
+    "estimatedAmountINR": 4823722.8,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 51535.5,
@@ -6151,8 +6151,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1020,
         "ratePerKg": 1.5,
         "amountCurrency": 1530,
-        "fobValueCurrency": 1530,
-        "fobValueINR": 146790.75
+        "fobValueCurrency": 1469.14,
+        "fobValueINR": 137437.96
       },
       {
         "id": "line-rf-exp-40-26-27-2",
@@ -6165,8 +6165,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3190,
         "ratePerKg": 2.15,
         "amountCurrency": 6858.5,
-        "fobValueCurrency": 6858.5,
-        "fobValueINR": 658015.92
+        "fobValueCurrency": 6585.68,
+        "fobValueINR": 616090.35
       },
       {
         "id": "line-rf-exp-40-26-27-3",
@@ -6179,8 +6179,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3380,
         "ratePerKg": 2.55,
         "amountCurrency": 8619,
-        "fobValueCurrency": 8619,
-        "fobValueINR": 826921.23
+        "fobValueCurrency": 8276.15,
+        "fobValueINR": 774233.83
       },
       {
         "id": "line-rf-exp-40-26-27-4",
@@ -6193,8 +6193,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 430,
         "ratePerKg": 2.7,
         "amountCurrency": 1161,
-        "fobValueCurrency": 1161,
-        "fobValueINR": 111388.28
+        "fobValueCurrency": 1114.82,
+        "fobValueINR": 104291.16
       },
       {
         "id": "line-rf-exp-40-26-27-5",
@@ -6207,8 +6207,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3590,
         "ratePerKg": 1.1,
         "amountCurrency": 3949,
-        "fobValueCurrency": 3949,
-        "fobValueINR": 378873.64
+        "fobValueCurrency": 3791.92,
+        "fobValueINR": 354733.66
       },
       {
         "id": "line-rf-exp-40-26-27-6",
@@ -6221,8 +6221,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6230,
         "ratePerKg": 1.8,
         "amountCurrency": 11214,
-        "fobValueCurrency": 11214,
-        "fobValueINR": 1075889.85
+        "fobValueCurrency": 10767.92,
+        "fobValueINR": 1007339.38
       },
       {
         "id": "line-rf-exp-40-26-27-7",
@@ -6235,8 +6235,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6720,
         "ratePerKg": 2.2,
         "amountCurrency": 14784,
-        "fobValueCurrency": 14784,
-        "fobValueINR": 1418401.6
+        "fobValueCurrency": 14195.92,
+        "fobValueINR": 1328027.95
       },
       {
         "id": "line-rf-exp-40-26-27-8",
@@ -6249,8 +6249,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1320,
         "ratePerKg": 2.5,
         "amountCurrency": 3300,
-        "fobValueCurrency": 3300,
-        "fobValueINR": 316607.5
+        "fobValueCurrency": 3168.73,
+        "fobValueINR": 296434.81
       },
       {
         "id": "line-rf-exp-40-26-27-9",
@@ -6263,8 +6263,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 100,
         "ratePerKg": 0.9,
         "amountCurrency": 90,
-        "fobValueCurrency": 90,
-        "fobValueINR": 8634.75
+        "fobValueCurrency": 86.42,
+        "fobValueINR": 8084.59
       },
       {
         "id": "line-rf-exp-40-26-27-10",
@@ -6277,8 +6277,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 10,
         "ratePerKg": 1.3,
         "amountCurrency": 13,
-        "fobValueCurrency": 13,
-        "fobValueINR": 1247.24
+        "fobValueCurrency": 12.48,
+        "fobValueINR": 1167.77
       },
       {
         "id": "line-rf-exp-40-26-27-11",
@@ -6291,8 +6291,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 10,
         "ratePerKg": 1.7,
         "amountCurrency": 17,
-        "fobValueCurrency": 17,
-        "fobValueINR": 1631.01
+        "fobValueCurrency": 16.32,
+        "fobValueINR": 1527.07
       }
     ]
   },
@@ -6324,12 +6324,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "exporterRef": "RF/EXP/41/26-27",
     "otherReferences": "RF/059/2026-27",
     "currency": "USD",
-    "exchangeRate": 96.126117,
+    "exchangeRate": 93.6,
     "termsOfPayment": "Net 45",
     "priceTerms": "FOB Cochin",
     "vesselFlightNo": "",
     "containerNo": "",
-    "billOfLadingNo": "",
+    "billOfLadingNo": "6910062",
     "factoryNameAndAddress": "M/s RELISH FOODS, 14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
     "factoryApprovalNumber": "1603",
     "chinaRegistrationNumber": "CIND18PP2309060037",
@@ -6343,9 +6343,9 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2239,
     "totalWeightKg": 22392,
     "totalAmountCurrency": 64936.8,
-    "totalFobValueCurrency": 64936.8,
-    "totalFobValueINR": 6242122.43,
-    "estimatedAmountINR": 6242122.43,
+    "totalFobValueCurrency": 62586.8,
+    "totalFobValueINR": 5854995.14,
+    "estimatedAmountINR": 6078084.48,
     "realizations": [],
     "totalRealizedCurrency": 0,
     "balanceRealizationCurrency": 64936.8,
@@ -6367,8 +6367,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 22392,
         "ratePerKg": 2.9,
         "amountCurrency": 64936.8,
-        "fobValueCurrency": 64936.8,
-        "fobValueINR": 6242122.43
+        "fobValueCurrency": 62586.8,
+        "fobValueINR": 5854995.14
       }
     ]
   },

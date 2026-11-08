@@ -383,16 +383,19 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 100,
         'Net Weight (Kg)': 2000,
         'Rate per Kg (USD)': 9.80,
-        'Total Sales Value (USD)': 26100,
-        'Total FOB Value (USD)': 26100,
-        'Total FOB Value (INR)': 2205450,
+        'Total Sales Value (C&F USD)': 26100,
+        'Ocean Freight (USD)': 1850,
+        'Ocean Freight (INR)': 156325,
+        'Total FOB Value (USD)': 24250,
+        'Total FOB Value (INR)': 2049125,
         'Total Purchase Value (INR)': 1563250,
+        'Shipping Bill No (SB No)': '2780281',
         'Pre-determined Bank Exchange Rate': 84.50,
         'Advance Received': 7830,
         'Date of Receiving Advance': '15-10-2026',
         'Balance Payment Amount': 18270,
         'Date of Receiving Balance Payment': '28-10-2026',
-        'Remarks': 'Reefer 40ft container #CRXU-89214 (Total Sales Value & FOB values in 1st row cover full invoice)'
+        'Remarks': 'Reefer 40ft container #CRXU-89214 (Total Sales C&F $26,100 - Freight $1,850 = FOB $24,250)'
       },
       {
         'Invoice No': 'EXP-2026-001',
@@ -413,11 +416,14 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 50,
         'Net Weight (Kg)': 1000,
         'Rate per Kg (USD)': 6.50,
-        'Total Sales Value (USD)': '',
+        'Total Sales Value (C&F USD)': '',
+        'Ocean Freight (USD)': '',
+        'Ocean Freight (INR)': '',
         'Total FOB Value (USD)': '',
         'Total FOB Value (INR)': '',
         'Total Purchase Value (INR)': '',
-        'Remarks': 'Line 2 of same invoice/date (Full invoice Sales & FOB values given in row 1)'
+        'Shipping Bill No (SB No)': '',
+        'Remarks': 'Line 2 of same invoice (Sales, Freight & FOB values on row 1 cover full invoice)'
       },
       {
         'Invoice No': 'EXP-2026-002',
@@ -438,11 +444,14 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
         'No of Cartons': 80,
         'Net Weight (Kg)': 1600,
         'Rate per Kg (USD)': 11.20,
-        'Total Sales Value (USD)': 17920,
-        'Total FOB Value (USD)': 17920,
-        'Total FOB Value (INR)': 1514240,
+        'Total Sales Value (C&F USD)': 17920,
+        'Ocean Freight (USD)': 1420,
+        'Ocean Freight (INR)': 119990,
+        'Total FOB Value (USD)': 16500,
+        'Total FOB Value (INR)': 1394250,
         'Total Purchase Value (INR)': 1115400,
-        'Remarks': 'Blast frozen sashimi grade (Single product invoice with USD Sales & dual-currency FOB)'
+        'Shipping Bill No (SB No)': '2835195',
+        'Remarks': 'Blast frozen sashimi grade (Single product invoice: Sales $17,920 - Freight $1,420 = FOB $16,500)'
       }
     ];
     const ws = XLSX.utils.json_to_sheet(data);

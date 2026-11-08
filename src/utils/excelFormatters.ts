@@ -15,14 +15,21 @@ export function normalizeKey(key: string): string {
 /**
  * Finds the first value in an object whose key matches one of the candidate normalized keys.
  * Supports exact normalized matching as well as fuzzy substring matching (e.g. "Supplier Name *" -> matches "suppliername").
+ * Accepts optional targetCurrency ('USD' | 'INR') to prevent cross-currency key matching collisions (e.g. FOB RS matching a USD FOB key).
  */
-export function getFlexibleValue(row: Record<string, any>, candidateKeys: string[]): any {
+export function getFlexibleValue(row: Record<string, any>, candidateKeys: string[], targetCurrency?: 'USD' | 'INR'): any {
   if (!row || typeof row !== 'object') return undefined;
   const normalizedCandidateKeys = candidateKeys.map(normalizeKey);
+
+  const isInrKey = (norm: string) => norm.includes('inr') || norm.includes('rs') || norm.includes('rupee');
+  const isUsdKey = (norm: string) => norm.includes('usd') || norm.includes('dollar') || norm.includes('currency') || norm.includes('curr');
 
   // 1. Exact match on normalized key
   for (const [key, val] of Object.entries(row)) {
     const norm = normalizeKey(key);
+    if (targetCurrency === 'USD' && isInrKey(norm)) continue;
+    if (targetCurrency === 'INR' && isUsdKey(norm)) continue;
+
     if (normalizedCandidateKeys.includes(norm) && val !== undefined && val !== null && String(val).trim() !== '') {
       return typeof val === 'string' ? val.trim() : val;
     }
@@ -31,6 +38,9 @@ export function getFlexibleValue(row: Record<string, any>, candidateKeys: string
   // 2. Substring / Prefix match (e.g. "Supplier Name (Required)" matches "suppliername")
   for (const [key, val] of Object.entries(row)) {
     const norm = normalizeKey(key);
+    if (targetCurrency === 'USD' && isInrKey(norm)) continue;
+    if (targetCurrency === 'INR' && isUsdKey(norm)) continue;
+
     for (const cand of normalizedCandidateKeys) {
       if (cand.length >= 3 && norm.includes(cand)) {
         if (val !== undefined && val !== null && String(val).trim() !== '') {

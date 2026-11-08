@@ -1900,6 +1900,94 @@ test('Commercial Reports Hub: Invoice & Product Cross-Analysis transforms nested
   assert.equal(weightedAvgRate.toFixed(2), '2.91');
 });
 
+test('FOB Valuation Derivation & Currency Key Isolation: prevents cross-currency collisions and derives FOB from C&F minus Ocean Freight', () => {
+  const rowWithBothFobs = {
+    'Invoice No': 'RF/EXP/01/26-27',
+    'C&F USD': 127320,
+    'EXCHANGE RATE': 92.5,
+    'C & F RS': 11777100,
+    'FREIGHT $': 1750,
+    'FREIGHT (RS)': 161875,
+    'FOB RS': 11615225,
+    'FOB USD': 125570
+  };
+
+  const fobUsdCandidateKeys = [
+    'fobusd', 'totalfobusd', 'fobvalueusd', 'totalfobvalueusd', 'fobamountusd',
+    'fobvalusd', 'fobvaluecurrency', 'totalfobvaluecurrency', 'totalfobvalue', 'fobvalue', 'fob'
+  ];
+
+  const fobInrCandidateKeys = [
+    'fobrs', 'totalfobrs', 'fobinr', 'totalfobinr', 'fobvalueinr', 'totalfobvalueinr',
+    'fobamountinr', 'fobvalinr', 'fobrupees', 'totalfobrupees'
+  ];
+
+  const freightUsdCandidateKeys = ['freightusd', 'freightdollar', 'oceanfreightusd', 'totalfreightusd', 'freight'];
+  const freightInrCandidateKeys = ['freightrs', 'freightinr', 'totalfreightrs', 'totalfreightinr'];
+
+  // 1. Currency isolation: FOB USD must NOT match FOB RS
+  const extractedFobUsd = getFlexibleValue(rowWithBothFobs, fobUsdCandidateKeys, 'USD');
+  const extractedFobInr = getFlexibleValue(rowWithBothFobs, fobInrCandidateKeys, 'INR');
+
+  assert.equal(extractedFobUsd, 125570);
+  assert.equal(extractedFobInr, 11615225);
+
+  const extractedFreightUsd = getFlexibleValue(rowWithBothFobs, freightUsdCandidateKeys, 'USD');
+  const extractedFreightInr = getFlexibleValue(rowWithBothFobs, freightInrCandidateKeys, 'INR');
+
+  assert.equal(extractedFreightUsd, 1750);
+  assert.equal(extractedFreightInr, 161875);
+
+  // 2. Derive FOB when explicit FOB columns are absent but Freight is present
+  const rowWithoutExplicitFob = {
+    'Invoice No': 'EXP-2026-001',
+    'Total Sales Value (C&F USD)': 26100,
+    'Ocean Freight (USD)': 1850,
+    'Ocean Freight (INR)': 156325,
+    'Exchange Rate': 84.50
+  };
+
+  const salesVal = parseFloat(getFlexibleValue(rowWithoutExplicitFob, ['totalsalesvaluecfusd', 'totalsalesvalueusd'], 'USD'));
+  const freightVal = parseFloat(getFlexibleValue(rowWithoutExplicitFob, freightUsdCandidateKeys, 'USD'));
+  const exRate = parseFloat(getFlexibleValue(rowWithoutExplicitFob, ['exchangerate']));
+
+  assert.equal(salesVal, 26100);
+  assert.equal(freightVal, 1850);
+
+  const derivedFobUsd = Math.max(0, Number((salesVal - freightVal).toFixed(2)));
+  const derivedFobInr = Math.max(0, Number((derivedFobUsd * exRate).toFixed(2)));
+
+  assert.equal(derivedFobUsd, 24250);
+  assert.equal(derivedFobInr, 2049125);
+
+  // 3. Proportional line item allocation with cent/paisa reconciliation
+  const lines = [
+    { id: 'l1', amountCurrency: 19600 },
+    { id: 'l2', amountCurrency: 6500 }
+  ];
+  const totalAmount = 26100;
+  const targetFobUsd = 24250;
+  const targetFobInr = 2049125;
+
+  let sumUsd = 0;
+  let sumInr = 0;
+  lines.forEach((l, idx) => {
+    const ratio = l.amountCurrency / totalAmount;
+    if (idx === lines.length - 1) {
+      l.fobUsd = Number((targetFobUsd - sumUsd).toFixed(2));
+      l.fobInr = Number((targetFobInr - sumInr).toFixed(2));
+    } else {
+      l.fobUsd = Number((targetFobUsd * ratio).toFixed(2));
+      l.fobInr = Number((targetFobInr * ratio).toFixed(2));
+      sumUsd = Number((sumUsd + l.fobUsd).toFixed(2));
+      sumInr = Number((sumInr + l.fobInr).toFixed(2));
+    }
+  });
+
+  assert.equal(lines[0].fobUsd + lines[1].fobUsd, targetFobUsd);
+  assert.equal(lines[0].fobInr + lines[1].fobInr, targetFobInr);
+});
+
 
 
 

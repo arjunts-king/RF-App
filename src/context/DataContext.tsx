@@ -5141,6 +5141,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const remarks = String(getFlexibleValue(headerRow, ['remarks', 'notes', 'comment']) || '').trim();
 
       const salesValUsdCandidateKeys = [
+        'cfusd',
+        'candfusd',
+        'totalcfusd',
+        'cfvalueusd',
+        'totalcfvalueusd',
+        'totalsalesvaluecfusd',
         'totalsalesvalueusd',
         'totalsalesvalue',
         'totalsalesamountusd',
@@ -5152,35 +5158,88 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'invoicesalesvalueusd',
         'invoicesalesvalue',
         'totalinvoicevalueusd',
-        'totalinvoicevalue'
+        'totalinvoicevalue',
+        'invoicevalueusd',
+        'cf'
+      ];
+
+      const salesValInrCandidateKeys = [
+        'cfrs',
+        'candfrs',
+        'candinr',
+        'cfinr',
+        'totalcfrs',
+        'totalcfinr',
+        'totalsalesvalueinr',
+        'totalsalesamountinr',
+        'salesvalueinr',
+        'salesamountinr'
+      ];
+
+      const freightUsdCandidateKeys = [
+        'freightusd',
+        'oceanfreightusd',
+        'freightdollar',
+        'totalfreightusd',
+        'freightamountusd',
+        'freightvalusd',
+        'oceanfreight',
+        'freightamount',
+        'shippingfreight',
+        'freight'
+      ];
+
+      const freightInrCandidateKeys = [
+        'freightrs',
+        'freightinr',
+        'totalfreightrs',
+        'totalfreightinr',
+        'freightrupees',
+        'freightamountinr',
+        'freightamountrs',
+        'oceanfreightrs',
+        'oceanfreightinr'
       ];
 
       const fobUsdCandidateKeys = [
+        'fobusd',
+        'totalfobusd',
+        'fobvalueusd',
         'totalfobvalueusd',
+        'fobamountusd',
+        'totalfobamountusd',
+        'fobvalusd',
+        'totalfobvalusd',
+        'fobvaluecurrency',
+        'totalfobvaluecurrency',
+        'fobcurrency',
+        'totalfobcurrency',
         'totalfobvaluefullinvoice',
-        'totalfobvalue',
         'fobvaluefullinvoice',
         'invoicefobvalue',
         'invoicefob',
-        'totalfob',
-        'fobvaluecurrency',
-        'fobvalueusd',
+        'totalfobvalue',
         'fobvalue',
-        'fobamountusd',
         'fobamount',
+        'totalfob',
         'fob'
       ];
 
       const fobInrCandidateKeys = [
-        'totalfobvalueinr',
-        'totalfobvalinr',
-        'totalfobinr',
-        'totalfobvalrupees',
-        'fobvalueinr',
-        'fobamountinr',
+        'fobrs',
+        'totalfobrs',
         'fobinr',
-        'fobrupees',
+        'totalfobinr',
+        'fobvalueinr',
+        'totalfobvalueinr',
+        'fobamountinr',
+        'totalfobamountinr',
         'fobvalinr',
+        'totalfobvalinr',
+        'fobrupees',
+        'totalfobrupees',
+        'fobvalrupees',
+        'totalfobvalrupees',
         'fobinrrupees'
       ];
 
@@ -5209,6 +5268,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       interface ParsedCandidate {
         line: SalesInvoiceLine;
         rowSalesUsd: number | null;
+        rowFreightUsd: number | null;
+        rowFreightInr: number | null;
         rowFobUsd: number | null;
         rowFobInr: number | null;
         rowPurUsd: number | null;
@@ -5364,11 +5425,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? Number(rawLineTotal.toFixed(2))
           : Number((weightKg * ratePerKg).toFixed(2));
 
-        const rawSalesUsdVal = parseFloat(getFlexibleValue(row, salesValUsdCandidateKeys) || '');
+        let rawSalesUsdVal = parseFloat(getFlexibleValue(row, salesValUsdCandidateKeys, 'USD') || '');
+        const rawSalesInrVal = parseFloat(getFlexibleValue(row, salesValInrCandidateKeys, 'INR') || '');
+        if ((isNaN(rawSalesUsdVal) || rawSalesUsdVal <= 0) && !isNaN(rawSalesInrVal) && rawSalesInrVal > 0) {
+          rawSalesUsdVal = Number((rawSalesInrVal / exchangeRate).toFixed(2));
+        }
         const rowSalesUsd = !isNaN(rawSalesUsdVal) && rawSalesUsdVal > 0 ? Number(rawSalesUsdVal.toFixed(2)) : null;
 
-        let rawFobUsdVal = parseFloat(getFlexibleValue(row, fobUsdCandidateKeys) || '');
-        let rawFobInrVal = parseFloat(getFlexibleValue(row, fobInrCandidateKeys) || '');
+        let rawFreightUsd = parseFloat(getFlexibleValue(row, freightUsdCandidateKeys, 'USD') || '');
+        let rawFreightInr = parseFloat(getFlexibleValue(row, freightInrCandidateKeys, 'INR') || '');
+        if (!isNaN(rawFreightUsd) && rawFreightUsd > 0 && (isNaN(rawFreightInr) || rawFreightInr <= 0)) {
+          rawFreightInr = Number((rawFreightUsd * exchangeRate).toFixed(2));
+        } else if (!isNaN(rawFreightInr) && rawFreightInr > 0 && (isNaN(rawFreightUsd) || rawFreightUsd <= 0)) {
+          rawFreightUsd = Number((rawFreightInr / exchangeRate).toFixed(2));
+        }
+        const rowFreightUsd = !isNaN(rawFreightUsd) && rawFreightUsd > 0 ? Number(rawFreightUsd.toFixed(2)) : null;
+        const rowFreightInr = !isNaN(rawFreightInr) && rawFreightInr > 0 ? Number(rawFreightInr.toFixed(2)) : null;
+
+        let rawFobUsdVal = parseFloat(getFlexibleValue(row, fobUsdCandidateKeys, 'USD') || '');
+        let rawFobInrVal = parseFloat(getFlexibleValue(row, fobInrCandidateKeys, 'INR') || '');
+
+        // Derive FOB from Sales minus Freight if explicit FOB is absent
+        if ((isNaN(rawFobUsdVal) || rawFobUsdVal <= 0) && rowFreightUsd !== null && rowFreightUsd > 0) {
+          const baseSales = rowSalesUsd !== null && rowSalesUsd > 0 ? rowSalesUsd : amountCurrency;
+          rawFobUsdVal = Math.max(0, Number((baseSales - rowFreightUsd).toFixed(2)));
+        }
+        if ((isNaN(rawFobInrVal) || rawFobInrVal <= 0) && rowFreightInr !== null && rowFreightInr > 0) {
+          const baseSalesInr = rowSalesUsd !== null && rowSalesUsd > 0 ? Number((rowSalesUsd * exchangeRate).toFixed(2)) : Number((amountCurrency * exchangeRate).toFixed(2));
+          rawFobInrVal = Math.max(0, Number((baseSalesInr - rowFreightInr).toFixed(2)));
+        }
 
         if (!isNaN(rawFobUsdVal) && rawFobUsdVal > 0 && (isNaN(rawFobInrVal) || rawFobInrVal <= 0)) {
           rawFobInrVal = Number((rawFobUsdVal * exchangeRate).toFixed(2));
@@ -5379,8 +5464,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const rowFobUsd = !isNaN(rawFobUsdVal) && rawFobUsdVal > 0 ? Number(rawFobUsdVal.toFixed(2)) : null;
         const rowFobInr = !isNaN(rawFobInrVal) && rawFobInrVal > 0 ? Number(rawFobInrVal.toFixed(2)) : null;
 
-        let rawPurUsdVal = parseFloat(getFlexibleValue(row, purchaseUsdCandidateKeys) || '');
-        let rawPurInrVal = parseFloat(getFlexibleValue(row, purchaseInrCandidateKeys) || '');
+        let rawPurUsdVal = parseFloat(getFlexibleValue(row, purchaseUsdCandidateKeys, 'USD') || '');
+        let rawPurInrVal = parseFloat(getFlexibleValue(row, purchaseInrCandidateKeys, 'INR') || '');
 
         if (!isNaN(rawPurUsdVal) && rawPurUsdVal > 0 && (isNaN(rawPurInrVal) || rawPurInrVal <= 0)) {
           rawPurInrVal = Number((rawPurUsdVal * exchangeRate).toFixed(2));
@@ -5410,6 +5495,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             gradeSize: extractedSize || undefined
           },
           rowSalesUsd,
+          rowFreightUsd,
+          rowFreightInr,
           rowFobUsd,
           rowFobInr,
           rowPurUsd,
@@ -5458,6 +5545,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 2. FOB Value (USD & INR) Resolution
       const firstRowFobUsd = candidates[0]?.rowFobUsd ?? null;
       const firstRowFobInr = candidates[0]?.rowFobInr ?? null;
+      const firstRowFreightUsd = candidates[0]?.rowFreightUsd ?? null;
+      const firstRowFreightInr = candidates[0]?.rowFreightInr ?? null;
       const validFobsUsd = candidates.map((c) => c.rowFobUsd).filter((v): v is number => v !== null && v > 0);
       const validFobsInr = candidates.map((c) => c.rowFobInr).filter((v): v is number => v !== null && v > 0);
 
@@ -5493,6 +5582,37 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
 
           // Reconcile cents
+          const allocatedSumUsd = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
+          const diffUsd = Number((totalFobValueCurrency - allocatedSumUsd).toFixed(2));
+          if (diffUsd !== 0 && candidates.length > 0) {
+            candidates[candidates.length - 1].line.fobValueCurrency = Number(
+              (candidates[candidates.length - 1].line.fobValueCurrency + diffUsd).toFixed(2)
+            );
+          }
+          const allocatedSumInr = Number(candidates.reduce((s, c) => s + (c.line.fobValueINR || 0), 0).toFixed(2));
+          const diffInr = Number((totalFobValueINR - allocatedSumInr).toFixed(2));
+          if (diffInr !== 0 && candidates.length > 0) {
+            candidates[candidates.length - 1].line.fobValueINR = Number(
+              ((candidates[candidates.length - 1].line.fobValueINR || 0) + diffInr).toFixed(2)
+            );
+          }
+        }
+      } else if (firstRowFreightUsd !== null && firstRowFreightUsd > 0) {
+        // Derive full invoice FOB from Total Sales minus Freight
+        totalFobValueCurrency = Math.max(0, Number((totalAmountCurrency - firstRowFreightUsd).toFixed(2)));
+        const freightInr = firstRowFreightInr !== null && firstRowFreightInr > 0 ? firstRowFreightInr : Number((firstRowFreightUsd * exchangeRate).toFixed(2));
+        totalFobValueINR = Math.max(0, Number((totalAmountCurrency * exchangeRate - freightInr).toFixed(2)));
+
+        if (candidates.length === 1) {
+          candidates[0].line.fobValueCurrency = totalFobValueCurrency;
+          candidates[0].line.fobValueINR = totalFobValueINR;
+        } else {
+          candidates.forEach((c) => {
+            const ratio = totalAmountCurrency > 0 ? c.line.amountCurrency / totalAmountCurrency : 1 / candidates.length;
+            c.line.fobValueCurrency = Number((totalFobValueCurrency * ratio).toFixed(2));
+            c.line.fobValueINR = Number((totalFobValueINR * ratio).toFixed(2));
+          });
+
           const allocatedSumUsd = Number(candidates.reduce((s, c) => s + c.line.fobValueCurrency, 0).toFixed(2));
           const diffUsd = Number((totalFobValueCurrency - allocatedSumUsd).toFixed(2));
           if (diffUsd !== 0 && candidates.length > 0) {
@@ -5679,6 +5799,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         portOfLoadingId,
         portOfDischargeId,
         finalDestinationId,
+        portOfLoading: mutablePorts.find(p => p.id === portOfLoadingId)?.name,
+        portOfDischarge: mutablePorts.find(p => p.id === portOfDischargeId)?.name,
+        finalDestination: mutablePorts.find(p => p.id === finalDestinationId)?.name,
+        countryOfOrigin: String(getFlexibleValue(headerRow, ['countryoforigin', 'origin', 'origincountry']) || 'INDIA').trim(),
+        countryOfDestination: String(getFlexibleValue(headerRow, ['countryofdestination', 'destinationcountry', 'destination', 'finaldestinationcountry']) || mutableCustomers.find(c => c.id === consigneeId)?.country || 'Global Export').trim(),
+        billOfLadingNo: String(getFlexibleValue(headerRow, ['sbno', 'shippingbillno', 'shippingbill', 'billofladingno', 'blno', 'sbnumber', 'sb']) || '').trim() || undefined,
         currency,
         exchangeRate,
         remarks,

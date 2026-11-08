@@ -217,9 +217,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
         FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0))
-          ? (inv.totalFobValueINR || inv.totalRealizedINR)
-          : '',
+        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
         RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',
@@ -305,9 +303,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
         FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0))
-          ? (inv.totalFobValueINR || inv.totalRealizedINR)
-          : '',
+        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
         RealizedAmount: inv.totalRealizedCurrency,
         BalanceUSD: inv.balanceRealizationCurrency,
         RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',

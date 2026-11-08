@@ -172,18 +172,17 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
     // Sales Values
     const totalSalesUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0).toFixed(2));
-
-    // Realized Invoices (only invoices realized / settled have confirmed INR value)
-    const realizedInvoices = filteredInvoices.filter(
-      (inv) => inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)
+    const totalSalesINR = Number(
+      filteredInvoices
+        .reduce((s, inv) => s + (inv.estimatedAmountINR || Number((inv.totalAmountCurrency * inv.exchangeRate).toFixed(2))), 0)
+        .toFixed(2)
     );
-    const totalSalesINR = Number(realizedInvoices.reduce((s, inv) => s + (inv.totalRealizedINR || 0), 0).toFixed(2));
 
-    // FOB Values
+    // FOB Values (Dual-currency export valuation)
     const totalFobUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.totalFobValueCurrency, 0).toFixed(2));
     const totalFobINR = Number(
-      realizedInvoices
-        .reduce((s, inv) => s + (inv.totalFobValueINR || inv.totalRealizedINR || 0), 0)
+      filteredInvoices
+        .reduce((s, inv) => s + (inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2))), 0)
         .toFixed(2)
     );
 
