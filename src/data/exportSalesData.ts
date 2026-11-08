@@ -1152,7 +1152,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "QDFL-RF/02/2026-27",
+    "exporterRef": "RF/EXP/01/26-27",
     "otherReferences": "QDFL-RF/02/2026-27",
     "currency": "USD",
     "exchangeRate": 94.571591,
@@ -1182,7 +1182,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-04-28T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-RF/EXP/01/26-27-1",
+        "id": "line-rf-exp-01-26-27-1",
         "speciesId": "sp-1",
         "sizeId": "sz-1",
         "productDescription": "FROZEN VANAMEI PVPD",
@@ -1196,7 +1196,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1429922.46
       },
       {
-        "id": "line-RF/EXP/01/26-27-2",
+        "id": "line-rf-exp-01-26-27-2",
         "speciesId": "sp-1",
         "sizeId": "sz-2",
         "productDescription": "FROZEN VANAMEI PVPD",
@@ -1210,7 +1210,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2076792.14
       },
       {
-        "id": "line-RF/EXP/01/26-27-3",
+        "id": "line-rf-exp-01-26-27-3",
         "speciesId": "sp-1",
         "sizeId": "sz-3",
         "productDescription": "FROZEN VANAMEI PVPD",
@@ -1224,7 +1224,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1361830.91
       },
       {
-        "id": "line-RF/EXP/01/26-27-4",
+        "id": "line-rf-exp-01-26-27-4",
         "speciesId": "sp-1",
         "sizeId": "sz-4",
         "productDescription": "FROZEN VANAMEI PVPD",
@@ -1238,7 +1238,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3291091.37
       },
       {
-        "id": "line-RF/EXP/01/26-27-5",
+        "id": "line-rf-exp-01-26-27-5",
         "speciesId": "sp-1",
         "sizeId": "sz-5",
         "productDescription": "FROZEN VANAMEI PVPD",
@@ -1251,12 +1251,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 41040,
         "fobValueINR": 3881218.09
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00001",
+    "internalInvoiceNo": "RF/EXP/01/26-27"
   },
   {
-    "id": "inv-so-00002",
-    "invoiceNo": "SO-00002",
-    "invoiceDate": "2026-04-21",
+    "id": "inv-rf-exp-02-26-27",
+    "invoiceNo": "RF/EXP/02/26-27",
+    "invoiceDate": "2026-04-30",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-1",
     "consigneeName": "QINGDAO FRESHNESS LEADER INTERNATIONAL TRADE CO LTD",
@@ -1276,7 +1278,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "QDFL-RF/03/2026-27",
+    "exporterRef": "RF/EXP/02/26-27",
     "otherReferences": "QDFL-RF/03/2026-27",
     "currency": "USD",
     "exchangeRate": 93.623051,
@@ -1306,7 +1308,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-04-21T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00002-1",
+        "id": "line-rf-exp-02-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -1320,7 +1322,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1713301.83
       },
       {
-        "id": "line-SO-00002-2",
+        "id": "line-rf-exp-02-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -1334,7 +1336,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 6027452.02
       },
       {
-        "id": "line-SO-00002-3",
+        "id": "line-rf-exp-02-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
@@ -1347,12 +1349,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42750,
         "fobValueINR": 4002385.43
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00002",
+    "internalInvoiceNo": "RF/EXP/02/26-27"
   },
   {
-    "id": "inv-so-00003",
-    "invoiceNo": "SO-00003",
-    "invoiceDate": "2026-05-25",
+    "id": "inv-rf-exp-03-26-27",
+    "invoiceNo": "RF/EXP/03/26-27",
+    "invoiceDate": "2026-05-30",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-2",
     "consigneeName": "FUJIAN HUI HAI TONG TRADING CO., LTD",
@@ -1372,7 +1376,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00003",
+    "exporterRef": "RF/EXP/03/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.256239,
@@ -1402,7 +1406,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-05-25T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00003-1",
+        "id": "line-rf-exp-03-26-27-1",
         "speciesId": "sp-3",
         "sizeId": "sz-6",
         "productDescription": "Frozen Leather Jacket 50/100",
@@ -1416,7 +1420,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 495332.44
       },
       {
-        "id": "line-SO-00003-2",
+        "id": "line-rf-exp-03-26-27-2",
         "speciesId": "sp-3",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
@@ -1430,7 +1434,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1700323.87
       },
       {
-        "id": "line-SO-00003-3",
+        "id": "line-rf-exp-03-26-27-3",
         "speciesId": "sp-3",
         "sizeId": "sz-7",
         "productDescription": "Frozen Leather Jacket 200/300",
@@ -1444,7 +1448,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 714421.79
       },
       {
-        "id": "line-SO-00003-4",
+        "id": "line-rf-exp-03-26-27-4",
         "speciesId": "sp-3",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 300/500",
@@ -1458,7 +1462,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 600114.31
       },
       {
-        "id": "line-SO-00003-5",
+        "id": "line-rf-exp-03-26-27-5",
         "speciesId": "sp-3",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 500/700",
@@ -1472,7 +1476,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1028767.38
       },
       {
-        "id": "line-SO-00003-6",
+        "id": "line-rf-exp-03-26-27-6",
         "speciesId": "sp-3",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 700/1000",
@@ -1486,7 +1490,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1919413.22
       },
       {
-        "id": "line-SO-00003-7",
+        "id": "line-rf-exp-03-26-27-7",
         "speciesId": "sp-3",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 1000/1500",
@@ -1500,7 +1504,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 642979.61
       },
       {
-        "id": "line-SO-00003-8",
+        "id": "line-rf-exp-03-26-27-8",
         "speciesId": "sp-3",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 1500/UP",
@@ -1514,7 +1518,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 114307.49
       },
       {
-        "id": "line-SO-00003-9",
+        "id": "line-rf-exp-03-26-27-9",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -1528,7 +1532,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 92874.83
       },
       {
-        "id": "line-SO-00003-10",
+        "id": "line-rf-exp-03-26-27-10",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -1542,7 +1546,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 492951.04
       },
       {
-        "id": "line-SO-00003-11",
+        "id": "line-rf-exp-03-26-27-11",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -1556,7 +1560,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 137168.98
       },
       {
-        "id": "line-SO-00003-12",
+        "id": "line-rf-exp-03-26-27-12",
         "speciesId": "sp-5",
         "sizeId": "sz-7",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
@@ -1570,7 +1574,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 53343.49
       },
       {
-        "id": "line-SO-00003-13",
+        "id": "line-rf-exp-03-26-27-13",
         "speciesId": "sp-5",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
@@ -1584,7 +1588,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 209563.73
       },
       {
-        "id": "line-SO-00003-14",
+        "id": "line-rf-exp-03-26-27-14",
         "speciesId": "sp-5",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
@@ -1597,12 +1601,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 420,
         "fobValueINR": 40007.62
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00003",
+    "internalInvoiceNo": "RF/EXP/03/26-27"
   },
   {
-    "id": "inv-so-00004",
-    "invoiceNo": "SO-00004",
-    "invoiceDate": "2026-04-29",
+    "id": "inv-rf-exp-04-26-27",
+    "invoiceNo": "RF/EXP/04/26-27",
+    "invoiceDate": "2026-05-30",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-3",
     "consigneeName": "ZHEJIANG YIWU CHINA COMMODITY CITY IMPORT AND EXPORT CO. LTD.",
@@ -1622,7 +1628,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00004",
+    "exporterRef": "RF/EXP/04/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.91686,
@@ -1652,7 +1658,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-04-29T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00004-1",
+        "id": "line-rf-exp-04-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -1666,7 +1672,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1917624.31
       },
       {
-        "id": "line-SO-00004-2",
+        "id": "line-rf-exp-04-26-27-2",
         "speciesId": "sp-6",
         "sizeId": "sz-13",
         "productDescription": "Frozen PVPD Vanamei Shrimps 111/150",
@@ -1680,7 +1686,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3722942.98
       },
       {
-        "id": "line-SO-00004-3",
+        "id": "line-rf-exp-04-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -1694,7 +1700,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1453366.96
       },
       {
-        "id": "line-SO-00004-4",
+        "id": "line-rf-exp-04-26-27-4",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -1707,12 +1713,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 51300,
         "fobValueINR": 4869234.92
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00004",
+    "internalInvoiceNo": "RF/EXP/04/26-27"
   },
   {
-    "id": "inv-so-00005",
-    "invoiceNo": "SO-00005",
-    "invoiceDate": "2026-05-29",
+    "id": "inv-rf-exp-05-26-27",
+    "invoiceNo": "RF/EXP/05/26-27",
+    "invoiceDate": "2026-06-03",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-4",
     "consigneeName": "FUZHOU HENGSHUNHE TRADING CO. LTD.",
@@ -1732,7 +1740,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00005",
+    "exporterRef": "RF/EXP/05/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.020905,
@@ -1762,7 +1770,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-05-29T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00005-1",
+        "id": "line-rf-exp-05-26-27-1",
         "speciesId": "sp-3",
         "sizeId": "sz-6",
         "productDescription": "Frozen Leather Jacket 50/100",
@@ -1776,7 +1784,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 484606.62
       },
       {
-        "id": "line-SO-00005-2",
+        "id": "line-rf-exp-05-26-27-2",
         "speciesId": "sp-7",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200-S",
@@ -1790,7 +1798,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1017673.89
       },
       {
-        "id": "line-SO-00005-3",
+        "id": "line-rf-exp-05-26-27-3",
         "speciesId": "sp-3",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
@@ -1804,7 +1812,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 678449.26
       },
       {
-        "id": "line-SO-00005-4",
+        "id": "line-rf-exp-05-26-27-4",
         "speciesId": "sp-3",
         "sizeId": "sz-7",
         "productDescription": "Frozen Leather Jacket 200/300",
@@ -1818,7 +1826,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 677023.95
       },
       {
-        "id": "line-SO-00005-5",
+        "id": "line-rf-exp-05-26-27-5",
         "speciesId": "sp-3",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 300/500",
@@ -1832,7 +1840,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 620011.41
       },
       {
-        "id": "line-SO-00005-6",
+        "id": "line-rf-exp-05-26-27-6",
         "speciesId": "sp-3",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 500/700",
@@ -1846,7 +1854,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1026225.77
       },
       {
-        "id": "line-SO-00005-7",
+        "id": "line-rf-exp-05-26-27-7",
         "speciesId": "sp-3",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 700/1000",
@@ -1860,7 +1868,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1822025.85
       },
       {
-        "id": "line-SO-00005-8",
+        "id": "line-rf-exp-05-26-27-8",
         "speciesId": "sp-3",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 1000/1500",
@@ -1874,7 +1882,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 629513.5
       },
       {
-        "id": "line-SO-00005-9",
+        "id": "line-rf-exp-05-26-27-9",
         "speciesId": "sp-3",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 1500/UP",
@@ -1888,7 +1896,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 116400.61
       },
       {
-        "id": "line-SO-00005-10",
+        "id": "line-rf-exp-05-26-27-10",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -1902,7 +1910,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 90269.86
       },
       {
-        "id": "line-SO-00005-11",
+        "id": "line-rf-exp-05-26-27-11",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -1916,7 +1924,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 507031.55
       },
       {
-        "id": "line-SO-00005-12",
+        "id": "line-rf-exp-05-26-27-12",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -1930,7 +1938,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 104523
       },
       {
-        "id": "line-SO-00005-13",
+        "id": "line-rf-exp-05-26-27-13",
         "speciesId": "sp-5",
         "sizeId": "sz-7",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
@@ -1944,7 +1952,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 56537.44
       },
       {
-        "id": "line-SO-00005-14",
+        "id": "line-rf-exp-05-26-27-14",
         "speciesId": "sp-5",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
@@ -1958,7 +1966,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 209045.99
       },
       {
-        "id": "line-SO-00005-15",
+        "id": "line-rf-exp-05-26-27-15",
         "speciesId": "sp-5",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
@@ -1971,12 +1979,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 638,
         "fobValueINR": 60623.34
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00005",
+    "internalInvoiceNo": "RF/EXP/05/26-27"
   },
   {
-    "id": "inv-so-00006",
-    "invoiceNo": "SO-00006",
-    "invoiceDate": "2026-05-27",
+    "id": "inv-rf-exp-06-26-27",
+    "invoiceNo": "RF/EXP/06/26-27",
+    "invoiceDate": "2026-06-04",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-5",
     "consigneeName": "Qingdao Ocean Choice International Trade Co. Ltd.",
@@ -1996,7 +2006,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00006",
+    "exporterRef": "RF/EXP/06/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 96.1405,
@@ -2026,7 +2036,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-05-27T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00006-1",
+        "id": "line-rf-exp-06-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-14",
         "productDescription": "Frozen PVPD Vannamei Shrimps 61/70",
@@ -2040,7 +2050,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 751049.59
       },
       {
-        "id": "line-SO-00006-2",
+        "id": "line-rf-exp-06-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
@@ -2054,7 +2064,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1059083.75
       },
       {
-        "id": "line-SO-00006-3",
+        "id": "line-rf-exp-06-26-27-3",
         "speciesId": "sp-8",
         "sizeId": "sz-4",
         "productDescription": "Frozen Vanamei PUD Shrimps 130/150",
@@ -2068,7 +2078,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 441284.9
       },
       {
-        "id": "line-SO-00006-4",
+        "id": "line-rf-exp-06-26-27-4",
         "speciesId": "sp-8",
         "sizeId": "sz-7",
         "productDescription": "Frozen Vanamei PUD Shrimps 200/300",
@@ -2082,7 +2092,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3060844.33
       },
       {
-        "id": "line-SO-00006-5",
+        "id": "line-rf-exp-06-26-27-5",
         "speciesId": "sp-8",
         "sizeId": "sz-8",
         "productDescription": "Frozen Vanamei PUD Shrimps 300/500",
@@ -2096,7 +2106,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 286114.13
       },
       {
-        "id": "line-SO-00006-6",
+        "id": "line-rf-exp-06-26-27-6",
         "speciesId": "sp-9",
         "sizeId": "sz-5",
         "productDescription": "Frozen Deepsea PUD Shrimp 100/200",
@@ -2110,7 +2120,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 160627.7
       },
       {
-        "id": "line-SO-00006-7",
+        "id": "line-rf-exp-06-26-27-7",
         "speciesId": "sp-9",
         "sizeId": "sz-7",
         "productDescription": "Frozen Deepsea PUD Shrimp 200/300",
@@ -2123,12 +2133,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 33078.24,
         "fobValueINR": 3180158.53
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00006",
+    "internalInvoiceNo": "RF/EXP/06/26-27"
   },
   {
-    "id": "inv-so-00007",
-    "invoiceNo": "SO-00007",
-    "invoiceDate": "2026-06-03",
+    "id": "inv-rf-exp-07-26-27",
+    "invoiceNo": "RF/EXP/07/26-27",
+    "invoiceDate": "2026-06-05",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-2",
     "consigneeName": "FUJIAN HUI HAI TONG TRADING CO., LTD",
@@ -2148,7 +2160,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00007",
+    "exporterRef": "RF/EXP/07/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 96.163093,
@@ -2178,7 +2190,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-06-03T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00007-1",
+        "id": "line-rf-exp-07-26-27-1",
         "speciesId": "sp-3",
         "sizeId": "sz-6",
         "productDescription": "Frozen Leather Jacket 50/100",
@@ -2192,7 +2204,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 15001.44
       },
       {
-        "id": "line-SO-00007-2",
+        "id": "line-rf-exp-07-26-27-2",
         "speciesId": "sp-3",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
@@ -2206,7 +2218,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 195018.75
       },
       {
-        "id": "line-SO-00007-3",
+        "id": "line-rf-exp-07-26-27-3",
         "speciesId": "sp-3",
         "sizeId": "sz-7",
         "productDescription": "Frozen Leather Jacket 200/300",
@@ -2220,7 +2232,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2826329.47
       },
       {
-        "id": "line-SO-00007-4",
+        "id": "line-rf-exp-07-26-27-4",
         "speciesId": "sp-3",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 300/500",
@@ -2234,7 +2246,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1745119.73
       },
       {
-        "id": "line-SO-00007-5",
+        "id": "line-rf-exp-07-26-27-5",
         "speciesId": "sp-3",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 500/700",
@@ -2248,7 +2260,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 277526.69
       },
       {
-        "id": "line-SO-00007-6",
+        "id": "line-rf-exp-07-26-27-6",
         "speciesId": "sp-3",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 700/1000",
@@ -2262,7 +2274,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1859890.38
       },
       {
-        "id": "line-SO-00007-7",
+        "id": "line-rf-exp-07-26-27-7",
         "speciesId": "sp-3",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 1000/1500",
@@ -2276,7 +2288,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1573468.61
       },
       {
-        "id": "line-SO-00007-8",
+        "id": "line-rf-exp-07-26-27-8",
         "speciesId": "sp-3",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 1500/UP",
@@ -2289,12 +2301,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3552.5,
         "fobValueINR": 341619.39
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00007",
+    "internalInvoiceNo": "RF/EXP/07/26-27"
   },
   {
-    "id": "inv-so-00008",
-    "invoiceNo": "SO-00008",
-    "invoiceDate": "2026-06-17",
+    "id": "inv-rf-exp-08-26-27",
+    "invoiceNo": "RF/EXP/08/26-27",
+    "invoiceDate": "2026-06-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-6",
     "consigneeName": "Qingdao Jinmao International Trading Co. Ltd.",
@@ -2314,7 +2328,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00008",
+    "exporterRef": "RF/EXP/08/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.858661,
@@ -2344,7 +2358,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-06-17T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00008-1",
+        "id": "line-rf-exp-08-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
@@ -2358,7 +2372,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2117245.31
       },
       {
-        "id": "line-SO-00008-2",
+        "id": "line-rf-exp-08-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -2372,7 +2386,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1041548.1
       },
       {
-        "id": "line-SO-00008-3",
+        "id": "line-rf-exp-08-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -2386,7 +2400,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2390438.26
       },
       {
-        "id": "line-SO-00008-4",
+        "id": "line-rf-exp-08-26-27-4",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -2400,7 +2414,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3357996.6
       },
       {
-        "id": "line-SO-00008-5",
+        "id": "line-rf-exp-08-26-27-5",
         "speciesId": "sp-2",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
@@ -2413,12 +2427,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 35400,
         "fobValueINR": 3357996.6
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00008",
+    "internalInvoiceNo": "RF/EXP/08/26-27"
   },
   {
-    "id": "inv-so-00009",
-    "invoiceNo": "SO-00009",
-    "invoiceDate": "2026-07-03",
+    "id": "inv-rf-exp-09-26-27",
+    "invoiceNo": "RF/EXP/09/26-27",
+    "invoiceDate": "2026-07-07",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-7",
     "consigneeName": "Zhejiang Zhoungyu Digital Technology Co., Ltd.",
@@ -2438,7 +2454,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00009",
+    "exporterRef": "RF/EXP/09/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.49215,
@@ -2468,7 +2484,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-03T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00009-1",
+        "id": "line-rf-exp-09-26-27-1",
         "speciesId": "sp-10",
         "sizeId": "sz-14",
         "productDescription": "Frozen Raw Vannamei Shrimps Hed-Less Shell-On 61/70",
@@ -2481,12 +2497,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 90240,
         "fobValueINR": 8617211.62
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00009",
+    "internalInvoiceNo": "RF/EXP/09/26-27"
   },
   {
-    "id": "inv-so-00010",
-    "invoiceNo": "SO-00010",
-    "invoiceDate": "2026-07-06",
+    "id": "inv-rf-exp-10-26-27",
+    "invoiceNo": "RF/EXP/10/26-27",
+    "invoiceDate": "2026-07-09",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-6",
     "consigneeName": "Qingdao Jinmao International Trading Co. Ltd.",
@@ -2506,7 +2524,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00010",
+    "exporterRef": "RF/EXP/10/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.603755,
@@ -2536,7 +2554,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00010-1",
+        "id": "line-rf-exp-10-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
@@ -2550,7 +2568,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 705555.71
       },
       {
-        "id": "line-SO-00010-2",
+        "id": "line-rf-exp-10-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -2564,7 +2582,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1998959.79
       },
       {
-        "id": "line-SO-00010-3",
+        "id": "line-rf-exp-10-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -2578,7 +2596,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2826008.76
       },
       {
-        "id": "line-SO-00010-4",
+        "id": "line-rf-exp-10-26-27-4",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -2592,7 +2610,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1986569.55
       },
       {
-        "id": "line-SO-00010-5",
+        "id": "line-rf-exp-10-26-27-5",
         "speciesId": "sp-2",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
@@ -2605,12 +2623,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 49280.4,
         "fobValueINR": 4711391.29
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00010",
+    "internalInvoiceNo": "RF/EXP/10/26-27"
   },
   {
-    "id": "inv-so-00011",
-    "invoiceNo": "SO-00011",
-    "invoiceDate": "2026-07-09",
+    "id": "inv-rf-exp-11-26-27",
+    "invoiceNo": "RF/EXP/11/26-27",
+    "invoiceDate": "2026-07-10",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-4",
     "consigneeName": "FUZHOU HENGSHUNHE TRADING CO. LTD.",
@@ -2630,7 +2650,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00011",
+    "exporterRef": "RF/EXP/11/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.39254,
@@ -2660,7 +2680,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-09T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00011-1",
+        "id": "line-rf-exp-11-26-27-1",
         "speciesId": "sp-3",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
@@ -2674,7 +2694,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 72975.29
       },
       {
-        "id": "line-SO-00011-2",
+        "id": "line-rf-exp-11-26-27-2",
         "speciesId": "sp-3",
         "sizeId": "sz-7",
         "productDescription": "Frozen Leather Jacket 200/300",
@@ -2688,7 +2708,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1246208.14
       },
       {
-        "id": "line-SO-00011-3",
+        "id": "line-rf-exp-11-26-27-3",
         "speciesId": "sp-3",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 300/500",
@@ -2702,7 +2722,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3144519.69
       },
       {
-        "id": "line-SO-00011-4",
+        "id": "line-rf-exp-11-26-27-4",
         "speciesId": "sp-3",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 500/700",
@@ -2716,7 +2736,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 694219.21
       },
       {
-        "id": "line-SO-00011-5",
+        "id": "line-rf-exp-11-26-27-5",
         "speciesId": "sp-3",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 700/1000",
@@ -2730,7 +2750,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 182581.32
       },
       {
-        "id": "line-SO-00011-6",
+        "id": "line-rf-exp-11-26-27-6",
         "speciesId": "sp-3",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 1000/1500",
@@ -2744,7 +2764,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 128970.71
       },
       {
-        "id": "line-SO-00011-7",
+        "id": "line-rf-exp-11-26-27-7",
         "speciesId": "sp-3",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 1500/UP",
@@ -2758,7 +2778,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 21463.32
       },
       {
-        "id": "line-SO-00011-8",
+        "id": "line-rf-exp-11-26-27-8",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -2772,7 +2792,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 159687.11
       },
       {
-        "id": "line-SO-00011-9",
+        "id": "line-rf-exp-11-26-27-9",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -2786,7 +2806,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1021367.93
       },
       {
-        "id": "line-SO-00011-10",
+        "id": "line-rf-exp-11-26-27-10",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -2800,7 +2820,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 149575.5
       },
       {
-        "id": "line-SO-00011-11",
+        "id": "line-rf-exp-11-26-27-11",
         "speciesId": "sp-4",
         "sizeId": "sz-10",
         "productDescription": "FROZEN RIBBONFISH A GRADE 700/1000",
@@ -2814,7 +2834,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 23371.17
       },
       {
-        "id": "line-SO-00011-12",
+        "id": "line-rf-exp-11-26-27-12",
         "speciesId": "sp-11",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
@@ -2828,7 +2848,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 14690.45
       },
       {
-        "id": "line-SO-00011-13",
+        "id": "line-rf-exp-11-26-27-13",
         "speciesId": "sp-5",
         "sizeId": "sz-7",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
@@ -2842,7 +2862,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 47314.7
       },
       {
-        "id": "line-SO-00011-14",
+        "id": "line-rf-exp-11-26-27-14",
         "speciesId": "sp-5",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
@@ -2856,7 +2876,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 347991.99
       },
       {
-        "id": "line-SO-00011-15",
+        "id": "line-rf-exp-11-26-27-15",
         "speciesId": "sp-5",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
@@ -2870,7 +2890,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 45788.42
       },
       {
-        "id": "line-SO-00011-16",
+        "id": "line-rf-exp-11-26-27-16",
         "speciesId": "sp-5",
         "sizeId": "sz-10",
         "productDescription": "Frozen RibbonFish B Grade 700/1000",
@@ -2884,7 +2904,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 9539.25
       },
       {
-        "id": "line-SO-00011-17",
+        "id": "line-rf-exp-11-26-27-17",
         "speciesId": "sp-12",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish C Grade 300/500",
@@ -2898,7 +2918,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 58666.41
       },
       {
-        "id": "line-SO-00011-18",
+        "id": "line-rf-exp-11-26-27-18",
         "speciesId": "sp-13",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish A Grade (IWP/IF) 300/500",
@@ -2912,7 +2932,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 422875.13
       },
       {
-        "id": "line-SO-00011-19",
+        "id": "line-rf-exp-11-26-27-19",
         "speciesId": "sp-13",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish A Grade (IWP/IF) 500/700",
@@ -2926,7 +2946,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 120194.6
       },
       {
-        "id": "line-SO-00011-20",
+        "id": "line-rf-exp-11-26-27-20",
         "speciesId": "sp-14",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE (IWP/IF) 300/500",
@@ -2940,7 +2960,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 13164.17
       },
       {
-        "id": "line-SO-00011-21",
+        "id": "line-rf-exp-11-26-27-21",
         "speciesId": "sp-14",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE (IWP/IF) 500/700",
@@ -2953,12 +2973,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 75,
         "fobValueINR": 7154.44
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00011",
+    "internalInvoiceNo": "RF/EXP/11/26-27"
   },
   {
-    "id": "inv-so-00012",
-    "invoiceNo": "SO-00012",
-    "invoiceDate": "2026-07-03",
+    "id": "inv-rf-exp-12-26-27",
+    "invoiceNo": "RF/EXP/12/26-27",
+    "invoiceDate": "2026-07-17",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-7",
     "consigneeName": "Zhejiang Zhoungyu Digital Technology Co., Ltd.",
@@ -2978,7 +3000,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00012",
+    "exporterRef": "RF/EXP/12/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.49215,
@@ -3008,7 +3030,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-03T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00012-1",
+        "id": "line-rf-exp-12-26-27-1",
         "speciesId": "sp-15",
         "sizeId": "sz-1",
         "productDescription": "Frozen Raw Vanamei Shrimps Head-Less Shell-On 71/90",
@@ -3021,12 +3043,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 88320,
         "fobValueINR": 8433866.69
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00012",
+    "internalInvoiceNo": "RF/EXP/12/26-27"
   },
   {
-    "id": "inv-so-00013",
-    "invoiceNo": "SO-00013",
-    "invoiceDate": "2026-07-14",
+    "id": "inv-rf-exp-13-26-27",
+    "invoiceNo": "RF/EXP/13/26-27",
+    "invoiceDate": "2026-07-21",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-3",
     "consigneeName": "ZHEJIANG YIWU CHINA COMMODITY CITY IMPORT AND EXPORT CO. LTD.",
@@ -3046,7 +3070,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00013",
+    "exporterRef": "RF/EXP/13/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 96.425551,
@@ -3076,7 +3100,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-14T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00013-1",
+        "id": "line-rf-exp-13-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -3090,7 +3114,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 6352515.3
       },
       {
-        "id": "line-SO-00013-2",
+        "id": "line-rf-exp-13-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -3104,7 +3128,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1388527.93
       },
       {
-        "id": "line-SO-00013-3",
+        "id": "line-rf-exp-13-26-27-3",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -3117,12 +3141,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 49140,
         "fobValueINR": 4738351.58
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00013",
+    "internalInvoiceNo": "RF/EXP/13/26-27"
   },
   {
-    "id": "inv-so-00014",
-    "invoiceNo": "SO-00014",
-    "invoiceDate": "2026-07-22",
+    "id": "inv-rf-exp-14-26-27",
+    "invoiceNo": "RF/EXP/14/26-27",
+    "invoiceDate": "2026-07-29",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-3",
     "consigneeName": "ZHEJIANG YIWU CHINA COMMODITY CITY IMPORT AND EXPORT CO. LTD.",
@@ -3142,7 +3168,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00014",
+    "exporterRef": "RF/EXP/14/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 96.557347,
@@ -3172,7 +3198,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-22T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00014-1",
+        "id": "line-rf-exp-14-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -3186,7 +3212,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2155159.99
       },
       {
-        "id": "line-SO-00014-2",
+        "id": "line-rf-exp-14-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -3200,7 +3226,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4240798.68
       },
       {
-        "id": "line-SO-00014-3",
+        "id": "line-rf-exp-14-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -3214,7 +3240,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2085638.7
       },
       {
-        "id": "line-SO-00014-4",
+        "id": "line-rf-exp-14-26-27-4",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -3227,12 +3253,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42120,
         "fobValueINR": 4066995.46
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00014",
+    "internalInvoiceNo": "RF/EXP/14/26-27"
   },
   {
-    "id": "inv-so-00015",
-    "invoiceNo": "SO-00015",
-    "invoiceDate": "2026-07-07",
+    "id": "inv-rf-exp-15-26-27",
+    "invoiceNo": "RF/EXP/15/26-27",
+    "invoiceDate": "2026-08-04",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-8",
     "consigneeName": "GALLANT OCEAN (VIETNAM)., JSC",
@@ -3252,7 +3280,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-nha",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00015",
+    "exporterRef": "RF/EXP/15/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.59355,
@@ -3282,7 +3310,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-07T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00015-1",
+        "id": "line-rf-exp-15-26-27-1",
         "speciesId": "sp-16",
         "sizeId": "sz-15",
         "productDescription": "Frozen RaW Headless Shell On Vanamei Shrimps 51/60",
@@ -3295,12 +3323,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 91200,
         "fobValueINR": 8718131.76
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00015",
+    "internalInvoiceNo": "RF/EXP/15/26-27"
   },
   {
-    "id": "inv-so-00017",
-    "invoiceNo": "SO-00017",
-    "invoiceDate": "2026-08-06",
+    "id": "inv-rf-exp-16-26-27",
+    "invoiceNo": "RF/EXP/16/26-27",
+    "invoiceDate": "2026-08-07",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-9",
     "consigneeName": "WEALTHOCEANSUPPLY CO. LTD.",
@@ -3308,7 +3338,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "buyerId": "cust-9",
     "buyerName": "WEALTHOCEANSUPPLY CO. LTD.",
     "buyerAddress": "WEALTHOCEANSUPPLY CO. LTD., 36/86 MO01, Phawong Subdistrict, Meang Songkhla District, Songkhla, Thailand, 90100",
-    "orderNo": "SO-00017",
+    "orderNo": "SO-00016",
     "orderDate": "2026-08-06",
     "countryOfOrigin": "India",
     "countryOfDestination": "Thailand",
@@ -3320,7 +3350,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-sgz",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00017",
+    "exporterRef": "RF/EXP/16/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.310713,
@@ -3350,7 +3380,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00017-1",
+        "id": "line-rf-exp-16-26-27-1",
         "speciesId": "sp-17",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid Semi Needle A Grade U/3",
@@ -3364,7 +3394,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 392802.14
       },
       {
-        "id": "line-SO-00017-2",
+        "id": "line-rf-exp-16-26-27-2",
         "speciesId": "sp-17",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid Semi Needle A Grade 3/6",
@@ -3378,7 +3408,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 5546992
       },
       {
-        "id": "line-SO-00017-3",
+        "id": "line-rf-exp-16-26-27-3",
         "speciesId": "sp-17",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Semi Needle A Grade 6/10",
@@ -3392,7 +3422,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2304521.54
       },
       {
-        "id": "line-SO-00017-4",
+        "id": "line-rf-exp-16-26-27-4",
         "speciesId": "sp-17",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Semi Needle A Grade 10/20",
@@ -3406,7 +3436,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 348128.1
       },
       {
-        "id": "line-SO-00017-5",
+        "id": "line-rf-exp-16-26-27-5",
         "speciesId": "sp-18",
         "sizeId": "sz-16",
         "productDescription": "Frozen Loligo Squid Whole A Grade U/3",
@@ -3420,7 +3450,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 42718.26
       },
       {
-        "id": "line-SO-00017-6",
+        "id": "line-rf-exp-16-26-27-6",
         "speciesId": "sp-18",
         "sizeId": "sz-17",
         "productDescription": "Frozen Loligo Squid Whole A Grade 3/6",
@@ -3434,7 +3464,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1112115.9
       },
       {
-        "id": "line-SO-00017-7",
+        "id": "line-rf-exp-16-26-27-7",
         "speciesId": "sp-18",
         "sizeId": "sz-18",
         "productDescription": "Frozen Loligo Squid Whole A Grade 6/10",
@@ -3448,7 +3478,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1398379.72
       },
       {
-        "id": "line-SO-00017-8",
+        "id": "line-rf-exp-16-26-27-8",
         "speciesId": "sp-18",
         "sizeId": "sz-19",
         "productDescription": "Frozen Loligo Squid Whole A Grade 10/20",
@@ -3461,12 +3491,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 10558.08,
         "fobValueINR": 1006298.13
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00016",
+    "internalInvoiceNo": "RF/EXP/16/26-27"
   },
   {
-    "id": "inv-so-00016",
-    "invoiceNo": "SO-00016",
-    "invoiceDate": "2026-07-16",
+    "id": "inv-rf-exp-17-26-27",
+    "invoiceNo": "RF/EXP/17/26-27",
+    "invoiceDate": "2026-08-08",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-10",
     "consigneeName": "ZHANJIANG YUEZHIDU FOOD CO., LTD",
@@ -3474,7 +3506,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "buyerId": "cust-10",
     "buyerName": "ZHANJIANG YUEZHIDU FOOD CO., LTD",
     "buyerAddress": "ZHANJIANG YUEZHIDU FOOD CO., LTD, THE INSIDE OF ZHANJIANG SHUANGHU FOOD CO., LTD\nEAST OF SHANI VILLAGE COMMITTEE(OFFICE), SUICHENG TOWN, NATIONAL ROAD 207, SUIXI COUNTRY ,, ZHANJIANG CITY, Guangdong, China",
-    "orderNo": "SO-00016",
+    "orderNo": "SO-00017",
     "orderDate": "2026-07-16",
     "countryOfOrigin": "India",
     "countryOfDestination": "China",
@@ -3486,7 +3518,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-zha",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00016",
+    "exporterRef": "RF/EXP/17/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 96.652446,
@@ -3516,7 +3548,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-16T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00016-1",
+        "id": "line-rf-exp-17-26-27-1",
         "speciesId": "sp-19",
         "sizeId": "sz-14",
         "productDescription": "Frozen Headless Shell-On Vanamei Shrimps-G1 61/70",
@@ -3529,11 +3561,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 87360,
         "fobValueINR": 8443557.68
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00017",
+    "internalInvoiceNo": "RF/EXP/17/26-27"
   },
   {
-    "id": "inv-so-00018",
-    "invoiceNo": "SO-00018",
+    "id": "inv-rf-exp-18-26-27",
+    "invoiceNo": "RF/EXP/18/26-27",
     "invoiceDate": "2026-08-14",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-6",
@@ -3554,7 +3588,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00018",
+    "exporterRef": "RF/EXP/18/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.438061,
@@ -3584,7 +3618,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-14T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00018-1",
+        "id": "line-rf-exp-18-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
@@ -3598,7 +3632,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2528726.86
       },
       {
-        "id": "line-SO-00018-2",
+        "id": "line-rf-exp-18-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -3612,7 +3646,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3312082.47
       },
       {
-        "id": "line-SO-00018-3",
+        "id": "line-rf-exp-18-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -3626,7 +3660,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3014888.35
       },
       {
-        "id": "line-SO-00018-4",
+        "id": "line-rf-exp-18-26-27-4",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -3639,12 +3673,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 31320,
         "fobValueINR": 2989120.07
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00018",
+    "internalInvoiceNo": "RF/EXP/18/26-27"
   },
   {
-    "id": "inv-so-00019",
-    "invoiceNo": "SO-00019",
-    "invoiceDate": "2026-08-08",
+    "id": "inv-rf-exp-19-26-27",
+    "invoiceNo": "RF/EXP/19/26-27",
+    "invoiceDate": "2026-08-17",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-11",
     "consigneeName": "HONGZHOU AQUATIC PRODUCTS INDUSTRY CO.,LTD",
@@ -3664,7 +3700,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-swa",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00019",
+    "exporterRef": "RF/EXP/19/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.138426,
@@ -3694,7 +3730,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-08T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00019-1",
+        "id": "line-rf-exp-19-26-27-1",
         "speciesId": "sp-20",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole 6/10",
@@ -3708,7 +3744,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 856245.83
       },
       {
-        "id": "line-SO-00019-2",
+        "id": "line-rf-exp-19-26-27-2",
         "speciesId": "sp-20",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
@@ -3721,12 +3757,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 61560,
         "fobValueINR": 5856721.5
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00019",
+    "internalInvoiceNo": "RF/EXP/19/26-27"
   },
   {
-    "id": "inv-so-00020",
-    "invoiceNo": "SO-00020",
-    "invoiceDate": "2026-08-10",
+    "id": "inv-rf-exp-20-26-27",
+    "invoiceNo": "RF/EXP/20/26-27",
+    "invoiceDate": "2026-08-17",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-1",
     "consigneeName": "QINGDAO FRESHNESS LEADER INTERNATIONAL TRADE CO LTD",
@@ -3746,7 +3784,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00020",
+    "exporterRef": "RF/EXP/20/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.396952,
@@ -3776,7 +3814,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-10T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00020-1",
+        "id": "line-rf-exp-20-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -3790,7 +3828,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3158173.33
       },
       {
-        "id": "line-SO-00020-2",
+        "id": "line-rf-exp-20-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -3804,7 +3842,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3405671.19
       },
       {
-        "id": "line-SO-00020-3",
+        "id": "line-rf-exp-20-26-27-3",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -3817,12 +3855,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 52228.8,
         "fobValueINR": 4982468.33
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00020",
+    "internalInvoiceNo": "RF/EXP/20/26-27"
   },
   {
-    "id": "inv-so-00021",
-    "invoiceNo": "SO-00021",
-    "invoiceDate": "2026-08-08",
+    "id": "inv-rf-exp-21-26-27",
+    "invoiceNo": "RF/EXP/21/26-27",
+    "invoiceDate": "2026-08-17",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-12",
     "consigneeName": "SHENZHEN YUESHI SUPPLY CHAIN MANAGEMENT CO., LTD",
@@ -3842,7 +3882,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-szx",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00021",
+    "exporterRef": "RF/EXP/21/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.138426,
@@ -3872,7 +3912,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-08T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00021-1",
+        "id": "line-rf-exp-21-26-27-1",
         "speciesId": "sp-20",
         "sizeId": "sz-20",
         "productDescription": "Frozen Squid Whole 20/40",
@@ -3885,12 +3925,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42055.2,
         "fobValueINR": 4001065.53
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00021",
+    "internalInvoiceNo": "RF/EXP/21/26-27"
   },
   {
-    "id": "inv-so-00022",
-    "invoiceNo": "SO-00022",
-    "invoiceDate": "2026-08-04",
+    "id": "inv-rf-exp-22-26-27",
+    "invoiceNo": "RF/EXP/22/26-27",
+    "invoiceDate": "2026-08-21",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-2",
     "consigneeName": "FUJIAN HUI HAI TONG TRADING CO., LTD",
@@ -3910,7 +3952,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00022",
+    "exporterRef": "RF/EXP/22/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.097446,
@@ -3940,7 +3982,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-04T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00022-1",
+        "id": "line-rf-exp-22-26-27-1",
         "speciesId": "sp-21",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid U/3",
@@ -3954,7 +3996,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1429246.14
       },
       {
-        "id": "line-SO-00022-2",
+        "id": "line-rf-exp-22-26-27-2",
         "speciesId": "sp-21",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid 3/6",
@@ -3968,7 +4010,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 5336564.36
       },
       {
-        "id": "line-SO-00022-3",
+        "id": "line-rf-exp-22-26-27-3",
         "speciesId": "sp-21",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid 6/10",
@@ -3982,7 +4024,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3017069.18
       },
       {
-        "id": "line-SO-00022-4",
+        "id": "line-rf-exp-22-26-27-4",
         "speciesId": "sp-21",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid 10/20",
@@ -3995,12 +4037,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11428.56,
         "fobValueINR": 1086826.87
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00022",
+    "internalInvoiceNo": "RF/EXP/22/26-27"
   },
   {
-    "id": "inv-so-00023",
-    "invoiceNo": "SO-00023",
-    "invoiceDate": "2026-08-13",
+    "id": "inv-rf-exp-23-26-27",
+    "invoiceNo": "RF/EXP/23/26-27",
+    "invoiceDate": "2026-08-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-13",
     "consigneeName": "SHANTOU OCEANKING AQUATIC PRODUCT FOODSTUFF CO., LTD.",
@@ -4020,7 +4064,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-swa",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00023",
+    "exporterRef": "RF/EXP/23/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.401454,
@@ -4050,7 +4094,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-13T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00023-1",
+        "id": "line-rf-exp-23-26-27-1",
         "speciesId": "sp-20",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole 6/10",
@@ -4064,7 +4108,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1642813.04
       },
       {
-        "id": "line-SO-00023-2",
+        "id": "line-rf-exp-23-26-27-2",
         "speciesId": "sp-20",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
@@ -4077,12 +4121,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 61380,
         "fobValueINR": 5855741.25
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00023",
+    "internalInvoiceNo": "RF/EXP/23/26-27"
   },
   {
-    "id": "inv-so-00024",
-    "invoiceNo": "SO-00024",
-    "invoiceDate": "2026-08-13",
+    "id": "inv-rf-exp-24-26-27",
+    "invoiceNo": "RF/EXP/24/26-27",
+    "invoiceDate": "2026-08-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-5",
     "consigneeName": "Qingdao Ocean Choice International Trade Co. Ltd.",
@@ -4102,7 +4148,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00024",
+    "exporterRef": "RF/EXP/24/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.401454,
@@ -4132,7 +4178,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-13T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00024-1",
+        "id": "line-rf-exp-24-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -4146,7 +4192,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2164849.79
       },
       {
-        "id": "line-SO-00024-2",
+        "id": "line-rf-exp-24-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -4160,7 +4206,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 5302794.42
       },
       {
-        "id": "line-SO-00024-3",
+        "id": "line-rf-exp-24-26-27-3",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -4173,12 +4219,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42480,
         "fobValueINR": 4052653.77
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00024",
+    "internalInvoiceNo": "RF/EXP/24/26-27"
   },
   {
-    "id": "inv-so-00025",
-    "invoiceNo": "SO-00025",
-    "invoiceDate": "2026-07-28",
+    "id": "inv-rf-exp-25-26-27",
+    "invoiceNo": "RF/EXP/25/26-27",
+    "invoiceDate": "2026-08-27",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-10",
     "consigneeName": "ZHANJIANG YUEZHIDU FOOD CO., LTD",
@@ -4198,7 +4246,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-zha",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00025",
+    "exporterRef": "RF/EXP/25/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.598954,
@@ -4228,7 +4276,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-28T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00025-1",
+        "id": "line-rf-exp-25-26-27-1",
         "speciesId": "sp-22",
         "sizeId": "sz-21",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 41/50",
@@ -4242,7 +4290,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2708222.77
       },
       {
-        "id": "line-SO-00025-2",
+        "id": "line-rf-exp-25-26-27-2",
         "speciesId": "sp-22",
         "sizeId": "sz-15",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 51/60",
@@ -4256,7 +4304,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1616329.75
       },
       {
-        "id": "line-SO-00025-3",
+        "id": "line-rf-exp-25-26-27-3",
         "speciesId": "sp-22",
         "sizeId": "sz-1",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 71/90",
@@ -4269,12 +4317,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 38178,
         "fobValueINR": 3649776.87
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00025",
+    "internalInvoiceNo": "RF/EXP/25/26-27"
   },
   {
-    "id": "inv-so-00026",
-    "invoiceNo": "SO-00026",
-    "invoiceDate": "2026-08-24",
+    "id": "inv-rf-exp-26-26-27",
+    "invoiceNo": "RF/EXP/26/26-27",
+    "invoiceDate": "2026-08-31",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-2",
     "consigneeName": "FUJIAN HUI HAI TONG TRADING CO., LTD",
@@ -4294,7 +4344,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00026",
+    "exporterRef": "RF/EXP/26/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.72126,
@@ -4324,7 +4374,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-24T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00026-1",
+        "id": "line-rf-exp-26-26-27-1",
         "speciesId": "sp-23",
         "sizeId": "sz-16",
         "productDescription": "FROZEN SQUID A GRADE U/3",
@@ -4338,7 +4388,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 375224.47
       },
       {
-        "id": "line-SO-00026-2",
+        "id": "line-rf-exp-26-26-27-2",
         "speciesId": "sp-23",
         "sizeId": "sz-17",
         "productDescription": "FROZEN SQUID A GRADE 3/6",
@@ -4352,7 +4402,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4255056.97
       },
       {
-        "id": "line-SO-00026-3",
+        "id": "line-rf-exp-26-26-27-3",
         "speciesId": "sp-23",
         "sizeId": "sz-18",
         "productDescription": "FROZEN SQUID A GRADE 6/10",
@@ -4366,7 +4416,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3247422.24
       },
       {
-        "id": "line-SO-00026-4",
+        "id": "line-rf-exp-26-26-27-4",
         "speciesId": "sp-23",
         "sizeId": "sz-19",
         "productDescription": "FROZEN SQUID A GRADE 10/20",
@@ -4380,7 +4430,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 914686.52
       },
       {
-        "id": "line-SO-00026-5",
+        "id": "line-rf-exp-26-26-27-5",
         "speciesId": "sp-24",
         "sizeId": "sz-16",
         "productDescription": "FROZEN SQUID B GRADE U/3",
@@ -4394,7 +4444,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 12364.32
       },
       {
-        "id": "line-SO-00026-6",
+        "id": "line-rf-exp-26-26-27-6",
         "speciesId": "sp-24",
         "sizeId": "sz-17",
         "productDescription": "FROZEN SQUID B GRADE 3/6",
@@ -4408,7 +4458,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 700495.84
       },
       {
-        "id": "line-SO-00026-7",
+        "id": "line-rf-exp-26-26-27-7",
         "speciesId": "sp-24",
         "sizeId": "sz-18",
         "productDescription": "FROZEN SQUID B GRADE 6/10",
@@ -4421,12 +4471,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4442.26,
         "fobValueINR": 425218.72
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00026",
+    "internalInvoiceNo": "RF/EXP/26/26-27"
   },
   {
-    "id": "inv-so-00027",
-    "invoiceNo": "SO-00027",
-    "invoiceDate": "2026-08-13",
+    "id": "inv-rf-exp-27-26-27",
+    "invoiceNo": "RF/EXP/27/26-27",
+    "invoiceDate": "2026-08-31",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-14",
     "consigneeName": "SHANTOU HYPO SEAFOOD LIMITED",
@@ -4446,7 +4498,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-swa",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00027",
+    "exporterRef": "RF/EXP/27/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.401454,
@@ -4476,7 +4528,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-13T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00027-1",
+        "id": "line-rf-exp-27-26-27-1",
         "speciesId": "sp-20",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
@@ -4489,12 +4541,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 70800,
         "fobValueINR": 6754422.94
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00027",
+    "internalInvoiceNo": "RF/EXP/27/26-27"
   },
   {
-    "id": "inv-so-00028",
-    "invoiceNo": "SO-00028",
-    "invoiceDate": "2026-07-31",
+    "id": "inv-rf-exp-28-26-27",
+    "invoiceNo": "RF/EXP/28/26-27",
+    "invoiceDate": "2026-09-01",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-15",
     "consigneeName": "GLOBAL FISH CO., LTD",
@@ -4514,7 +4568,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00028",
+    "exporterRef": "RF/EXP/28/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.40235,
@@ -4544,7 +4598,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-07-31T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00028-1",
+        "id": "line-rf-exp-28-26-27-1",
         "speciesId": "sp-25",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel - A Grade 12/15",
@@ -4557,12 +4611,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 44200,
         "fobValueINR": 4216783.87
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00028",
+    "internalInvoiceNo": "RF/EXP/28/26-27"
   },
   {
-    "id": "inv-so-00029",
-    "invoiceNo": "SO-00029",
-    "invoiceDate": "2026-08-24",
+    "id": "inv-rf-exp-29-26-27",
+    "invoiceNo": "RF/EXP/29/26-27",
+    "invoiceDate": "2026-09-01",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
     "consigneeName": "JIRA SMITH TRADING CO. LTD.",
@@ -4582,7 +4638,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00029",
+    "exporterRef": "RF/EXP/29/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.72126,
@@ -4612,7 +4668,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-24T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00029-1",
+        "id": "line-rf-exp-29-26-27-1",
         "speciesId": "sp-26",
         "sizeId": "sz-23",
         "productDescription": "Frozen Indian Mackerel 10/12",
@@ -4626,7 +4682,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1924906.68
       },
       {
-        "id": "line-SO-00029-2",
+        "id": "line-rf-exp-29-26-27-2",
         "speciesId": "sp-26",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel 12/15",
@@ -4640,7 +4696,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2195175.66
       },
       {
-        "id": "line-SO-00029-3",
+        "id": "line-rf-exp-29-26-27-3",
         "speciesId": "sp-26",
         "sizeId": "sz-24",
         "productDescription": "Frozen Indian Mackerel 15/20",
@@ -4653,12 +4709,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 864,
         "fobValueINR": 82703.17
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00029",
+    "internalInvoiceNo": "RF/EXP/29/26-27"
   },
   {
-    "id": "inv-so-00030",
-    "invoiceNo": "SO-00030",
-    "invoiceDate": "2026-09-01",
+    "id": "inv-rf-exp-30-26-27",
+    "invoiceNo": "RF/EXP/30/26-27",
+    "invoiceDate": "2026-09-04",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
     "consigneeName": "JIRA SMITH TRADING CO. LTD.",
@@ -4678,7 +4736,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00030",
+    "exporterRef": "RF/EXP/30/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.957744,
@@ -4708,7 +4766,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-01T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00030-1",
+        "id": "line-rf-exp-30-26-27-1",
         "speciesId": "sp-26",
         "sizeId": "sz-23",
         "productDescription": "Frozen Indian Mackerel 10/12",
@@ -4722,7 +4780,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2097521.61
       },
       {
-        "id": "line-SO-00030-2",
+        "id": "line-rf-exp-30-26-27-2",
         "speciesId": "sp-26",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel 12/15",
@@ -4736,7 +4794,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2187351.63
       },
       {
-        "id": "line-SO-00030-3",
+        "id": "line-rf-exp-30-26-27-3",
         "speciesId": "sp-26",
         "sizeId": "sz-24",
         "productDescription": "Frozen Indian Mackerel 15/20",
@@ -4749,12 +4807,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 418.5,
         "fobValueINR": 39739.82
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00030",
+    "internalInvoiceNo": "RF/EXP/30/26-27"
   },
   {
-    "id": "inv-so-00031",
-    "invoiceNo": "SO-00031",
-    "invoiceDate": "2026-09-03",
+    "id": "inv-rf-exp-31-26-27",
+    "invoiceNo": "RF/EXP/31/26-27",
+    "invoiceDate": "2026-09-04",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-4",
     "consigneeName": "FUZHOU HENGSHUNHE TRADING CO. LTD.",
@@ -4774,7 +4834,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00031",
+    "exporterRef": "RF/EXP/31/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.491165,
@@ -4804,7 +4864,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-03T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00031-1",
+        "id": "line-rf-exp-31-26-27-1",
         "speciesId": "sp-4",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
@@ -4818,7 +4878,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 54804.88
       },
       {
-        "id": "line-SO-00031-2",
+        "id": "line-rf-exp-31-26-27-2",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -4832,7 +4892,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 515921.76
       },
       {
-        "id": "line-SO-00031-3",
+        "id": "line-rf-exp-31-26-27-3",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -4846,7 +4906,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 803174.9
       },
       {
-        "id": "line-SO-00031-4",
+        "id": "line-rf-exp-31-26-27-4",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -4860,7 +4920,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 221109.33
       },
       {
-        "id": "line-SO-00031-5",
+        "id": "line-rf-exp-31-26-27-5",
         "speciesId": "sp-11",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
@@ -4874,7 +4934,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 124728.34
       },
       {
-        "id": "line-SO-00031-6",
+        "id": "line-rf-exp-31-26-27-6",
         "speciesId": "sp-11",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
@@ -4888,7 +4948,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 803174.9
       },
       {
-        "id": "line-SO-00031-7",
+        "id": "line-rf-exp-31-26-27-7",
         "speciesId": "sp-11",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
@@ -4902,7 +4962,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1230274.97
       },
       {
-        "id": "line-SO-00031-8",
+        "id": "line-rf-exp-31-26-27-8",
         "speciesId": "sp-11",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
@@ -4916,7 +4976,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 362846.07
       },
       {
-        "id": "line-SO-00031-9",
+        "id": "line-rf-exp-31-26-27-9",
         "speciesId": "sp-27",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH C GRADE 100/200",
@@ -4930,7 +4990,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 45355.76
       },
       {
-        "id": "line-SO-00031-10",
+        "id": "line-rf-exp-31-26-27-10",
         "speciesId": "sp-27",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH C GRADE 200/300",
@@ -4944,7 +5004,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 177170.93
       },
       {
-        "id": "line-SO-00031-11",
+        "id": "line-rf-exp-31-26-27-11",
         "speciesId": "sp-27",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH C GRADE 300/500",
@@ -4958,7 +5018,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 317490.31
       },
       {
-        "id": "line-SO-00031-12",
+        "id": "line-rf-exp-31-26-27-12",
         "speciesId": "sp-12",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish C Grade 500/700",
@@ -4971,12 +5031,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 320,
         "fobValueINR": 30237.17
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00031",
+    "internalInvoiceNo": "RF/EXP/31/26-27"
   },
   {
-    "id": "inv-so-00032",
-    "invoiceNo": "SO-00032",
-    "invoiceDate": "2026-09-05",
+    "id": "inv-rf-exp-32-26-27",
+    "invoiceNo": "RF/EXP/32/26-27",
+    "invoiceDate": "2026-09-07",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
     "consigneeName": "JIRA SMITH TRADING CO. LTD.",
@@ -4996,7 +5058,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00032",
+    "exporterRef": "RF/EXP/32/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.428706,
@@ -5026,7 +5088,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-05T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00032-1",
+        "id": "line-rf-exp-32-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -5040,7 +5102,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 310198.3
       },
       {
-        "id": "line-SO-00032-2",
+        "id": "line-rf-exp-32-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -5054,7 +5116,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4149197.34
       },
       {
-        "id": "line-SO-00032-3",
+        "id": "line-rf-exp-32-26-27-3",
         "speciesId": "sp-28",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
@@ -5068,7 +5130,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 70632.67
       },
       {
-        "id": "line-SO-00032-4",
+        "id": "line-rf-exp-32-26-27-4",
         "speciesId": "sp-28",
         "sizeId": "sz-24",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 15/20",
@@ -5082,7 +5144,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 80311.61
       },
       {
-        "id": "line-SO-00032-5",
+        "id": "line-rf-exp-32-26-27-5",
         "speciesId": "sp-29",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GARDE 10/12",
@@ -5096,7 +5158,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 51369.22
       },
       {
-        "id": "line-SO-00032-6",
+        "id": "line-rf-exp-32-26-27-6",
         "speciesId": "sp-30",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 12/15",
@@ -5110,7 +5172,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 158073.65
       },
       {
-        "id": "line-SO-00032-7",
+        "id": "line-rf-exp-32-26-27-7",
         "speciesId": "sp-30",
         "sizeId": "sz-24",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 15/20",
@@ -5123,12 +5185,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 120,
         "fobValueINR": 11331.44
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00032",
+    "internalInvoiceNo": "RF/EXP/32/26-27"
   },
   {
-    "id": "inv-so-00033",
-    "invoiceNo": "SO-00033",
-    "invoiceDate": "2026-09-07",
+    "id": "inv-rf-exp-33-26-27",
+    "invoiceNo": "RF/EXP/33/26-27",
+    "invoiceDate": "2026-09-08",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
     "consigneeName": "JIRA SMITH TRADING CO. LTD.",
@@ -5148,7 +5212,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00033",
+    "exporterRef": "RF/EXP/33/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.491165,
@@ -5178,7 +5242,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-07T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00033-1",
+        "id": "line-rf-exp-33-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -5192,7 +5256,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 869554.95
       },
       {
-        "id": "line-SO-00033-2",
+        "id": "line-rf-exp-33-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -5205,12 +5269,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 43820,
         "fobValueINR": 4140602.85
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00033",
+    "internalInvoiceNo": "RF/EXP/33/26-27"
   },
   {
-    "id": "inv-so-00034",
-    "invoiceNo": "SO-00034",
-    "invoiceDate": "2026-09-08",
+    "id": "inv-rf-exp-34-26-27",
+    "invoiceNo": "RF/EXP/34/26-27",
+    "invoiceDate": "2026-09-09",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-15",
     "consigneeName": "GLOBAL FISH CO., LTD",
@@ -5230,7 +5296,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00034",
+    "exporterRef": "RF/EXP/34/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.840668,
@@ -5260,7 +5326,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-08T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00034-1",
+        "id": "line-rf-exp-34-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -5274,7 +5340,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1251896.82
       },
       {
-        "id": "line-SO-00034-2",
+        "id": "line-rf-exp-34-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -5287,12 +5353,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 38000,
         "fobValueINR": 3603945.38
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00034",
+    "internalInvoiceNo": "RF/EXP/34/26-27"
   },
   {
-    "id": "inv-so-00035",
-    "invoiceNo": "SO-00035",
-    "invoiceDate": "2026-08-06",
+    "id": "inv-rf-exp-35-26-27",
+    "invoiceNo": "RF/EXP/35/26-27",
+    "invoiceDate": "2026-09-10",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-9",
     "consigneeName": "WEALTHOCEANSUPPLY CO. LTD.",
@@ -5312,7 +5380,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-sgz",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00035",
+    "exporterRef": "RF/EXP/35/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.312158,
@@ -5342,7 +5410,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-08-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00035-1",
+        "id": "line-rf-exp-35-26-27-1",
         "speciesId": "sp-32",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade U/3",
@@ -5356,7 +5424,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 444688.4
       },
       {
-        "id": "line-SO-00035-2",
+        "id": "line-rf-exp-35-26-27-2",
         "speciesId": "sp-32",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 3/6",
@@ -5370,7 +5438,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 915728.71
       },
       {
-        "id": "line-SO-00035-3",
+        "id": "line-rf-exp-35-26-27-3",
         "speciesId": "sp-32",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 6/10",
@@ -5384,7 +5452,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1056752.58
       },
       {
-        "id": "line-SO-00035-4",
+        "id": "line-rf-exp-35-26-27-4",
         "speciesId": "sp-32",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 10/20",
@@ -5398,7 +5466,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 129083.16
       },
       {
-        "id": "line-SO-00035-5",
+        "id": "line-rf-exp-35-26-27-5",
         "speciesId": "sp-18",
         "sizeId": "sz-16",
         "productDescription": "Frozen Loligo Squid Whole A Grade U/3",
@@ -5412,7 +5480,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3258166.06
       },
       {
-        "id": "line-SO-00035-6",
+        "id": "line-rf-exp-35-26-27-6",
         "speciesId": "sp-18",
         "sizeId": "sz-17",
         "productDescription": "Frozen Loligo Squid Whole A Grade 3/6",
@@ -5426,7 +5494,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4980510.13
       },
       {
-        "id": "line-SO-00035-7",
+        "id": "line-rf-exp-35-26-27-7",
         "speciesId": "sp-18",
         "sizeId": "sz-18",
         "productDescription": "Frozen Loligo Squid Whole A Grade 6/10",
@@ -5439,12 +5507,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 36265.32,
         "fobValueINR": 3456525.91
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00035",
+    "internalInvoiceNo": "RF/EXP/35/26-27"
   },
   {
-    "id": "inv-so-00036",
-    "invoiceNo": "SO-00036",
-    "invoiceDate": "2026-09-09",
+    "id": "inv-rf-exp-36-26-27",
+    "invoiceNo": "RF/EXP/36/26-27",
+    "invoiceDate": "2026-09-12",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-1",
     "consigneeName": "QINGDAO FRESHNESS LEADER INTERNATIONAL TRADE CO LTD",
@@ -5464,7 +5534,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00036",
+    "exporterRef": "RF/EXP/36/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 95.110553,
@@ -5494,7 +5564,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-09T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00036-1",
+        "id": "line-rf-exp-36-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
@@ -5508,7 +5578,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 537793.11
       },
       {
-        "id": "line-SO-00036-2",
+        "id": "line-rf-exp-36-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -5522,7 +5592,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4128520.84
       },
       {
-        "id": "line-SO-00036-3",
+        "id": "line-rf-exp-36-26-27-3",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -5535,11 +5605,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 77254.8,
         "fobValueINR": 7347746.75
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00036",
+    "internalInvoiceNo": "RF/EXP/36/26-27"
   },
   {
-    "id": "inv-so-00037",
-    "invoiceNo": "SO-00037",
+    "id": "inv-rf-exp-37-26-27",
+    "invoiceNo": "RF/EXP/37/26-27",
     "invoiceDate": "2026-09-12",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -5560,7 +5632,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/059/2026-27",
+    "exporterRef": "RF/EXP/37/26-27",
     "otherReferences": "RF/059/2026-27",
     "currency": "USD",
     "exchangeRate": 95.602294,
@@ -5590,7 +5662,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-12T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00037-1",
+        "id": "line-rf-exp-37-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -5604,7 +5676,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 210325.05
       },
       {
-        "id": "line-SO-00037-2",
+        "id": "line-rf-exp-37-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -5617,12 +5689,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 48750,
         "fobValueINR": 4660611.83
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00037",
+    "internalInvoiceNo": "RF/EXP/37/26-27"
   },
   {
-    "id": "inv-so-00038",
-    "invoiceNo": "SO-00038",
-    "invoiceDate": "2026-09-10",
+    "id": "inv-rf-exp-38-26-27",
+    "invoiceNo": "RF/EXP/38/26-27",
+    "invoiceDate": "2026-09-14",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-17",
     "consigneeName": "UMIOS CORPORATION",
@@ -5642,7 +5716,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tyo",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/057/2026-27",
+    "exporterRef": "RF/EXP/38/26-27",
     "otherReferences": "RF/057/2026-27",
     "currency": "USD",
     "exchangeRate": 95.69455,
@@ -5672,7 +5746,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-10T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00038-1",
+        "id": "line-rf-exp-38-26-27-1",
         "speciesId": "sp-33",
         "sizeId": "sz-26",
         "productDescription": "FROZEN PUD POOVALAN SHRIMPS 80/120",
@@ -5685,12 +5759,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 115315.2,
         "fobValueINR": 11035036.17
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00038",
+    "internalInvoiceNo": "RF/EXP/38/26-27"
   },
   {
-    "id": "inv-so-00039",
-    "invoiceNo": "SO-00039",
-    "invoiceDate": "2026-09-11",
+    "id": "inv-rf-exp-39-26-27",
+    "invoiceNo": "RF/EXP/39/26-27",
+    "invoiceDate": "2026-09-16",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-18",
     "consigneeName": "LEE HUP GUAN SDN BHD",
@@ -5710,7 +5786,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-pkg",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "057/2026-27/RL",
+    "exporterRef": "RF/EXP/39/26-27",
     "otherReferences": "057/2026-27/RL",
     "currency": "USD",
     "exchangeRate": 95.60055,
@@ -5740,7 +5816,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-11T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00039-1",
+        "id": "line-rf-exp-39-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -5754,7 +5830,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 475325.93
       },
       {
-        "id": "line-SO-00039-2",
+        "id": "line-rf-exp-39-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -5767,12 +5843,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 46293,
         "fobValueINR": 4425636.26
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00039",
+    "internalInvoiceNo": "RF/EXP/39/26-27"
   },
   {
-    "id": "inv-so-00040",
-    "invoiceNo": "SO-00040",
-    "invoiceDate": "2026-09-07",
+    "id": "inv-rf-exp-40-26-27",
+    "invoiceNo": "RF/EXP/40/26-27",
+    "invoiceDate": "2026-09-16",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-4",
     "consigneeName": "FUZHOU HENGSHUNHE TRADING CO. LTD.",
@@ -5792,7 +5870,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SBT/ALP-012",
+    "exporterRef": "RF/EXP/40/26-27",
     "otherReferences": "SBT/ALP-012",
     "currency": "USD",
     "exchangeRate": 94.492243,
@@ -5822,7 +5900,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-07T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00040-1",
+        "id": "line-rf-exp-40-26-27-1",
         "speciesId": "sp-34",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 100/200",
@@ -5836,7 +5914,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 144573.13
       },
       {
-        "id": "line-SO-00040-2",
+        "id": "line-rf-exp-40-26-27-2",
         "speciesId": "sp-34",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 200/300",
@@ -5850,7 +5928,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 648075.05
       },
       {
-        "id": "line-SO-00040-3",
+        "id": "line-rf-exp-40-26-27-3",
         "speciesId": "sp-34",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 300/500",
@@ -5864,7 +5942,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 814428.64
       },
       {
-        "id": "line-SO-00040-4",
+        "id": "line-rf-exp-40-26-27-4",
         "speciesId": "sp-34",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 500/700",
@@ -5878,7 +5956,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 109705.49
       },
       {
-        "id": "line-SO-00040-5",
+        "id": "line-rf-exp-40-26-27-5",
         "speciesId": "sp-35",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 100/200",
@@ -5892,7 +5970,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 373149.87
       },
       {
-        "id": "line-SO-00040-6",
+        "id": "line-rf-exp-40-26-27-6",
         "speciesId": "sp-35",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 200/300",
@@ -5906,7 +5984,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1059636.01
       },
       {
-        "id": "line-SO-00040-7",
+        "id": "line-rf-exp-40-26-27-7",
         "speciesId": "sp-35",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 300/500",
@@ -5920,7 +5998,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1396973.32
       },
       {
-        "id": "line-SO-00040-8",
+        "id": "line-rf-exp-40-26-27-8",
         "speciesId": "sp-35",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 500/700",
@@ -5934,7 +6012,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 311824.4
       },
       {
-        "id": "line-SO-00040-9",
+        "id": "line-rf-exp-40-26-27-9",
         "speciesId": "sp-36",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 100/200",
@@ -5948,7 +6026,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 8504.3
       },
       {
-        "id": "line-SO-00040-10",
+        "id": "line-rf-exp-40-26-27-10",
         "speciesId": "sp-36",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 200/300",
@@ -5962,7 +6040,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1228.4
       },
       {
-        "id": "line-SO-00040-11",
+        "id": "line-rf-exp-40-26-27-11",
         "speciesId": "sp-36",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 500/700",
@@ -5975,12 +6053,14 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 17,
         "fobValueINR": 1606.37
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00040",
+    "internalInvoiceNo": "RF/EXP/40/26-27"
   },
   {
-    "id": "inv-so-00041",
-    "invoiceNo": "SO-00041",
-    "invoiceDate": "2026-09-12",
+    "id": "inv-rf-exp-41-26-27",
+    "invoiceNo": "RF/EXP/41/26-27",
+    "invoiceDate": "2026-09-17",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-14",
     "consigneeName": "SHANTOU HYPO SEAFOOD LIMITED",
@@ -6000,7 +6080,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-swa",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/059/2026-27",
+    "exporterRef": "RF/EXP/41/26-27",
     "otherReferences": "RF/059/2026-27",
     "currency": "USD",
     "exchangeRate": 95.60055,
@@ -6030,7 +6110,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-12T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00041-1",
+        "id": "line-rf-exp-41-26-27-1",
         "speciesId": "sp-37",
         "sizeId": "sz-19",
         "productDescription": "FROZEN SQUID WHOLE 10/20",
@@ -6043,11 +6123,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 64936.8,
         "fobValueINR": 6207993.8
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00041",
+    "internalInvoiceNo": "RF/EXP/41/26-27"
   },
   {
-    "id": "inv-so-00042",
-    "invoiceNo": "SO-00042",
+    "id": "inv-rf-exp-42-26-27",
+    "invoiceNo": "RF/EXP/42/26-27",
     "invoiceDate": "2026-09-18",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-19",
@@ -6068,7 +6150,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-xmn",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SBT/ALP-013",
+    "exporterRef": "RF/EXP/42/26-27",
     "otherReferences": "SBT/ALP-013",
     "currency": "USD",
     "exchangeRate": 95.99265,
@@ -6098,7 +6180,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-18T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00042-1",
+        "id": "line-rf-exp-42-26-27-1",
         "speciesId": "sp-34",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 100/200",
@@ -6112,7 +6194,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 156660
       },
       {
-        "id": "line-SO-00042-2",
+        "id": "line-rf-exp-42-26-27-2",
         "speciesId": "sp-34",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 200/300",
@@ -6126,7 +6208,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 652270.06
       },
       {
-        "id": "line-SO-00042-3",
+        "id": "line-rf-exp-42-26-27-3",
         "speciesId": "sp-34",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 300/500",
@@ -6140,7 +6222,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 916681.81
       },
       {
-        "id": "line-SO-00042-4",
+        "id": "line-rf-exp-42-26-27-4",
         "speciesId": "sp-34",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 500/700",
@@ -6154,7 +6236,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 303720.74
       },
       {
-        "id": "line-SO-00042-5",
+        "id": "line-rf-exp-42-26-27-5",
         "speciesId": "sp-35",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 100/200",
@@ -6168,7 +6250,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 436766.56
       },
       {
-        "id": "line-SO-00042-6",
+        "id": "line-rf-exp-42-26-27-6",
         "speciesId": "sp-35",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 200/300",
@@ -6182,7 +6264,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1495613.48
       },
       {
-        "id": "line-SO-00042-7",
+        "id": "line-rf-exp-42-26-27-7",
         "speciesId": "sp-35",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 300/500",
@@ -6196,7 +6278,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1017282.11
       },
       {
-        "id": "line-SO-00042-8",
+        "id": "line-rf-exp-42-26-27-8",
         "speciesId": "sp-35",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 500/700",
@@ -6209,11 +6291,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 2808,
         "fobValueINR": 269547.36
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00042",
+    "internalInvoiceNo": "RF/EXP/42/26-27"
   },
   {
-    "id": "inv-so-00043",
-    "invoiceNo": "SO-00043",
+    "id": "inv-rf-exp-43-26-27",
+    "invoiceNo": "RF/EXP/43/26-27",
     "invoiceDate": "2026-09-20",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -6234,7 +6318,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/64/2026-27",
+    "exporterRef": "RF/EXP/43/26-27",
     "otherReferences": "RF/64/2026-27",
     "currency": "USD",
     "exchangeRate": 96.015362,
@@ -6264,7 +6348,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-20T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00043-1",
+        "id": "line-rf-exp-43-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -6278,7 +6362,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 868170.9
       },
       {
-        "id": "line-SO-00043-2",
+        "id": "line-rf-exp-43-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -6292,7 +6376,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2729812.76
       },
       {
-        "id": "line-SO-00043-3",
+        "id": "line-rf-exp-43-26-27-3",
         "speciesId": "sp-30",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
@@ -6306,7 +6390,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 20067.21
       },
       {
-        "id": "line-SO-00043-4",
+        "id": "line-rf-exp-43-26-27-4",
         "speciesId": "sp-30",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
@@ -6319,11 +6403,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11880,
         "fobValueINR": 1140662.5
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00043",
+    "internalInvoiceNo": "RF/EXP/43/26-27"
   },
   {
-    "id": "inv-so-00044",
-    "invoiceNo": "SO-00044",
+    "id": "inv-rf-exp-44-26-27",
+    "invoiceNo": "RF/EXP/44/26-27",
     "invoiceDate": "2026-09-22",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -6344,7 +6430,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/065/2026-27",
+    "exporterRef": "RF/EXP/44/26-27",
     "otherReferences": "RF/065/2026-27",
     "currency": "USD",
     "exchangeRate": 95.69378,
@@ -6374,7 +6460,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-22T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00044-1",
+        "id": "line-rf-exp-44-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -6388,7 +6474,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4236057.42
       },
       {
-        "id": "line-SO-00044-2",
+        "id": "line-rf-exp-44-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -6401,11 +6487,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11635.2,
         "fobValueINR": 1113416.27
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00044",
+    "internalInvoiceNo": "RF/EXP/44/26-27"
   },
   {
-    "id": "inv-so-00045",
-    "invoiceNo": "SO-00045",
+    "id": "inv-rf-exp-45-26-27",
+    "invoiceNo": "RF/EXP/45/26-27",
     "invoiceDate": "2026-09-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -6426,7 +6514,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/066/26-27",
+    "exporterRef": "RF/EXP/45/26-27",
     "otherReferences": "RF/066/26-27",
     "currency": "USD",
     "exchangeRate": 96.162759,
@@ -6456,7 +6544,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-24T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00045-1",
+        "id": "line-rf-exp-45-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -6470,7 +6558,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 38417.02
       },
       {
-        "id": "line-SO-00045-2",
+        "id": "line-rf-exp-45-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -6484,7 +6572,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4518880.37
       },
       {
-        "id": "line-SO-00045-3",
+        "id": "line-rf-exp-45-26-27-3",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -6497,11 +6585,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 6419.5,
         "fobValueINR": 617316.83
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00045",
+    "internalInvoiceNo": "RF/EXP/45/26-27"
   },
   {
-    "id": "inv-so-00046",
-    "invoiceNo": "SO-00046",
+    "id": "inv-rf-exp-46-26-27",
+    "invoiceNo": "RF/EXP/46/26-27",
     "invoiceDate": "2026-09-20",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-3",
@@ -6522,7 +6612,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-ngb",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "JCK-HSD-C251103-IN6527",
+    "exporterRef": "RF/EXP/46/26-27",
     "otherReferences": "JCK-HSD-C251103-IN6527",
     "currency": "USD",
     "exchangeRate": 96.015362,
@@ -6552,7 +6642,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-20T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00046-1",
+        "id": "line-rf-exp-46-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -6566,7 +6656,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 942947.67
       },
       {
-        "id": "line-SO-00046-2",
+        "id": "line-rf-exp-46-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -6580,7 +6670,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 5678886.19
       },
       {
-        "id": "line-SO-00046-3",
+        "id": "line-rf-exp-46-26-27-3",
         "speciesId": "sp-6",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
@@ -6593,11 +6683,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 61404,
         "fobValueINR": 5895727.29
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00046",
+    "internalInvoiceNo": "RF/EXP/46/26-27"
   },
   {
-    "id": "inv-so-00047",
-    "invoiceNo": "SO-00047",
+    "id": "inv-rf-exp-47-26-27",
+    "invoiceNo": "RF/EXP/47/26-27",
     "invoiceDate": "2026-09-16",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-20",
@@ -6618,7 +6710,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tyo",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/060/2026-27",
+    "exporterRef": "RF/EXP/47/26-27",
     "otherReferences": "RF/060/2026-27",
     "currency": "USD",
     "exchangeRate": 96.132545,
@@ -6648,7 +6740,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-16T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00047-1",
+        "id": "line-rf-exp-47-26-27-1",
         "speciesId": "sp-38",
         "sizeId": "sz-5",
         "productDescription": "FROZEN MONSOON POOVALAN PUD SHRIMPS 100/200",
@@ -6662,7 +6754,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 8458356.56
       },
       {
-        "id": "line-SO-00047-2",
+        "id": "line-rf-exp-47-26-27-2",
         "speciesId": "sp-38",
         "sizeId": "sz-7",
         "productDescription": "FROZEN MONSOON POOVALAN PUD SHRIMPS 200/300",
@@ -6675,11 +6767,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 5346,
         "fobValueINR": 513924.59
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00047",
+    "internalInvoiceNo": "RF/060/2026-27"
   },
   {
-    "id": "inv-so-00048",
-    "invoiceNo": "SO-00048",
+    "id": "inv-rf-exp-48-26-27",
+    "invoiceNo": "RF/EXP/48/26-27",
     "invoiceDate": "2026-09-28",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-21",
@@ -6700,7 +6794,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-sha",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SBT/ALP-015",
+    "exporterRef": "RF/EXP/48/26-27",
     "otherReferences": "SBT/ALP-015",
     "currency": "USD",
     "exchangeRate": 95.972148,
@@ -6730,7 +6824,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-28T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00048-1",
+        "id": "line-rf-exp-48-26-27-1",
         "speciesId": "sp-4",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
@@ -6744,7 +6838,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 163152.65
       },
       {
-        "id": "line-SO-00048-2",
+        "id": "line-rf-exp-48-26-27-2",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -6758,7 +6852,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 460666.31
       },
       {
-        "id": "line-SO-00048-3",
+        "id": "line-rf-exp-48-26-27-3",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -6772,7 +6866,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1209249.06
       },
       {
-        "id": "line-SO-00048-4",
+        "id": "line-rf-exp-48-26-27-4",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -6786,7 +6880,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 575832.89
       },
       {
-        "id": "line-SO-00048-5",
+        "id": "line-rf-exp-48-26-27-5",
         "speciesId": "sp-11",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
@@ -6800,7 +6894,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 431874.67
       },
       {
-        "id": "line-SO-00048-6",
+        "id": "line-rf-exp-48-26-27-6",
         "speciesId": "sp-11",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
@@ -6814,7 +6908,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 983714.52
       },
       {
-        "id": "line-SO-00048-7",
+        "id": "line-rf-exp-48-26-27-7",
         "speciesId": "sp-11",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
@@ -6828,7 +6922,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1266832.35
       },
       {
-        "id": "line-SO-00048-8",
+        "id": "line-rf-exp-48-26-27-8",
         "speciesId": "sp-11",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
@@ -6841,11 +6935,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 8100,
         "fobValueINR": 777374.4
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00048"
   },
   {
-    "id": "inv-so-00049",
-    "invoiceNo": "SO-00049",
+    "id": "inv-rf-exp-49-26-27",
+    "invoiceNo": "RF/EXP/49/26-27",
     "invoiceDate": "2026-10-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -6866,7 +6961,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/067/2026-27",
+    "exporterRef": "RF/EXP/49/26-27",
     "otherReferences": "RF/067/2026-27",
     "currency": "USD",
     "exchangeRate": 95.996928,
@@ -6896,7 +6991,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-24T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00049-1",
+        "id": "line-rf-exp-49-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -6910,7 +7005,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2866391.47
       },
       {
-        "id": "line-SO-00049-2",
+        "id": "line-rf-exp-49-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -6923,11 +7018,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 22644,
         "fobValueINR": 2173754.44
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00049",
+    "internalInvoiceNo": "RF/067/2026-27"
   },
   {
-    "id": "inv-so-00050",
-    "invoiceNo": "SO-00050",
+    "id": "inv-rf-exp-50-26-27",
+    "invoiceNo": "RF/EXP/50/26-27",
     "invoiceDate": "2026-10-01",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -6948,7 +7045,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/069/2026-27",
+    "exporterRef": "RF/EXP/50/26-27",
     "otherReferences": "RF/069/2026-27",
     "currency": "USD",
     "exchangeRate": 96.227868,
@@ -6978,7 +7075,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-01T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00050-1",
+        "id": "line-rf-exp-50-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -6992,7 +7089,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4255725.58
       },
       {
-        "id": "line-SO-00050-2",
+        "id": "line-rf-exp-50-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -7006,7 +7103,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 261691.69
       },
       {
-        "id": "line-SO-00050-3",
+        "id": "line-rf-exp-50-26-27-3",
         "speciesId": "sp-30",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
@@ -7019,11 +7116,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7524,
         "fobValueINR": 724018.48
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00050",
+    "internalInvoiceNo": "RF/069/2026-27"
   },
   {
-    "id": "inv-so-00051",
-    "invoiceNo": "SO-00051",
+    "id": "inv-rf-exp-51-26-27",
+    "invoiceNo": "RF/EXP/51/26-27",
     "invoiceDate": "2026-10-03",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7044,7 +7143,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/070/2026-27",
+    "exporterRef": "RF/EXP/51/26-27",
     "otherReferences": "RF/070/2026-27",
     "currency": "USD",
     "exchangeRate": 96.329833,
@@ -7074,7 +7173,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-03T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00051-1",
+        "id": "line-rf-exp-51-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
@@ -7088,7 +7187,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 65648.78
       },
       {
-        "id": "line-SO-00051-2",
+        "id": "line-rf-exp-51-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -7102,7 +7201,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1915759.55
       },
       {
-        "id": "line-SO-00051-3",
+        "id": "line-rf-exp-51-26-27-3",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -7116,7 +7215,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2110008.66
       },
       {
-        "id": "line-SO-00051-4",
+        "id": "line-rf-exp-51-26-27-4",
         "speciesId": "sp-28",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
@@ -7130,7 +7229,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 135632.4
       },
       {
-        "id": "line-SO-00051-5",
+        "id": "line-rf-exp-51-26-27-5",
         "speciesId": "sp-30",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
@@ -7144,7 +7243,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 543589.25
       },
       {
-        "id": "line-SO-00051-6",
+        "id": "line-rf-exp-51-26-27-6",
         "speciesId": "sp-30",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
@@ -7158,7 +7257,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 100183.03
       },
       {
-        "id": "line-SO-00051-7",
+        "id": "line-rf-exp-51-26-27-7",
         "speciesId": "sp-30",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 12/15",
@@ -7171,11 +7270,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 162,
         "fobValueINR": 15605.43
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00051",
+    "internalInvoiceNo": "RF/070/2026-27"
   },
   {
-    "id": "inv-so-00053",
-    "invoiceNo": "SO-00053",
+    "id": "inv-rf-exp-52-26-27",
+    "invoiceNo": "RF/EXP/52/26-27",
     "invoiceDate": "2026-10-06",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7196,7 +7297,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/075/2026-27",
+    "exporterRef": "RF/EXP/52/26-27",
     "otherReferences": "RF/075/2026-27",
     "currency": "USD",
     "exchangeRate": 96.366965,
@@ -7226,7 +7327,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00053-1",
+        "id": "line-rf-exp-52-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -7240,7 +7341,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3834672.82
       },
       {
-        "id": "line-SO-00053-2",
+        "id": "line-rf-exp-52-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -7253,11 +7354,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 13014,
         "fobValueINR": 1254119.68
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00052",
+    "internalInvoiceNo": "RF/075/2026-27"
   },
   {
-    "id": "inv-so-00052",
-    "invoiceNo": "SO-00052",
+    "id": "inv-rf-exp-53-26-27",
+    "invoiceNo": "RF/EXP/53/26-27",
     "invoiceDate": "2026-10-06",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7278,7 +7381,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/073/2026-27",
+    "exporterRef": "RF/EXP/53/26-27",
     "otherReferences": "RF/073/2026-27",
     "currency": "USD",
     "exchangeRate": 96.366965,
@@ -7308,7 +7411,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00052-1",
+        "id": "line-rf-exp-53-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -7322,7 +7425,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 181748.1
       },
       {
-        "id": "line-SO-00052-2",
+        "id": "line-rf-exp-53-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -7336,7 +7439,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2717162.95
       },
       {
-        "id": "line-SO-00052-3",
+        "id": "line-rf-exp-53-26-27-3",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -7350,7 +7453,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1918473.54
       },
       {
-        "id": "line-SO-00052-4",
+        "id": "line-rf-exp-53-26-27-4",
         "speciesId": "sp-31",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL 12/15",
@@ -7363,11 +7466,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 1230,
         "fobValueINR": 118531.37
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00053",
+    "internalInvoiceNo": "RF/073/2026-27"
   },
   {
-    "id": "inv-so-00054",
-    "invoiceNo": "SO-00054",
+    "id": "inv-rf-exp-54-26-27",
+    "invoiceNo": "RF/EXP/54/26-27",
     "invoiceDate": "2026-10-06",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7388,7 +7493,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/074/2026-27",
+    "exporterRef": "RF/EXP/54/26-27",
     "otherReferences": "RF/074/2026-27",
     "currency": "USD",
     "exchangeRate": 96.366965,
@@ -7418,7 +7523,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00054-1",
+        "id": "line-rf-exp-54-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -7432,7 +7537,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 104172.69
       },
       {
-        "id": "line-SO-00054-2",
+        "id": "line-rf-exp-54-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -7446,7 +7551,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3685535.3
       },
       {
-        "id": "line-SO-00054-3",
+        "id": "line-rf-exp-54-26-27-3",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -7459,11 +7564,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 13482,
         "fobValueINR": 1299219.42
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00054",
+    "internalInvoiceNo": "RF/074/2026-27"
   },
   {
-    "id": "inv-so-00055",
-    "invoiceNo": "SO-00055",
+    "id": "inv-rf-exp-55-26-27",
+    "invoiceNo": "RF/EXP/55/26-27",
     "invoiceDate": "2026-09-25",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-9",
@@ -7484,7 +7591,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-sgz",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/067/2026-27",
+    "exporterRef": "RF/EXP/55/26-27",
     "otherReferences": "RF/067/2026-27",
     "currency": "USD",
     "exchangeRate": 95.81785,
@@ -7514,7 +7621,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-25T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00055-1",
+        "id": "line-rf-exp-55-26-27-1",
         "speciesId": "sp-39",
         "sizeId": "sz-16",
         "productDescription": "FROZEN LOLIGO SQUID U/3",
@@ -7528,7 +7635,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3590248.85
       },
       {
-        "id": "line-SO-00055-2",
+        "id": "line-rf-exp-55-26-27-2",
         "speciesId": "sp-39",
         "sizeId": "sz-17",
         "productDescription": "FROZEN LOLIGO SQUID 3/6",
@@ -7542,7 +7649,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 6126520.51
       },
       {
-        "id": "line-SO-00055-3",
+        "id": "line-rf-exp-55-26-27-3",
         "speciesId": "sp-39",
         "sizeId": "sz-18",
         "productDescription": "FROZEN LOLIGO SQUID 6/10",
@@ -7556,7 +7663,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1777221.82
       },
       {
-        "id": "line-SO-00055-4",
+        "id": "line-rf-exp-55-26-27-4",
         "speciesId": "sp-39",
         "sizeId": "sz-19",
         "productDescription": "FROZEN LOLIGO SQUID 10/20",
@@ -7570,7 +7677,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1921063.57
       },
       {
-        "id": "line-SO-00055-5",
+        "id": "line-rf-exp-55-26-27-5",
         "speciesId": "sp-40",
         "sizeId": "sz-8",
         "productDescription": "FROZEN OCTOPUS WHOLE 300/500",
@@ -7583,11 +7690,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3830.4,
         "fobValueINR": 367020.69
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00055",
+    "internalInvoiceNo": "RF/067/2026-27"
   },
   {
-    "id": "inv-so-00056",
-    "invoiceNo": "SO-00056",
+    "id": "inv-rf-exp-56-26-27",
+    "invoiceNo": "RF/EXP/56/26-27",
     "invoiceDate": "2026-10-06",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7608,7 +7717,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/074/2026-27",
+    "exporterRef": "RF/EXP/56/26-27",
     "otherReferences": "RF/074/2026-27",
     "currency": "USD",
     "exchangeRate": 96.370642,
@@ -7638,7 +7747,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-06T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00056-1",
+        "id": "line-rf-exp-56-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -7652,7 +7761,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 228302.05
       },
       {
-        "id": "line-SO-00056-2",
+        "id": "line-rf-exp-56-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -7666,7 +7775,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 4596879.62
       },
       {
-        "id": "line-SO-00056-3",
+        "id": "line-rf-exp-56-26-27-3",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -7679,11 +7788,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4446,
         "fobValueINR": 428463.87
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00056",
+    "internalInvoiceNo": "RF/074/2026-27"
   },
   {
-    "id": "inv-so-00057",
-    "invoiceNo": "SO-00057",
+    "id": "inv-rf-exp-57-26-27",
+    "invoiceNo": "RF/EXP/57/26-27",
     "invoiceDate": "2026-10-10",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7704,7 +7815,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/077/2026-27",
+    "exporterRef": "RF/EXP/57/26-27",
     "otherReferences": "RF/077/2026-27",
     "currency": "USD",
     "exchangeRate": 96.777315,
@@ -7734,7 +7845,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-10T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00057-1",
+        "id": "line-rf-exp-57-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -7748,7 +7859,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 432884.93
       },
       {
-        "id": "line-SO-00057-2",
+        "id": "line-rf-exp-57-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -7761,11 +7872,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 45353,
         "fobValueINR": 4389141.57
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00057",
+    "internalInvoiceNo": "RF/077/2026-27"
   },
   {
-    "id": "inv-so-00058",
-    "invoiceNo": "SO-00058",
+    "id": "inv-rf-exp-58-26-27",
+    "invoiceNo": "RF/EXP/58/26-27",
     "invoiceDate": "2026-09-28",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-22",
@@ -7786,7 +7899,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "XL26218",
+    "exporterRef": "RF/EXP/58/26-27",
     "otherReferences": "XL26218",
     "currency": "USD",
     "exchangeRate": 95.972148,
@@ -7816,7 +7929,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-28T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00058-1",
+        "id": "line-rf-exp-58-26-27-1",
         "speciesId": "sp-4",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
@@ -7830,7 +7943,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 455867.7
       },
       {
-        "id": "line-SO-00058-2",
+        "id": "line-rf-exp-58-26-27-2",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -7844,7 +7957,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 929970.11
       },
       {
-        "id": "line-SO-00058-3",
+        "id": "line-rf-exp-58-26-27-3",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -7858,7 +7971,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 840859.97
       },
       {
-        "id": "line-SO-00058-4",
+        "id": "line-rf-exp-58-26-27-4",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -7872,7 +7985,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 807701.6
       },
       {
-        "id": "line-SO-00058-5",
+        "id": "line-rf-exp-58-26-27-5",
         "speciesId": "sp-11",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
@@ -7886,7 +7999,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 680922.39
       },
       {
-        "id": "line-SO-00058-6",
+        "id": "line-rf-exp-58-26-27-6",
         "speciesId": "sp-11",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
@@ -7900,7 +8013,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 846474.35
       },
       {
-        "id": "line-SO-00058-7",
+        "id": "line-rf-exp-58-26-27-7",
         "speciesId": "sp-11",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
@@ -7914,7 +8027,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 988705.07
       },
       {
-        "id": "line-SO-00058-8",
+        "id": "line-rf-exp-58-26-27-8",
         "speciesId": "sp-11",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
@@ -7927,11 +8040,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4368,
         "fobValueINR": 419206.34
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00058"
   },
   {
-    "id": "inv-so-00059",
-    "invoiceNo": "SO-00059",
+    "id": "inv-rf-exp-59-26-27",
+    "invoiceNo": "RF/EXP/59/26-27",
     "invoiceDate": "2026-10-13",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -7952,7 +8066,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/078/2026-27",
+    "exporterRef": "RF/EXP/59/26-27",
     "otherReferences": "RF/078/2026-27",
     "currency": "USD",
     "exchangeRate": 95.287552,
@@ -7982,7 +8096,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-13T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00059-1",
+        "id": "line-rf-exp-59-26-27-1",
         "speciesId": "sp-41",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
@@ -7996,7 +8110,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 466241.99
       },
       {
-        "id": "line-SO-00059-2",
+        "id": "line-rf-exp-59-26-27-2",
         "speciesId": "sp-41",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
@@ -8010,7 +8124,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3861718.62
       },
       {
-        "id": "line-SO-00059-3",
+        "id": "line-rf-exp-59-26-27-3",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -8023,11 +8137,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4914,
         "fobValueINR": 468243.03
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00059",
+    "internalInvoiceNo": "RF/078/2026-27"
   },
   {
-    "id": "inv-so-00060",
-    "invoiceNo": "SO-00060",
+    "id": "inv-rf-exp-60-26-27",
+    "invoiceNo": "RF/EXP/60/26-27",
     "invoiceDate": "2026-10-14",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -8048,7 +8164,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/079/2026-27",
+    "exporterRef": "RF/EXP/60/26-27",
     "otherReferences": "RF/079/2026-27",
     "currency": "USD",
     "exchangeRate": 95.151551,
@@ -8078,7 +8194,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-14T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00060-1",
+        "id": "line-rf-exp-60-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
@@ -8092,7 +8208,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 492409.28
       },
       {
-        "id": "line-SO-00060-2",
+        "id": "line-rf-exp-60-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -8106,7 +8222,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1566575.14
       },
       {
-        "id": "line-SO-00060-3",
+        "id": "line-rf-exp-60-26-27-3",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -8120,7 +8236,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 672721.47
       },
       {
-        "id": "line-SO-00060-4",
+        "id": "line-rf-exp-60-26-27-4",
         "speciesId": "sp-30",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
@@ -8134,7 +8250,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 672436.01
       },
       {
-        "id": "line-SO-00060-5",
+        "id": "line-rf-exp-60-26-27-5",
         "speciesId": "sp-30",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
@@ -8148,7 +8264,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 67081.84
       },
       {
-        "id": "line-SO-00060-6",
+        "id": "line-rf-exp-60-26-27-6",
         "speciesId": "sp-41",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
@@ -8162,7 +8278,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 161852.79
       },
       {
-        "id": "line-SO-00060-7",
+        "id": "line-rf-exp-60-26-27-7",
         "speciesId": "sp-41",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
@@ -8175,11 +8291,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 12863,
         "fobValueINR": 1223934.4
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00060",
+    "internalInvoiceNo": "RF/079/2026-27"
   },
   {
-    "id": "inv-so-00061",
-    "invoiceNo": "SO-00061",
+    "id": "inv-rf-exp-61-26-27",
+    "invoiceNo": "RF/EXP/61/26-27",
     "invoiceDate": "2026-10-15",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -8200,7 +8318,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/080/2026-27",
+    "exporterRef": "RF/EXP/61/26-27",
     "otherReferences": "RF/080/2026-27",
     "currency": "USD",
     "exchangeRate": 94.525056,
@@ -8230,7 +8348,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-15T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00061-1",
+        "id": "line-rf-exp-61-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
@@ -8244,7 +8362,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 116454.87
       },
       {
-        "id": "line-SO-00061-2",
+        "id": "line-rf-exp-61-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -8258,7 +8376,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1135434.97
       },
       {
-        "id": "line-SO-00061-3",
+        "id": "line-rf-exp-61-26-27-3",
         "speciesId": "sp-41",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
@@ -8272,7 +8390,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 450600.94
       },
       {
-        "id": "line-SO-00061-4",
+        "id": "line-rf-exp-61-26-27-4",
         "speciesId": "sp-41",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
@@ -8286,7 +8404,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2710127.88
       },
       {
-        "id": "line-SO-00061-5",
+        "id": "line-rf-exp-61-26-27-5",
         "speciesId": "sp-42",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
@@ -8299,11 +8417,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3540,
         "fobValueINR": 334618.7
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00061",
+    "internalInvoiceNo": "RF/080/2026-27"
   },
   {
-    "id": "inv-so-00062",
-    "invoiceNo": "SO-00062",
+    "id": "inv-rf-exp-62-26-27",
+    "invoiceNo": "RF/EXP/62/26-27",
     "invoiceDate": "2026-09-29",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-23",
@@ -8324,7 +8444,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-xmn",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "HTSP-20260929-02",
+    "exporterRef": "RF/EXP/62/26-27",
     "otherReferences": "HTSP-20260929-02",
     "currency": "USD",
     "exchangeRate": 96.05085,
@@ -8354,7 +8474,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-09-29T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00062-1",
+        "id": "line-rf-exp-62-26-27-1",
         "speciesId": "sp-43",
         "sizeId": "sz-7",
         "productDescription": "Frozen PUD Vannamei Shrimps 200/300",
@@ -8367,11 +8487,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 101520,
         "fobValueINR": 9751082.29
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00062"
   },
   {
-    "id": "inv-so-00063",
-    "invoiceNo": "SO-00063",
+    "id": "inv-rf-exp-63-26-27",
+    "invoiceNo": "RF/EXP/63/26-27",
     "invoiceDate": "2026-10-05",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-23",
@@ -8392,7 +8513,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-xmn",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "HTSP-20261006-3",
+    "exporterRef": "RF/EXP/63/26-27",
     "otherReferences": "HTSP-20261006-3",
     "currency": "USD",
     "exchangeRate": 96.343054,
@@ -8422,7 +8543,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-05T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00063-1",
+        "id": "line-rf-exp-63-26-27-1",
         "speciesId": "sp-2",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
@@ -8436,7 +8557,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 739914.65
       },
       {
-        "id": "line-SO-00063-2",
+        "id": "line-rf-exp-63-26-27-2",
         "speciesId": "sp-2",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
@@ -8450,7 +8571,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 5017546.25
       },
       {
-        "id": "line-SO-00063-3",
+        "id": "line-rf-exp-63-26-27-3",
         "speciesId": "sp-2",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
@@ -8463,11 +8584,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 72600,
         "fobValueINR": 6994505.72
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00063"
   },
   {
-    "id": "inv-so-00064",
-    "invoiceNo": "SO-00064",
+    "id": "inv-rf-exp-64-26-27",
+    "invoiceNo": "RF/EXP/64/26-27",
     "invoiceDate": "2026-10-21",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -8488,7 +8610,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SO-00064",
+    "exporterRef": "RF/EXP/64/26-27",
     "otherReferences": "",
     "currency": "USD",
     "exchangeRate": 94.31293,
@@ -8518,7 +8640,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-21T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00064-1",
+        "id": "line-rf-exp-64-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -8532,7 +8654,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 606054.89
       },
       {
-        "id": "line-SO-00064-2",
+        "id": "line-rf-exp-64-26-27-2",
         "speciesId": "sp-41",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
@@ -8546,7 +8668,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 146647.17
       },
       {
-        "id": "line-SO-00064-3",
+        "id": "line-rf-exp-64-26-27-3",
         "speciesId": "sp-41",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
@@ -8560,7 +8682,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3898953.11
       },
       {
-        "id": "line-SO-00064-4",
+        "id": "line-rf-exp-64-26-27-4",
         "speciesId": "sp-41",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 10/12",
@@ -8573,11 +8695,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 439.6,
         "fobValueINR": 41459.96
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00064"
   },
   {
-    "id": "inv-so-00065",
-    "invoiceNo": "SO-00065",
+    "id": "inv-rf-exp-65-26-27",
+    "invoiceNo": "RF/EXP/65/26-27",
     "invoiceDate": "2026-10-20",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-24",
@@ -8598,7 +8721,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-tao",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "XL26245",
+    "exporterRef": "RF/EXP/65/26-27",
     "otherReferences": "XL26245",
     "currency": "USD",
     "exchangeRate": 94.714908,
@@ -8628,7 +8751,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-20T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00065-1",
+        "id": "line-rf-exp-65-26-27-1",
         "speciesId": "sp-4",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
@@ -8642,7 +8765,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 173612.43
       },
       {
-        "id": "line-SO-00065-2",
+        "id": "line-rf-exp-65-26-27-2",
         "speciesId": "sp-4",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
@@ -8656,7 +8779,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 479399.51
       },
       {
-        "id": "line-SO-00065-3",
+        "id": "line-rf-exp-65-26-27-3",
         "speciesId": "sp-4",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
@@ -8670,7 +8793,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 909263.12
       },
       {
-        "id": "line-SO-00065-4",
+        "id": "line-rf-exp-65-26-27-4",
         "speciesId": "sp-4",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
@@ -8684,7 +8807,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 387952.26
       },
       {
-        "id": "line-SO-00065-5",
+        "id": "line-rf-exp-65-26-27-5",
         "speciesId": "sp-11",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
@@ -8698,7 +8821,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 597082.78
       },
       {
-        "id": "line-SO-00065-6",
+        "id": "line-rf-exp-65-26-27-6",
         "speciesId": "sp-11",
         "sizeId": "sz-7",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
@@ -8712,7 +8835,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1008429.63
       },
       {
-        "id": "line-SO-00065-7",
+        "id": "line-rf-exp-65-26-27-7",
         "speciesId": "sp-11",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
@@ -8726,7 +8849,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1497253.27
       },
       {
-        "id": "line-SO-00065-8",
+        "id": "line-rf-exp-65-26-27-8",
         "speciesId": "sp-11",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
@@ -8739,11 +8862,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4293,
         "fobValueINR": 406611.1
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00065"
   },
   {
-    "id": "inv-so-00066",
-    "invoiceNo": "SO-00066",
+    "id": "inv-rf-exp-66-26-27",
+    "invoiceNo": "RF/EXP/66/26-27",
     "invoiceDate": "2026-10-22",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-4",
@@ -8764,7 +8888,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-foc",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "SBT/ALP-024",
+    "exporterRef": "RF/EXP/66/26-27",
     "otherReferences": "SBT/ALP-024",
     "currency": "USD",
     "exchangeRate": 94.714908,
@@ -8794,7 +8918,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-22T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00066-1",
+        "id": "line-rf-exp-66-26-27-1",
         "speciesId": "sp-44",
         "sizeId": "sz-8",
         "productDescription": "FROZEN LEATHER JACKET FISH 300/500",
@@ -8808,7 +8932,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 52566.77
       },
       {
-        "id": "line-SO-00066-2",
+        "id": "line-rf-exp-66-26-27-2",
         "speciesId": "sp-44",
         "sizeId": "sz-9",
         "productDescription": "FROZEN LEATHER JACKET FISH 500/700",
@@ -8822,7 +8946,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3681947.33
       },
       {
-        "id": "line-SO-00066-3",
+        "id": "line-rf-exp-66-26-27-3",
         "speciesId": "sp-44",
         "sizeId": "sz-10",
         "productDescription": "FROZEN LEATHER JACKET FISH  700/1000",
@@ -8836,7 +8960,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3463629.47
       },
       {
-        "id": "line-SO-00066-4",
+        "id": "line-rf-exp-66-26-27-4",
         "speciesId": "sp-44",
         "sizeId": "sz-11",
         "productDescription": "FROZEN LEATHER JACKET FISH  1000/1500",
@@ -8849,11 +8973,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 432,
         "fobValueINR": 40916.84
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00066"
   },
   {
-    "id": "inv-so-00067",
-    "invoiceNo": "SO-00067",
+    "id": "inv-rf-exp-67-26-27",
+    "invoiceNo": "RF/EXP/67/26-27",
     "invoiceDate": "2026-10-19",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-23",
@@ -8874,7 +8999,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-xmn",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "HTSP-20261019-4",
+    "exporterRef": "RF/EXP/67/26-27",
     "otherReferences": "HTSP-20261019-4",
     "currency": "USD",
     "exchangeRate": 94.994644,
@@ -8904,7 +9029,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-19T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00067-1",
+        "id": "line-rf-exp-67-26-27-1",
         "speciesId": "sp-45",
         "sizeId": "sz-2",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 91/110",
@@ -8918,7 +9043,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2345474.76
       },
       {
-        "id": "line-SO-00067-2",
+        "id": "line-rf-exp-67-26-27-2",
         "speciesId": "sp-45",
         "sizeId": "sz-4",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 130/150",
@@ -8932,7 +9057,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1060140.23
       },
       {
-        "id": "line-SO-00067-3",
+        "id": "line-rf-exp-67-26-27-3",
         "speciesId": "sp-45",
         "sizeId": "sz-5",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 100/200",
@@ -8945,11 +9070,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 97429.2,
         "fobValueINR": 9255252.17
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00067"
   },
   {
-    "id": "inv-so-00068",
-    "invoiceNo": "SO-00068",
+    "id": "inv-rf-exp-68-26-27",
+    "invoiceNo": "RF/EXP/68/26-27",
     "invoiceDate": "2026-10-25",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -8970,7 +9096,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/085/2026-27",
+    "exporterRef": "RF/EXP/68/26-27",
     "otherReferences": "RF/085/2026-27",
     "currency": "USD",
     "exchangeRate": 94.939713,
@@ -9000,7 +9126,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-25T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00068-1",
+        "id": "line-rf-exp-68-26-27-1",
         "speciesId": "sp-31",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
@@ -9014,7 +9140,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 554087.15
       },
       {
-        "id": "line-SO-00068-2",
+        "id": "line-rf-exp-68-26-27-2",
         "speciesId": "sp-31",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
@@ -9028,7 +9154,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3453954.23
       },
       {
-        "id": "line-SO-00068-3",
+        "id": "line-rf-exp-68-26-27-3",
         "speciesId": "sp-31",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
@@ -9041,11 +9167,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 6923.7,
         "fobValueINR": 657334.09
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00068",
+    "internalInvoiceNo": "RF/085/2026-27"
   },
   {
-    "id": "inv-so-00069",
-    "invoiceNo": "SO-00069",
+    "id": "inv-rf-exp-69-26-27",
+    "invoiceNo": "RF/EXP/69/26-27",
     "invoiceDate": "2026-10-24",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -9066,7 +9194,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/086/2026-27",
+    "exporterRef": "RF/EXP/69/26-27",
     "otherReferences": "RF/086/2026-27",
     "currency": "USD",
     "exchangeRate": 94.94655,
@@ -9096,7 +9224,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-24T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00069-1",
+        "id": "line-rf-exp-69-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
@@ -9110,7 +9238,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 343801.46
       },
       {
-        "id": "line-SO-00069-2",
+        "id": "line-rf-exp-69-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -9124,7 +9252,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3525669.23
       },
       {
-        "id": "line-SO-00069-3",
+        "id": "line-rf-exp-69-26-27-3",
         "speciesId": "sp-42",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
@@ -9137,11 +9265,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7741.8,
         "fobValueINR": 735057.2
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00069",
+    "internalInvoiceNo": "RF/086/2026-27"
   },
   {
-    "id": "inv-so-00070",
-    "invoiceNo": "SO-00070",
+    "id": "inv-rf-exp-70-26-27",
+    "invoiceNo": "RF/EXP/70/26-27",
     "invoiceDate": "2026-10-27",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -9162,7 +9292,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/087/2026-27",
+    "exporterRef": "RF/EXP/70/26-27",
     "otherReferences": "RF/087/2026-27",
     "currency": "USD",
     "exchangeRate": 95.174645,
@@ -9192,7 +9322,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-27T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00070-1",
+        "id": "line-rf-exp-70-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
@@ -9206,7 +9336,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 328409.63
       },
       {
-        "id": "line-SO-00070-2",
+        "id": "line-rf-exp-70-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -9220,7 +9350,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 3578224.02
       },
       {
-        "id": "line-SO-00070-3",
+        "id": "line-rf-exp-70-26-27-3",
         "speciesId": "sp-42",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
@@ -9233,11 +9363,13 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7497,
         "fobValueINR": 713524.31
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00070",
+    "internalInvoiceNo": "RF/087/2026-27"
   },
   {
-    "id": "inv-so-00071",
-    "invoiceNo": "SO-00071",
+    "id": "inv-rf-exp-71-26-27",
+    "invoiceNo": "RF/EXP/71/26-27",
     "invoiceDate": "2026-10-30",
     "financialYear": "FY 2026-27",
     "consigneeId": "cust-16",
@@ -9258,7 +9390,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "finalDestinationId": "port-bkk",
     "exporterName": "M/s RELISH FOODS",
     "exporterAddress": "14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA",
-    "exporterRef": "RF/091/2026-27",
+    "exporterRef": "RF/EXP/71/26-27",
     "otherReferences": "RF/091/2026-27",
     "currency": "USD",
     "exchangeRate": 94.91268,
@@ -9288,7 +9420,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "updatedAt": "2026-10-30T00:00:00.000Z",
     "lineItems": [
       {
-        "id": "line-SO-00071-1",
+        "id": "line-rf-exp-71-26-27-1",
         "speciesId": "sp-28",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
@@ -9302,7 +9434,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 2482991.64
       },
       {
-        "id": "line-SO-00071-2",
+        "id": "line-rf-exp-71-26-27-2",
         "speciesId": "sp-28",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
@@ -9316,7 +9448,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 1194191.34
       },
       {
-        "id": "line-SO-00071-3",
+        "id": "line-rf-exp-71-26-27-3",
         "speciesId": "sp-28",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
@@ -9330,7 +9462,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 126044.04
       },
       {
-        "id": "line-SO-00071-4",
+        "id": "line-rf-exp-71-26-27-4",
         "speciesId": "sp-30",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
@@ -9344,7 +9476,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 495187.93
       },
       {
-        "id": "line-SO-00071-5",
+        "id": "line-rf-exp-71-26-27-5",
         "speciesId": "sp-30",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
@@ -9358,7 +9490,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueINR": 95624.53
       },
       {
-        "id": "line-SO-00071-6",
+        "id": "line-rf-exp-71-26-27-6",
         "speciesId": "sp-46",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S. 8/10",
@@ -9371,6 +9503,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4632,
         "fobValueINR": 439635.53
       }
-    ]
+    ],
+    "salesOrderNo": "SO-00071",
+    "internalInvoiceNo": "RF/091/2026-27"
   }
 ];

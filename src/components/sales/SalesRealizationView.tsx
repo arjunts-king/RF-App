@@ -636,15 +636,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         <div className="text-[11px] text-ink-600 font-medium whitespace-nowrap mt-0.5">
                           {inv.invoiceDate}
                         </div>
-                        {inv.orderNo && (
+                        {inv.salesOrderNo && (
+                          <div className="text-[10px] text-blue-700 font-mono font-semibold">SO: {inv.salesOrderNo}</div>
+                        )}
+                        {inv.orderNo && inv.orderNo !== inv.salesOrderNo && (
                           <div className="text-[10px] text-ink-500 font-mono">PO: {inv.orderNo}</div>
                         )}
                       </td>
 
                       {/* Consignee */}
                       <td className="py-3 px-3 align-middle max-w-[220px]">
-                        <div className="font-bold text-ink-900 truncate" title={consignee?.name}>
-                          {consignee?.name || 'Unknown Consignee'}
+                        <div className="font-bold text-ink-900 truncate" title={consignee?.name || inv.consigneeName}>
+                          {consignee?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}
                         </div>
                         <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5 truncate">
                           <Globe className="w-3 h-3 text-ink-400 shrink-0" />

@@ -100,13 +100,14 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const matchNo = inv.invoiceNo.toLowerCase().includes(q);
+      const matchSo = inv.salesOrderNo?.toLowerCase().includes(q);
       const matchOrder = inv.orderNo?.toLowerCase().includes(q);
-      const consigneeName = customerMap.get(inv.consigneeId)?.name.toLowerCase() || '';
-      const buyerName = inv.buyerId ? customerMap.get(inv.buyerId)?.name.toLowerCase() || '' : '';
+      const consigneeName = customerMap.get(inv.consigneeId)?.name.toLowerCase() || inv.consigneeName?.toLowerCase() || '';
+      const buyerName = inv.buyerId ? customerMap.get(inv.buyerId)?.name.toLowerCase() || inv.buyerName?.toLowerCase() || '' : '';
       const matchCust = consigneeName.includes(q) || buyerName.includes(q);
-      const matchPort = portMap.get(inv.portOfDischargeId)?.name.toLowerCase().includes(q);
+      const matchPort = (portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || '').toLowerCase().includes(q);
       const matchRemarks = inv.remarks?.toLowerCase().includes(q);
-      return matchNo || matchOrder || matchCust || matchPort || matchRemarks;
+      return matchNo || matchSo || matchOrder || matchCust || matchPort || matchRemarks;
     }
 
     return true;
@@ -570,18 +571,28 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                           <span className="font-mono font-bold text-rose-700">{inv.invoiceNo}</span>
                           {inv.isVoided && <StatusBadge status="Voided" />}
                         </div>
-                        {inv.orderNo && (
-                          <div className="text-[10px] text-ink-500 font-mono ml-6">PO: {inv.orderNo}</div>
-                        )}
+                        <div className="ml-6 space-y-0.5 mt-0.5">
+                          {inv.salesOrderNo && (
+                            <div className="text-[10px] text-blue-700 font-mono font-semibold">SO: {inv.salesOrderNo}</div>
+                          )}
+                          {inv.orderNo && inv.orderNo !== inv.salesOrderNo && (
+                            <div className="text-[10px] text-amber-800 font-mono">PO: {inv.orderNo}</div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Date */}
-                      <td className="py-3 px-3 text-ink-700 whitespace-nowrap">{inv.invoiceDate}</td>
+                      <td className="py-3 px-3 text-ink-700 whitespace-nowrap">
+                        <div className="font-medium">{inv.invoiceDate}</div>
+                        {inv.orderDate && inv.orderDate !== inv.invoiceDate && (
+                          <div className="text-[10px] text-ink-400">SO: {inv.orderDate}</div>
+                        )}
+                      </td>
 
                       {/* Consignee & Item Chips */}
                       <td className="py-3 px-3">
                         <div className="font-bold text-ink-900 leading-tight">
-                          {consignee?.name || 'Unknown Consignee'}
+                          {consignee?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}
                         </div>
                         <div className="text-[10px] text-ink-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                           <span className="flex items-center gap-1">

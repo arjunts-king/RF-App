@@ -292,11 +292,11 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
   // Top Foreign Buyers by FOB
   const topBuyers = useMemo(() => {
-    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; count: number }>();
+    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; count: number; nameFallback?: string; countryFallback?: string }>();
     filteredInvoices.forEach((inv) => {
-      const custId = inv.consigneeId;
+      const custId = inv.consigneeId || 'overseas-cust';
       const fobINR = inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2));
-      const curr = map.get(custId) || { fobUSD: 0, fobINR: 0, wtKg: 0, count: 0 };
+      const curr = map.get(custId) || { fobUSD: 0, fobINR: 0, wtKg: 0, count: 0, nameFallback: inv.consigneeName || inv.buyerName, countryFallback: inv.countryOfDestination };
       curr.fobUSD += inv.totalFobValueCurrency;
       curr.fobINR += fobINR;
       curr.wtKg += inv.totalWeightKg;
@@ -305,24 +305,31 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     });
 
     return Array.from(map.entries())
-      .map(([id, data]) => ({
-        id,
-        customer: customerMap.get(id),
-        ...data,
-        pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
-      }))
+      .map(([id, data]) => {
+        const cust = customerMap.get(id);
+        const name = cust?.name || data.nameFallback || 'Overseas Customer';
+        const country = cust?.country || data.countryFallback || 'Global Export';
+        return {
+          id,
+          name,
+          country,
+          customer: cust,
+          ...data,
+          pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
+        };
+      })
       .sort((a, b) => b.fobUSD - a.fobUSD)
       .slice(0, 5);
   }, [filteredInvoices, customerMap, stats.totalFobUSD]);
 
   // Top Products / Species by FOB
   const topProducts = useMemo(() => {
-    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; linesCount: number }>();
+    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; linesCount: number; nameFallback?: string; hsCodeFallback?: string }>();
     filteredInvoices.forEach((inv) => {
       inv.lineItems.forEach((l) => {
         const spId = l.speciesId;
         const lineFobINR = l.fobValueINR || Number((l.fobValueCurrency * inv.exchangeRate).toFixed(2));
-        const curr = map.get(spId) || { fobUSD: 0, fobINR: 0, wtKg: 0, linesCount: 0 };
+        const curr = map.get(spId) || { fobUSD: 0, fobINR: 0, wtKg: 0, linesCount: 0, nameFallback: l.productDescription, hsCodeFallback: l.hsCode };
         curr.fobUSD += l.fobValueCurrency;
         curr.fobINR += lineFobINR;
         curr.wtKg += l.weightKg;
@@ -332,23 +339,30 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     });
 
     return Array.from(map.entries())
-      .map(([id, data]) => ({
-        id,
-        species: speciesMap.get(id),
-        ...data,
-        pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
-      }))
+      .map(([id, data]) => {
+        const sp = speciesMap.get(id);
+        const name = sp?.name || data.nameFallback || 'Export Seafood Commodity';
+        const hsCode = sp?.hsCode || data.hsCodeFallback || '03061790';
+        return {
+          id,
+          name,
+          hsCode,
+          species: sp,
+          ...data,
+          pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
+        };
+      })
       .sort((a, b) => b.fobUSD - a.fobUSD)
       .slice(0, 5);
   }, [filteredInvoices, speciesMap, stats.totalFobUSD]);
 
   // Destination Port Distribution
   const topPorts = useMemo(() => {
-    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; count: number }>();
+    const map = new Map<string, { fobUSD: number; fobINR: number; wtKg: number; count: number; nameFallback?: string; countryFallback?: string }>();
     filteredInvoices.forEach((inv) => {
       const podId = inv.portOfDischargeId;
       const fobINR = inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2));
-      const curr = map.get(podId) || { fobUSD: 0, fobINR: 0, wtKg: 0, count: 0 };
+      const curr = map.get(podId) || { fobUSD: 0, fobINR: 0, wtKg: 0, count: 0, nameFallback: inv.portOfDischarge, countryFallback: inv.countryOfDestination };
       curr.fobUSD += inv.totalFobValueCurrency;
       curr.fobINR += fobINR;
       curr.wtKg += inv.totalWeightKg;
@@ -357,12 +371,21 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     });
 
     return Array.from(map.entries())
-      .map(([id, data]) => ({
-        id,
-        port: portMap.get(id),
-        ...data,
-        pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
-      }))
+      .map(([id, data]) => {
+        const port = portMap.get(id);
+        const name = port?.name || data.nameFallback || 'Discharge Port';
+        const country = port?.country || data.countryFallback || 'Destination';
+        const code = port?.code || '';
+        return {
+          id,
+          name,
+          country,
+          code,
+          port,
+          ...data,
+          pct: stats.totalFobUSD > 0 ? (data.fobUSD / stats.totalFobUSD) * 100 : 0
+        };
+      })
       .sort((a, b) => b.fobUSD - a.fobUSD)
       .slice(0, 4);
   }, [filteredInvoices, portMap, stats.totalFobUSD]);
@@ -425,9 +448,9 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
       return [
         `"${inv.invoiceNo}"`,
         `"${inv.invoiceDate}"`,
-        `"${cust?.name || 'Unknown'}"`,
-        `"${cust?.country || 'Global'}"`,
-        `"${pod?.name || 'POD'}"`,
+        `"${cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}"`,
+        `"${cust?.country || inv.countryOfDestination || 'Global Export'}"`,
+        `"${pod?.name || inv.portOfDischarge || 'POD'}"`,
         inv.exchangeRate,
         inv.totalWeightKg,
         inv.totalAmountCurrency.toFixed(2),
@@ -1073,8 +1096,8 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                 <div key={b.id} className="p-2.5 bg-gray-50/70 hover:bg-rose-50/30 rounded-xl transition space-y-1.5 border border-gray-100">
                   <div className="flex items-center justify-between text-xs">
                     <div>
-                      <strong className="text-ink-900">{b.customer?.name || 'Unknown Buyer'}</strong>
-                      <span className="text-[10px] text-ink-500 block">{b.customer?.country || 'Global Export'}</span>
+                      <strong className="text-ink-900">{b.name}</strong>
+                      <span className="text-[10px] text-ink-500 block">{b.country}</span>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-rose-700">{formatUSD(b.fobUSD)}</div>
@@ -1111,8 +1134,8 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                 <div key={p.id} className="p-2.5 bg-gray-50/70 hover:bg-rose-50/30 rounded-xl transition space-y-1.5 border border-gray-100">
                   <div className="flex items-center justify-between text-xs">
                     <div>
-                      <strong className="text-ink-900">{p.species?.name || 'Export Product'}</strong>
-                      <span className="text-[10px] text-ink-500 block">HS Code: {p.species?.hsCode || '03061790'}</span>
+                      <strong className="text-ink-900">{p.name}</strong>
+                      <span className="text-[10px] text-ink-500 block">HS Code: {p.hsCode}</span>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-rose-700">{formatUSD(p.fobUSD)}</div>
@@ -1149,8 +1172,8 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                 <div key={p.id} className="p-2.5 bg-gray-50/70 hover:bg-rose-50/30 rounded-xl transition space-y-1.5 border border-gray-100">
                   <div className="flex items-center justify-between text-xs">
                     <div>
-                      <strong className="text-ink-900">{p.port?.name || 'Discharge Port'}</strong>
-                      <span className="text-[10px] text-ink-500 block">{p.port?.country || 'Destination'} ({p.port?.code})</span>
+                      <strong className="text-ink-900">{p.name}</strong>
+                      <span className="text-[10px] text-ink-500 block">{p.country}{p.code ? ` (${p.code})` : ''}</span>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-rose-700">{formatUSD(p.fobUSD)}</div>
@@ -1243,11 +1266,18 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="font-bold text-ink-900 font-mono">{inv.invoiceNo}</div>
-                        <div className="text-[11px] text-ink-500">{inv.invoiceDate}</div>
+                        <div className="text-[11px] text-ink-500 flex items-center gap-1.5">
+                          <span>{inv.invoiceDate}</span>
+                          {inv.salesOrderNo && (
+                            <span className="font-mono text-indigo-700 bg-indigo-50 px-1 rounded text-[10px] font-semibold border border-indigo-100">
+                              {inv.salesOrderNo}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="font-bold text-ink-800">{cust?.name || 'Unknown Buyer'}</div>
-                        <div className="text-[11px] text-ink-500">{pod?.name || 'POD'} ({cust?.country || 'Global'})</div>
+                        <div className="font-bold text-ink-800">{cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}</div>
+                        <div className="text-[11px] text-ink-500">{pod?.name || inv.portOfDischarge || 'POD'} ({cust?.country || inv.countryOfDestination || 'Global'})</div>
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-semibold">
                         {formatKg(inv.totalWeightKg)}

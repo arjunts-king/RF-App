@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
+import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { MultiSelectFilter } from '../common/MultiSelectFilter';
@@ -18,7 +19,13 @@ import {
   Fish,
   Ship,
   DollarSign,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  Search,
+  Boxes,
+  ArrowUpDown,
+  Table,
+  LayoutGrid
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -33,6 +40,12 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+
+  // Product Share Matrix State
+  const [matrixSearch, setMatrixSearch] = useState('');
+  const [matrixSortBy, setMatrixSortBy] = useState<'value' | 'weight' | 'rate' | 'shipments' | 'name'>('value');
+  const [matrixSortDir, setMatrixSortDir] = useState<'asc' | 'desc'>('desc');
+  const [matrixViewMode, setMatrixViewMode] = useState<'table' | 'cards'>('table');
 
   // Lookups
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
@@ -157,32 +170,164 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     );
   });
   const topCustomers = Array.from(custDistributionMap.entries())
-    .map(([id, val]) => ({
-      name: customerMap.get(id)?.name || 'Unknown',
-      val,
-      pct: totalUSD > 0 ? (val / totalUSD) * 100 : 0
-    }))
+    .map(([id, val]) => {
+      const matchInv = filteredInvoices.find((i) => i.consigneeId === id);
+      return {
+        name: customerMap.get(id)?.name || matchInv?.consigneeName || matchInv?.buyerName || 'Overseas Buyer',
+        val,
+        pct: totalUSD > 0 ? (val / totalUSD) * 100 : 0
+      };
+    })
     .sort((a, b) => b.val - a.val)
     .slice(0, 5);
 
-  // Product-wise Distribution (Top 5)
-  const prodDistributionMap = new Map<string, number>();
-  filteredInvoices.forEach((inv) => {
-    inv.lineItems.forEach((l) => {
-      prodDistributionMap.set(
-        l.speciesId,
-        (prodDistributionMap.get(l.speciesId) || 0) + l.amountCurrency
-      );
+  // Complete Product Share Matrix Computation
+  const productShareMap = useMemo(() => {
+    const map = new Map<string, {
+      id: string;
+      name: string;
+      scientificName?: string;
+      hsCode: string;
+      invoices: Set<string>;
+      totalWeightKg: number;
+      totalCartons: number;
+      totalUSD: number;
+      minRate: number;
+      maxRate: number;
+    }>();
+
+    filteredInvoices.forEach((inv) => {
+      inv.lineItems.forEach((l) => {
+        const sp = speciesMap.get(l.speciesId);
+        const name = (sp?.name || l.productDescription || 'Export Seafood').trim();
+        const key = (l.speciesId || name).trim().toLowerCase();
+        const hs = l.hsCode || sp?.hsCode || '03061790';
+        const wt = Number(l.weightKg) || 0;
+        const ctns = Number(l.cartonsCount) || 0;
+        const usd = Number(l.amountCurrency) || 0;
+        const rate = Number(l.ratePerKg) || (wt > 0 ? usd / wt : 0);
+
+        if (!map.has(key)) {
+          map.set(key, {
+            id: l.speciesId || key,
+            name,
+            scientificName: sp?.scientificName,
+            hsCode: hs,
+            invoices: new Set(),
+            totalWeightKg: 0,
+            totalCartons: 0,
+            totalUSD: 0,
+            minRate: rate > 0 ? rate : Infinity,
+            maxRate: rate > 0 ? rate : 0
+          });
+        }
+
+        const item = map.get(key)!;
+        item.invoices.add(inv.invoiceNo);
+        item.totalWeightKg += wt;
+        item.totalCartons += ctns;
+        item.totalUSD += usd;
+        if (rate > 0) {
+          if (rate < item.minRate) item.minRate = rate;
+          if (rate > item.maxRate) item.maxRate = rate;
+        }
+      });
     });
-  });
-  const topProducts = Array.from(prodDistributionMap.entries())
-    .map(([id, val]) => ({
-      name: speciesMap.get(id)?.name || 'Unknown',
-      val,
-      pct: totalUSD > 0 ? (val / totalUSD) * 100 : 0
-    }))
-    .sort((a, b) => b.val - a.val)
-    .slice(0, 5);
+
+    return map;
+  }, [filteredInvoices, speciesMap]);
+
+  const fullProductShareMatrix = useMemo(() => {
+    return Array.from(productShareMap.values()).map((item) => {
+      const volumeSharePct = totalWeightKg > 0 ? (item.totalWeightKg / totalWeightKg) * 100 : 0;
+      const valueSharePct = totalUSD > 0 ? (item.totalUSD / totalUSD) * 100 : 0;
+      const avgRatePerKg = item.totalWeightKg > 0 ? item.totalUSD / item.totalWeightKg : 0;
+      const safeMinRate = item.minRate === Infinity ? avgRatePerKg : item.minRate;
+
+      return {
+        id: item.id,
+        name: item.name,
+        scientificName: item.scientificName,
+        hsCode: item.hsCode,
+        invoicesCount: item.invoices.size,
+        totalWeightKg: item.totalWeightKg,
+        volumeSharePct,
+        totalCartons: item.totalCartons,
+        totalUSD: item.totalUSD,
+        valueSharePct,
+        avgRatePerKg,
+        minRate: safeMinRate,
+        maxRate: item.maxRate || avgRatePerKg,
+        indicativeINR: item.totalUSD * 84.5
+      };
+    }).sort((a, b) => b.totalUSD - a.totalUSD);
+  }, [productShareMap, totalWeightKg, totalUSD]);
+
+  // Filtered and sorted product share matrix
+  const displayProductMatrix = useMemo(() => {
+    let list = fullProductShareMatrix;
+    if (matrixSearch) {
+      const q = matrixSearch.toLowerCase();
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.hsCode.toLowerCase().includes(q) ||
+        (p.scientificName || '').toLowerCase().includes(q)
+      );
+    }
+
+    list = [...list].sort((a, b) => {
+      let diff = 0;
+      if (matrixSortBy === 'value') diff = b.totalUSD - a.totalUSD;
+      else if (matrixSortBy === 'weight') diff = b.totalWeightKg - a.totalWeightKg;
+      else if (matrixSortBy === 'rate') diff = b.avgRatePerKg - a.avgRatePerKg;
+      else if (matrixSortBy === 'shipments') diff = b.invoicesCount - a.invoicesCount;
+      else if (matrixSortBy === 'name') diff = a.name.localeCompare(b.name);
+
+      return matrixSortDir === 'desc' ? diff : -diff;
+    });
+
+    return list;
+  }, [fullProductShareMatrix, matrixSearch, matrixSortBy, matrixSortDir]);
+
+  // Top 6 products for visual card widget
+  const topProducts = useMemo(() => fullProductShareMatrix.slice(0, 6), [fullProductShareMatrix]);
+
+  // Export Matrix CSV handler
+  const handleExportMatrixCSV = () => {
+    const data = displayProductMatrix.map((p, idx) => ({
+      Rank: idx + 1,
+      Commodity: p.name,
+      ScientificName: p.scientificName || '',
+      HSCode: p.hsCode,
+      Shipments: p.invoicesCount,
+      NetWeightKg: p.totalWeightKg,
+      VolumeSharePct: `${p.volumeSharePct.toFixed(2)}%`,
+      Cartons: p.totalCartons,
+      TotalSalesUSD: p.totalUSD,
+      ValueSharePct: `${p.valueSharePct.toFixed(2)}%`,
+      WeightedAvgRateUSDPerKg: p.avgRatePerKg.toFixed(2),
+      PriceSpreadUSD: `$${p.minRate.toFixed(2)} – $${p.maxRate.toFixed(2)}`,
+      IndicativeINR: p.indicativeINR
+    }));
+
+    const csv = convertToCSV(data, [
+      { key: 'Rank', label: '#' },
+      { key: 'Commodity', label: 'Export Commodity / Product' },
+      { key: 'ScientificName', label: 'Scientific Name' },
+      { key: 'HSCode', label: 'HS Code' },
+      { key: 'Shipments', label: 'Shipments' },
+      { key: 'NetWeightKg', label: 'Total Net Wt (Kg)' },
+      { key: 'VolumeSharePct', label: 'Volume Share %' },
+      { key: 'Cartons', label: 'Total Cartons' },
+      { key: 'TotalSalesUSD', label: 'Total Sales (USD)' },
+      { key: 'ValueSharePct', label: 'Value Share %' },
+      { key: 'WeightedAvgRateUSDPerKg', label: 'Weighted Avg Rate ($/Kg)' },
+      { key: 'PriceSpreadUSD', label: 'Price Spread ($/Kg)' },
+      { key: 'IndicativeINR', label: 'Indicative Value (INR)' }
+    ]);
+
+    downloadFile(csv, `Commercial_Product_Share_Matrix_${new Date().toISOString().split('T')[0]}.csv`);
+  };
 
   // Destination Port-wise Distribution (Top 4)
   const podDistributionMap = new Map<string, number>();
@@ -193,12 +338,15 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     );
   });
   const topPorts = Array.from(podDistributionMap.entries())
-    .map(([id, wt]) => ({
-      name: portMap.get(id)?.name || 'Unknown',
-      code: portMap.get(id)?.code || 'POD',
-      wt,
-      pct: totalWeightKg > 0 ? (wt / totalWeightKg) * 100 : 0
-    }))
+    .map(([id, wt]) => {
+      const matchInv = filteredInvoices.find((i) => i.portOfDischargeId === id);
+      return {
+        name: portMap.get(id)?.name || matchInv?.portOfDischarge || 'Discharge Port',
+        code: portMap.get(id)?.code || 'POD',
+        wt,
+        pct: totalWeightKg > 0 ? (wt / totalWeightKg) * 100 : 0
+      };
+    })
     .sort((a, b) => b.wt - a.wt)
     .slice(0, 4);
 
@@ -738,27 +886,50 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
 
         {/* Product / Species Distribution */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-rose-700" />
-            Product Export Share
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-rose-700" />
+              Product Export Share
+            </h3>
+            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+              {fullProductShareMatrix.length} Commodities
+            </span>
+          </div>
 
           <div className="space-y-3 pt-1">
             {topProducts.length === 0 ? (
               <p className="text-xs text-ink-500 py-6 text-center">No product data recorded.</p>
             ) : (
               topProducts.map((p) => (
-                <div key={p.name} className="space-y-1">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="truncate max-w-[170px] text-ink-900">{p.name}</span>
-                    <span className="text-ink-700 tabular-nums">${p.val.toLocaleString()} ({p.pct.toFixed(1)}%)</span>
+                <div key={p.id} className="space-y-1">
+                  <div className="flex justify-between items-baseline text-xs font-semibold">
+                    <span className="truncate max-w-[170px] text-ink-900 font-bold" title={p.name}>
+                      {p.name}
+                    </span>
+                    <span className="text-ink-700 tabular-nums font-bold text-[11px]">
+                      ${p.totalUSD.toLocaleString()} ({p.valueSharePct.toFixed(1)}%)
+                    </span>
                   </div>
-                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.pct}%` }} />
+                  <div className="flex justify-between items-center text-[10px] text-ink-500 font-mono">
+                    <span>{formatKg(p.totalWeightKg)} ({p.volumeSharePct.toFixed(1)}% wt)</span>
+                    <span className="text-emerald-700 font-bold">${p.avgRatePerKg.toFixed(2)}/kg</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden flex">
+                    <div className="h-full bg-emerald-500" style={{ width: `${p.valueSharePct}%` }} title="Value share" />
                   </div>
                 </div>
               ))
             )}
+          </div>
+
+          <div className="pt-2 border-t border-gray-100">
+            <a
+              href="#commercial-product-share-matrix"
+              className="text-[11px] font-bold text-rose-700 hover:text-rose-900 flex items-center justify-between group"
+            >
+              <span>Explore Full Product Share Matrix ({fullProductShareMatrix.length} items)</span>
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </a>
           </div>
         </div>
 
@@ -800,6 +971,292 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             )}
           </div>
         </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* FULL COMMERCIAL PRODUCT SHARE MATRIX (COMPLETE INTERACTIVE COMPONENT) */}
+      {/* ==================================================================== */}
+      <div id="commercial-product-share-matrix" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-6">
+        {/* Header & Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-ink-900 flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-rose-700" />
+                Commercial Product Share Matrix
+              </h3>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                {fullProductShareMatrix.length} Export Commodities
+              </span>
+            </div>
+            <p className="text-xs text-ink-500 mt-0.5">
+              Comprehensive volumetric, revenue share, and $/Kg realization cross-tabulation across all shipments.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Box */}
+            <div className="relative min-w-[200px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search commodity, HS code..."
+                value={matrixSearch}
+                onChange={(e) => setMatrixSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            {/* Sort Selector */}
+            <select
+              value={matrixSortBy}
+              onChange={(e) => setMatrixSortBy(e.target.value as any)}
+              className="text-xs font-semibold px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="value">Sort: Sales Value (USD)</option>
+              <option value="weight">Sort: Net Weight (Kg)</option>
+              <option value="rate">Sort: Realization Rate ($/Kg)</option>
+              <option value="shipments">Sort: Shipment Count</option>
+              <option value="name">Sort: Commodity Name</option>
+            </select>
+
+            <button
+              onClick={() => setMatrixSortDir(matrixSortDir === 'desc' ? 'asc' : 'desc')}
+              className="p-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-ink-600 transition"
+              title={matrixSortDir === 'desc' ? 'Descending' : 'Ascending'}
+              aria-label="Toggle sort direction"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+              <button
+                onClick={() => setMatrixViewMode('table')}
+                className={`p-1.5 rounded-lg text-xs font-bold transition ${
+                  matrixViewMode === 'table' ? 'bg-white text-rose-700 shadow-xs' : 'text-ink-600 hover:text-ink-900'
+                }`}
+                title="Table View"
+                aria-label="Table View"
+              >
+                <Table className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setMatrixViewMode('cards')}
+                className={`p-1.5 rounded-lg text-xs font-bold transition ${
+                  matrixViewMode === 'cards' ? 'bg-white text-rose-700 shadow-xs' : 'text-ink-600 hover:text-ink-900'
+                }`}
+                title="Grid Cards View"
+                aria-label="Grid Cards View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* CSV Export */}
+            <button
+              onClick={handleExportMatrixCSV}
+              className="px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Matrix CSV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Executive KPI Summary Tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <span className="text-[10px] font-bold text-ink-500 uppercase block">Active Commodities</span>
+            <span className="text-lg font-black text-ink-900 mt-0.5 block">{fullProductShareMatrix.length}</span>
+            <span className="text-[10px] text-ink-500 mt-0.5 block">Across {totalInvoices} Invoices</span>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <span className="text-[10px] font-bold text-ink-500 uppercase block">Total Net Weight</span>
+            <span className="text-lg font-black text-ink-900 mt-0.5 block">{formatKg(totalWeightKg)}</span>
+            <span className="text-[10px] text-ink-500 mt-0.5 block">{fullProductShareMatrix.reduce((s, p) => s + p.totalCartons, 0).toLocaleString()} Cartons</span>
+          </div>
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
+            <span className="text-[10px] font-bold text-rose-800 uppercase block">Total Export Value</span>
+            <span className="text-lg font-black text-rose-950 mt-0.5 block">${totalUSD.toLocaleString()}</span>
+            <span className="text-[10px] text-rose-800 font-semibold mt-0.5 block">≈ {formatINR(totalUSD * 84.5)}</span>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase block">Weighted Realization</span>
+            <span className="text-lg font-black text-emerald-950 mt-0.5 block">${avgUSDPerKg.toFixed(2)}/kg</span>
+            <span className="text-[10px] text-emerald-800 font-semibold mt-0.5 block">Overall Portfolio Avg</span>
+          </div>
+          <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-200">
+            <span className="text-[10px] font-bold text-cyan-800 uppercase block">Top Commodity</span>
+            <span className="text-xs font-black text-cyan-950 mt-1 block truncate" title={fullProductShareMatrix[0]?.name || 'N/A'}>
+              {fullProductShareMatrix[0]?.name || 'N/A'}
+            </span>
+            <span className="text-[10px] text-cyan-800 font-bold mt-0.5 block">
+              {fullProductShareMatrix[0] ? `$${fullProductShareMatrix[0].totalUSD.toLocaleString()} (${fullProductShareMatrix[0].valueSharePct.toFixed(1)}%)` : '—'}
+            </span>
+          </div>
+        </div>
+
+        {/* View Mode 1: Table View */}
+        {matrixViewMode === 'table' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-gray-50 text-[10px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                  <th className="py-2.5 px-3 text-center">#</th>
+                  <th className="py-2.5 px-3">Export Commodity / Species</th>
+                  <th className="py-2.5 px-3 font-mono">HS Code</th>
+                  <th className="py-2.5 px-3 text-center">Shipments</th>
+                  <th className="py-2.5 px-3 text-right">Net Wt (Kg)</th>
+                  <th className="py-2.5 px-3 text-right">Vol Share</th>
+                  <th className="py-2.5 px-3 text-right">Cartons</th>
+                  <th className="py-2.5 px-3 text-right">Sales Value (USD)</th>
+                  <th className="py-2.5 px-3 text-right">Value Share</th>
+                  <th className="py-2.5 px-3 text-right">Avg Rate ($/Kg)</th>
+                  <th className="py-2.5 px-3 text-right">Price Spread</th>
+                  <th className="py-2.5 px-3 text-right">Indicative INR</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 font-medium">
+                {displayProductMatrix.length === 0 ? (
+                  <tr>
+                    <td colSpan={12} className="py-8 text-center text-ink-500">
+                      No commodities matched the search or filter query.
+                    </td>
+                  </tr>
+                ) : (
+                  displayProductMatrix.map((p, idx) => (
+                    <tr key={p.id} className="hover:bg-rose-50/20 transition-colors">
+                      <td className="py-2.5 px-3 text-center font-mono text-ink-400 font-semibold">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-extrabold text-ink-900">{p.name}</div>
+                        {p.scientificName && (
+                          <div className="text-[10px] italic text-ink-400 font-normal">{p.scientificName}</div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-ink-600 font-medium">{p.hsCode}</td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-gray-100 text-ink-700 font-bold text-[10px]">
+                          {p.invoicesCount} inv
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-ink-900 tabular-nums">
+                        {formatKg(p.totalWeightKg)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <div className="font-semibold text-ink-700 tabular-nums">{p.volumeSharePct.toFixed(1)}%</div>
+                        <div className="h-1 w-14 bg-gray-100 rounded-full overflow-hidden ml-auto mt-0.5">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, p.volumeSharePct)}%` }} />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-ink-600 tabular-nums">
+                        {p.totalCartons > 0 ? p.totalCartons.toLocaleString() : '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-black text-rose-950 tabular-nums">
+                        ${p.totalUSD.toLocaleString()}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <div className="font-bold text-rose-800 tabular-nums">{p.valueSharePct.toFixed(1)}%</div>
+                        <div className="h-1 w-14 bg-gray-100 rounded-full overflow-hidden ml-auto mt-0.5">
+                          <div className="h-full bg-rose-600 rounded-full" style={{ width: `${Math.min(100, p.valueSharePct)}%` }} />
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700 tabular-nums">
+                        ${p.avgRatePerKg.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono text-[11px] text-amber-800 tabular-nums">
+                        ${p.minRate.toFixed(2)} – ${p.maxRate.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-ink-700 font-semibold tabular-nums">
+                        {formatINR(p.indicativeINR)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50/90 font-bold text-ink-900 border-t-2 border-gray-200">
+                  <td colSpan={4} className="py-3 px-3 uppercase text-[10px] text-ink-500 text-right">
+                    Total Portfolio ({displayProductMatrix.length} commodities)
+                  </td>
+                  <td className="py-3 px-3 text-right font-extrabold text-ink-900">
+                    {formatKg(displayProductMatrix.reduce((s, p) => s + p.totalWeightKg, 0))}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold text-blue-700">
+                    {displayProductMatrix.reduce((s, p) => s + p.volumeSharePct, 0).toFixed(1)}%
+                  </td>
+                  <td className="py-3 px-3 text-right text-ink-700 font-bold">
+                    {displayProductMatrix.reduce((s, p) => s + p.totalCartons, 0).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black text-rose-950 text-sm">
+                    ${displayProductMatrix.reduce((s, p) => s + p.totalUSD, 0).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold text-rose-800">
+                    {displayProductMatrix.reduce((s, p) => s + p.valueSharePct, 0).toFixed(1)}%
+                  </td>
+                  <td className="py-3 px-3 text-right font-black text-emerald-800">
+                    ${(displayProductMatrix.reduce((s, p) => s + p.totalUSD, 0) / (displayProductMatrix.reduce((s, p) => s + p.totalWeightKg, 0) || 1)).toFixed(2)}/kg
+                  </td>
+                  <td></td>
+                  <td className="py-3 px-3 text-right font-bold text-ink-900">
+                    {formatINR(displayProductMatrix.reduce((s, p) => s + p.indicativeINR, 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        {/* View Mode 2: Grid Cards View */}
+        {matrixViewMode === 'cards' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayProductMatrix.map((p, idx) => (
+              <div key={p.id} className="p-4 bg-gray-50/80 hover:bg-rose-50/30 rounded-2xl border border-gray-200 transition space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-mono text-ink-400 font-bold">#{idx + 1}</span>
+                    <h4 className="text-sm font-extrabold text-ink-900 leading-snug">{p.name}</h4>
+                    <span className="text-[11px] font-mono text-ink-500">HS {p.hsCode}</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-gray-200 text-ink-700">
+                    {p.invoicesCount} inv
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-200/60">
+                  <div>
+                    <span className="text-[10px] text-ink-400 block font-bold uppercase">Weight</span>
+                    <span className="font-extrabold text-ink-900">{formatKg(p.totalWeightKg)}</span>
+                    <span className="text-[10px] text-blue-700 font-semibold block">{p.volumeSharePct.toFixed(1)}% vol</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-ink-400 block font-bold uppercase">Sales USD</span>
+                    <span className="font-black text-rose-950">${p.totalUSD.toLocaleString()}</span>
+                    <span className="text-[10px] text-rose-700 font-semibold block">{p.valueSharePct.toFixed(1)}% val</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-ink-400 block font-bold uppercase">Weighted Avg</span>
+                    <span className="font-extrabold text-emerald-700">${p.avgRatePerKg.toFixed(2)}/kg</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-ink-400 block font-bold uppercase">Spread</span>
+                    <span className="font-mono text-[11px] text-amber-800 font-bold">${p.minRate.toFixed(2)} – ${p.maxRate.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[10px] text-ink-500 font-medium">
+                    <span>Revenue Share Bar</span>
+                    <span className="font-bold text-rose-700">{p.valueSharePct.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-rose-600 rounded-full" style={{ width: `${Math.min(100, p.valueSharePct)}%` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

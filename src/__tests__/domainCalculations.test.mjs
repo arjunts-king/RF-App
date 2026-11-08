@@ -1721,6 +1721,7 @@ test('Commercial Reports Hub: Component-level filtering across Invoice Register,
     {
       id: 'inv-1',
       invoiceNo: 'RF/EXP/01/26-27',
+      salesOrderNo: 'SO-00001',
       invoiceDate: '2026-04-10',
       consigneeId: 'cust-1',
       portOfDischargeId: 'port-cn-tao',
@@ -1735,7 +1736,8 @@ test('Commercial Reports Hub: Component-level filtering across Invoice Register,
     },
     {
       id: 'inv-2',
-      invoiceNo: 'SO-00002',
+      invoiceNo: 'RF/EXP/02/26-27',
+      salesOrderNo: 'SO-00002',
       invoiceDate: '2026-05-15',
       consigneeId: 'cust-2',
       portOfDischargeId: 'port-cn-foc',
@@ -1750,7 +1752,8 @@ test('Commercial Reports Hub: Component-level filtering across Invoice Register,
     },
     {
       id: 'inv-3',
-      invoiceNo: 'SO-00003',
+      invoiceNo: 'RF/EXP/03/26-27',
+      salesOrderNo: 'SO-00003',
       invoiceDate: '2026-06-20',
       consigneeId: 'cust-1',
       portOfDischargeId: 'port-th-sgz',
@@ -1778,18 +1781,18 @@ test('Commercial Reports Hub: Component-level filtering across Invoice Register,
     (inv) => inv.balanceRealizationCurrency > 0 && (!inv.advanceReceivedCurrency || inv.advanceReceivedCurrency === 0)
   );
   assert.equal(unrealizedOnly.length, 1);
-  assert.equal(unrealizedOnly[0].invoiceNo, 'SO-00002');
+  assert.equal(unrealizedOnly[0].invoiceNo, 'RF/EXP/02/26-27');
 
   const partialOnly = sampleInvoices.filter(
     (inv) => inv.balanceRealizationCurrency > 0 && inv.advanceReceivedCurrency > 0
   );
   assert.equal(partialOnly.length, 1);
-  assert.equal(partialOnly[0].invoiceNo, 'SO-00003');
+  assert.equal(partialOnly[0].invoiceNo, 'RF/EXP/03/26-27');
 
   // 3. Discharge Port Filtering
   const thailandInvoices = sampleInvoices.filter((inv) => inv.portOfDischargeId === 'port-th-sgz');
   assert.equal(thailandInvoices.length, 1);
-  assert.equal(thailandInvoices[0].invoiceNo, 'SO-00003');
+  assert.equal(thailandInvoices[0].invoiceNo, 'RF/EXP/03/26-27');
 });
 
 test('Commercial Reports Hub: Invoice & Product Cross-Analysis transforms nested line items into granular hierarchies, itemized flat views, and product price-spread matrices', () => {

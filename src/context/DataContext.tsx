@@ -307,7 +307,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
+  const SALES_DATASET_VERSION = 'v71_pure_uploaded_invoices_v3';
+
   const [species, setSpecies] = useState<Species[]>(() => {
+    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
+    if (currentVersion !== SALES_DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(VERIFIED_SPECIES));
+      return VERIFIED_SPECIES;
+    }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
     const existingNames = new Set(list.map((sp) => sp.name.trim().toLowerCase()));
@@ -321,6 +328,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [sizes, setSizes] = useState<Size[]>(() => {
+    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
+    if (currentVersion !== SALES_DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}sizes`, JSON.stringify(VERIFIED_SIZES));
+      return VERIFIED_SIZES;
+    }
     const saved = localStorage.getItem(`${DB_PREFIX}sizes`);
     const list: Size[] = saved ? JSON.parse(saved) : INITIAL_SIZES;
     const existingNames = new Set(list.map((sz) => sz.name.trim().toUpperCase()));
@@ -477,9 +489,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
-    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
-    if (currentVersion !== DATASET_VERSION) {
+    if (currentVersion !== SALES_DATASET_VERSION) {
       localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(VERIFIED_CUSTOMERS));
       return VERIFIED_CUSTOMERS;
     }
@@ -497,9 +508,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
-    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
-    if (currentVersion !== DATASET_VERSION) {
+    if (currentVersion !== SALES_DATASET_VERSION) {
       localStorage.setItem(`${DB_PREFIX}ports`, JSON.stringify(VERIFIED_PORTS));
       return VERIFIED_PORTS;
     }
@@ -516,12 +526,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
-    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
 
     // Force-sync to pure 71 uploaded export invoices from the uploaded Excel
-    if (currentVersion !== DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}sales_dataset_version`, DATASET_VERSION);
+    if (currentVersion !== SALES_DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}sales_dataset_version`, SALES_DATASET_VERSION);
       localStorage.setItem(`${DB_PREFIX}sales_invoices`, JSON.stringify(VERIFIED_SALES_INVOICES));
       return VERIFIED_SALES_INVOICES;
     }

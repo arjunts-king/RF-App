@@ -205,7 +205,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(inv.invoiceNo || '')} DTD. ${formatDDMMYYYY(inv.invoiceDate)}</w:t></w:r>
-        ${inv.exporterRef && inv.exporterRef !== inv.invoiceNo ? `<w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">   ${escapeXml(inv.exporterRef)}</w:t></w:r>` : ''}
+        ${(inv.exporterRef && inv.exporterRef !== inv.invoiceNo) || inv.internalInvoiceNo || (inv.salesOrderNo && inv.salesOrderNo !== inv.invoiceNo) ? `<w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">   ${escapeXml(inv.exporterRef || inv.internalInvoiceNo || inv.salesOrderNo || '')}</w:t></w:r>` : ''}
       </w:p>
     </w:tc>
   </w:tr>

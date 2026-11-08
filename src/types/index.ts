@@ -413,6 +413,8 @@ export interface SalesInvoice {
   buyerId?: string; // Foreign key to Customer (Buyer, if other than Consignee)
   orderNo?: string;
   orderDate?: string;
+  salesOrderNo?: string;
+  internalInvoiceNo?: string;
   portOfLoadingId: string; // Foreign key to PortMaster
   portOfDischargeId: string; // Foreign key to PortMaster
   finalDestinationId: string; // Foreign key to PortMaster

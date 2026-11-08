@@ -45,7 +45,10 @@ export interface EnrichedInvoiceProductLine {
   invoiceId: string;
   invoiceNo: string;
   invoiceDate: string;
+  salesOrderNo?: string;
   orderNo?: string;
+  orderDate?: string;
+  internalInvoiceNo?: string;
   customerId: string;
   customerName: string;
   customerCountry: string;
@@ -222,9 +225,12 @@ export const SalesReportsHub: React.FC = () => {
           invoiceId: inv.id,
           invoiceNo: inv.invoiceNo,
           invoiceDate: inv.invoiceDate,
+          salesOrderNo: inv.salesOrderNo || (inv.orderNo?.startsWith('SO-') ? inv.orderNo : undefined),
           orderNo: inv.orderNo,
+          orderDate: inv.orderDate || inv.invoiceDate,
+          internalInvoiceNo: inv.internalInvoiceNo,
           customerId: inv.consigneeId,
-          customerName: cust?.name || 'Overseas Buyer',
+          customerName: cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Buyer',
           customerCountry: cust?.country || inv.countryOfDestination || 'Export',
           portOfDischargeId: inv.portOfDischargeId,
           portOfDischargeName: pod?.name || inv.portOfDischarge || 'Discharge Port',
@@ -262,12 +268,13 @@ export const SalesReportsHub: React.FC = () => {
       if (invProdSearch) {
         const q = invProdSearch.toLowerCase();
         const mInv = line.invoiceNo.toLowerCase().includes(q);
+        const mSo = (line.salesOrderNo || '').toLowerCase().includes(q);
         const mProd = line.productName.toLowerCase().includes(q);
         const mGrade = line.gradeSize.toLowerCase().includes(q);
         const mCust = line.customerName.toLowerCase().includes(q);
         const mHs = line.hsCode.toLowerCase().includes(q);
         const mOrder = (line.orderNo || '').toLowerCase().includes(q);
-        if (!mInv && !mProd && !mGrade && !mCust && !mHs && !mOrder) return false;
+        if (!mInv && !mSo && !mProd && !mGrade && !mCust && !mHs && !mOrder) return false;
       }
       return true;
     });
@@ -1038,7 +1045,10 @@ export const SalesReportsHub: React.FC = () => {
       const data = registerInvoices.map((inv) => ({
         InvoiceNo: inv.invoiceNo,
         Date: inv.invoiceDate,
-        Customer: customerMap.get(inv.consigneeId)?.name || '',
+        SalesOrderNo: inv.salesOrderNo || '',
+        SalesOrderDate: inv.orderDate || '',
+        BuyerOrderRef: inv.orderNo && inv.orderNo !== inv.salesOrderNo ? inv.orderNo : '',
+        Customer: customerMap.get(inv.consigneeId)?.name || inv.consigneeName || inv.buyerName || '',
         POD: portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || '',
         WeightKg: inv.totalWeightKg,
         AmountUSD: inv.totalAmountCurrency,
@@ -1047,8 +1057,11 @@ export const SalesReportsHub: React.FC = () => {
         BalanceUSD: inv.balanceRealizationCurrency
       }));
       const csv = convertToCSV(data, [
-        { key: 'InvoiceNo', label: 'Invoice No' },
+        { key: 'InvoiceNo', label: 'Commercial Invoice No' },
         { key: 'Date', label: 'Invoice Date' },
+        { key: 'SalesOrderNo', label: 'Sales Order No' },
+        { key: 'SalesOrderDate', label: 'Sales Order Date' },
+        { key: 'BuyerOrderRef', label: 'Buyer Order / PO Ref' },
         { key: 'Customer', label: 'Customer' },
         { key: 'POD', label: 'Discharge Port' },
         { key: 'WeightKg', label: 'Net Weight (Kg)' },
@@ -1062,6 +1075,9 @@ export const SalesReportsHub: React.FC = () => {
       const data = filteredInvoiceProductLines.map((l) => ({
         InvoiceNo: l.invoiceNo,
         InvoiceDate: l.invoiceDate,
+        SalesOrderNo: l.salesOrderNo || '',
+        SalesOrderDate: l.orderDate || '',
+        BuyerOrderRef: l.orderNo && l.orderNo !== l.salesOrderNo ? l.orderNo : '',
         Customer: l.customerName,
         Country: l.customerCountry,
         DischargePort: l.portOfDischargeName,
@@ -1076,8 +1092,11 @@ export const SalesReportsHub: React.FC = () => {
         RealizedINR: l.totalRealizedINR > 0 ? l.totalRealizedINR : ''
       }));
       const csv = convertToCSV(data, [
-        { key: 'InvoiceNo', label: 'Invoice No' },
-        { key: 'InvoiceDate', label: 'Date' },
+        { key: 'InvoiceNo', label: 'Commercial Invoice No' },
+        { key: 'InvoiceDate', label: 'Invoice Date' },
+        { key: 'SalesOrderNo', label: 'Sales Order No' },
+        { key: 'SalesOrderDate', label: 'Sales Order Date' },
+        { key: 'BuyerOrderRef', label: 'Buyer Order / PO Ref' },
         { key: 'Customer', label: 'Customer' },
         { key: 'Country', label: 'Destination Country' },
         { key: 'DischargePort', label: 'Port of Discharge' },
@@ -1532,8 +1551,9 @@ export const SalesReportsHub: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
-                  <th className="py-2.5 px-3">Invoice #</th>
-                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3">Commercial Invoice #</th>
+                  <th className="py-2.5 px-3">Invoice Date</th>
+                  <th className="py-2.5 px-3">Sales Order #</th>
                   <th className="py-2.5 px-3">Customer / Consignee</th>
                   <th className="py-2.5 px-3">POD</th>
                   <th className="py-2.5 px-3 text-right">Net Wt (Kg)</th>
@@ -1546,17 +1566,28 @@ export const SalesReportsHub: React.FC = () => {
               <tbody className="divide-y divide-gray-100 font-medium">
                 {registerInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-ink-500">
+                    <td colSpan={10} className="py-8 text-center text-ink-500">
                       No invoices match the selected filter criteria.
                     </td>
                   </tr>
                 ) : (
                   registerInvoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-rose-50/20">
-                      <td className="py-2 px-3 font-bold text-rose-700">{inv.invoiceNo}</td>
-                      <td className="py-2 px-3 text-ink-700">{inv.invoiceDate}</td>
+                      <td className="py-2 px-3">
+                        <span className="font-bold text-rose-700 block">{inv.invoiceNo}</span>
+                        {inv.internalInvoiceNo && inv.internalInvoiceNo !== inv.invoiceNo && (
+                          <span className="text-[10px] text-ink-400 font-mono block">Ref: {inv.internalInvoiceNo}</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-ink-700 whitespace-nowrap">{inv.invoiceDate}</td>
+                      <td className="py-2 px-3">
+                        <span className="font-mono text-blue-700 font-semibold block">{inv.salesOrderNo || '—'}</span>
+                        {inv.orderDate && (
+                          <span className="text-[10px] text-ink-400 block">{inv.orderDate}</span>
+                        )}
+                      </td>
                       <td className="py-2 px-3 font-semibold text-ink-900">
-                        {customerMap.get(inv.consigneeId)?.name || 'Unknown'}
+                        {customerMap.get(inv.consigneeId)?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}
                       </td>
                       <td className="py-2 px-3">{portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || 'POD'}</td>
                       <td className="py-2 px-3 text-right font-bold">{formatKg(inv.totalWeightKg)}</td>
@@ -1852,12 +1883,22 @@ export const SalesReportsHub: React.FC = () => {
                             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </button>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-extrabold text-sm text-rose-700">{inv.invoiceNo}</span>
-                              <span className="text-[11px] font-semibold text-ink-500">({inv.invoiceDate})</span>
-                              {inv.orderNo && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-200 text-ink-700">
-                                  {inv.orderNo}
+                              <span className="text-[11px] font-semibold text-ink-700 bg-gray-100 px-2 py-0.5 rounded">Inv Date: {inv.invoiceDate}</span>
+                              {inv.salesOrderNo && (
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                                  SO: {inv.salesOrderNo}
+                                </span>
+                              )}
+                              {inv.orderDate && (
+                                <span className="text-[10px] text-ink-500 font-medium">
+                                  (SO Date: {inv.orderDate})
+                                </span>
+                              )}
+                              {inv.orderNo && inv.orderNo !== inv.salesOrderNo && (
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                                  Buyer Ref: {inv.orderNo}
                                 </span>
                               )}
                               <span
@@ -1873,7 +1914,7 @@ export const SalesReportsHub: React.FC = () => {
                               </span>
                             </div>
                             <div className="text-xs text-ink-600 font-medium mt-0.5">
-                              {cust?.name} · {inv.portOfDischarge || pod?.name} ({inv.countryOfDestination || cust?.country})
+                              {cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Buyer'} · {inv.portOfDischarge || pod?.name || 'Port'} ({inv.countryOfDestination || cust?.country || 'Export'})
                             </div>
                           </div>
                         </div>
@@ -1975,8 +2016,10 @@ export const SalesReportsHub: React.FC = () => {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
-                    <th className="py-2.5 px-3">Invoice #</th>
-                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Commercial Invoice #</th>
+                    <th className="py-2.5 px-3">Invoice Date</th>
+                    <th className="py-2.5 px-3">Sales Order #</th>
+                    <th className="py-2.5 px-3">SO Date</th>
                     <th className="py-2.5 px-3">Customer</th>
                     <th className="py-2.5 px-3">POD</th>
                     <th className="py-2.5 px-3">Product / Species</th>
@@ -1992,15 +2035,27 @@ export const SalesReportsHub: React.FC = () => {
                 <tbody className="divide-y divide-gray-100 font-medium">
                   {filteredInvoiceProductLines.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-8 text-center text-ink-500">
+                      <td colSpan={14} className="py-8 text-center text-ink-500">
                         No product lines found matching the selected filters.
                       </td>
                     </tr>
                   ) : (
                     filteredInvoiceProductLines.map((l) => (
                       <tr key={l.id} className="hover:bg-rose-50/20">
-                        <td className="py-2 px-3 font-bold text-rose-700">{l.invoiceNo}</td>
-                        <td className="py-2 px-3 text-ink-600">{l.invoiceDate}</td>
+                        <td className="py-2 px-3">
+                          <span className="font-bold text-rose-700 whitespace-nowrap block">{l.invoiceNo}</span>
+                          {l.internalInvoiceNo && l.internalInvoiceNo !== l.invoiceNo && (
+                            <span className="text-[10px] text-ink-400 font-mono block">Ref: {l.internalInvoiceNo}</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-ink-700 whitespace-nowrap">{l.invoiceDate}</td>
+                        <td className="py-2 px-3 whitespace-nowrap">
+                          <span className="font-mono text-blue-700 font-semibold block">{l.salesOrderNo || l.orderNo || '—'}</span>
+                          {l.orderNo && l.orderNo !== l.salesOrderNo && (
+                            <span className="text-[10px] text-amber-800 font-mono block">PO: {l.orderNo}</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-ink-500 whitespace-nowrap">{l.orderDate || '—'}</td>
                         <td className="py-2 px-3 font-semibold text-ink-900">{l.customerName}</td>
                         <td className="py-2 px-3 text-ink-600">{l.portOfDischargeName}</td>
                         <td className="py-2 px-3 font-bold text-ink-900">{l.productName}</td>
@@ -2027,7 +2082,7 @@ export const SalesReportsHub: React.FC = () => {
                 </tbody>
                 <tfoot>
                   <tr className="bg-gray-50/90 font-bold text-ink-900 border-t-2 border-gray-200">
-                    <td colSpan={7} className="py-3 px-3 uppercase text-[10px] text-ink-500 text-right">
+                    <td colSpan={9} className="py-3 px-3 uppercase text-[10px] text-ink-500 text-right">
                       Total Across Filtered Lines ({filteredInvoiceProductLines.length})
                     </td>
                     <td className="py-3 px-3 text-right font-bold">{invProdTotalCartons.toLocaleString()}</td>
@@ -2088,8 +2143,9 @@ export const SalesReportsHub: React.FC = () => {
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
                             <tr className="bg-gray-50 text-[10px] font-bold text-ink-500 uppercase">
-                              <th className="py-1.5 px-3">Invoice #</th>
-                              <th className="py-1.5 px-3">Date</th>
+                              <th className="py-1.5 px-3">Commercial Invoice #</th>
+                              <th className="py-1.5 px-3">Invoice Date</th>
+                              <th className="py-1.5 px-3">Sales Order #</th>
                               <th className="py-1.5 px-3">Buyer / Consignee</th>
                               <th className="py-1.5 px-3">POD</th>
                               <th className="py-1.5 px-3">Grade Size</th>
@@ -2102,8 +2158,13 @@ export const SalesReportsHub: React.FC = () => {
                           <tbody className="divide-y divide-gray-100 font-medium">
                             {pm.lines.map((l) => (
                               <tr key={l.id} className="hover:bg-rose-50/20">
-                                <td className="py-1.5 px-3 font-bold text-rose-700">{l.invoiceNo}</td>
-                                <td className="py-1.5 px-3 text-ink-600">{l.invoiceDate}</td>
+                                <td className="py-1.5 px-3">
+                                  <span className="font-bold text-rose-700 block">{l.invoiceNo}</span>
+                                </td>
+                                <td className="py-1.5 px-3 text-ink-700 whitespace-nowrap">{l.invoiceDate}</td>
+                                <td className="py-1.5 px-3 whitespace-nowrap font-mono text-blue-700 font-semibold">
+                                  {l.salesOrderNo || l.orderNo || '—'}
+                                </td>
                                 <td className="py-1.5 px-3 font-semibold text-ink-900">{l.customerName}</td>
                                 <td className="py-1.5 px-3 text-ink-600">{l.portOfDischargeName}</td>
                                 <td className="py-1.5 px-3 font-mono text-ink-700">{l.gradeSize}</td>
@@ -2749,7 +2810,7 @@ export const SalesReportsHub: React.FC = () => {
                       <td className="py-2.5 px-3 font-bold text-rose-700">{inv.invoiceNo}</td>
                       <td className="py-2.5 px-3 text-ink-700">{inv.invoiceDate}</td>
                       <td className="py-2.5 px-3 font-semibold text-ink-900">
-                        {customerMap.get(inv.consigneeId)?.name || 'Unknown'}
+                        {customerMap.get(inv.consigneeId)?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}
                       </td>
                       <td className="py-2.5 px-3 text-right font-extrabold text-ink-900">
                         ${inv.totalAmountCurrency.toLocaleString()}

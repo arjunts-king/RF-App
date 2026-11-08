@@ -32,7 +32,7 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const exporterAddress = invoice.exporterAddress || settings?.address || '';
   const invoiceNo = invoice.invoiceNo || '';
   const invoiceDate = invoice.invoiceDate || '';
-  const exporterRef = invoice.exporterRef || invoiceNo;
+  const exporterRef = invoice.exporterRef || invoice.internalInvoiceNo || (invoice.salesOrderNo && invoice.salesOrderNo !== invoiceNo ? invoice.salesOrderNo : '') || invoiceNo;
   const orderNo = invoice.orderNo || '';
   const orderDate = invoice.orderDate || '';
   const otherReferences = invoice.otherReferences || '';

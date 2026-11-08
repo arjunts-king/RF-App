@@ -275,9 +275,9 @@ export function calculateReceivablesCollectionAnalysis(
       invoiceNo: inv.invoiceNo,
       invoiceDate: inv.invoiceDate,
       consigneeId: inv.consigneeId,
-      consigneeName: cust?.name || 'Unknown Buyer',
-      buyerName: buyer?.name,
-      country: cust?.country || 'Export',
+      consigneeName: cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer',
+      buyerName: buyer?.name || inv.buyerName || cust?.name || 'Overseas Customer',
+      country: cust?.country || inv.countryOfDestination || 'Global Export',
       currency: inv.currency,
       totalAmountCurrency: inv.totalAmountCurrency,
       bankPreDeterminedExchangeRate: rate,
@@ -408,8 +408,8 @@ export function calculateReceivablesCollectionAnalysis(
 
       return {
         consigneeId: custId,
-        consigneeName: cust?.name || 'Unknown Buyer',
-        country: cust?.country || 'Export',
+        consigneeName: cust?.name || list[0]?.consigneeName || 'Overseas Customer',
+        country: cust?.country || list[0]?.country || 'Global Export',
         totalInvoicesCount: list.length,
         realizedInvoicesCount: list.filter((m) => m.realizationStatus === 'Fully Realized').length,
         outstandingInvoicesCount: list.filter((m) => m.balanceRealizationCurrency > 0.05).length,
