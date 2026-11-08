@@ -23,6 +23,7 @@ import {
   Users,
   Fish,
   Anchor,
+  Sparkles,
   X
 } from 'lucide-react';
 
@@ -534,52 +535,95 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         ]}
       />
 
-      {/* Dual Currency Controller Bar */}
-      <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap items-center justify-between gap-3">
-        {/* Currency View Mode Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-gray-100/90 rounded-xl">
-          <button
-            onClick={() => setCurrencyMode('dual')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              currencyMode === 'dual'
-                ? 'bg-white text-rose-700 shadow-xs'
-                : 'text-ink-600 hover:text-ink-900'
-            }`}
-          >
-            <BadgeDollarSign className="w-3.5 h-3.5 text-rose-600" />
-            <span>Dual View (USD &amp; INR)</span>
-          </button>
-          <button
-            onClick={() => setCurrencyMode('usd')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              currencyMode === 'usd'
-                ? 'bg-white text-emerald-700 shadow-xs'
-                : 'text-ink-600 hover:text-ink-900'
-            }`}
-          >
-            <span>USD Focus ($)</span>
-          </button>
-          <button
-            onClick={() => setCurrencyMode('inr')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              currencyMode === 'inr'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-ink-600 hover:text-ink-900'
-            }`}
-          >
-            <span>INR Focus (₹)</span>
-          </button>
-        </div>
+      {/* Executive FOB Valuation & Performance Hero Box */}
+      <div className="relative overflow-hidden rounded-3xl bg-white/95 backdrop-blur-xl text-ink-900 p-6 sm:p-7 shadow-md border border-rose-100/90 space-y-5">
+        {/* Mild red liquid ambient effects */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-gradient-to-br from-rose-200/45 via-rose-100/25 to-transparent blur-3xl pointer-events-none animate-pulse" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-80 h-80 rounded-full bg-gradient-to-tr from-rose-300/35 via-pink-100/20 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/95 via-rose-50/30 to-white/90 pointer-events-none" />
 
-        {/* Live Forex Indicators */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-100 rounded-lg font-medium text-rose-900">
-            <Globe2 className="w-3.5 h-3.5 text-rose-600" />
-            <span>Avg Booking Rate: <strong>₹{stats.avgBookingRate.toFixed(2)}</strong> / $</span>
+        <div className="relative z-10 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rose-100/80 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-rose-100/70 text-rose-800 border border-rose-200/80">
+                  <Sparkles className="w-4 h-4 text-rose-600" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                  Executive FOB Valuation Ledger
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 font-mono text-rose-800 border border-rose-200">
+                  {stats.totalInvoices} Invoices • {stats.totalCartons.toLocaleString()} Cartons
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-ink-950">
+                FOB Commercial Valuation &amp; Dual Currency Performance
+              </h2>
+              <p className="text-xs text-ink-600 max-w-2xl font-medium">
+                Dual-currency intelligence tracking Free On Board export values, foreign exchange realizations, and shipment margins in USD ($) and Indian Rupees (₹).
+              </p>
+            </div>
+
+            {/* Quick Summary Pill Tile */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/85 border border-rose-100/90 rounded-2xl p-3 px-4 shadow-xs backdrop-blur-md">
+                <span className="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">Net FOB Turnover</span>
+                <span className="text-lg font-black text-ink-950 block">{formatUSD(stats.totalFobUSD)}</span>
+                <span className="text-[11px] font-bold text-emerald-700 block">
+                  {stats.totalFobINR > 0 ? `Realized: ${formatINR(stats.totalFobINR)}` : 'Foreign Remittance'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg font-medium text-emerald-900">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Realized Rate: <strong>₹{stats.avgRealizedRate.toFixed(2)}</strong> / $</span>
+
+          {/* Dual Currency Controller Bar & Live Forex */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            {/* Currency View Mode Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-white/80 rounded-xl border border-rose-100/80 shadow-2xs backdrop-blur-sm">
+              <button
+                onClick={() => setCurrencyMode('dual')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  currencyMode === 'dual'
+                    ? 'bg-rose-700 text-white shadow-xs'
+                    : 'text-ink-600 hover:text-ink-900 hover:bg-rose-50/50'
+                }`}
+              >
+                <BadgeDollarSign className="w-3.5 h-3.5" />
+                <span>Dual View (USD &amp; INR)</span>
+              </button>
+              <button
+                onClick={() => setCurrencyMode('usd')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  currencyMode === 'usd'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-ink-600 hover:text-ink-900 hover:bg-emerald-50/50'
+                }`}
+              >
+                <span>USD Focus ($)</span>
+              </button>
+              <button
+                onClick={() => setCurrencyMode('inr')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  currencyMode === 'inr'
+                    ? 'bg-indigo-700 text-white shadow-xs'
+                    : 'text-ink-600 hover:text-ink-900 hover:bg-indigo-50/50'
+                }`}
+              >
+                <span>INR Focus (₹)</span>
+              </button>
+            </div>
+
+            {/* Live Forex Indicators */}
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-rose-100 rounded-xl font-medium text-rose-900 shadow-2xs backdrop-blur-sm">
+                <Globe2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Avg Booking Rate: <strong>₹{stats.avgBookingRate.toFixed(2)}</strong> / $</span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-emerald-100 rounded-xl font-medium text-emerald-900 shadow-2xs backdrop-blur-sm">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Realized Rate: <strong>₹{stats.avgRealizedRate.toFixed(2)}</strong> / $</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -828,7 +872,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
       {/* 6 High-Impact Dual-Currency Financial KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* 1. Total FOB Export Value */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-rose-500 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-rose-500 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Total FOB Export Valuation</span>
@@ -862,7 +906,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         </div>
 
         {/* 2. Total Commercial Sales Turnover */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-emerald-500 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-emerald-500 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Total Commercial Sales Turnover</span>
@@ -896,7 +940,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         </div>
 
         {/* 3. Procurement Purchase Cost (Cost of Raw Materials) */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-amber-500 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-amber-500 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Procurement Purchase Cost</span>
@@ -930,7 +974,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         </div>
 
         {/* 4. FOB Realizations & Banking Settlement */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-indigo-500 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-indigo-500 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Settled / Realized Export Value</span>
@@ -962,7 +1006,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         </div>
 
         {/* 5. Outstanding Receivables */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-rose-400 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-rose-400 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Outstanding / Pending Receivables</span>
@@ -996,7 +1040,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
         </div>
 
         {/* 6. Export Volume & Container Shipping */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs border-l-4 border-l-teal-500 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-teal-500 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs text-ink-500 font-bold uppercase tracking-wider mb-2">
               <span>Total Export Shipping Volume</span>

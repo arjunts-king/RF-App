@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V13 - Verified Commercial Invoices October 1.5M Tie-Out)
-const CACHE_VERSION = 'seafood-pwa-v13';
+// Seafood Purchase App - Offline PWA Service Worker (V14 - Mild Red Liquid White Glass Dashboards)
+const CACHE_VERSION = 'seafood-pwa-v14';
 const STATIC_ASSETS = [
   './',
   './index.html',

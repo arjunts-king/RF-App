@@ -1276,45 +1276,47 @@ export const SalesReportsHub: React.FC = () => {
       {/* ==================================================================== */}
       {/* EXECUTIVE SALES PERFORMANCE DASHBOARD BANNER */}
       {/* ==================================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-950 via-rose-900 to-ink-950 text-white p-6 sm:p-8 shadow-xl border border-rose-800/40">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-white/95 backdrop-blur-xl text-ink-900 p-6 sm:p-8 shadow-md border border-rose-100/90">
+        {/* Mild red liquid ambient effects */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-96 h-96 rounded-full bg-gradient-to-br from-rose-200/50 via-rose-100/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-96 h-96 rounded-full bg-gradient-to-tr from-rose-300/35 via-pink-100/25 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/95 via-rose-50/40 to-white/90 pointer-events-none" />
 
         <div className="relative z-10 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rose-100/80 pb-5">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300">
-                  <Sparkles className="w-4 h-4" />
+                <span className="p-1.5 rounded-lg bg-rose-100/70 text-rose-800 border border-rose-200/80">
+                  <Sparkles className="w-4 h-4 text-rose-600" />
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-rose-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
                   Executive Performance Analysis
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 font-mono text-white/90">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 font-mono text-rose-800 border border-rose-200">
                   {periodInvoices.length} Shipments
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-ink-950">
                 Export Sales &amp; Realization Performance
               </h2>
-              <p className="text-xs text-rose-200/80 max-w-2xl">
+              <p className="text-xs text-ink-600 max-w-2xl font-medium">
                 Comprehensive commercial turnover, metric tonnage, foreign exchange earnings, and customer market distribution.
               </p>
             </div>
 
             {/* Period Selector Dropdown */}
-            <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-2xl border border-white/15 backdrop-blur-md">
-              <Calendar className="w-4 h-4 text-rose-300 ml-2" />
-              <span className="text-xs font-semibold text-rose-200">Period:</span>
+            <div className="flex items-center gap-2 bg-white/90 p-1.5 rounded-2xl border border-rose-200/80 shadow-xs backdrop-blur-md">
+              <Calendar className="w-4 h-4 text-rose-600 ml-2" />
+              <span className="text-xs font-bold text-ink-700">Period:</span>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 aria-label="Filter performance report by period"
-                className="bg-rose-950/80 text-white font-bold text-xs px-3 py-1.5 rounded-xl border border-white/20 outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+                className="bg-white text-ink-900 font-bold text-xs px-3 py-1.5 rounded-xl border border-rose-200 shadow-2xs outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
               >
                 <option value="ALL">All FY 2026-27 (Full Period Overview)</option>
                 {availableMonths.map((m) => (
-                  <option key={m} value={m} className="bg-ink-900 text-white">
+                  <option key={m} value={m} className="bg-white text-ink-900">
                     {formatMonthLabel(m)}
                   </option>
                 ))}
@@ -1324,74 +1326,74 @@ export const SalesReportsHub: React.FC = () => {
 
           {/* 6 Key Executive Metric Tiles */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">
                 Total Export Turnover
               </span>
-              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+              <span className="text-lg sm:text-xl font-black text-ink-950 mt-1 block truncate">
                 ${totalPeriodUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
-              <span className="text-[11px] text-amber-300 font-bold mt-0.5 block truncate">
+              <span className="text-[11px] text-amber-700 font-bold mt-0.5 block truncate">
                 ≈ {formatINR(estimatedINRValue)}
               </span>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">
                 Export Net Volume
               </span>
-              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+              <span className="text-lg sm:text-xl font-black text-ink-950 mt-1 block truncate">
                 {formatKg(totalPeriodWeightKg)}
               </span>
-              <span className="text-[11px] text-rose-200/80 font-medium mt-0.5 block truncate">
+              <span className="text-[11px] text-ink-600 font-medium mt-0.5 block truncate">
                 {totalPeriodCartons.toLocaleString()} Cartons Shipped
               </span>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-emerald-700 uppercase block tracking-wider">
                 Bank Realization
               </span>
-              <span className="text-lg sm:text-xl font-black text-emerald-400 mt-1 block truncate">
+              <span className="text-lg sm:text-xl font-black text-emerald-600 mt-1 block truncate">
                 {realizationRatePct.toFixed(1)}%
               </span>
-              <span className="text-[11px] text-emerald-200/90 font-bold mt-0.5 block truncate">
+              <span className="text-[11px] text-emerald-700 font-bold mt-0.5 block truncate">
                 {totalPeriodRealizedINR > 0 ? formatINR(totalPeriodRealizedINR) : 'Remittance Inward'}
               </span>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">
                 Avg Realization / Kg
               </span>
-              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+              <span className="text-lg sm:text-xl font-black text-ink-950 mt-1 block truncate">
                 ${overallAvgUSDPerKg.toFixed(2)}
               </span>
-              <span className="text-[11px] text-rose-200/80 font-medium mt-0.5 block truncate">
+              <span className="text-[11px] text-ink-600 font-medium mt-0.5 block truncate">
                 ≈ ₹{(overallAvgUSDPerKg * 84.5).toFixed(0)} / Kg
               </span>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-amber-700 uppercase block tracking-wider">
                 Top Product
               </span>
-              <span className="text-sm sm:text-base font-extrabold text-white mt-1 block truncate" title={topProduct?.name || 'N/A'}>
+              <span className="text-sm sm:text-base font-extrabold text-ink-950 mt-1 block truncate" title={topProduct?.name || 'N/A'}>
                 {topProduct ? topProduct.name : 'N/A'}
               </span>
-              <span className="text-[11px] text-amber-200/90 font-bold mt-0.5 block truncate">
+              <span className="text-[11px] text-amber-800 font-bold mt-0.5 block truncate">
                 {topProduct ? `$${topProduct.usd.toLocaleString()} (${topProduct.pct.toFixed(0)}%)` : '—'}
               </span>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
-              <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">
+            <div className="relative overflow-hidden bg-white/85 hover:bg-white border border-rose-100/90 rounded-2xl p-4 shadow-xs hover:shadow-sm backdrop-blur-md transition-all">
+              <span className="text-[10px] font-bold text-sky-700 uppercase block tracking-wider">
                 Top Overseas Buyer
               </span>
-              <span className="text-sm sm:text-base font-extrabold text-white mt-1 block truncate" title={topCustomer?.name || 'N/A'}>
+              <span className="text-sm sm:text-base font-extrabold text-ink-950 mt-1 block truncate" title={topCustomer?.name || 'N/A'}>
                 {topCustomer ? topCustomer.name : 'N/A'}
               </span>
-              <span className="text-[11px] text-cyan-200/90 font-bold mt-0.5 block truncate">
+              <span className="text-[11px] text-sky-800 font-bold mt-0.5 block truncate">
                 {topCustomer ? `$${topCustomer.usd.toLocaleString()} · ${topPort?.name || topCustomer.country}` : '—'}
               </span>
             </div>
