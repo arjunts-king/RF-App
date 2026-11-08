@@ -25,7 +25,9 @@ import {
   Globe,
   Plus,
   FileSpreadsheet,
-  FileDown
+  FileDown,
+  ChevronDown,
+  Layers
 } from 'lucide-react';
 
 export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -40,6 +42,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
   } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
+
+  // Expanded row state for item breakdown
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const toggleExpand = (id: string) =>
+    setExpandedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -529,10 +536,11 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                   const consignee = customerMap.get(inv.consigneeId);
                   const pod = portMap.get(inv.portOfDischargeId);
                   const isSelected = selectedIds.includes(inv.id);
+                  const isExpanded = expandedIds.includes(inv.id);
 
                   return (
+                    <React.Fragment key={inv.id}>
                     <tr
-                      key={inv.id}
                       className={`hover:bg-rose-50/25 transition-colors ${
                         isSelected ? 'bg-rose-50/70 font-medium' : ''
                       } ${inv.isVoided ? 'bg-rose-50/40 text-ink-400' : ''}`}
@@ -548,26 +556,74 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                       {/* Invoice No */}
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5">
+                          {inv.lineItems && inv.lineItems.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(inv.id)}
+                              className="p-1 hover:bg-rose-100 rounded text-rose-700 transition"
+                              title={isExpanded ? 'Hide item breakdown' : 'Show item breakdown'}
+                              aria-label="Toggle item breakdown"
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                            </button>
+                          )}
                           <span className="font-mono font-bold text-rose-700">{inv.invoiceNo}</span>
                           {inv.isVoided && <StatusBadge status="Voided" />}
                         </div>
                         {inv.orderNo && (
-                          <div className="text-[10px] text-ink-500 font-mono">PO: {inv.orderNo}</div>
+                          <div className="text-[10px] text-ink-500 font-mono ml-6">PO: {inv.orderNo}</div>
                         )}
                       </td>
 
                       {/* Date */}
                       <td className="py-3 px-3 text-ink-700 whitespace-nowrap">{inv.invoiceDate}</td>
 
-                      {/* Consignee */}
+                      {/* Consignee & Item Chips */}
                       <td className="py-3 px-3">
                         <div className="font-bold text-ink-900 leading-tight">
                           {consignee?.name || 'Unknown Consignee'}
                         </div>
-                        <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5">
-                          <Globe className="w-3 h-3 text-ink-400" />
-                          <span>{consignee?.country || 'Export'}</span>
+                        <div className="text-[10px] text-ink-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3 h-3 text-ink-400" />
+                            <span>{consignee?.country || 'Export'}</span>
+                          </span>
+                          {(consignee?.isGstExempt || consignee?.customerType === 'Overseas') && (
+                            <span className="px-1.5 py-0.2 text-[9px] bg-emerald-50 text-emerald-800 font-bold rounded-sm border border-emerald-200">
+                              Overseas (GST Exempt)
+                            </span>
+                          )}
                         </div>
+
+                        {/* Inline Item Chips (Species, Grade/Size, Cartons) */}
+                        {inv.lineItems && inv.lineItems.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                            {inv.lineItems.slice(0, 3).map((l, idx) => (
+                              <span
+                                key={l.id || idx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 border border-rose-200 rounded text-[10px] font-semibold text-rose-900"
+                                title={`${l.productDescription}: Grade ${l.gradeSize || 'N/A'}, ${l.cartonsCount ? l.cartonsCount + ' cs, ' : ''}${l.weightKg} kg @ $${l.ratePerKg}/kg`}
+                              >
+                                {l.gradeSize ? (
+                                  <strong className="text-rose-700 font-bold">{l.gradeSize}</strong>
+                                ) : (
+                                  <span>{l.productDescription}</span>
+                                )}
+                                {l.cartonsCount > 0 && <span className="text-ink-500">({l.cartonsCount}cs)</span>}
+                                <span className="text-ink-600 font-mono text-[9px]">{l.weightKg}kg</span>
+                              </span>
+                            ))}
+                            {inv.lineItems.length > 3 && (
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(inv.id)}
+                                className="text-[10px] text-rose-700 font-bold hover:underline"
+                              >
+                                +{inv.lineItems.length - 3} more
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Port of Discharge */}
@@ -707,6 +763,72 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                         </div>
                       </td>
                     </tr>
+                    {isExpanded && inv.lineItems && inv.lineItems.length > 0 && (
+                      <tr className="bg-rose-50/25 border-b border-gray-200 animate-fade-in">
+                        <td colSpan={10} className="p-3 pl-12 bg-neutral-50/70">
+                          <div className="p-3 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-2">
+                            <div className="flex items-center justify-between text-xs font-bold text-ink-900 border-b border-gray-100 pb-1.5">
+                              <span className="flex items-center gap-1.5 text-rose-800">
+                                <Layers className="w-3.5 h-3.5 text-rose-600" />
+                                Line Item Specifications &amp; Size Breakdown ({inv.lineItems.length} items)
+                              </span>
+                              <span className="text-ink-500 font-normal text-[11px]">
+                                Invoice: <strong className="font-mono text-ink-900">{inv.invoiceNo}</strong>
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                  <tr className="text-[10px] text-ink-500 uppercase font-bold border-b border-gray-200 bg-gray-50/60">
+                                    <th className="py-1.5 px-2">#</th>
+                                    <th className="py-1.5 px-2">Product / Commodity</th>
+                                    <th className="py-1.5 px-2 text-center">Grade / Size</th>
+                                    <th className="py-1.5 px-2 text-center">Cartons</th>
+                                    <th className="py-1.5 px-2 text-right">Net Weight (Kg)</th>
+                                    <th className="py-1.5 px-2 text-right">Rate / Kg ({inv.currency})</th>
+                                    <th className="py-1.5 px-2 text-right">Line Amount ({inv.currency})</th>
+                                    <th className="py-1.5 px-2 text-center">HSN/SAC</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 text-ink-800">
+                                  {inv.lineItems.map((line, idx) => (
+                                    <tr key={line.id || idx} className="hover:bg-rose-50/30">
+                                      <td className="py-1.5 px-2 font-mono text-ink-400">{idx + 1}</td>
+                                      <td className="py-1.5 px-2 font-medium">{line.productDescription || 'Export Finish'}</td>
+                                      <td className="py-1.5 px-2 text-center">
+                                        {line.gradeSize ? (
+                                          <span className="px-2 py-0.5 bg-rose-100/70 text-rose-800 font-bold rounded-md font-mono text-[11px] border border-rose-200">
+                                            {line.gradeSize}
+                                          </span>
+                                        ) : (
+                                          <span className="text-ink-400">-</span>
+                                        )}
+                                      </td>
+                                      <td className="py-1.5 px-2 text-center font-bold text-ink-700">
+                                        {line.cartonsCount > 0 ? `${line.cartonsCount} cs` : '-'}
+                                      </td>
+                                      <td className="py-1.5 px-2 text-right font-mono font-semibold tabular-nums">
+                                        {formatKg(line.weightKg)}
+                                      </td>
+                                      <td className="py-1.5 px-2 text-right font-mono tabular-nums">
+                                        ${Number(line.ratePerKg || 0).toFixed(2)}
+                                      </td>
+                                      <td className="py-1.5 px-2 text-right font-mono font-bold tabular-nums text-rose-950">
+                                        ${Number(line.amountCurrency || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </td>
+                                      <td className="py-1.5 px-2 text-center font-mono text-[10px] text-ink-500">
+                                        {line.hsCode || '-'}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })
               )}

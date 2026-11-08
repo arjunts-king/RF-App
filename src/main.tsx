@@ -15,10 +15,27 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .register(`${import.meta.env.BASE_URL}sw.js?v=8`, { updateViaCache: 'none' })
       .then((reg) => {
-        // Force immediate check for updated service worker bundle on page load
-        reg.update();
+        // If a new worker is waiting, activate immediately
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New update available, activate without waiting
+                installingWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
+
+        // Force check for updated service worker bundle on page load
+        reg.update().catch(() => {});
       })
       .catch((err) => {
         console.log('SW registration failed: ', err);

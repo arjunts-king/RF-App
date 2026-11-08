@@ -239,7 +239,7 @@ interface DataContextType {
   bulkImportSalesInvoices: (
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
-  ) => { added: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number; createdSizes?: number };
+  ) => { added: number; totalLines?: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number; createdSizes?: number };
   bulkImportSalesRealizations: (
     rawRows: Record<string, any>[]
   ) => { updated: number; errors: string[] };
@@ -507,6 +507,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!clean.totalRealizedCurrency || clean.totalRealizedCurrency <= 0) {
           clean.totalRealizedINR = 0;
         }
+
+        // Auto-enrich existing line items with grade/size and carton counts from productDescription
+        if (clean.lineItems && clean.lineItems.length > 0) {
+          clean.lineItems = clean.lineItems.map((l) => {
+            let extractedSize = l.gradeSize;
+            const desc = l.productDescription || '';
+            if (!extractedSize && desc) {
+              const m = desc.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+              if (m) extractedSize = m[1].toUpperCase();
+            }
+            if (!extractedSize && clean.commodityDescription) {
+              const m = clean.commodityDescription.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
+              if (m) extractedSize = m[1].toUpperCase();
+            }
+
+            let cartons = l.cartonsCount;
+            if ((!cartons || cartons <= 0) && desc) {
+              const ctnMatch = desc.match(/(\d+)\s*(?:cases|case|cartons|carton|ctns|ctn|boxes|box|pkgs|pkg)/i) ||
+                               desc.match(/(?:No\.?\s*of\s*Cartons|Total\s*Cartons)\s*[:=]\s*(\d+)/i);
+              if (ctnMatch) cartons = parseInt(ctnMatch[1], 10);
+            }
+
+            let cleanDesc = desc;
+            if (extractedSize && desc) {
+              cleanDesc = desc.replace(new RegExp(`\\s*\\b${extractedSize.replace('/', '\\/')}\\b\\s*$`, 'i'), '').trim() || desc;
+            }
+
+            return {
+              ...l,
+              productDescription: cleanDesc,
+              gradeSize: extractedSize || l.gradeSize,
+              cartonsCount: cartons !== undefined && cartons > 0 ? cartons : l.cartonsCount
+            };
+          });
+        }
+
         return clean;
       });
     }
@@ -5620,16 +5656,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       newInvoices.push(invRecord);
     });
 
+    const totalImportedLines = newInvoices.reduce((sum, inv) => sum + (inv.lineItems?.length || 0), 0);
+
     if (newInvoices.length > 0) {
-      setSalesInvoices((prev) => [...newInvoices, ...prev]);
+      setSalesInvoices((prev) => {
+        const incomingMap = new Map(newInvoices.map((inv) => [inv.invoiceNo.trim().toUpperCase(), inv]));
+        const updatedPrev = prev.map((inv) => {
+          const matching = incomingMap.get(inv.invoiceNo.trim().toUpperCase());
+          if (matching) {
+            incomingMap.delete(inv.invoiceNo.trim().toUpperCase());
+            return { ...matching, id: inv.id };
+          }
+          return inv;
+        });
+        return [...Array.from(incomingMap.values()), ...updatedPrev];
+      });
       if (createdCustomers > 0) setCustomers([...mutableCustomers]);
       if (createdPorts > 0) setPorts([...mutablePorts]);
       if (createdSpecies > 0) setSpecies([...mutableSpecies]);
       if (createdSizes > 0) setSizes([...mutableSizes]);
 
-      logAudit('CREATE', 'SALES_INVOICE', `Excel bulk import: ${newInvoices.length} sales invoices imported`, {
+      logAudit('CREATE', 'SALES_INVOICE', `Excel bulk import: ${newInvoices.length} sales invoices imported (${totalImportedLines} line items)`, {
         newValues: {
           importedCount: newInvoices.length,
+          totalLines: totalImportedLines,
           createdCustomers,
           createdPorts,
           createdSpecies,
@@ -5637,11 +5687,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       });
 
-      showToast(`Successfully imported ${newInvoices.length} export sales invoices from Excel.`, 'success');
+      showToast(`Successfully imported ${newInvoices.length} export sales invoices (${totalImportedLines} item lines) from Excel.`, 'success');
     }
 
     return {
       added: newInvoices.length,
+      totalLines: totalImportedLines,
       errors,
       createdCustomers,
       createdPorts,

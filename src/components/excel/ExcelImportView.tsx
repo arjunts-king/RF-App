@@ -34,12 +34,14 @@ import {
 interface ImportSummary {
   added: number;
   updated?: number;
+  totalLines?: number;
   errors: string[];
   createdSuppliers?: number;
   createdSpecies?: number;
   createdLocations?: number;
   createdCustomers?: number;
   createdPorts?: number;
+  createdSizes?: number;
   createdSlabTypes?: number;
 }
 
@@ -502,6 +504,8 @@ export const ExcelImportView: React.FC<{
         let totalCustomersAdded = 0;
         let totalPortsAdded = 0;
         let totalSpeciesAdded = 0;
+        let totalSizesAdded = 0;
+        let totalLinesAdded = 0;
         const allErrors: string[] = [];
 
         sheetsData.forEach((sheet) => {
@@ -509,6 +513,11 @@ export const ExcelImportView: React.FC<{
           if (sheetNameNorm.includes('invoice') || sheetNameNorm.includes('export') || sheetNameNorm.includes('sales')) {
             const res = bulkImportSalesInvoices(sheet.rows, autoCreateMaster);
             totalInvoicesAdded += res.added;
+            totalLinesAdded += res.totalLines || 0;
+            totalCustomersAdded += res.createdCustomers || 0;
+            totalPortsAdded += res.createdPorts || 0;
+            totalSpeciesAdded += res.createdSpecies || 0;
+            totalSizesAdded += res.createdSizes || 0;
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('customer') || sheetNameNorm.includes('buyer')) {
             const res = bulkImportCustomers(sheet.rows);
@@ -531,9 +540,11 @@ export const ExcelImportView: React.FC<{
 
         setImportSummary({
           added: totalInvoicesAdded + totalCustomersAdded + totalPortsAdded + totalSpeciesAdded,
+          totalLines: totalLinesAdded,
           createdCustomers: totalCustomersAdded,
           createdPorts: totalPortsAdded,
           createdSpecies: totalSpeciesAdded,
+          createdSizes: totalSizesAdded,
           errors: allErrors
         });
       } else if (selectedEntity === 'purchases') {
@@ -565,10 +576,12 @@ export const ExcelImportView: React.FC<{
         const res = bulkImportSalesInvoices(activeRows, autoCreateMaster);
         setImportSummary({
           added: res.added,
+          totalLines: res.totalLines,
           errors: res.errors,
           createdCustomers: res.createdCustomers,
           createdPorts: res.createdPorts,
-          createdSpecies: res.createdSpecies
+          createdSpecies: res.createdSpecies,
+          createdSizes: res.createdSizes
         });
       } else if (selectedEntity === 'sales-realizations') {
         const res = bulkImportSalesRealizations(activeRows);
@@ -1319,6 +1332,28 @@ export const ExcelImportView: React.FC<{
                 </span>
                 <span className="text-lg font-black text-teal-700">
                   {importSummary.createdPorts}
+                </span>
+              </div>
+            )}
+
+            {importSummary.totalLines !== undefined && importSummary.totalLines > 0 && (
+              <div className="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                <span className="text-[10px] font-bold text-rose-800 uppercase block">
+                  Line Items Extracted
+                </span>
+                <span className="text-lg font-black text-rose-700">
+                  {importSummary.totalLines}
+                </span>
+              </div>
+            )}
+
+            {importSummary.createdSizes !== undefined && importSummary.createdSizes > 0 && (
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                <span className="text-[10px] font-bold text-purple-800 uppercase block">
+                  Auto-Created Grade / Sizes
+                </span>
+                <span className="text-lg font-black text-purple-700">
+                  {importSummary.createdSizes}
                 </span>
               </div>
             )}
