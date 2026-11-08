@@ -61,6 +61,13 @@ import {
   INITIAL_PERIOD_CLOSE_LOCKS,
   SAMPLE_STARTER_PRESETS
 } from '../data/initialData';
+import {
+  VERIFIED_CUSTOMERS,
+  VERIFIED_SPECIES,
+  VERIFIED_SIZES,
+  VERIFIED_PORTS,
+  VERIFIED_SALES_INVOICES
+} from '../data/exportSalesData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { computePurchaseFields, allocateBatchExpenses, allocateBatchYield, getIndianFinancialYear } from '../utils/calculations';
@@ -305,7 +312,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [species, setSpecies] = useState<Species[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
-    return saved ? JSON.parse(saved) : INITIAL_SPECIES;
+    const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
+    const existingNames = new Set(list.map((sp) => sp.name.trim().toLowerCase()));
+    const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase()));
+    return [...list, ...missing];
   });
 
   const [grades, setGrades] = useState<Grade[]>(() => {
@@ -315,7 +325,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [sizes, setSizes] = useState<Size[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}sizes`);
-    return saved ? JSON.parse(saved) : INITIAL_SIZES;
+    const list: Size[] = saved ? JSON.parse(saved) : INITIAL_SIZES;
+    const existingNames = new Set(list.map((sz) => sz.name.trim().toUpperCase()));
+    const missing = VERIFIED_SIZES.filter((sz) => !existingNames.has(sz.name.trim().toUpperCase()));
+    return [...list, ...missing];
   });
 
   const [counts, setCounts] = useState<Count[]>(() => {
@@ -469,8 +482,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}customers`);
     const rawList: Customer[] = saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+    const existingNames = new Set(rawList.map((c) => c.name.trim().toLowerCase()));
+    const missing = VERIFIED_CUSTOMERS.filter((c) => !existingNames.has(c.name.trim().toLowerCase()));
+    const merged = [...rawList, ...missing];
     // Default all customers to Overseas Customers with GST Exempt export supply status
-    return rawList.map((c) => ({
+    return merged.map((c) => ({
       ...c,
       customerType: c.customerType || 'Overseas',
       gstTreatment: c.gstTreatment || 'Overseas (GST Exempt Export Supply)',
@@ -480,7 +496,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}ports`);
-    return saved ? JSON.parse(saved) : INITIAL_PORTS;
+    const list: PortMaster[] = saved ? JSON.parse(saved) : INITIAL_PORTS;
+    const existingNames = new Set(list.map((p) => p.name.trim().toLowerCase()));
+    const missing = VERIFIED_PORTS.filter((p) => !existingNames.has(p.name.trim().toLowerCase()));
+    return [...list, ...missing];
   });
 
   const [processingEntries, setProcessingEntries] = useState<DailyProcessingEntry[]>(() => {
@@ -491,6 +510,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}sales_invoices`);
     let list: SalesInvoice[] = saved ? JSON.parse(saved) : INITIAL_SALES_INVOICES;
+    const verifiedMap = new Map(VERIFIED_SALES_INVOICES.map((inv) => [inv.invoiceNo.trim().toUpperCase(), inv]));
+
     if (list && list.length > 0) {
       list = list.map((inv) => {
         const clean = { ...inv };
@@ -506,6 +527,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (clean.packingDescription === '1X10KG') clean.packingDescription = undefined;
         if (!clean.totalRealizedCurrency || clean.totalRealizedCurrency <= 0) {
           clean.totalRealizedINR = 0;
+        }
+
+        // Auto-enrich invoices with verified line items from Sales_Order.xlsx if missing or generic
+        const verified = verifiedMap.get(clean.invoiceNo.trim().toUpperCase());
+        const needsItemEnrichment =
+          !clean.lineItems ||
+          clean.lineItems.length === 0 ||
+          clean.lineItems.every(
+            (l) => !l.productDescription || l.productDescription === 'FROZEN SEAFOOD' || l.productDescription === 'Export Finish'
+          );
+
+        if (verified && needsItemEnrichment && verified.lineItems && verified.lineItems.length > 0) {
+          clean.lineItems = verified.lineItems;
+          clean.totalWeightKg = verified.totalWeightKg || clean.totalWeightKg;
+          clean.totalCartons = verified.totalCartons || clean.totalCartons;
+          clean.consigneeId = clean.consigneeId || verified.consigneeId;
+          clean.portOfDischargeId = clean.portOfDischargeId || verified.portOfDischargeId;
+          clean.finalDestinationId = clean.finalDestinationId || verified.finalDestinationId;
+          if (!clean.totalAmountCurrency || clean.totalAmountCurrency <= 0) {
+            clean.totalAmountCurrency = verified.totalAmountCurrency;
+          }
+          if (!clean.totalFobValueCurrency || clean.totalFobValueCurrency <= 0) {
+            clean.totalFobValueCurrency = verified.totalFobValueCurrency;
+          }
+          if (!clean.totalFobValueINR || clean.totalFobValueINR <= 0) {
+            clean.totalFobValueINR = verified.totalFobValueINR;
+          }
         }
 
         // Auto-enrich existing line items with grade/size and carton counts from productDescription
@@ -545,6 +593,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         return clean;
       });
+
+      // Merge any verified invoices that were completely missing in list
+      const existingNos = new Set(list.map((inv) => inv.invoiceNo.trim().toUpperCase()));
+      const missingVerified = VERIFIED_SALES_INVOICES.filter((inv) => !existingNos.has(inv.invoiceNo.trim().toUpperCase()));
+      if (missingVerified.length > 0) {
+        list = [...list, ...missingVerified];
+      }
+    } else {
+      list = VERIFIED_SALES_INVOICES;
     }
     return list;
   });

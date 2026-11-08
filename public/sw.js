@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V8 - Instant Item Details & Overseas GST Exempt)
-const CACHE_VERSION = 'seafood-pwa-v8';
+// Seafood Purchase App - Offline PWA Service Worker (V9 - Full Item Breakdown & Commercial Sales Performance)
+const CACHE_VERSION = 'seafood-pwa-v9';
 const STATIC_ASSETS = [
   './',
   './index.html',

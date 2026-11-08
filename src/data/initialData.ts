@@ -1,4 +1,11 @@
 import {
+  VERIFIED_CUSTOMERS,
+  VERIFIED_SPECIES,
+  VERIFIED_SIZES,
+  VERIFIED_PORTS,
+  VERIFIED_SALES_INVOICES
+} from './exportSalesData';
+import {
   Supplier,
   Species,
   Grade,
@@ -75,11 +82,11 @@ export const INITIAL_USERS: User[] = [
   }
 ];
 
-// Completely EMPTY default state — Ready for full customization by user!
+// Base default states populated with verified commercial export masters
 export const INITIAL_SUPPLIERS: Supplier[] = [];
-export const INITIAL_SPECIES: Species[] = [];
+export const INITIAL_SPECIES: Species[] = VERIFIED_SPECIES;
 export const INITIAL_GRADES: Grade[] = [];
-export const INITIAL_SIZES: Size[] = [];
+export const INITIAL_SIZES: Size[] = VERIFIED_SIZES;
 export const INITIAL_COUNTS: Count[] = [];
 export const INITIAL_LOCATIONS: PurchaseLocation[] = [];
 export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [];
@@ -90,9 +97,9 @@ export const INITIAL_PURCHASE_RETURNS: PurchaseReturn[] = [];
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [];
 export const INITIAL_SLAB_TYPES: SlabType[] = [];
 export const INITIAL_PROCESSING_ENTRIES: DailyProcessingEntry[] = [];
-export const INITIAL_CUSTOMERS: Customer[] = [];
-export const INITIAL_PORTS: PortMaster[] = [];
-export const INITIAL_SALES_INVOICES: SalesInvoice[] = [];
+export const INITIAL_CUSTOMERS: Customer[] = VERIFIED_CUSTOMERS;
+export const INITIAL_PORTS: PortMaster[] = VERIFIED_PORTS;
+export const INITIAL_SALES_INVOICES: SalesInvoice[] = VERIFIED_SALES_INVOICES;
 
 export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
   {

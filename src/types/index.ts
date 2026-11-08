@@ -48,7 +48,7 @@ export interface Supplier {
   creditDays: number;
   openingBalance: number;
   active: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface Species {
@@ -354,7 +354,7 @@ export interface Customer {
   taxId: string; // Buyer's Foreign Tax ID / US FEIN / VAT / GSTIN (No GSTIN for overseas)
   bankDetails: string; // Bank details for inward remittance realization (SWIFT / IBAN / Account)
   active: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface PortMaster {
@@ -528,7 +528,7 @@ export interface InventoryItem {
   description?: string;
   category: string;
   active: boolean;
-  createdAt: string;
+  createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
   isDeleted?: boolean;

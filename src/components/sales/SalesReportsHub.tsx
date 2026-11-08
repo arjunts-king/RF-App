@@ -15,7 +15,9 @@ import {
   AlertTriangle,
   Percent,
   CheckCircle2,
-  DollarSign
+  DollarSign,
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 
 type SalesReportTab =
@@ -40,11 +42,10 @@ export const SalesReportsHub: React.FC = () => {
 
   const [activeReport, setActiveReport] = useState<SalesReportTab>('invoice-register');
 
-  // Filter States
+  // Filter States: Default to ALL for full FY 2026-27 period analysis
   const today = new Date().toISOString().split('T')[0];
-  const currentMonthStr = today.slice(0, 7);
-  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
-  const [startDate, setStartDate] = useState<string>(`${currentMonthStr}-01`);
+  const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
+  const [startDate, setStartDate] = useState<string>('2026-04-01');
   const [endDate, setEndDate] = useState<string>(today);
   const [overdueThresholdDays, setOverdueThresholdDays] = useState<number>(60);
 
@@ -55,6 +56,37 @@ export const SalesReportsHub: React.FC = () => {
   const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
 
   const activeInvoices = salesInvoices.filter((inv) => !inv.isVoided);
+
+  // Available unique months from commercial invoice dates
+  const availableMonths = Array.from(
+    new Set(activeInvoices.map((inv) => inv.invoiceDate.slice(0, 7)).filter(Boolean))
+  ).sort().reverse();
+
+  const formatMonthLabel = (m: string) => {
+    if (m === 'ALL') return 'All FY 2026-27 (Full Year Overview)';
+    const [year, month] = m.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const idx = parseInt(month, 10) - 1;
+    return `${monthNames[idx] || month} ${year}`;
+  };
+
+  // --------------------------------------------------------------------------
+  // EXECUTIVE SALES PERFORMANCE OVERVIEW (Filtered by selectedMonth)
+  // --------------------------------------------------------------------------
+  const periodInvoices = selectedMonth === 'ALL'
+    ? activeInvoices
+    : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(selectedMonth));
+
+  const totalPeriodUSD = periodInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
+  const totalPeriodWeightKg = periodInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
+  const totalPeriodCartons = periodInvoices.reduce((s, inv) => s + inv.totalCartons, 0);
+  const totalPeriodRealizedINR = periodInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
+  const totalPeriodOutstandingUSD = periodInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+  const overallAvgUSDPerKg = totalPeriodWeightKg > 0 ? totalPeriodUSD / totalPeriodWeightKg : 0;
+  const realizationRatePct = totalPeriodUSD > 0
+    ? Math.min(100, Math.max(0, ((totalPeriodUSD - totalPeriodOutstandingUSD) / totalPeriodUSD) * 100))
+    : 0;
+  const estimatedINRValue = totalPeriodUSD * 84.5;
 
   // --------------------------------------------------------------------------
   // 1. INVOICE REGISTER (Date range)
@@ -68,14 +100,10 @@ export const SalesReportsHub: React.FC = () => {
   const regTotalBalance = registerInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
 
   // --------------------------------------------------------------------------
-  // 2. CUSTOMER-WISE SALES ANALYSIS (Monthly)
+  // 2. CUSTOMER-WISE SALES ANALYSIS (Period / Month)
   // --------------------------------------------------------------------------
-  const monthInvoices = activeInvoices.filter((inv) => inv.invoiceDate.startsWith(selectedMonth));
-  const monthTotalUSD = monthInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
-  const monthTotalWeight = monthInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
-
   const customerAggMap = new Map<string, { weight: number; usd: number; cartons: number; invoices: number }>();
-  monthInvoices.forEach((inv) => {
+  periodInvoices.forEach((inv) => {
     const cur = customerAggMap.get(inv.consigneeId) || { weight: 0, usd: 0, cartons: 0, invoices: 0 };
     customerAggMap.set(inv.consigneeId, {
       weight: cur.weight + inv.totalWeightKg,
@@ -88,12 +116,12 @@ export const SalesReportsHub: React.FC = () => {
   const customerBreakdown = Array.from(customerAggMap.entries())
     .map(([custId, data]) => {
       const cust = customerMap.get(custId);
-      const pct = monthTotalUSD > 0 ? (data.usd / monthTotalUSD) * 100 : 0;
+      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
       const avgRate = data.weight > 0 ? data.usd / data.weight : 0;
       return {
         id: custId,
-        name: cust?.name || 'Unknown',
-        country: cust?.country || 'Export',
+        name: cust?.name || 'Overseas Buyer',
+        country: cust?.country || 'Export Market',
         ...data,
         pct,
         avgRate
@@ -103,19 +131,47 @@ export const SalesReportsHub: React.FC = () => {
 
   const topCustomer = customerBreakdown[0];
   const lowestCustomer = customerBreakdown[customerBreakdown.length - 1];
-  const avgCustomerUSD = customerBreakdown.length > 0 ? monthTotalUSD / customerBreakdown.length : 0;
+  const avgCustomerUSD = customerBreakdown.length > 0 ? totalPeriodUSD / customerBreakdown.length : 0;
 
   // --------------------------------------------------------------------------
-  // 3. PRODUCT & SIZE ANALYSIS (Monthly)
+  // 3. PRODUCT & SIZE ANALYSIS (Period / Month)
   // --------------------------------------------------------------------------
-  const productAggMap = new Map<string, { weight: number; usd: number; cartons: number; linesCount: number }>();
-  const sizeAggMap = new Map<string, { weight: number; usd: number; cartons: number }>();
+  const productAggMap = new Map<string, {
+    name: string;
+    hsCode: string;
+    form: string;
+    weight: number;
+    usd: number;
+    cartons: number;
+    linesCount: number;
+  }>();
+  const sizeAggMap = new Map<string, {
+    name: string;
+    weight: number;
+    usd: number;
+    cartons: number;
+  }>();
 
-  monthInvoices.forEach((inv) => {
+  periodInvoices.forEach((inv) => {
     inv.lineItems.forEach((l) => {
       // Product
-      const curP = productAggMap.get(l.speciesId) || { weight: 0, usd: 0, cartons: 0, linesCount: 0 };
-      productAggMap.set(l.speciesId, {
+      const sp = speciesMap.get(l.speciesId);
+      const prodName = sp?.name || l.productDescription || 'Export Seafood';
+      const hsCode = l.hsCode || sp?.hsCode || '03061790';
+      const form = sp?.category || (prodName.toLowerCase().includes('shrimp') || prodName.toLowerCase().includes('vanamei') ? 'Frozen Block / IQF' : 'Frozen Whole');
+      const prodKey = l.speciesId || prodName;
+
+      const curP = productAggMap.get(prodKey) || {
+        name: prodName,
+        hsCode,
+        form,
+        weight: 0,
+        usd: 0,
+        cartons: 0,
+        linesCount: 0
+      };
+      productAggMap.set(prodKey, {
+        ...curP,
         weight: curP.weight + l.weightKg,
         usd: curP.usd + l.amountCurrency,
         cartons: curP.cartons + l.cartonsCount,
@@ -123,8 +179,18 @@ export const SalesReportsHub: React.FC = () => {
       });
 
       // Size
-      const curS = sizeAggMap.get(l.sizeId) || { weight: 0, usd: 0, cartons: 0 };
-      sizeAggMap.set(l.sizeId, {
+      const sz = sizeMap.get(l.sizeId);
+      const sizeName = l.gradeSize || sz?.name || 'Standard';
+      const sizeKey = sizeName;
+
+      const curS = sizeAggMap.get(sizeKey) || {
+        name: sizeName,
+        weight: 0,
+        usd: 0,
+        cartons: 0
+      };
+      sizeAggMap.set(sizeKey, {
+        ...curS,
         weight: curS.weight + l.weightKg,
         usd: curS.usd + l.amountCurrency,
         cartons: curS.cartons + l.cartonsCount
@@ -133,15 +199,11 @@ export const SalesReportsHub: React.FC = () => {
   });
 
   const productBreakdown = Array.from(productAggMap.entries())
-    .map(([spId, data]) => {
-      const sp = speciesMap.get(spId);
+    .map(([key, data]) => {
       const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
-      const pct = monthTotalUSD > 0 ? (data.usd / monthTotalUSD) * 100 : 0;
+      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
       return {
-        id: spId,
-        name: sp?.name || 'Unknown',
-        hsCode: sp?.hsCode || '03061790',
-        form: sp?.productForm || '-',
+        id: key,
         ...data,
         weightedAvgUSD,
         pct
@@ -149,14 +211,14 @@ export const SalesReportsHub: React.FC = () => {
     })
     .sort((a, b) => b.usd - a.usd);
 
+  const topProduct = productBreakdown[0];
+
   const sizeBreakdown = Array.from(sizeAggMap.entries())
-    .map(([szId, data]) => {
-      const sz = sizeMap.get(szId);
+    .map(([key, data]) => {
       const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
-      const pct = monthTotalUSD > 0 ? (data.usd / monthTotalUSD) * 100 : 0;
+      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
       return {
-        id: szId,
-        name: sz?.name || 'Standard',
+        id: key,
         ...data,
         weightedAvgUSD,
         pct
@@ -168,7 +230,7 @@ export const SalesReportsHub: React.FC = () => {
   // 4. DESTINATION & PORT ANALYSIS
   // --------------------------------------------------------------------------
   const podAggMap = new Map<string, { weight: number; usd: number; count: number }>();
-  monthInvoices.forEach((inv) => {
+  periodInvoices.forEach((inv) => {
     const cur = podAggMap.get(inv.portOfDischargeId) || { weight: 0, usd: 0, count: 0 };
     podAggMap.set(inv.portOfDischargeId, {
       weight: cur.weight + inv.totalWeightKg,
@@ -180,17 +242,19 @@ export const SalesReportsHub: React.FC = () => {
   const podBreakdown = Array.from(podAggMap.entries())
     .map(([podId, data]) => {
       const p = portMap.get(podId);
-      const pct = monthTotalUSD > 0 ? (data.usd / monthTotalUSD) * 100 : 0;
+      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
       return {
         id: podId,
-        name: p?.name || 'Unknown',
+        name: p?.name || 'Overseas Port',
         code: p?.code || 'POD',
-        country: p?.country || 'Export',
+        country: p?.country || 'Export Market',
         ...data,
         pct
       };
     })
     .sort((a, b) => b.usd - a.usd);
+
+  const topPort = podBreakdown[0];
 
   // --------------------------------------------------------------------------
   // 5. REALIZATION & AGEING SCHEDULE (0-30, 31-60, 61-90, 91-180, 180+ days)
@@ -252,7 +316,7 @@ export const SalesReportsHub: React.FC = () => {
     weight: data.weight,
     usd: data.usd,
     avgUSDPerKg: data.weight > 0 ? data.usd / data.weight : 0
-  }));
+  })).sort((a, b) => b.usd - a.usd);
 
   // --------------------------------------------------------------------------
   // 7. EXCEPTION REPORT (Missing data, Duplicates, Zero rate/weight, Overdue)
@@ -355,13 +419,13 @@ export const SalesReportsHub: React.FC = () => {
     const purchaseAvgCostPerKg = purchaseWeight > 0 ? purchaseCost / purchaseWeight : 0;
 
     const matchedInvoices = registerInvoices.filter((inv) =>
-      inv.lineItems.some((l) => l.speciesId === sp.id)
+      inv.lineItems.some((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
     );
     let salesWeight = 0;
     let salesUSD = 0;
     matchedInvoices.forEach((inv) => {
       inv.lineItems
-        .filter((l) => l.speciesId === sp.id)
+        .filter((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
         .forEach((l) => {
           salesWeight += l.weightKg;
           salesUSD += l.amountCurrency;
@@ -369,7 +433,6 @@ export const SalesReportsHub: React.FC = () => {
     });
 
     const salesAvgUSDPerKg = salesWeight > 0 ? salesUSD / salesWeight : 0;
-    // Realized INR rate approximation using booking rate (e.g. 84.50)
     const salesAvgINRPerKg = salesAvgUSDPerKg * 84.5;
     const grossMarginINRPerKg = salesAvgINRPerKg > 0 && purchaseAvgCostPerKg > 0 ? salesAvgINRPerKg - purchaseAvgCostPerKg : 0;
     const grossMarginPct = salesAvgINRPerKg > 0 ? (grossMarginINRPerKg / salesAvgINRPerKg) * 100 : 0;
@@ -392,11 +455,11 @@ export const SalesReportsHub: React.FC = () => {
   // Tab definitions
   const reportTabs: { id: SalesReportTab; label: string; icon: any; count?: number }[] = [
     { id: 'invoice-register', label: '1. Invoice Register', icon: FileText, count: registerInvoices.length },
-    { id: 'customer-analysis', label: '2. Customer Analysis', icon: Users },
-    { id: 'product-analysis', label: '3. Product & Size', icon: Layers },
-    { id: 'destination-analysis', label: '4. Ports & Destination', icon: Anchor },
+    { id: 'customer-analysis', label: '2. Customer Analysis', icon: Users, count: customerBreakdown.length },
+    { id: 'product-analysis', label: '3. Product & Size', icon: Layers, count: productBreakdown.length },
+    { id: 'destination-analysis', label: '4. Ports & Destination', icon: Anchor, count: podBreakdown.length },
     { id: 'realization-ageing', label: '5. Realization & Ageing', icon: Clock, count: outstandingInvoices.length },
-    { id: 'hs-code-summary', label: '6. HS Code / Compliance', icon: Percent },
+    { id: 'hs-code-summary', label: '6. HS Code / Compliance', icon: Percent, count: hsCodeBreakdown.length },
     { id: 'exceptions', label: '7. Exception Audit', icon: ShieldAlert, count: exceptionItems.length },
     { id: 'margin-analysis', label: '8. Margin Reconciliation', icon: DollarSign }
   ];
@@ -426,6 +489,46 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'BalanceUSD', label: 'Balance (USD)' }
       ]);
       downloadFile(csv, `Invoice_Register_${startDate}_${endDate}.csv`);
+    } else if (activeReport === 'product-analysis') {
+      const data = productBreakdown.map((p) => ({
+        Product: p.name,
+        HSCode: p.hsCode,
+        Form: p.form,
+        WeightKg: p.weight,
+        AmountUSD: p.usd,
+        SharePct: p.pct.toFixed(1) + '%',
+        AvgUSDPerKg: p.weightedAvgUSD.toFixed(2)
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'Product', label: 'Product / Species' },
+        { key: 'HSCode', label: 'HS Code' },
+        { key: 'Form', label: 'Product Form' },
+        { key: 'WeightKg', label: 'Total Net Weight (Kg)' },
+        { key: 'AmountUSD', label: 'Total USD' },
+        { key: 'SharePct', label: 'Share %' },
+        { key: 'AvgUSDPerKg', label: 'Avg USD/Kg' }
+      ]);
+      downloadFile(csv, `Product_Export_Analysis_${selectedMonth}.csv`);
+    } else if (activeReport === 'destination-analysis') {
+      const data = podBreakdown.map((p) => ({
+        Port: p.name,
+        Code: p.code,
+        Country: p.country,
+        Shipments: p.count,
+        WeightKg: p.weight,
+        AmountUSD: p.usd,
+        SharePct: p.pct.toFixed(1) + '%'
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'Port', label: 'Port of Discharge' },
+        { key: 'Code', label: 'Port Code' },
+        { key: 'Country', label: 'Country' },
+        { key: 'Shipments', label: 'Shipments Count' },
+        { key: 'WeightKg', label: 'Net Weight (Kg)' },
+        { key: 'AmountUSD', label: 'Total USD' },
+        { key: 'SharePct', label: 'Share %' }
+      ]);
+      downloadFile(csv, `Destination_Analysis_${selectedMonth}.csv`);
     } else {
       const data = customerBreakdown.map((c) => ({
         Customer: c.name,
@@ -470,8 +573,142 @@ export const SalesReportsHub: React.FC = () => {
         ]}
       />
 
+      {/* ==================================================================== */}
+      {/* EXECUTIVE SALES PERFORMANCE DASHBOARD BANNER */}
+      {/* ==================================================================== */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-950 via-rose-900 to-ink-950 text-white p-6 sm:p-8 shadow-xl border border-rose-800/40">
+        {/* Glow decoration */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-6">
+          {/* Header Row with Title and Period Filter */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300">
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-300">
+                  Executive Performance Analysis
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 font-mono text-white/90">
+                  {periodInvoices.length} Shipments
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Export Sales &amp; Realization Performance
+              </h2>
+              <p className="text-xs text-rose-200/80 max-w-2xl">
+                Comprehensive commercial turnover, metric tonnage, foreign exchange earnings, and customer market distribution.
+              </p>
+            </div>
+
+            {/* Period Selector Dropdown */}
+            <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-2xl border border-white/15 backdrop-blur-md">
+              <Calendar className="w-4 h-4 text-rose-300 ml-2" />
+              <span className="text-xs font-semibold text-rose-200">Period:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label="Filter performance report by period"
+                className="bg-rose-950/80 text-white font-bold text-xs px-3 py-1.5 rounded-xl border border-white/20 outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+              >
+                <option value="ALL">All FY 2026-27 (Full Period Overview)</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m} className="bg-ink-900 text-white">
+                    {formatMonthLabel(m)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 6 Key Executive Metric Tiles */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {/* Tile 1: Total Turnover */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+                Total Export Turnover
+              </span>
+              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+                ${totalPeriodUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-[11px] text-amber-300 font-bold mt-0.5 block truncate">
+                ≈ {formatINR(estimatedINRValue)}
+              </span>
+            </div>
+
+            {/* Tile 2: Volume Shipped */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+                Export Net Volume
+              </span>
+              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+                {formatKg(totalPeriodWeightKg)}
+              </span>
+              <span className="text-[11px] text-rose-200/80 font-medium mt-0.5 block truncate">
+                {totalPeriodCartons.toLocaleString()} Cartons Shipped
+              </span>
+            </div>
+
+            {/* Tile 3: Realization % */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">
+                Bank Realization
+              </span>
+              <span className="text-lg sm:text-xl font-black text-emerald-400 mt-1 block truncate">
+                {realizationRatePct.toFixed(1)}%
+              </span>
+              <span className="text-[11px] text-emerald-200/90 font-bold mt-0.5 block truncate">
+                {totalPeriodRealizedINR > 0 ? formatINR(totalPeriodRealizedINR) : 'Remittance Inward'}
+              </span>
+            </div>
+
+            {/* Tile 4: Average Price */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
+                Avg Realization / Kg
+              </span>
+              <span className="text-lg sm:text-xl font-black text-white mt-1 block truncate">
+                ${overallAvgUSDPerKg.toFixed(2)}
+              </span>
+              <span className="text-[11px] text-rose-200/80 font-medium mt-0.5 block truncate">
+                ≈ ₹{(overallAvgUSDPerKg * 84.5).toFixed(0)} / Kg
+              </span>
+            </div>
+
+            {/* Tile 5: Top Commodity */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">
+                Top Product
+              </span>
+              <span className="text-sm sm:text-base font-extrabold text-white mt-1 block truncate" title={topProduct?.name || 'N/A'}>
+                {topProduct ? topProduct.name : 'N/A'}
+              </span>
+              <span className="text-[11px] text-amber-200/90 font-bold mt-0.5 block truncate">
+                {topProduct ? `$${topProduct.usd.toLocaleString()} (${topProduct.pct.toFixed(0)}%)` : '—'}
+              </span>
+            </div>
+
+            {/* Tile 6: Top Customer */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
+              <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">
+                Top Overseas Buyer
+              </span>
+              <span className="text-sm sm:text-base font-extrabold text-white mt-1 block truncate" title={topCustomer?.name || 'N/A'}>
+                {topCustomer ? topCustomer.name : 'N/A'}
+              </span>
+              <span className="text-[11px] text-cyan-200/90 font-bold mt-0.5 block truncate">
+                {topCustomer ? `$${topCustomer.usd.toLocaleString()} · ${topPort?.name || topCustomer.country}` : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Pill Tab Bar (Liquid Glass Surface) */}
-      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs">
+      <div className="glass-surface-thin p-3 rounded-2xl border border-white/80 shadow-xs">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
           {reportTabs.map((tab) => {
             const Icon = tab.icon;
@@ -511,7 +748,7 @@ export const SalesReportsHub: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
               <h3 className="text-sm font-bold text-ink-900">Commercial Invoice Register</h3>
-              <p className="text-xs text-ink-500">Chronological register of export shipments within date range.</p>
+              <p className="text-xs text-ink-500">Chronological register of export shipments within date range ({registerInvoices.length} shipments).</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-ink-700">From:</span>
@@ -519,14 +756,14 @@ export const SalesReportsHub: React.FC = () => {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none"
+                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:border-rose-500 focus:bg-white transition"
               />
               <span className="text-xs font-semibold text-ink-700">To:</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none"
+                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:border-rose-500 focus:bg-white transition"
               />
             </div>
           </div>
@@ -614,35 +851,44 @@ export const SalesReportsHub: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">Customer &amp; Consignee Performance</h3>
-              <p className="text-xs text-ink-500">Monthly breakdown of export volume, value share, and average USD/Kg.</p>
+              <h3 className="text-sm font-bold text-ink-900">
+                Customer &amp; Consignee Performance ({formatMonthLabel(selectedMonth)})
+              </h3>
+              <p className="text-xs text-ink-500">Breakdown of export volume, value share, and average USD/Kg across overseas clients.</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-ink-700">Month:</span>
-              <input
-                type="month"
+              <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
+              <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
-              />
+                aria-label="Filter customer analysis by period"
+                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+              >
+                <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {formatMonthLabel(m)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200">
-              <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">Total Month Export</span>
+              <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">Total Period Export</span>
               <span className="text-lg font-black text-rose-950 mt-1 block">
-                ${monthTotalUSD.toLocaleString()}
+                ${totalPeriodUSD.toLocaleString()}
               </span>
               <span className="text-xs text-rose-800 mt-1 block">
-                {formatKg(monthTotalWeight)} across {monthInvoices.length} shipments
+                {formatKg(totalPeriodWeightKg)} across {periodInvoices.length} shipments
               </span>
             </div>
 
             <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase block tracking-wider">Top Customer</span>
-              <span className="text-lg font-black text-emerald-950 mt-1 block">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase block tracking-wider">Top Overseas Customer</span>
+              <span className="text-base font-black text-emerald-950 mt-1 block truncate" title={topCustomer?.name || 'N/A'}>
                 {topCustomer ? topCustomer.name : 'N/A'}
               </span>
               <span className="text-xs text-emerald-800 mt-1 block">
@@ -652,7 +898,7 @@ export const SalesReportsHub: React.FC = () => {
 
             <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
               <span className="text-[10px] font-bold text-amber-800 uppercase block tracking-wider">Lowest Volume Customer</span>
-              <span className="text-lg font-black text-amber-950 mt-1 block">
+              <span className="text-base font-black text-amber-950 mt-1 block truncate" title={lowestCustomer?.name || 'N/A'}>
                 {lowestCustomer ? lowestCustomer.name : 'N/A'}
               </span>
               <span className="text-xs text-amber-800 mt-1 block">
@@ -712,16 +958,42 @@ export const SalesReportsHub: React.FC = () => {
       {/* ==================================================================== */}
       {activeReport === 'product-analysis' && (
         <div className="space-y-6">
-          {/* Products */}
+          {/* Products Table */}
           <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
-            <h3 className="text-sm font-bold text-ink-900">Product / Species Export Distribution ({selectedMonth})</h3>
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-gray-100">
+              <div>
+                <h3 className="text-sm font-bold text-ink-900">
+                  Product &amp; Species Export Distribution ({formatMonthLabel(selectedMonth)})
+                </h3>
+                <p className="text-xs text-ink-500">
+                  Extracted directly from Commercial Invoices line items ({productBreakdown.length} species / product lines).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  aria-label="Filter product analysis by period"
+                  className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+                >
+                  <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
+                  {availableMonths.map((m) => (
+                    <option key={m} value={m}>
+                      {formatMonthLabel(m)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
                     <th className="py-2.5 px-3">Product / Species</th>
                     <th className="py-2.5 px-3">HS Code</th>
-                    <th className="py-2.5 px-3">Form</th>
+                    <th className="py-2.5 px-3">Product Form</th>
                     <th className="py-2.5 px-3 text-right">Total Net Wt (Kg)</th>
                     <th className="py-2.5 px-3 text-right">Export Value (USD)</th>
                     <th className="py-2.5 px-3 text-right">% Share</th>
@@ -729,34 +1001,44 @@ export const SalesReportsHub: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {productBreakdown.map((row) => (
-                    <tr key={row.id} className="hover:bg-rose-50/20">
-                      <td className="py-2.5 px-3 font-bold text-ink-900">{row.name}</td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-ink-600">{row.hsCode}</td>
-                      <td className="py-2.5 px-3 text-ink-600">{row.form}</td>
-                      <td className="py-2.5 px-3 text-right font-bold">{formatKg(row.weight)}</td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-rose-950">
-                        ${row.usd.toLocaleString()}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-bold">{row.pct.toFixed(1)}%</td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700">
-                        ${row.weightedAvgUSD.toFixed(2)}/kg
+                  {productBreakdown.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-ink-500">
+                        No product line items found for the selected period.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    productBreakdown.map((row) => (
+                      <tr key={row.id} className="hover:bg-rose-50/20">
+                        <td className="py-2.5 px-3 font-bold text-ink-900">{row.name}</td>
+                        <td className="py-2.5 px-3 font-mono text-[11px] text-ink-600">{row.hsCode}</td>
+                        <td className="py-2.5 px-3 text-ink-600">{row.form}</td>
+                        <td className="py-2.5 px-3 text-right font-bold">{formatKg(row.weight)}</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-rose-950">
+                          ${row.usd.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-bold text-ink-700">{row.pct.toFixed(1)}%</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700">
+                          ${row.weightedAvgUSD.toFixed(2)}/kg
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Sizes */}
+          {/* Sizes Table */}
           <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
-            <h3 className="text-sm font-bold text-ink-900">Physical Size Export Breakdown ({selectedMonth})</h3>
+            <h3 className="text-sm font-bold text-ink-900">
+              Physical Grade / Size Breakdown ({sizeBreakdown.length} active sizes)
+            </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
-                    <th className="py-2.5 px-3">Physical Size</th>
+                    <th className="py-2.5 px-3">Grade Size</th>
                     <th className="py-2.5 px-3 text-right">Cartons</th>
                     <th className="py-2.5 px-3 text-right">Net Weight (Kg)</th>
                     <th className="py-2.5 px-3 text-right">Value (USD)</th>
@@ -765,20 +1047,28 @@ export const SalesReportsHub: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {sizeBreakdown.map((row) => (
-                    <tr key={row.id} className="hover:bg-rose-50/20">
-                      <td className="py-2 px-3 font-bold text-ink-900">{row.name}</td>
-                      <td className="py-2 px-3 text-right">{row.cartons}</td>
-                      <td className="py-2 px-3 text-right font-bold">{formatKg(row.weight)}</td>
-                      <td className="py-2 px-3 text-right font-extrabold text-rose-950">
-                        ${row.usd.toLocaleString()}
-                      </td>
-                      <td className="py-2 px-3 text-right font-bold">{row.pct.toFixed(1)}%</td>
-                      <td className="py-2 px-3 text-right font-bold text-emerald-700">
-                        ${row.weightedAvgUSD.toFixed(2)}/kg
+                  {sizeBreakdown.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-ink-500">
+                        No size breakdown available for the selected period.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    sizeBreakdown.map((row) => (
+                      <tr key={row.id} className="hover:bg-rose-50/20">
+                        <td className="py-2 px-3 font-bold text-ink-900 font-mono">{row.name}</td>
+                        <td className="py-2 px-3 text-right">{row.cartons.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right font-bold">{formatKg(row.weight)}</td>
+                        <td className="py-2 px-3 text-right font-extrabold text-rose-950">
+                          ${row.usd.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-3 text-right font-bold text-ink-700">{row.pct.toFixed(1)}%</td>
+                        <td className="py-2 px-3 text-right font-bold text-emerald-700">
+                          ${row.weightedAvgUSD.toFixed(2)}/kg
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -793,8 +1083,26 @@ export const SalesReportsHub: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">Destination Ports &amp; Overseas Terminal Volume</h3>
-              <p className="text-xs text-ink-500">Volume and value breakdown by Port of Discharge (POD) for {selectedMonth}.</p>
+              <h3 className="text-sm font-bold text-ink-900">
+                Destination Ports &amp; Overseas Terminal Volume ({formatMonthLabel(selectedMonth)})
+              </h3>
+              <p className="text-xs text-ink-500">Volume and value breakdown by Port of Discharge (POD).</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label="Filter destination analysis by period"
+                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+              >
+                <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {formatMonthLabel(m)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -842,7 +1150,7 @@ export const SalesReportsHub: React.FC = () => {
                 Inward Realization &amp; Export Receivables Ageing Schedule
               </h3>
               <p className="text-xs text-ink-500">
-                Mirrors the Purchase module's payment ageing pattern. Tracks pending foreign remittances across 0–30, 31–60, 61–90, 91–180, and 180+ days.
+                Tracks pending foreign remittances across 0–30, 31–60, 61–90, 91–180, and 180+ days.
               </p>
             </div>
           </div>
