@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
@@ -17,11 +17,21 @@ import {
   CheckCircle2,
   DollarSign,
   Sparkles,
-  Calendar
+  Calendar,
+  Search,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
+  Package,
+  Boxes,
+  Table,
+  LayoutGrid
 } from 'lucide-react';
+import { SalesInvoice } from '../../types';
 
-type SalesReportTab =
+export type SalesReportTab =
   | 'invoice-register'
+  | 'invoice-product-analysis'
   | 'customer-analysis'
   | 'product-analysis'
   | 'destination-analysis'
@@ -29,6 +39,35 @@ type SalesReportTab =
   | 'hs-code-summary'
   | 'exceptions'
   | 'margin-analysis';
+
+export interface EnrichedInvoiceProductLine {
+  id: string;
+  invoiceId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  orderNo?: string;
+  customerId: string;
+  customerName: string;
+  customerCountry: string;
+  portOfDischargeId: string;
+  portOfDischargeName: string;
+  finalDestination: string;
+  realizationStatus: string;
+  totalRealizedINR: number;
+  speciesId: string;
+  productName: string;
+  scientificName?: string;
+  sizeId: string;
+  gradeSize: string;
+  hsCode: string;
+  cartonsCount: number;
+  weightKg: number;
+  ratePerKg: number;
+  amountCurrency: number;
+  invoiceTotalUSD: number;
+  invoiceTotalWeightKg: number;
+  lineSharePct: number;
+}
 
 export const SalesReportsHub: React.FC = () => {
   const {
@@ -42,25 +81,34 @@ export const SalesReportsHub: React.FC = () => {
 
   const [activeReport, setActiveReport] = useState<SalesReportTab>('invoice-register');
 
-  // Filter States: Default to ALL for full FY 2026-27 period analysis
+  // Executive Top Banner Filter
   const today = new Date().toISOString().split('T')[0];
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
-  const [startDate, setStartDate] = useState<string>('2026-04-01');
-  const [endDate, setEndDate] = useState<string>(today);
-  const [overdueThresholdDays, setOverdueThresholdDays] = useState<number>(60);
 
   // Lookups
-  const customerMap = new Map(customers.map((c) => [c.id, c]));
-  const portMap = new Map(ports.map((p) => [p.id, p]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
-  const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
+  const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
+  const portMap = useMemo(() => new Map(ports.map((p) => [p.id, p])), [ports]);
+  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+  const sizeMap = useMemo(() => new Map(sizes.map((sz) => [sz.id, sz])), [sizes]);
 
-  const activeInvoices = salesInvoices.filter((inv) => !inv.isVoided);
+  const activeInvoices = useMemo(() => salesInvoices.filter((inv) => !inv.isVoided), [salesInvoices]);
 
   // Available unique months from commercial invoice dates
-  const availableMonths = Array.from(
-    new Set(activeInvoices.map((inv) => inv.invoiceDate.slice(0, 7)).filter(Boolean))
-  ).sort().reverse();
+  const availableMonths = useMemo(() => {
+    return Array.from(
+      new Set(activeInvoices.map((inv) => inv.invoiceDate.slice(0, 7)).filter(Boolean))
+    ).sort().reverse();
+  }, [activeInvoices]);
+
+  const availableCountries = useMemo(() => {
+    return Array.from(
+      new Set(
+        activeInvoices
+          .map((inv) => inv.countryOfDestination || customerMap.get(inv.consigneeId)?.country)
+          .filter(Boolean) as string[]
+      )
+    ).sort();
+  }, [activeInvoices, customerMap]);
 
   const formatMonthLabel = (m: string) => {
     if (m === 'ALL') return 'All FY 2026-27 (Full Year Overview)';
@@ -71,11 +119,13 @@ export const SalesReportsHub: React.FC = () => {
   };
 
   // --------------------------------------------------------------------------
-  // EXECUTIVE SALES PERFORMANCE OVERVIEW (Filtered by selectedMonth)
+  // EXECUTIVE SALES PERFORMANCE OVERVIEW (Top banner)
   // --------------------------------------------------------------------------
-  const periodInvoices = selectedMonth === 'ALL'
-    ? activeInvoices
-    : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(selectedMonth));
+  const periodInvoices = useMemo(() => {
+    return selectedMonth === 'ALL'
+      ? activeInvoices
+      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(selectedMonth));
+  }, [activeInvoices, selectedMonth]);
 
   const totalPeriodUSD = periodInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
   const totalPeriodWeightKg = periodInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
@@ -89,240 +139,681 @@ export const SalesReportsHub: React.FC = () => {
   const estimatedINRValue = totalPeriodUSD * 84.5;
 
   // --------------------------------------------------------------------------
-  // 1. INVOICE REGISTER (Date range)
+  // 1. INVOICE REGISTER STATE & FILTERING
   // --------------------------------------------------------------------------
-  const registerInvoices = activeInvoices.filter(
-    (inv) => inv.invoiceDate >= startDate && inv.invoiceDate <= endDate
-  );
+  const [regStartDate, setRegStartDate] = useState<string>('2026-04-01');
+  const [regEndDate, setRegEndDate] = useState<string>(today);
+  const [regCustomerFilter, setRegCustomerFilter] = useState<string>('');
+  const [regPortFilter, setRegPortFilter] = useState<string>('');
+  const [regStatusFilter, setRegStatusFilter] = useState<string>('');
+  const [regSearch, setRegSearch] = useState<string>('');
+
+  const registerInvoices = useMemo(() => {
+    return activeInvoices.filter((inv) => {
+      if (regStartDate && inv.invoiceDate < regStartDate) return false;
+      if (regEndDate && inv.invoiceDate > regEndDate) return false;
+      if (regCustomerFilter && inv.consigneeId !== regCustomerFilter) return false;
+      if (regPortFilter && inv.portOfDischargeId !== regPortFilter) return false;
+      if (regStatusFilter && inv.realizationStatus !== regStatusFilter) return false;
+      if (regSearch) {
+        const q = regSearch.toLowerCase();
+        const matchNo = inv.invoiceNo.toLowerCase().includes(q);
+        const matchCust = (customerMap.get(inv.consigneeId)?.name || '').toLowerCase().includes(q);
+        const matchPort = (portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || '').toLowerCase().includes(q);
+        const matchDest = (inv.finalDestination || '').toLowerCase().includes(q);
+        if (!matchNo && !matchCust && !matchPort && !matchDest) return false;
+      }
+      return true;
+    });
+  }, [activeInvoices, regStartDate, regEndDate, regCustomerFilter, regPortFilter, regStatusFilter, regSearch, customerMap, portMap]);
+
   const regTotalWeight = registerInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
   const regTotalUSD = registerInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
   const regTotalINR = registerInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const regTotalBalance = registerInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
 
-  // --------------------------------------------------------------------------
-  // 2. CUSTOMER-WISE SALES ANALYSIS (Period / Month)
-  // --------------------------------------------------------------------------
-  const customerAggMap = new Map<string, { weight: number; usd: number; cartons: number; invoices: number }>();
-  periodInvoices.forEach((inv) => {
-    const cur = customerAggMap.get(inv.consigneeId) || { weight: 0, usd: 0, cartons: 0, invoices: 0 };
-    customerAggMap.set(inv.consigneeId, {
-      weight: cur.weight + inv.totalWeightKg,
-      usd: cur.usd + inv.totalAmountCurrency,
-      cartons: cur.cartons + inv.totalCartons,
-      invoices: cur.invoices + 1
-    });
-  });
+  const isRegFiltered = Boolean(
+    regStartDate !== '2026-04-01' ||
+    regEndDate !== today ||
+    regCustomerFilter ||
+    regPortFilter ||
+    regStatusFilter ||
+    regSearch
+  );
 
-  const customerBreakdown = Array.from(customerAggMap.entries())
-    .map(([custId, data]) => {
-      const cust = customerMap.get(custId);
-      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
-      const avgRate = data.weight > 0 ? data.usd / data.weight : 0;
-      return {
-        id: custId,
-        name: cust?.name || 'Overseas Buyer',
-        country: cust?.country || 'Export Market',
-        ...data,
-        pct,
-        avgRate
+  const resetRegFilters = () => {
+    setRegStartDate('2026-04-01');
+    setRegEndDate(today);
+    setRegCustomerFilter('');
+    setRegPortFilter('');
+    setRegStatusFilter('');
+    setRegSearch('');
+  };
+
+  // --------------------------------------------------------------------------
+  // 2. INVOICE & PRODUCT CROSS-ANALYSIS (NEW REPORT)
+  // --------------------------------------------------------------------------
+  const [invProdMonth, setInvProdMonth] = useState<string>('ALL');
+  const [invProdCustomer, setInvProdCustomer] = useState<string>('');
+  const [invProdSpecies, setInvProdSpecies] = useState<string>('');
+  const [invProdSize, setInvProdSize] = useState<string>('');
+  const [invProdPort, setInvProdPort] = useState<string>('');
+  const [invProdStatus, setInvProdStatus] = useState<string>('');
+  const [invProdSearch, setInvProdSearch] = useState<string>('');
+  const [invProdViewMode, setInvProdViewMode] = useState<'hierarchy' | 'flat' | 'matrix'>('hierarchy');
+  const [expandedInvoiceIds, setExpandedInvoiceIds] = useState<Set<string>>(new Set());
+
+  // Flattened enriched product lines across active invoices
+  const allEnrichedLines = useMemo(() => {
+    const list: EnrichedInvoiceProductLine[] = [];
+    activeInvoices.forEach((inv) => {
+      const cust = customerMap.get(inv.consigneeId);
+      const pod = portMap.get(inv.portOfDischargeId);
+      inv.lineItems.forEach((l, idx) => {
+        const sp = speciesMap.get(l.speciesId);
+        const sz = sizeMap.get(l.sizeId);
+        const prodName = sp?.name || l.productDescription || 'Export Seafood';
+        const grade = l.gradeSize || sz?.name || 'Standard';
+        const hs = l.hsCode || sp?.hsCode || '03061790';
+        const sharePct = inv.totalAmountCurrency > 0 ? (l.amountCurrency / inv.totalAmountCurrency) * 100 : 0;
+
+        list.push({
+          id: l.id || `${inv.id}-${idx}`,
+          invoiceId: inv.id,
+          invoiceNo: inv.invoiceNo,
+          invoiceDate: inv.invoiceDate,
+          orderNo: inv.orderNo,
+          customerId: inv.consigneeId,
+          customerName: cust?.name || 'Overseas Buyer',
+          customerCountry: cust?.country || inv.countryOfDestination || 'Export',
+          portOfDischargeId: inv.portOfDischargeId,
+          portOfDischargeName: pod?.name || inv.portOfDischarge || 'Discharge Port',
+          finalDestination: inv.finalDestination || `${cust?.address || ''}, ${cust?.country || ''}`,
+          realizationStatus: inv.realizationStatus,
+          totalRealizedINR: inv.totalRealizedINR,
+          speciesId: l.speciesId,
+          productName: prodName,
+          scientificName: sp?.scientificName,
+          sizeId: l.sizeId,
+          gradeSize: grade,
+          hsCode: hs,
+          cartonsCount: l.cartonsCount,
+          weightKg: l.weightKg,
+          ratePerKg: l.ratePerKg,
+          amountCurrency: l.amountCurrency,
+          invoiceTotalUSD: inv.totalAmountCurrency,
+          invoiceTotalWeightKg: inv.totalWeightKg,
+          lineSharePct: sharePct
+        });
+      });
+    });
+    return list;
+  }, [activeInvoices, customerMap, portMap, speciesMap, sizeMap]);
+
+  // Filtered enriched lines
+  const filteredInvoiceProductLines = useMemo(() => {
+    return allEnrichedLines.filter((line) => {
+      if (invProdMonth !== 'ALL' && !line.invoiceDate.startsWith(invProdMonth)) return false;
+      if (invProdCustomer && line.customerId !== invProdCustomer) return false;
+      if (invProdSpecies && line.speciesId !== invProdSpecies && !line.productName.toLowerCase().includes(invProdSpecies.toLowerCase())) return false;
+      if (invProdSize && line.sizeId !== invProdSize && !line.gradeSize.toLowerCase().includes(invProdSize.toLowerCase())) return false;
+      if (invProdPort && line.portOfDischargeId !== invProdPort) return false;
+      if (invProdStatus && line.realizationStatus !== invProdStatus) return false;
+      if (invProdSearch) {
+        const q = invProdSearch.toLowerCase();
+        const mInv = line.invoiceNo.toLowerCase().includes(q);
+        const mProd = line.productName.toLowerCase().includes(q);
+        const mGrade = line.gradeSize.toLowerCase().includes(q);
+        const mCust = line.customerName.toLowerCase().includes(q);
+        const mHs = line.hsCode.toLowerCase().includes(q);
+        const mOrder = (line.orderNo || '').toLowerCase().includes(q);
+        if (!mInv && !mProd && !mGrade && !mCust && !mHs && !mOrder) return false;
+      }
+      return true;
+    });
+  }, [allEnrichedLines, invProdMonth, invProdCustomer, invProdSpecies, invProdSize, invProdPort, invProdStatus, invProdSearch]);
+
+  // Invoices represented in the filtered lines
+  const filteredInvoiceMap = useMemo(() => {
+    const map = new Map<string, { invoice: SalesInvoice; lines: EnrichedInvoiceProductLine[] }>();
+    filteredInvoiceProductLines.forEach((line) => {
+      const inv = activeInvoices.find((i) => i.id === line.invoiceId);
+      if (inv) {
+        const cur = map.get(inv.id) || { invoice: inv, lines: [] };
+        cur.lines.push(line);
+        map.set(inv.id, cur);
+      }
+    });
+    return map;
+  }, [filteredInvoiceProductLines, activeInvoices]);
+
+  const filteredInvoicesCount = filteredInvoiceMap.size;
+  const invProdTotalWeight = filteredInvoiceProductLines.reduce((s, l) => s + l.weightKg, 0);
+  const invProdTotalUSD = filteredInvoiceProductLines.reduce((s, l) => s + l.amountCurrency, 0);
+  const invProdTotalCartons = filteredInvoiceProductLines.reduce((s, l) => s + l.cartonsCount, 0);
+  const invProdAvgRate = invProdTotalWeight > 0 ? invProdTotalUSD / invProdTotalWeight : 0;
+  const ratesList = filteredInvoiceProductLines.map((l) => l.ratePerKg).filter((r) => r > 0);
+  const invProdMinRate = ratesList.length > 0 ? Math.min(...ratesList) : 0;
+  const invProdMaxRate = ratesList.length > 0 ? Math.max(...ratesList) : 0;
+
+  // Grouping by Product for Matrix View
+  const productMatrixMap = useMemo(() => {
+    const map = new Map<string, {
+      productName: string;
+      hsCode: string;
+      totalWeight: number;
+      totalUSD: number;
+      totalCartons: number;
+      lines: EnrichedInvoiceProductLine[];
+      minRate: number;
+      maxRate: number;
+      invoicesSet: Set<string>;
+    }>();
+
+    filteredInvoiceProductLines.forEach((l) => {
+      const key = l.speciesId || l.productName;
+      const cur = map.get(key) || {
+        productName: l.productName,
+        hsCode: l.hsCode,
+        totalWeight: 0,
+        totalUSD: 0,
+        totalCartons: 0,
+        lines: [],
+        minRate: l.ratePerKg,
+        maxRate: l.ratePerKg,
+        invoicesSet: new Set<string>()
       };
-    })
-    .sort((a, b) => b.usd - a.usd);
+
+      cur.totalWeight += l.weightKg;
+      cur.totalUSD += l.amountCurrency;
+      cur.totalCartons += l.cartonsCount;
+      cur.lines.push(l);
+      cur.minRate = Math.min(cur.minRate, l.ratePerKg);
+      cur.maxRate = Math.max(cur.maxRate, l.ratePerKg);
+      cur.invoicesSet.add(l.invoiceNo);
+
+      map.set(key, cur);
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalUSD - a.totalUSD);
+  }, [filteredInvoiceProductLines]);
+
+  const toggleInvoiceExpansion = (id: string) => {
+    setExpandedInvoiceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAllInvoices = () => {
+    setExpandedInvoiceIds(new Set(Array.from(filteredInvoiceMap.keys())));
+  };
+
+  const collapseAllInvoices = () => {
+    setExpandedInvoiceIds(new Set());
+  };
+
+  const isInvProdFiltered = Boolean(
+    invProdMonth !== 'ALL' ||
+    invProdCustomer ||
+    invProdSpecies ||
+    invProdSize ||
+    invProdPort ||
+    invProdStatus ||
+    invProdSearch
+  );
+
+  const resetInvProdFilters = () => {
+    setInvProdMonth('ALL');
+    setInvProdCustomer('');
+    setInvProdSpecies('');
+    setInvProdSize('');
+    setInvProdPort('');
+    setInvProdStatus('');
+    setInvProdSearch('');
+  };
+
+  // --------------------------------------------------------------------------
+  // 3. CUSTOMER-WISE SALES ANALYSIS
+  // --------------------------------------------------------------------------
+  const [custMonth, setCustMonth] = useState<string>('ALL');
+  const [custCountryFilter, setCustCountryFilter] = useState<string>('');
+  const [custSearch, setCustSearch] = useState<string>('');
+  const [custMinValue, setCustMinValue] = useState<number>(0);
+  const [custSortBy, setCustSortBy] = useState<'usd' | 'weight' | 'invoices' | 'rate'>('usd');
+
+  const customerAnalysisInvoices = useMemo(() => {
+    return custMonth === 'ALL'
+      ? activeInvoices
+      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(custMonth));
+  }, [activeInvoices, custMonth]);
+
+  const customerBreakdown = useMemo(() => {
+    const customerAggMap = new Map<string, { weight: number; usd: number; cartons: number; invoices: number }>();
+    customerAnalysisInvoices.forEach((inv) => {
+      const cur = customerAggMap.get(inv.consigneeId) || { weight: 0, usd: 0, cartons: 0, invoices: 0 };
+      customerAggMap.set(inv.consigneeId, {
+        weight: cur.weight + inv.totalWeightKg,
+        usd: cur.usd + inv.totalAmountCurrency,
+        cartons: cur.cartons + inv.totalCartons,
+        invoices: cur.invoices + 1
+      });
+    });
+
+    const totalCustUSD = Array.from(customerAggMap.values()).reduce((s, v) => s + v.usd, 0);
+
+    let list = Array.from(customerAggMap.entries())
+      .map(([custId, data]) => {
+        const cust = customerMap.get(custId);
+        const pct = totalCustUSD > 0 ? (data.usd / totalCustUSD) * 100 : 0;
+        const avgRate = data.weight > 0 ? data.usd / data.weight : 0;
+        return {
+          id: custId,
+          name: cust?.name || 'Overseas Buyer',
+          country: cust?.country || 'Export Market',
+          address: cust?.address || '',
+          ...data,
+          pct,
+          avgRate
+        };
+      })
+      .filter((c) => {
+        if (custCountryFilter && c.country !== custCountryFilter) return false;
+        if (custMinValue > 0 && c.usd < custMinValue) return false;
+        if (custSearch) {
+          const q = custSearch.toLowerCase();
+          const matchName = c.name.toLowerCase().includes(q);
+          const matchCountry = c.country.toLowerCase().includes(q);
+          const matchAddress = c.address.toLowerCase().includes(q);
+          if (!matchName && !matchCountry && !matchAddress) return false;
+        }
+        return true;
+      });
+
+    if (custSortBy === 'usd') list.sort((a, b) => b.usd - a.usd);
+    else if (custSortBy === 'weight') list.sort((a, b) => b.weight - a.weight);
+    else if (custSortBy === 'invoices') list.sort((a, b) => b.invoices - a.invoices);
+    else if (custSortBy === 'rate') list.sort((a, b) => b.avgRate - a.avgRate);
+
+    return list;
+  }, [customerAnalysisInvoices, customerMap, custCountryFilter, custMinValue, custSearch, custSortBy]);
 
   const topCustomer = customerBreakdown[0];
   const lowestCustomer = customerBreakdown[customerBreakdown.length - 1];
-  const avgCustomerUSD = customerBreakdown.length > 0 ? totalPeriodUSD / customerBreakdown.length : 0;
+  const totalFilteredCustUSD = customerBreakdown.reduce((s, c) => s + c.usd, 0);
+  const totalFilteredCustWeight = customerBreakdown.reduce((s, c) => s + c.weight, 0);
+  const avgCustomerUSD = customerBreakdown.length > 0 ? totalFilteredCustUSD / customerBreakdown.length : 0;
+
+  const isCustFiltered = Boolean(
+    custMonth !== 'ALL' ||
+    custCountryFilter ||
+    custSearch ||
+    custMinValue > 0 ||
+    custSortBy !== 'usd'
+  );
+
+  const resetCustFilters = () => {
+    setCustMonth('ALL');
+    setCustCountryFilter('');
+    setCustSearch('');
+    setCustMinValue(0);
+    setCustSortBy('usd');
+  };
 
   // --------------------------------------------------------------------------
-  // 3. PRODUCT & SIZE ANALYSIS (Period / Month)
+  // 4. PRODUCT & SIZE ANALYSIS
   // --------------------------------------------------------------------------
-  const productAggMap = new Map<string, {
-    name: string;
-    hsCode: string;
-    form: string;
-    weight: number;
-    usd: number;
-    cartons: number;
-    linesCount: number;
-  }>();
-  const sizeAggMap = new Map<string, {
-    name: string;
-    weight: number;
-    usd: number;
-    cartons: number;
-  }>();
+  const [prodMonth, setProdMonth] = useState<string>('ALL');
+  const [prodFormFilter, setProdFormFilter] = useState<string>('');
+  const [prodSearch, setProdSearch] = useState<string>('');
+  const [prodSizeSearch, setProdSizeSearch] = useState<string>('');
+  const [prodSortBy, setProdSortBy] = useState<'usd' | 'weight' | 'rate'>('usd');
 
-  periodInvoices.forEach((inv) => {
-    inv.lineItems.forEach((l) => {
-      // Product
-      const sp = speciesMap.get(l.speciesId);
-      const prodName = sp?.name || l.productDescription || 'Export Seafood';
-      const hsCode = l.hsCode || sp?.hsCode || '03061790';
-      const form = sp?.category || (prodName.toLowerCase().includes('shrimp') || prodName.toLowerCase().includes('vanamei') ? 'Frozen Block / IQF' : 'Frozen Whole');
-      const prodKey = l.speciesId || prodName;
+  const prodAnalysisInvoices = useMemo(() => {
+    return prodMonth === 'ALL'
+      ? activeInvoices
+      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(prodMonth));
+  }, [activeInvoices, prodMonth]);
 
-      const curP = productAggMap.get(prodKey) || {
-        name: prodName,
-        hsCode,
-        form,
-        weight: 0,
-        usd: 0,
-        cartons: 0,
-        linesCount: 0
-      };
-      productAggMap.set(prodKey, {
-        ...curP,
-        weight: curP.weight + l.weightKg,
-        usd: curP.usd + l.amountCurrency,
-        cartons: curP.cartons + l.cartonsCount,
-        linesCount: curP.linesCount + 1
-      });
+  const { productBreakdown, sizeBreakdown, availableForms } = useMemo(() => {
+    const productAggMap = new Map<string, {
+      name: string;
+      hsCode: string;
+      form: string;
+      weight: number;
+      usd: number;
+      cartons: number;
+      linesCount: number;
+    }>();
+    const sizeAggMap = new Map<string, {
+      name: string;
+      weight: number;
+      usd: number;
+      cartons: number;
+    }>();
+    const formsSet = new Set<string>();
 
-      // Size
-      const sz = sizeMap.get(l.sizeId);
-      const sizeName = l.gradeSize || sz?.name || 'Standard';
-      const sizeKey = sizeName;
+    prodAnalysisInvoices.forEach((inv) => {
+      inv.lineItems.forEach((l) => {
+        const sp = speciesMap.get(l.speciesId);
+        const prodName = sp?.name || l.productDescription || 'Export Seafood';
+        const hsCode = l.hsCode || sp?.hsCode || '03061790';
+        const form = sp?.category || (prodName.toLowerCase().includes('shrimp') || prodName.toLowerCase().includes('vanamei') ? 'Frozen Block / IQF' : 'Frozen Whole');
+        formsSet.add(form);
+        const prodKey = l.speciesId || prodName;
 
-      const curS = sizeAggMap.get(sizeKey) || {
-        name: sizeName,
-        weight: 0,
-        usd: 0,
-        cartons: 0
-      };
-      sizeAggMap.set(sizeKey, {
-        ...curS,
-        weight: curS.weight + l.weightKg,
-        usd: curS.usd + l.amountCurrency,
-        cartons: curS.cartons + l.cartonsCount
+        const curP = productAggMap.get(prodKey) || {
+          name: prodName,
+          hsCode,
+          form,
+          weight: 0,
+          usd: 0,
+          cartons: 0,
+          linesCount: 0
+        };
+        productAggMap.set(prodKey, {
+          ...curP,
+          weight: curP.weight + l.weightKg,
+          usd: curP.usd + l.amountCurrency,
+          cartons: curP.cartons + l.cartonsCount,
+          linesCount: curP.linesCount + 1
+        });
+
+        const sz = sizeMap.get(l.sizeId);
+        const sizeName = l.gradeSize || sz?.name || 'Standard';
+        const sizeKey = sizeName;
+
+        const curS = sizeAggMap.get(sizeKey) || {
+          name: sizeName,
+          weight: 0,
+          usd: 0,
+          cartons: 0
+        };
+        sizeAggMap.set(sizeKey, {
+          ...curS,
+          weight: curS.weight + l.weightKg,
+          usd: curS.usd + l.amountCurrency,
+          cartons: curS.cartons + l.cartonsCount
+        });
       });
     });
-  });
 
-  const productBreakdown = Array.from(productAggMap.entries())
-    .map(([key, data]) => {
-      const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
-      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
-      return {
-        id: key,
-        ...data,
-        weightedAvgUSD,
-        pct
-      };
-    })
-    .sort((a, b) => b.usd - a.usd);
+    const totalProdUSD = Array.from(productAggMap.values()).reduce((s, p) => s + p.usd, 0);
+
+    let pList = Array.from(productAggMap.entries())
+      .map(([key, data]) => {
+        const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
+        const pct = totalProdUSD > 0 ? (data.usd / totalProdUSD) * 100 : 0;
+        return {
+          id: key,
+          ...data,
+          weightedAvgUSD,
+          pct
+        };
+      })
+      .filter((p) => {
+        if (prodFormFilter && p.form !== prodFormFilter) return false;
+        if (prodSearch) {
+          const q = prodSearch.toLowerCase();
+          const matchName = p.name.toLowerCase().includes(q);
+          const matchHs = p.hsCode.toLowerCase().includes(q);
+          if (!matchName && !matchHs) return false;
+        }
+        return true;
+      });
+
+    if (prodSortBy === 'usd') pList.sort((a, b) => b.usd - a.usd);
+    else if (prodSortBy === 'weight') pList.sort((a, b) => b.weight - a.weight);
+    else if (prodSortBy === 'rate') pList.sort((a, b) => b.weightedAvgUSD - a.weightedAvgUSD);
+
+    let sList = Array.from(sizeAggMap.entries())
+      .map(([key, data]) => {
+        const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
+        const pct = totalProdUSD > 0 ? (data.usd / totalProdUSD) * 100 : 0;
+        return {
+          id: key,
+          ...data,
+          weightedAvgUSD,
+          pct
+        };
+      })
+      .filter((s) => {
+        if (prodSizeSearch && !s.name.toLowerCase().includes(prodSizeSearch.toLowerCase())) return false;
+        return true;
+      })
+      .sort((a, b) => b.usd - a.usd);
+
+    return { productBreakdown: pList, sizeBreakdown: sList, availableForms: Array.from(formsSet) };
+  }, [prodAnalysisInvoices, speciesMap, sizeMap, prodFormFilter, prodSearch, prodSizeSearch, prodSortBy]);
 
   const topProduct = productBreakdown[0];
 
-  const sizeBreakdown = Array.from(sizeAggMap.entries())
-    .map(([key, data]) => {
-      const weightedAvgUSD = data.weight > 0 ? data.usd / data.weight : 0;
-      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
-      return {
-        id: key,
-        ...data,
-        weightedAvgUSD,
-        pct
-      };
-    })
-    .sort((a, b) => b.usd - a.usd);
+  const isProdFiltered = Boolean(
+    prodMonth !== 'ALL' ||
+    prodFormFilter ||
+    prodSearch ||
+    prodSizeSearch ||
+    prodSortBy !== 'usd'
+  );
+
+  const resetProdFilters = () => {
+    setProdMonth('ALL');
+    setProdFormFilter('');
+    setProdSearch('');
+    setProdSizeSearch('');
+    setProdSortBy('usd');
+  };
 
   // --------------------------------------------------------------------------
-  // 4. DESTINATION & PORT ANALYSIS
+  // 5. DESTINATION & PORT ANALYSIS
   // --------------------------------------------------------------------------
-  const podAggMap = new Map<string, { name: string; code: string; country: string; weight: number; usd: number; count: number }>();
-  periodInvoices.forEach((inv) => {
-    const p = portMap.get(inv.portOfDischargeId);
-    const podName = inv.portOfDischarge || p?.name || 'Port of Qingdao, China';
-    const podCode = p?.code || 'POD';
-    const podCountry = p?.country || inv.countryOfDestination || 'Export';
-    const key = podName;
+  const [destMonth, setDestMonth] = useState<string>('ALL');
+  const [destCountryFilter, setDestCountryFilter] = useState<string>('');
+  const [destSearch, setDestSearch] = useState<string>('');
+  const [destSortBy, setDestSortBy] = useState<'usd' | 'weight' | 'count'>('usd');
 
-    const cur = podAggMap.get(key) || { name: podName, code: podCode, country: podCountry, weight: 0, usd: 0, count: 0 };
-    podAggMap.set(key, {
-      ...cur,
-      weight: cur.weight + inv.totalWeightKg,
-      usd: cur.usd + inv.totalAmountCurrency,
-      count: cur.count + 1
+  const destAnalysisInvoices = useMemo(() => {
+    return destMonth === 'ALL'
+      ? activeInvoices
+      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(destMonth));
+  }, [activeInvoices, destMonth]);
+
+  const podBreakdown = useMemo(() => {
+    const podAggMap = new Map<string, { name: string; code: string; country: string; weight: number; usd: number; count: number }>();
+    destAnalysisInvoices.forEach((inv) => {
+      const p = portMap.get(inv.portOfDischargeId);
+      const podName = inv.portOfDischarge || p?.name || 'Port of Qingdao, China';
+      const podCode = p?.code || 'POD';
+      const podCountry = p?.country || inv.countryOfDestination || 'Export';
+      const key = podName;
+
+      const cur = podAggMap.get(key) || { name: podName, code: podCode, country: podCountry, weight: 0, usd: 0, count: 0 };
+      podAggMap.set(key, {
+        ...cur,
+        weight: cur.weight + inv.totalWeightKg,
+        usd: cur.usd + inv.totalAmountCurrency,
+        count: cur.count + 1
+      });
     });
-  });
 
-  const podBreakdown = Array.from(podAggMap.entries())
-    .map(([key, data]) => {
-      const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
-      return {
-        id: key,
-        ...data,
-        pct
-      };
-    })
-    .sort((a, b) => b.usd - a.usd);
+    const totalDestUSD = Array.from(podAggMap.values()).reduce((s, v) => s + v.usd, 0);
+
+    let list = Array.from(podAggMap.entries())
+      .map(([key, data]) => {
+        const pct = totalDestUSD > 0 ? (data.usd / totalDestUSD) * 100 : 0;
+        return {
+          id: key,
+          ...data,
+          pct
+        };
+      })
+      .filter((p) => {
+        if (destCountryFilter && p.country !== destCountryFilter) return false;
+        if (destSearch) {
+          const q = destSearch.toLowerCase();
+          const matchName = p.name.toLowerCase().includes(q);
+          const matchCode = p.code.toLowerCase().includes(q);
+          const matchCountry = p.country.toLowerCase().includes(q);
+          if (!matchName && !matchCode && !matchCountry) return false;
+        }
+        return true;
+      });
+
+    if (destSortBy === 'usd') list.sort((a, b) => b.usd - a.usd);
+    else if (destSortBy === 'weight') list.sort((a, b) => b.weight - a.weight);
+    else if (destSortBy === 'count') list.sort((a, b) => b.count - a.count);
+
+    return list;
+  }, [destAnalysisInvoices, portMap, destCountryFilter, destSearch, destSortBy]);
 
   const topPort = podBreakdown[0];
 
-  // --------------------------------------------------------------------------
-  // 5. REALIZATION & AGEING SCHEDULE (0-30, 31-60, 61-90, 91-180, 180+ days)
-  // --------------------------------------------------------------------------
-  const now = new Date().getTime();
-  const ageingBuckets = {
-    '0-30': { count: 0, balanceUSD: 0 },
-    '31-60': { count: 0, balanceUSD: 0 },
-    '61-90': { count: 0, balanceUSD: 0 },
-    '91-180': { count: 0, balanceUSD: 0 },
-    '180+': { count: 0, balanceUSD: 0 }
+  const isDestFiltered = Boolean(
+    destMonth !== 'ALL' ||
+    destCountryFilter ||
+    destSearch ||
+    destSortBy !== 'usd'
+  );
+
+  const resetDestFilters = () => {
+    setDestMonth('ALL');
+    setDestCountryFilter('');
+    setDestSearch('');
+    setDestSortBy('usd');
   };
 
-  const outstandingInvoices = activeInvoices
-    .filter((inv) => inv.balanceRealizationCurrency > 0)
-    .map((inv) => {
-      const invTime = new Date(inv.invoiceDate).getTime();
-      const ageDays = Math.max(0, Math.floor((now - invTime) / (1000 * 60 * 60 * 24)));
+  // --------------------------------------------------------------------------
+  // 6. REALIZATION & AGEING SCHEDULE
+  // --------------------------------------------------------------------------
+  const [ageingBucketFilter, setAgeingBucketFilter] = useState<string>('ALL');
+  const [ageingCustomerFilter, setAgeingCustomerFilter] = useState<string>('');
+  const [ageingStatusFilter, setAgeingStatusFilter] = useState<string>('ALL');
+  const [ageingSearch, setAgeingSearch] = useState<string>('');
 
-      let bucket: '0-30' | '31-60' | '61-90' | '91-180' | '180+' = '0-30';
-      if (ageDays > 180) bucket = '180+';
-      else if (ageDays > 90) bucket = '91-180';
-      else if (ageDays > 60) bucket = '61-90';
-      else if (ageDays > 30) bucket = '31-60';
+  const now = new Date().getTime();
 
-      ageingBuckets[bucket].count += 1;
-      ageingBuckets[bucket].balanceUSD += inv.balanceRealizationCurrency;
+  const { ageingBuckets, filteredAgeingInvoices, totalOutstandingUSD } = useMemo(() => {
+    const buckets = {
+      '0-30': { count: 0, balanceUSD: 0 },
+      '31-60': { count: 0, balanceUSD: 0 },
+      '61-90': { count: 0, balanceUSD: 0 },
+      '91-180': { count: 0, balanceUSD: 0 },
+      '180+': { count: 0, balanceUSD: 0 }
+    };
 
-      return {
-        ...inv,
-        ageDays,
-        bucket
-      };
-    })
-    .sort((a, b) => b.ageDays - a.ageDays);
+    const calculated = activeInvoices
+      .filter((inv) => inv.balanceRealizationCurrency > 0)
+      .map((inv) => {
+        const invTime = new Date(inv.invoiceDate).getTime();
+        const ageDays = Math.max(0, Math.floor((now - invTime) / (1000 * 60 * 60 * 24)));
 
-  const totalOutstandingUSD = Object.values(ageingBuckets).reduce((s, b) => s + b.balanceUSD, 0);
+        let bucket: '0-30' | '31-60' | '61-90' | '91-180' | '180+' = '0-30';
+        if (ageDays > 180) bucket = '180+';
+        else if (ageDays > 90) bucket = '91-180';
+        else if (ageDays > 60) bucket = '61-90';
+        else if (ageDays > 30) bucket = '31-60';
+
+        buckets[bucket].count += 1;
+        buckets[bucket].balanceUSD += inv.balanceRealizationCurrency;
+
+        return {
+          ...inv,
+          ageDays,
+          bucket
+        };
+      })
+      .sort((a, b) => b.ageDays - a.ageDays);
+
+    const filtered = calculated.filter((inv) => {
+      if (ageingBucketFilter !== 'ALL' && inv.bucket !== ageingBucketFilter) return false;
+      if (ageingCustomerFilter && inv.consigneeId !== ageingCustomerFilter) return false;
+      if (ageingStatusFilter === 'unrealized_only' && (inv.advanceReceivedCurrency || 0) > 0) return false;
+      if (ageingStatusFilter === 'partial_only' && (!inv.advanceReceivedCurrency || inv.advanceReceivedCurrency <= 0)) return false;
+      if (ageingSearch) {
+        const q = ageingSearch.toLowerCase();
+        const mNo = inv.invoiceNo.toLowerCase().includes(q);
+        const mCust = (customerMap.get(inv.consigneeId)?.name || '').toLowerCase().includes(q);
+        if (!mNo && !mCust) return false;
+      }
+      return true;
+    });
+
+    const totalBal = filtered.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+
+    return { ageingBuckets: buckets, filteredAgeingInvoices: filtered, totalOutstandingUSD: totalBal };
+  }, [activeInvoices, now, ageingBucketFilter, ageingCustomerFilter, ageingStatusFilter, ageingSearch, customerMap]);
+
+  const isAgeingFiltered = Boolean(
+    ageingBucketFilter !== 'ALL' ||
+    ageingCustomerFilter ||
+    ageingStatusFilter !== 'ALL' ||
+    ageingSearch
+  );
+
+  const resetAgeingFilters = () => {
+    setAgeingBucketFilter('ALL');
+    setAgeingCustomerFilter('');
+    setAgeingStatusFilter('ALL');
+    setAgeingSearch('');
+  };
 
   // --------------------------------------------------------------------------
-  // 6. HS CODE / COMPLIANCE SUMMARY
+  // 7. HS CODE / COMPLIANCE SUMMARY
   // --------------------------------------------------------------------------
-  const hsAggMap = new Map<string, { weight: number; usd: number; invoiceSet: Set<string> }>();
-  activeInvoices.forEach((inv) => {
-    inv.lineItems.forEach((l) => {
-      const code = l.hsCode || '03061790';
-      const cur = hsAggMap.get(code) || { weight: 0, usd: 0, invoiceSet: new Set() };
-      cur.invoiceSet.add(inv.id);
-      hsAggMap.set(code, {
-        weight: cur.weight + l.weightKg,
-        usd: cur.usd + l.amountCurrency,
-        invoiceSet: cur.invoiceSet
+  const [hsMonth, setHsMonth] = useState<string>('ALL');
+  const [hsSearch, setHsSearch] = useState<string>('');
+  const [hsSortBy, setHsSortBy] = useState<'usd' | 'weight' | 'invoices' | 'rate'>('usd');
+
+  const hsCodeBreakdown = useMemo(() => {
+    const hsInvoices = hsMonth === 'ALL'
+      ? activeInvoices
+      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(hsMonth));
+
+    const hsAggMap = new Map<string, { weight: number; usd: number; invoiceSet: Set<string> }>();
+    hsInvoices.forEach((inv) => {
+      inv.lineItems.forEach((l) => {
+        const sp = speciesMap.get(l.speciesId);
+        const code = l.hsCode || sp?.hsCode || '03061790';
+        const cur = hsAggMap.get(code) || { weight: 0, usd: 0, invoiceSet: new Set() };
+        cur.invoiceSet.add(inv.id);
+        hsAggMap.set(code, {
+          weight: cur.weight + l.weightKg,
+          usd: cur.usd + l.amountCurrency,
+          invoiceSet: cur.invoiceSet
+        });
       });
     });
-  });
 
-  const hsCodeBreakdown = Array.from(hsAggMap.entries()).map(([code, data]) => ({
-    code,
-    invoicesCount: data.invoiceSet.size,
-    weight: data.weight,
-    usd: data.usd,
-    avgUSDPerKg: data.weight > 0 ? data.usd / data.weight : 0
-  })).sort((a, b) => b.usd - a.usd);
+    let list = Array.from(hsAggMap.entries()).map(([code, data]) => ({
+      code,
+      invoicesCount: data.invoiceSet.size,
+      weight: data.weight,
+      usd: data.usd,
+      avgUSDPerKg: data.weight > 0 ? data.usd / data.weight : 0
+    })).filter((item) => {
+      if (hsSearch && !item.code.toLowerCase().includes(hsSearch.toLowerCase())) return false;
+      return true;
+    });
+
+    if (hsSortBy === 'usd') list.sort((a, b) => b.usd - a.usd);
+    else if (hsSortBy === 'weight') list.sort((a, b) => b.weight - a.weight);
+    else if (hsSortBy === 'invoices') list.sort((a, b) => b.invoicesCount - a.invoicesCount);
+    else if (hsSortBy === 'rate') list.sort((a, b) => b.avgUSDPerKg - a.avgUSDPerKg);
+
+    return list;
+  }, [hsMonth, activeInvoices, speciesMap, hsSearch, hsSortBy]);
+
+  const isHsFiltered = Boolean(hsMonth !== 'ALL' || hsSearch || hsSortBy !== 'usd');
+  const resetHsFilters = () => {
+    setHsMonth('ALL');
+    setHsSearch('');
+    setHsSortBy('usd');
+  };
 
   // --------------------------------------------------------------------------
-  // 7. EXCEPTION REPORT (Missing data, Duplicates, Zero rate/weight, Overdue)
+  // 8. EXCEPTION AUDIT
   // --------------------------------------------------------------------------
   interface ExceptionItem {
     id: string;
@@ -334,146 +825,221 @@ export const SalesReportsHub: React.FC = () => {
     description: string;
   }
 
-  const exceptionItems: ExceptionItem[] = [];
+  const [overdueThresholdDays, setOverdueThresholdDays] = useState<number>(60);
+  const [excTypeFilter, setExcTypeFilter] = useState<string>('ALL');
+  const [excSeverityFilter, setExcSeverityFilter] = useState<string>('ALL');
+  const [excSearch, setExcSearch] = useState<string>('');
 
-  // Check 1: Missing Data & Zero Values
-  activeInvoices.forEach((inv) => {
-    const cust = customerMap.get(inv.consigneeId);
-    if (!cust?.taxId && cust?.customerType === 'Domestic' && !cust?.isGstExempt) {
-      exceptionItems.push({
-        id: `exc-tax-${inv.id}`,
-        type: 'Missing Data',
-        severity: 'Medium',
-        invoiceNo: inv.invoiceNo,
-        date: inv.invoiceDate,
-        customer: cust?.name || 'N/A',
-        description: 'Customer Tax ID / VAT is not recorded on consignee master.'
+  const exceptionItems = useMemo(() => {
+    const list: ExceptionItem[] = [];
+
+    // Check 1: Missing Data & Zero Values
+    activeInvoices.forEach((inv) => {
+      const cust = customerMap.get(inv.consigneeId);
+      if (!cust?.taxId && cust?.customerType === 'Domestic' && !cust?.isGstExempt) {
+        list.push({
+          id: `exc-tax-${inv.id}`,
+          type: 'Missing Data',
+          severity: 'Medium',
+          invoiceNo: inv.invoiceNo,
+          date: inv.invoiceDate,
+          customer: cust?.name || 'N/A',
+          description: 'Customer Tax ID / VAT is not recorded on consignee master.'
+        });
+      }
+
+      inv.lineItems.forEach((l, i) => {
+        if (l.weightKg <= 0 || l.ratePerKg <= 0) {
+          list.push({
+            id: `exc-zero-${inv.id}-${i}`,
+            type: 'Zero / Negative Value',
+            severity: 'High',
+            invoiceNo: inv.invoiceNo,
+            date: inv.invoiceDate,
+            customer: cust?.name || 'N/A',
+            description: `Line ${i + 1} has zero or invalid weight (${l.weightKg} Kg) or rate ($${l.ratePerKg}).`
+          });
+        }
       });
-    }
 
-    inv.lineItems.forEach((l, i) => {
-      if (l.weightKg <= 0 || l.ratePerKg <= 0) {
-        exceptionItems.push({
-          id: `exc-zero-${inv.id}-${i}`,
-          type: 'Zero / Negative Value',
+      // Check Overdue realization
+      const invTime = new Date(inv.invoiceDate).getTime();
+      const ageDays = Math.floor((now - invTime) / (1000 * 60 * 60 * 24));
+      if (inv.balanceRealizationCurrency > 0 && ageDays > overdueThresholdDays) {
+        list.push({
+          id: `exc-overdue-${inv.id}`,
+          type: 'Overdue Realization',
           severity: 'High',
           invoiceNo: inv.invoiceNo,
           date: inv.invoiceDate,
           customer: cust?.name || 'N/A',
-          description: `Line ${i + 1} has zero or invalid weight (${l.weightKg} Kg) or rate ($${l.ratePerKg}).`
+          description: `Unrealized balance of ${inv.currency} ${inv.balanceRealizationCurrency.toLocaleString()} is ${ageDays} days overdue (> ${overdueThresholdDays} days).`
         });
       }
     });
 
-    // Check Overdue realization
-    const invTime = new Date(inv.invoiceDate).getTime();
-    const ageDays = Math.floor((now - invTime) / (1000 * 60 * 60 * 24));
-    if (inv.balanceRealizationCurrency > 0 && ageDays > overdueThresholdDays) {
-      exceptionItems.push({
-        id: `exc-overdue-${inv.id}`,
-        type: 'Overdue Realization',
-        severity: 'High',
-        invoiceNo: inv.invoiceNo,
-        date: inv.invoiceDate,
-        customer: cust?.name || 'N/A',
-        description: `Unrealized balance of ${inv.currency} ${inv.balanceRealizationCurrency.toLocaleString()} is ${ageDays} days overdue (> ${overdueThresholdDays} days).`
-      });
-    }
-  });
-
-  // Check Duplicate Invoice No.
-  const invNoMap = new Map<string, string[]>();
-  activeInvoices.forEach((inv) => {
-    const no = inv.invoiceNo.toLowerCase().trim();
-    const list = invNoMap.get(no) || [];
-    list.push(inv.id);
-    invNoMap.set(no, list);
-  });
-  invNoMap.forEach((ids, no) => {
-    if (ids.length > 1) {
-      ids.forEach((id) => {
-        const inv = activeInvoices.find((i) => i.id === id);
-        if (inv) {
-          exceptionItems.push({
-            id: `exc-dup-${inv.id}`,
-            type: 'Duplicate Invoice No',
-            severity: 'High',
-            invoiceNo: inv.invoiceNo,
-            date: inv.invoiceDate,
-            customer: customerMap.get(inv.consigneeId)?.name || 'N/A',
-            description: `Duplicate Commercial Invoice No detected (${ids.length} matches): ${no.toUpperCase()}`
-          });
-        }
-      });
-    }
-  });
-
-  // --------------------------------------------------------------------------
-  // 8. LANDED COST VS SALES REALIZATION (Period-Level Margin Approximation)
-  // --------------------------------------------------------------------------
-  const purchaseMonthRecords = purchases.filter(
-    (p) => !p.isVoided && p.purchaseDate >= startDate && p.purchaseDate <= endDate
-  );
-
-  const productMarginAnalysis = species.map((sp) => {
-    const matchedPurchases = purchaseMonthRecords.filter((p) => p.speciesId === sp.id);
-    const purchaseWeight = matchedPurchases.reduce((s, p) => s + p.weightKg, 0);
-    const purchaseCost = matchedPurchases.reduce((s, p) => s + p.totalCost, 0);
-    const purchaseAvgCostPerKg = purchaseWeight > 0 ? purchaseCost / purchaseWeight : 0;
-
-    const matchedInvoices = registerInvoices.filter((inv) =>
-      inv.lineItems.some((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
-    );
-    let salesWeight = 0;
-    let salesUSD = 0;
-    matchedInvoices.forEach((inv) => {
-      inv.lineItems
-        .filter((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
-        .forEach((l) => {
-          salesWeight += l.weightKg;
-          salesUSD += l.amountCurrency;
+    // Check Duplicate Invoice No.
+    const invNoMap = new Map<string, string[]>();
+    activeInvoices.forEach((inv) => {
+      const no = inv.invoiceNo.toLowerCase().trim();
+      const ids = invNoMap.get(no) || [];
+      ids.push(inv.id);
+      invNoMap.set(no, ids);
+    });
+    invNoMap.forEach((ids, no) => {
+      if (ids.length > 1) {
+        ids.forEach((id) => {
+          const inv = activeInvoices.find((i) => i.id === id);
+          if (inv) {
+            list.push({
+              id: `exc-dup-${inv.id}`,
+              type: 'Duplicate Invoice No',
+              severity: 'High',
+              invoiceNo: inv.invoiceNo,
+              date: inv.invoiceDate,
+              customer: customerMap.get(inv.consigneeId)?.name || 'N/A',
+              description: `Duplicate Commercial Invoice No detected (${ids.length} matches): ${no.toUpperCase()}`
+            });
+          }
         });
+      }
     });
 
-    const salesAvgUSDPerKg = salesWeight > 0 ? salesUSD / salesWeight : 0;
-    const salesAvgINRPerKg = salesAvgUSDPerKg * 84.5;
-    const grossMarginINRPerKg = salesAvgINRPerKg > 0 && purchaseAvgCostPerKg > 0 ? salesAvgINRPerKg - purchaseAvgCostPerKg : 0;
-    const grossMarginPct = salesAvgINRPerKg > 0 ? (grossMarginINRPerKg / salesAvgINRPerKg) * 100 : 0;
+    return list.filter((exc) => {
+      if (excTypeFilter !== 'ALL' && exc.type !== excTypeFilter) return false;
+      if (excSeverityFilter !== 'ALL' && exc.severity !== excSeverityFilter) return false;
+      if (excSearch) {
+        const q = excSearch.toLowerCase();
+        const mInv = exc.invoiceNo.toLowerCase().includes(q);
+        const mCust = exc.customer.toLowerCase().includes(q);
+        const mDesc = exc.description.toLowerCase().includes(q);
+        if (!mInv && !mCust && !mDesc) return false;
+      }
+      return true;
+    });
+  }, [activeInvoices, customerMap, now, overdueThresholdDays, excTypeFilter, excSeverityFilter, excSearch]);
 
-    return {
-      speciesId: sp.id,
-      name: sp.name,
-      purchaseWeight,
-      purchaseCost,
-      purchaseAvgCostPerKg,
-      salesWeight,
-      salesUSD,
-      salesAvgUSDPerKg,
-      salesAvgINRPerKg,
-      grossMarginINRPerKg,
-      grossMarginPct
-    };
-  }).filter((m) => m.purchaseWeight > 0 || m.salesWeight > 0);
+  const isExcFiltered = Boolean(
+    excTypeFilter !== 'ALL' ||
+    excSeverityFilter !== 'ALL' ||
+    overdueThresholdDays !== 60 ||
+    excSearch
+  );
 
-  // Tab definitions
+  const resetExcFilters = () => {
+    setExcTypeFilter('ALL');
+    setExcSeverityFilter('ALL');
+    setOverdueThresholdDays(60);
+    setExcSearch('');
+  };
+
+  // --------------------------------------------------------------------------
+  // 9. MARGIN ANALYSIS
+  // --------------------------------------------------------------------------
+  const [marginStartDate, setMarginStartDate] = useState<string>('2026-04-01');
+  const [marginEndDate, setMarginEndDate] = useState<string>(today);
+  const [marginSpeciesFilter, setMarginSpeciesFilter] = useState<string>('');
+  const [marginHealthFilter, setMarginHealthFilter] = useState<string>('ALL');
+  const [marginSearch, setMarginSearch] = useState<string>('');
+
+  const productMarginAnalysis = useMemo(() => {
+    const purchaseMonthRecords = purchases.filter(
+      (p) => !p.isVoided && p.purchaseDate >= marginStartDate && p.purchaseDate <= marginEndDate
+    );
+    const registerRangeInvoices = activeInvoices.filter(
+      (inv) => inv.invoiceDate >= marginStartDate && inv.invoiceDate <= marginEndDate
+    );
+
+    return species.map((sp) => {
+      const matchedPurchases = purchaseMonthRecords.filter((p) => p.speciesId === sp.id);
+      const purchaseWeight = matchedPurchases.reduce((s, p) => s + p.weightKg, 0);
+      const purchaseCost = matchedPurchases.reduce((s, p) => s + p.totalCost, 0);
+      const purchaseAvgCostPerKg = purchaseWeight > 0 ? purchaseCost / purchaseWeight : 0;
+
+      const matchedInvoices = registerRangeInvoices.filter((inv) =>
+        inv.lineItems.some((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
+      );
+      let salesWeight = 0;
+      let salesUSD = 0;
+      matchedInvoices.forEach((inv) => {
+        inv.lineItems
+          .filter((l) => l.speciesId === sp.id || (l.productDescription && l.productDescription.toLowerCase().includes(sp.name.toLowerCase())))
+          .forEach((l) => {
+            salesWeight += l.weightKg;
+            salesUSD += l.amountCurrency;
+          });
+      });
+
+      const salesAvgUSDPerKg = salesWeight > 0 ? salesUSD / salesWeight : 0;
+      const salesAvgINRPerKg = salesAvgUSDPerKg * 84.5;
+      const grossMarginINRPerKg = salesAvgINRPerKg > 0 && purchaseAvgCostPerKg > 0 ? salesAvgINRPerKg - purchaseAvgCostPerKg : 0;
+      const grossMarginPct = salesAvgINRPerKg > 0 ? (grossMarginINRPerKg / salesAvgINRPerKg) * 100 : 0;
+
+      return {
+        speciesId: sp.id,
+        name: sp.name,
+        purchaseWeight,
+        purchaseCost,
+        purchaseAvgCostPerKg,
+        salesWeight,
+        salesUSD,
+        salesAvgUSDPerKg,
+        salesAvgINRPerKg,
+        grossMarginINRPerKg,
+        grossMarginPct
+      };
+    }).filter((m) => {
+      if (m.purchaseWeight <= 0 && m.salesWeight <= 0) return false;
+      if (marginSpeciesFilter && m.speciesId !== marginSpeciesFilter) return false;
+      if (marginHealthFilter === 'profitable' && m.grossMarginPct <= 0) return false;
+      if (marginHealthFilter === 'high_margin' && m.grossMarginPct < 20) return false;
+      if (marginHealthFilter === 'negative' && m.grossMarginPct >= 0) return false;
+      if (marginSearch && !m.name.toLowerCase().includes(marginSearch.toLowerCase())) return false;
+      return true;
+    });
+  }, [purchases, activeInvoices, species, marginStartDate, marginEndDate, marginSpeciesFilter, marginHealthFilter, marginSearch]);
+
+  const isMarginFiltered = Boolean(
+    marginStartDate !== '2026-04-01' ||
+    marginEndDate !== today ||
+    marginSpeciesFilter ||
+    marginHealthFilter !== 'ALL' ||
+    marginSearch
+  );
+
+  const resetMarginFilters = () => {
+    setMarginStartDate('2026-04-01');
+    setMarginEndDate(today);
+    setMarginSpeciesFilter('');
+    setMarginHealthFilter('ALL');
+    setMarginSearch('');
+  };
+
+  // --------------------------------------------------------------------------
+  // TAB DEFINITIONS
+  // --------------------------------------------------------------------------
   const reportTabs: { id: SalesReportTab; label: string; icon: any; count?: number }[] = [
     { id: 'invoice-register', label: '1. Invoice Register', icon: FileText, count: registerInvoices.length },
-    { id: 'customer-analysis', label: '2. Customer Analysis', icon: Users, count: customerBreakdown.length },
-    { id: 'product-analysis', label: '3. Product & Size', icon: Layers, count: productBreakdown.length },
-    { id: 'destination-analysis', label: '4. Ports & Destination', icon: Anchor, count: podBreakdown.length },
-    { id: 'realization-ageing', label: '5. Realization & Ageing', icon: Clock, count: outstandingInvoices.length },
-    { id: 'hs-code-summary', label: '6. HS Code / Compliance', icon: Percent, count: hsCodeBreakdown.length },
-    { id: 'exceptions', label: '7. Exception Audit', icon: ShieldAlert, count: exceptionItems.length },
-    { id: 'margin-analysis', label: '8. Margin Reconciliation', icon: DollarSign }
+    { id: 'invoice-product-analysis', label: '2. Invoice & Product Analysis', icon: Boxes, count: filteredInvoiceProductLines.length },
+    { id: 'customer-analysis', label: '3. Customer Analysis', icon: Users, count: customerBreakdown.length },
+    { id: 'product-analysis', label: '4. Product & Size', icon: Layers, count: productBreakdown.length },
+    { id: 'destination-analysis', label: '5. Ports & Destination', icon: Anchor, count: podBreakdown.length },
+    { id: 'realization-ageing', label: '6. Realization & Ageing', icon: Clock, count: filteredAgeingInvoices.length },
+    { id: 'hs-code-summary', label: '7. HS Code / Compliance', icon: Percent, count: hsCodeBreakdown.length },
+    { id: 'exceptions', label: '8. Exception Audit', icon: ShieldAlert, count: exceptionItems.length },
+    { id: 'margin-analysis', label: '9. Margin Reconciliation', icon: DollarSign, count: productMarginAnalysis.length }
   ];
 
+  // --------------------------------------------------------------------------
+  // EXPORT CSV HANDLER
+  // --------------------------------------------------------------------------
   const handleExportCSV = () => {
     if (activeReport === 'invoice-register') {
       const data = registerInvoices.map((inv) => ({
         InvoiceNo: inv.invoiceNo,
         Date: inv.invoiceDate,
         Customer: customerMap.get(inv.consigneeId)?.name || '',
-        POD: portMap.get(inv.portOfDischargeId)?.name || '',
+        POD: portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || '',
         WeightKg: inv.totalWeightKg,
         AmountUSD: inv.totalAmountCurrency,
         Status: inv.realizationStatus,
@@ -491,7 +1057,41 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'RealizedINR', label: 'Realized (INR)' },
         { key: 'BalanceUSD', label: 'Balance (USD)' }
       ]);
-      downloadFile(csv, `Invoice_Register_${startDate}_${endDate}.csv`);
+      downloadFile(csv, `Invoice_Register_${regStartDate}_${regEndDate}.csv`);
+    } else if (activeReport === 'invoice-product-analysis') {
+      const data = filteredInvoiceProductLines.map((l) => ({
+        InvoiceNo: l.invoiceNo,
+        InvoiceDate: l.invoiceDate,
+        Customer: l.customerName,
+        Country: l.customerCountry,
+        DischargePort: l.portOfDischargeName,
+        Product: l.productName,
+        GradeSize: l.gradeSize,
+        HSCode: l.hsCode,
+        Cartons: l.cartonsCount,
+        NetWeightKg: l.weightKg,
+        RateUSD: l.ratePerKg,
+        AmountUSD: l.amountCurrency,
+        RealizationStatus: l.realizationStatus,
+        RealizedINR: l.totalRealizedINR > 0 ? l.totalRealizedINR : ''
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'InvoiceNo', label: 'Invoice No' },
+        { key: 'InvoiceDate', label: 'Date' },
+        { key: 'Customer', label: 'Customer' },
+        { key: 'Country', label: 'Destination Country' },
+        { key: 'DischargePort', label: 'Port of Discharge' },
+        { key: 'Product', label: 'Product / Species' },
+        { key: 'GradeSize', label: 'Grade / Size' },
+        { key: 'HSCode', label: 'HS Code' },
+        { key: 'Cartons', label: 'Cartons' },
+        { key: 'NetWeightKg', label: 'Net Weight (Kg)' },
+        { key: 'RateUSD', label: 'Rate (USD/Kg)' },
+        { key: 'AmountUSD', label: 'Amount (USD)' },
+        { key: 'RealizationStatus', label: 'Realization Status' },
+        { key: 'RealizedINR', label: 'Realized INR' }
+      ]);
+      downloadFile(csv, `Invoice_Product_Analysis_${invProdMonth}.csv`);
     } else if (activeReport === 'product-analysis') {
       const data = productBreakdown.map((p) => ({
         Product: p.name,
@@ -511,7 +1111,7 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'SharePct', label: 'Share %' },
         { key: 'AvgUSDPerKg', label: 'Avg USD/Kg' }
       ]);
-      downloadFile(csv, `Product_Export_Analysis_${selectedMonth}.csv`);
+      downloadFile(csv, `Product_Export_Analysis_${prodMonth}.csv`);
     } else if (activeReport === 'destination-analysis') {
       const data = podBreakdown.map((p) => ({
         Port: p.name,
@@ -531,7 +1131,85 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'AmountUSD', label: 'Total USD' },
         { key: 'SharePct', label: 'Share %' }
       ]);
-      downloadFile(csv, `Destination_Analysis_${selectedMonth}.csv`);
+      downloadFile(csv, `Destination_Analysis_${destMonth}.csv`);
+    } else if (activeReport === 'realization-ageing') {
+      const data = filteredAgeingInvoices.map((inv) => ({
+        InvoiceNo: inv.invoiceNo,
+        Date: inv.invoiceDate,
+        Customer: customerMap.get(inv.consigneeId)?.name || '',
+        InvoiceUSD: inv.totalAmountCurrency,
+        AdvanceUSD: inv.advanceReceivedCurrency || 0,
+        BalanceUSD: inv.balanceRealizationCurrency,
+        AgeDays: inv.ageDays,
+        Bucket: inv.bucket
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'InvoiceNo', label: 'Invoice No' },
+        { key: 'Date', label: 'Invoice Date' },
+        { key: 'Customer', label: 'Customer' },
+        { key: 'InvoiceUSD', label: 'Invoice Amount (USD)' },
+        { key: 'AdvanceUSD', label: 'Advance Recd (USD)' },
+        { key: 'BalanceUSD', label: 'Outstanding Balance (USD)' },
+        { key: 'AgeDays', label: 'Age (Days)' },
+        { key: 'Bucket', label: 'Ageing Bucket' }
+      ]);
+      downloadFile(csv, `Realization_Ageing_Schedule.csv`);
+    } else if (activeReport === 'hs-code-summary') {
+      const data = hsCodeBreakdown.map((h) => ({
+        HSCode: h.code,
+        InvoicesCount: h.invoicesCount,
+        WeightKg: h.weight,
+        AmountUSD: h.usd,
+        AvgUSDPerKg: h.avgUSDPerKg.toFixed(2)
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'HSCode', label: 'HS Code' },
+        { key: 'InvoicesCount', label: 'Invoices Declared' },
+        { key: 'WeightKg', label: 'Net Weight (Kg)' },
+        { key: 'AmountUSD', label: 'Total Value (USD)' },
+        { key: 'AvgUSDPerKg', label: 'Avg USD/Kg' }
+      ]);
+      downloadFile(csv, `HS_Code_Compliance_${hsMonth}.csv`);
+    } else if (activeReport === 'exceptions') {
+      const data = exceptionItems.map((e) => ({
+        Type: e.type,
+        Severity: e.severity,
+        InvoiceNo: e.invoiceNo,
+        Date: e.date,
+        Customer: e.customer,
+        Description: e.description
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'Type', label: 'Exception Type' },
+        { key: 'Severity', label: 'Severity' },
+        { key: 'InvoiceNo', label: 'Invoice No' },
+        { key: 'Date', label: 'Date' },
+        { key: 'Customer', label: 'Customer' },
+        { key: 'Description', label: 'Description' }
+      ]);
+      downloadFile(csv, `Sales_Exception_Audit.csv`);
+    } else if (activeReport === 'margin-analysis') {
+      const data = productMarginAnalysis.map((m) => ({
+        Species: m.name,
+        PurchaseWeightKg: m.purchaseWeight,
+        RawCostPerKg: m.purchaseAvgCostPerKg.toFixed(2),
+        ExportWeightKg: m.salesWeight,
+        ExportUSDPerKg: m.salesAvgUSDPerKg.toFixed(2),
+        RealizedINRPerKg: m.salesAvgINRPerKg.toFixed(2),
+        GrossMarginINRPerKg: m.grossMarginINRPerKg.toFixed(2),
+        GrossMarginPct: m.grossMarginPct.toFixed(1) + '%'
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'Species', label: 'Species' },
+        { key: 'PurchaseWeightKg', label: 'Purchase Wt (Kg)' },
+        { key: 'RawCostPerKg', label: 'Raw Cost/Kg (INR)' },
+        { key: 'ExportWeightKg', label: 'Exported Wt (Kg)' },
+        { key: 'ExportUSDPerKg', label: 'Export Rate (USD/Kg)' },
+        { key: 'RealizedINRPerKg', label: 'Realized INR/Kg' },
+        { key: 'GrossMarginINRPerKg', label: 'Gross Margin/Kg (INR)' },
+        { key: 'GrossMarginPct', label: 'Gross Margin %' }
+      ]);
+      downloadFile(csv, `Export_Margin_Analysis_${marginStartDate}_${marginEndDate}.csv`);
     } else {
       const data = customerBreakdown.map((c) => ({
         Customer: c.name,
@@ -551,7 +1229,7 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'SharePct', label: 'Share %' },
         { key: 'AvgUSDPerKg', label: 'Avg USD/Kg' }
       ]);
-      downloadFile(csv, `Commercial_Sales_Report_${selectedMonth}.csv`);
+      downloadFile(csv, `Commercial_Customer_Report_${custMonth}.csv`);
     }
   };
 
@@ -580,12 +1258,10 @@ export const SalesReportsHub: React.FC = () => {
       {/* EXECUTIVE SALES PERFORMANCE DASHBOARD BANNER */}
       {/* ==================================================================== */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-950 via-rose-900 to-ink-950 text-white p-6 sm:p-8 shadow-xl border border-rose-800/40">
-        {/* Glow decoration */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-6">
-          {/* Header Row with Title and Period Filter */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -629,7 +1305,6 @@ export const SalesReportsHub: React.FC = () => {
 
           {/* 6 Key Executive Metric Tiles */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {/* Tile 1: Total Turnover */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
                 Total Export Turnover
@@ -642,7 +1317,6 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
 
-            {/* Tile 2: Volume Shipped */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
                 Export Net Volume
@@ -655,7 +1329,6 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
 
-            {/* Tile 3: Realization % */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">
                 Bank Realization
@@ -668,7 +1341,6 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
 
-            {/* Tile 4: Average Price */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-rose-300 uppercase block tracking-wider">
                 Avg Realization / Kg
@@ -681,7 +1353,6 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
 
-            {/* Tile 5: Top Commodity */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">
                 Top Product
@@ -694,7 +1365,6 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
 
-            {/* Tile 6: Top Customer */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm hover:bg-white/10 transition">
               <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">
                 Top Overseas Buyer
@@ -750,25 +1420,91 @@ export const SalesReportsHub: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">Commercial Invoice Register</h3>
-              <p className="text-xs text-ink-500">Chronological register of export shipments within date range ({registerInvoices.length} shipments).</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">Commercial Invoice Register</h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {registerInvoices.length} of {activeInvoices.length} invoices
+                </span>
+              </div>
+              <p className="text-xs text-ink-500">Chronological export shipment records with real-time customer, destination, and payment tracking.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-ink-700">From:</span>
+            {isRegFiltered && (
+              <button
+                onClick={resetRegFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Component-Level Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search invoice #, customer, discharge port, destination..."
+                value={regSearch}
+                onChange={(e) => setRegSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200">
+              <span className="text-[11px] font-semibold text-ink-500">From:</span>
               <input
                 type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:border-rose-500 focus:bg-white transition"
+                value={regStartDate}
+                onChange={(e) => setRegStartDate(e.target.value)}
+                className="p-1 text-xs font-semibold outline-none bg-transparent"
               />
-              <span className="text-xs font-semibold text-ink-700">To:</span>
+              <span className="text-[11px] font-semibold text-ink-500">To:</span>
               <input
                 type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:border-rose-500 focus:bg-white transition"
+                value={regEndDate}
+                onChange={(e) => setRegEndDate(e.target.value)}
+                className="p-1 text-xs font-semibold outline-none bg-transparent"
               />
             </div>
+
+            <select
+              value={regCustomerFilter}
+              onChange={(e) => setRegCustomerFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Customers ({customers.length})</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.country})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={regPortFilter}
+              onChange={(e) => setRegPortFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Discharge Ports ({ports.length})</option>
+              {ports.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={regStatusFilter}
+              onChange={(e) => setRegStatusFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Realization Statuses</option>
+              <option value="Not Realized">Not Realized</option>
+              <option value="Partially Realized">Partially Realized</option>
+              <option value="Fully Realized">Fully Realized</option>
+            </select>
           </div>
 
           {/* KPI Strip */}
@@ -811,7 +1547,7 @@ export const SalesReportsHub: React.FC = () => {
                 {registerInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-ink-500">
-                      No invoices recorded between {startDate} and {endDate}.
+                      No invoices match the selected filter criteria.
                     </td>
                   </tr>
                 ) : (
@@ -822,13 +1558,19 @@ export const SalesReportsHub: React.FC = () => {
                       <td className="py-2 px-3 font-semibold text-ink-900">
                         {customerMap.get(inv.consigneeId)?.name || 'Unknown'}
                       </td>
-                      <td className="py-2 px-3">{portMap.get(inv.portOfDischargeId)?.name || 'POD'}</td>
+                      <td className="py-2 px-3">{portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || 'POD'}</td>
                       <td className="py-2 px-3 text-right font-bold">{formatKg(inv.totalWeightKg)}</td>
                       <td className="py-2 px-3 text-right font-extrabold text-rose-950">
                         ${inv.totalAmountCurrency.toLocaleString()}
                       </td>
                       <td className="py-2 px-3 text-center">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-ink-800">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          inv.realizationStatus === 'Fully Realized'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : inv.realizationStatus === 'Partially Realized'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-gray-100 text-ink-800'
+                        }`}>
                           {inv.realizationStatus}
                         </span>
                       </td>
@@ -848,44 +1590,640 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 2. CUSTOMER-WISE SALES ANALYSIS */}
+      {/* 2. INVOICE & PRODUCT CROSS-ANALYSIS (NEW REPORT COMPONENT) */}
       {/* ==================================================================== */}
-      {activeReport === 'customer-analysis' && (
-        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
+      {activeReport === 'invoice-product-analysis' && (
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-6">
+          {/* Header & View Mode Switcher */}
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">
-                Customer &amp; Consignee Performance ({formatMonthLabel(selectedMonth)})
-              </h3>
-              <p className="text-xs text-ink-500">Breakdown of export volume, value share, and average USD/Kg across overseas clients.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">Commercial Invoice &amp; Product Cross-Analysis</h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {filteredInvoiceProductLines.length} product lines across {filteredInvoicesCount} invoices
+                </span>
+              </div>
+              <p className="text-xs text-ink-500">
+                Granular cross-tabulation connecting export commercial invoices with species, physical grades, cartons, and realization rates.
+              </p>
             </div>
+
+            {/* View Mode Buttons */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
+              <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setInvProdViewMode('hierarchy')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    invProdViewMode === 'hierarchy' ? 'bg-white text-rose-700 shadow-xs' : 'text-ink-600 hover:text-ink-900'
+                  }`}
+                  title="Grouped by Invoice with nested line items"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Invoice Breakdown</span>
+                </button>
+                <button
+                  onClick={() => setInvProdViewMode('flat')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    invProdViewMode === 'flat' ? 'bg-white text-rose-700 shadow-xs' : 'text-ink-600 hover:text-ink-900'
+                  }`}
+                  title="Flat granular itemized register"
+                >
+                  <Table className="w-3.5 h-3.5" />
+                  <span>Itemized Register</span>
+                </button>
+                <button
+                  onClick={() => setInvProdViewMode('matrix')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    invProdViewMode === 'matrix' ? 'bg-white text-rose-700 shadow-xs' : 'text-ink-600 hover:text-ink-900'
+                  }`}
+                  title="Product-to-Invoice price and volume matrix"
+                >
+                  <Boxes className="w-3.5 h-3.5" />
+                  <span>Product Matrix</span>
+                </button>
+              </div>
+
+              {isInvProdFiltered && (
+                <button
+                  onClick={resetInvProdFilters}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Component-Level Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Box */}
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+                <input
+                  type="text"
+                  placeholder="Search invoice #, product / species, grade size, buyer, order #..."
+                  value={invProdSearch}
+                  onChange={(e) => setInvProdSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+                />
+              </div>
+
+              {/* Month Dropdown */}
               <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                aria-label="Filter customer analysis by period"
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+                value={invProdMonth}
+                onChange={(e) => setInvProdMonth(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
               >
-                <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
+                <option value="ALL">All FY 2026-27 (All Months)</option>
                 {availableMonths.map((m) => (
                   <option key={m} value={m}>
                     {formatMonthLabel(m)}
                   </option>
                 ))}
               </select>
+
+              {/* Customer Dropdown */}
+              <select
+                value={invProdCustomer}
+                onChange={(e) => setInvProdCustomer(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Overseas Buyers ({customers.length})</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.country})
+                  </option>
+                ))}
+              </select>
+
+              {/* Product / Species Dropdown */}
+              <select
+                value={invProdSpecies}
+                onChange={(e) => setInvProdSpecies(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Species / Commodities ({species.length})</option>
+                {species.map((sp) => (
+                  <option key={sp.id} value={sp.id}>
+                    {sp.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Size / Grade Dropdown */}
+              <select
+                value={invProdSize}
+                onChange={(e) => setInvProdSize(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Grade Sizes ({sizes.length})</option>
+                {sizes.map((sz) => (
+                  <option key={sz.id} value={sz.id}>
+                    {sz.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Port of Discharge Dropdown */}
+              <select
+                value={invProdPort}
+                onChange={(e) => setInvProdPort(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Discharge Ports ({ports.length})</option>
+                {ports.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Realization Status Dropdown */}
+              <select
+                value={invProdStatus}
+                onChange={(e) => setInvProdStatus(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Realization Statuses</option>
+                <option value="Not Realized">Not Realized</option>
+                <option value="Partially Realized">Partially Realized</option>
+                <option value="Fully Realized">Fully Realized</option>
+              </select>
             </div>
+
+            {/* Filter tags & quick action */}
+            {invProdViewMode === 'hierarchy' && (
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200/60">
+                <span className="text-ink-500 font-medium">
+                  Showing {filteredInvoicesCount} invoices ({filteredInvoiceProductLines.length} line items)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={expandAllInvoices}
+                    className="text-rose-700 font-bold hover:underline"
+                  >
+                    Expand All Products
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={collapseAllInvoices}
+                    className="text-ink-600 font-semibold hover:underline"
+                  >
+                    Collapse All
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Product Lines</span>
+              <span className="text-lg font-black text-ink-900 mt-0.5 block">{filteredInvoiceProductLines.length}</span>
+              <span className="text-[10px] text-ink-500 mt-0.5 block">{filteredInvoicesCount} Invoices</span>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold text-ink-500 uppercase block">Total Net Weight</span>
+              <span className="text-lg font-black text-ink-900 mt-0.5 block">{formatKg(invProdTotalWeight)}</span>
+              <span className="text-[10px] text-ink-500 mt-0.5 block">{invProdTotalCartons.toLocaleString()} Cartons</span>
+            </div>
+            <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
+              <span className="text-[10px] font-bold text-rose-800 uppercase block">Total Invoiced (USD)</span>
+              <span className="text-lg font-black text-rose-950 mt-0.5 block">${invProdTotalUSD.toLocaleString()}</span>
+              <span className="text-[10px] text-rose-800 font-semibold mt-0.5 block">≈ {formatINR(invProdTotalUSD * 84.5)}</span>
+            </div>
+            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase block">Weighted Avg Price</span>
+              <span className="text-lg font-black text-emerald-950 mt-0.5 block">${invProdAvgRate.toFixed(2)}/kg</span>
+              <span className="text-[10px] text-emerald-800 font-semibold mt-0.5 block">≈ ₹{(invProdAvgRate * 84.5).toFixed(0)}/kg</span>
+            </div>
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <span className="text-[10px] font-bold text-amber-800 uppercase block">Price Range ($/Kg)</span>
+              <span className="text-base font-extrabold text-amber-950 mt-0.5 block">
+                ${invProdMinRate.toFixed(2)} – ${invProdMaxRate.toFixed(2)}
+              </span>
+              <span className="text-[10px] text-amber-800 font-medium mt-0.5 block">Min to Max spread</span>
+            </div>
+            <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-200">
+              <span className="text-[10px] font-bold text-cyan-800 uppercase block">Top Product by Value</span>
+              <span className="text-xs font-black text-cyan-950 mt-1 block truncate" title={productMatrixMap[0]?.productName || 'N/A'}>
+                {productMatrixMap[0]?.productName || 'N/A'}
+              </span>
+              <span className="text-[10px] text-cyan-800 font-bold mt-0.5 block truncate">
+                {productMatrixMap[0] ? `$${productMatrixMap[0].totalUSD.toLocaleString()}` : '—'}
+              </span>
+            </div>
+          </div>
+
+          {/* VIEW 1: HIERARCHY VIEW (INVOICE WITH NESTED LINE ITEMS) */}
+          {invProdViewMode === 'hierarchy' && (
+            <div className="space-y-4">
+              {Array.from(filteredInvoiceMap.values()).length === 0 ? (
+                <div className="py-12 text-center text-ink-500 bg-gray-50 rounded-2xl border border-gray-200">
+                  <Package className="w-8 h-8 mx-auto text-ink-300 mb-2" />
+                  <p className="text-sm font-semibold">No invoices or product line items matched the current filters.</p>
+                  <p className="text-xs text-ink-400 mt-1">Try resetting the filters or modifying your search query.</p>
+                </div>
+              ) : (
+                Array.from(filteredInvoiceMap.values()).map(({ invoice: inv, lines }) => {
+                  const isExpanded = expandedInvoiceIds.has(inv.id);
+                  const cust = customerMap.get(inv.consigneeId);
+                  const pod = portMap.get(inv.portOfDischargeId);
+
+                  return (
+                    <div
+                      key={inv.id}
+                      className="border border-gray-200 rounded-2xl overflow-hidden hover:border-rose-300 transition bg-white shadow-2xs"
+                    >
+                      {/* Invoice Summary Header */}
+                      <div
+                        onClick={() => toggleInvoiceExpansion(inv.id)}
+                        className="p-4 bg-gray-50/70 hover:bg-rose-50/30 cursor-pointer flex flex-wrap items-center justify-between gap-3 select-none"
+                      >
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className="p-1 rounded-lg bg-white border border-gray-200 text-ink-600 hover:text-rose-700 transition"
+                            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-sm text-rose-700">{inv.invoiceNo}</span>
+                              <span className="text-[11px] font-semibold text-ink-500">({inv.invoiceDate})</span>
+                              {inv.orderNo && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-200 text-ink-700">
+                                  {inv.orderNo}
+                                </span>
+                              )}
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  inv.realizationStatus === 'Fully Realized'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : inv.realizationStatus === 'Partially Realized'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-gray-100 text-ink-700'
+                                }`}
+                              >
+                                {inv.realizationStatus}
+                              </span>
+                            </div>
+                            <div className="text-xs text-ink-600 font-medium mt-0.5">
+                              {cust?.name} · {inv.portOfDischarge || pod?.name} ({inv.countryOfDestination || cust?.country})
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-xs font-semibold">
+                          <div className="text-right">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Total Weight</span>
+                            <span className="text-ink-900 font-extrabold">{formatKg(inv.totalWeightKg)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Invoice Amount</span>
+                            <span className="text-rose-950 font-black text-sm">${inv.totalAmountCurrency.toLocaleString()}</span>
+                          </div>
+                          {inv.totalRealizedINR > 0 && (
+                            <div className="text-right">
+                              <span className="text-[10px] text-emerald-600 uppercase block font-bold">Realized INR</span>
+                              <span className="text-emerald-700 font-extrabold">{formatINR(inv.totalRealizedINR)}</span>
+                            </div>
+                          )}
+                          <div className="text-right pl-2 border-l border-gray-200">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Lines</span>
+                            <span className="text-ink-700 font-bold">{lines.length} items</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Nested Line Items Table */}
+                      {isExpanded && (
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-gray-50 text-[10px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                                <th className="py-2 px-3">#</th>
+                                <th className="py-2 px-3">Product / Species</th>
+                                <th className="py-2 px-3">Grade / Size</th>
+                                <th className="py-2 px-3 font-mono">HS Code</th>
+                                <th className="py-2 px-3 text-right">Cartons</th>
+                                <th className="py-2 px-3 text-right">Net Wt (Kg)</th>
+                                <th className="py-2 px-3 text-right">Rate ($/Kg)</th>
+                                <th className="py-2 px-3 text-right">Total (USD)</th>
+                                <th className="py-2 px-3 text-right">% of Inv</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 font-medium">
+                              {lines.map((l, i) => (
+                                <tr key={l.id} className="hover:bg-rose-50/20">
+                                  <td className="py-2 px-3 text-ink-400 font-mono text-[11px]">{i + 1}</td>
+                                  <td className="py-2 px-3 font-bold text-ink-900">
+                                    {l.productName}
+                                    {l.scientificName && (
+                                      <span className="block text-[10px] italic text-ink-400 font-normal">
+                                        {l.scientificName}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3 font-mono font-semibold text-ink-700">{l.gradeSize}</td>
+                                  <td className="py-2 px-3 font-mono text-[11px] text-ink-500">{l.hsCode}</td>
+                                  <td className="py-2 px-3 text-right">{l.cartonsCount.toLocaleString()}</td>
+                                  <td className="py-2 px-3 text-right font-bold text-ink-900">{formatKg(l.weightKg)}</td>
+                                  <td className="py-2 px-3 text-right font-bold text-emerald-700">${l.ratePerKg.toFixed(2)}</td>
+                                  <td className="py-2 px-3 text-right font-black text-rose-950">${l.amountCurrency.toLocaleString()}</td>
+                                  <td className="py-2 px-3 text-right font-semibold text-ink-500">{l.lineSharePct.toFixed(1)}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-gray-50/80 font-bold text-ink-900 border-t border-gray-200">
+                                <td colSpan={4} className="py-2 px-3 text-right uppercase text-[10px] text-ink-500">
+                                  Invoice Total ({lines.length} lines)
+                                </td>
+                                <td className="py-2 px-3 text-right">
+                                  {lines.reduce((s, l) => s + l.cartonsCount, 0).toLocaleString()}
+                                </td>
+                                <td className="py-2 px-3 text-right text-rose-900">
+                                  {formatKg(lines.reduce((s, l) => s + l.weightKg, 0))}
+                                </td>
+                                <td className="py-2 px-3 text-right text-emerald-800 font-bold">
+                                  ${(lines.reduce((s, l) => s + l.amountCurrency, 0) / (lines.reduce((s, l) => s + l.weightKg, 0) || 1)).toFixed(2)} avg
+                                </td>
+                                <td className="py-2 px-3 text-right text-rose-950 font-black">
+                                  ${lines.reduce((s, l) => s + l.amountCurrency, 0).toLocaleString()}
+                                </td>
+                                <td className="py-2 px-3 text-right text-ink-500">100%</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* VIEW 2: FLAT ITEMIZED REGISTER */}
+          {invProdViewMode === 'flat' && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
+                    <th className="py-2.5 px-3">Invoice #</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Customer</th>
+                    <th className="py-2.5 px-3">POD</th>
+                    <th className="py-2.5 px-3">Product / Species</th>
+                    <th className="py-2.5 px-3 font-mono">Grade Size</th>
+                    <th className="py-2.5 px-3 font-mono">HS Code</th>
+                    <th className="py-2.5 px-3 text-right">Cartons</th>
+                    <th className="py-2.5 px-3 text-right">Weight (Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Rate ($/Kg)</th>
+                    <th className="py-2.5 px-3 text-right">Amount (USD)</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-medium">
+                  {filteredInvoiceProductLines.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-8 text-center text-ink-500">
+                        No product lines found matching the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInvoiceProductLines.map((l) => (
+                      <tr key={l.id} className="hover:bg-rose-50/20">
+                        <td className="py-2 px-3 font-bold text-rose-700">{l.invoiceNo}</td>
+                        <td className="py-2 px-3 text-ink-600">{l.invoiceDate}</td>
+                        <td className="py-2 px-3 font-semibold text-ink-900">{l.customerName}</td>
+                        <td className="py-2 px-3 text-ink-600">{l.portOfDischargeName}</td>
+                        <td className="py-2 px-3 font-bold text-ink-900">{l.productName}</td>
+                        <td className="py-2 px-3 font-mono text-ink-700">{l.gradeSize}</td>
+                        <td className="py-2 px-3 font-mono text-[11px] text-ink-500">{l.hsCode}</td>
+                        <td className="py-2 px-3 text-right">{l.cartonsCount.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right font-bold text-ink-900">{formatKg(l.weightKg)}</td>
+                        <td className="py-2 px-3 text-right font-bold text-emerald-700">${l.ratePerKg.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-black text-rose-950">${l.amountCurrency.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-center">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            l.realizationStatus === 'Fully Realized'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : l.realizationStatus === 'Partially Realized'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-gray-100 text-ink-800'
+                          }`}>
+                            {l.realizationStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-50/90 font-bold text-ink-900 border-t-2 border-gray-200">
+                    <td colSpan={7} className="py-3 px-3 uppercase text-[10px] text-ink-500 text-right">
+                      Total Across Filtered Lines ({filteredInvoiceProductLines.length})
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold">{invProdTotalCartons.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-right font-extrabold text-rose-900">{formatKg(invProdTotalWeight)}</td>
+                    <td className="py-3 px-3 text-right font-bold text-emerald-800">${invProdAvgRate.toFixed(2)}/kg</td>
+                    <td className="py-3 px-3 text-right font-black text-rose-950 text-sm">${invProdTotalUSD.toLocaleString()}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          {/* VIEW 3: PRODUCT CROSS-MATRIX VIEW */}
+          {invProdViewMode === 'matrix' && (
+            <div className="space-y-4">
+              {productMatrixMap.length === 0 ? (
+                <div className="py-8 text-center text-ink-500">No products match current filters.</div>
+              ) : (
+                productMatrixMap.map((pm) => {
+                  const avgPrice = pm.totalWeight > 0 ? pm.totalUSD / pm.totalWeight : 0;
+                  return (
+                    <div key={pm.productName} className="border border-gray-200 rounded-2xl p-5 bg-white space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-base font-black text-ink-900">{pm.productName}</h4>
+                            <span className="font-mono text-xs px-2 py-0.5 rounded bg-gray-100 text-ink-600 font-semibold">
+                              HS {pm.hsCode}
+                            </span>
+                          </div>
+                          <span className="text-xs text-ink-500">
+                            Exported in {pm.invoicesSet.size} shipments ({pm.lines.length} line items)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs font-semibold">
+                          <div className="text-right">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Total Exported</span>
+                            <span className="font-extrabold text-ink-900">{formatKg(pm.totalWeight)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Total Value</span>
+                            <span className="font-black text-rose-950 text-sm">${pm.totalUSD.toLocaleString()}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Weighted Avg Rate</span>
+                            <span className="font-bold text-emerald-700">${avgPrice.toFixed(2)}/kg</span>
+                          </div>
+                          <div className="text-right pl-3 border-l border-gray-200">
+                            <span className="text-[10px] text-ink-400 uppercase block font-bold">Price Spread</span>
+                            <span className="font-mono text-amber-800 font-bold">${pm.minRate.toFixed(2)} – ${pm.maxRate.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Shipments breakdown for this product */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 text-[10px] font-bold text-ink-500 uppercase">
+                              <th className="py-1.5 px-3">Invoice #</th>
+                              <th className="py-1.5 px-3">Date</th>
+                              <th className="py-1.5 px-3">Buyer / Consignee</th>
+                              <th className="py-1.5 px-3">POD</th>
+                              <th className="py-1.5 px-3">Grade Size</th>
+                              <th className="py-1.5 px-3 text-right">Cartons</th>
+                              <th className="py-1.5 px-3 text-right">Net Wt (Kg)</th>
+                              <th className="py-1.5 px-3 text-right">Rate ($/Kg)</th>
+                              <th className="py-1.5 px-3 text-right">Amount (USD)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 font-medium">
+                            {pm.lines.map((l) => (
+                              <tr key={l.id} className="hover:bg-rose-50/20">
+                                <td className="py-1.5 px-3 font-bold text-rose-700">{l.invoiceNo}</td>
+                                <td className="py-1.5 px-3 text-ink-600">{l.invoiceDate}</td>
+                                <td className="py-1.5 px-3 font-semibold text-ink-900">{l.customerName}</td>
+                                <td className="py-1.5 px-3 text-ink-600">{l.portOfDischargeName}</td>
+                                <td className="py-1.5 px-3 font-mono text-ink-700">{l.gradeSize}</td>
+                                <td className="py-1.5 px-3 text-right">{l.cartonsCount.toLocaleString()}</td>
+                                <td className="py-1.5 px-3 text-right font-bold text-ink-900">{formatKg(l.weightKg)}</td>
+                                <td className="py-1.5 px-3 text-right font-bold text-emerald-700">${l.ratePerKg.toFixed(2)}</td>
+                                <td className="py-1.5 px-3 text-right font-black text-rose-950">${l.amountCurrency.toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 3. CUSTOMER-WISE SALES ANALYSIS */}
+      {/* ==================================================================== */}
+      {activeReport === 'customer-analysis' && (
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">
+                  Customer &amp; Consignee Performance
+                </h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {customerBreakdown.length} buyers active
+                </span>
+              </div>
+              <p className="text-xs text-ink-500">Breakdown of export volume, value share, and average USD/Kg across overseas clients.</p>
+            </div>
+            {isCustFiltered && (
+              <button
+                onClick={resetCustFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Component-Level Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search overseas buyer name, city, country..."
+                value={custSearch}
+                onChange={(e) => setCustSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            <select
+              value={custMonth}
+              onChange={(e) => setCustMonth(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All FY 2026-27</option>
+              {availableMonths.map((m) => (
+                <option key={m} value={m}>
+                  {formatMonthLabel(m)}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={custCountryFilter}
+              onChange={(e) => setCustCountryFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Countries ({availableCountries.length})</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={custMinValue}
+              onChange={(e) => setCustMinValue(Number(e.target.value))}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="0">All Export Values</option>
+              <option value="50000">&gt; $50,000</option>
+              <option value="100000">&gt; $100,000</option>
+              <option value="250000">&gt; $250,000</option>
+            </select>
+
+            <select
+              value={custSortBy}
+              onChange={(e) => setCustSortBy(e.target.value as any)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="usd">Sort by: Value (USD)</option>
+              <option value="weight">Sort by: Weight (Kg)</option>
+              <option value="invoices">Sort by: Invoices Count</option>
+              <option value="rate">Sort by: Avg USD/Kg</option>
+            </select>
           </div>
 
           {/* Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200">
-              <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">Total Period Export</span>
+              <span className="text-[10px] font-bold text-rose-800 uppercase block tracking-wider">Total Filtered Export</span>
               <span className="text-lg font-black text-rose-950 mt-1 block">
-                ${totalPeriodUSD.toLocaleString()}
+                ${totalFilteredCustUSD.toLocaleString()}
               </span>
               <span className="text-xs text-rose-800 mt-1 block">
-                {formatKg(totalPeriodWeightKg)} across {periodInvoices.length} shipments
+                {formatKg(totalFilteredCustWeight)} across {customerBreakdown.reduce((s, c) => s + c.invoices, 0)} shipments
               </span>
             </div>
 
@@ -957,37 +2295,84 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 3. PRODUCT & SIZE ANALYSIS */}
+      {/* 4. PRODUCT & SIZE ANALYSIS */}
       {/* ==================================================================== */}
       {activeReport === 'product-analysis' && (
         <div className="space-y-6">
-          {/* Products Table */}
           <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-gray-100">
               <div>
-                <h3 className="text-sm font-bold text-ink-900">
-                  Product &amp; Species Export Distribution ({formatMonthLabel(selectedMonth)})
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-ink-900">
+                    Product &amp; Species Export Distribution
+                  </h3>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    {productBreakdown.length} species
+                  </span>
+                </div>
                 <p className="text-xs text-ink-500">
-                  Extracted directly from Commercial Invoices line items ({productBreakdown.length} species / product lines).
+                  Extracted directly from Commercial Invoices line items with pricing and weight totals.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  aria-label="Filter product analysis by period"
-                  className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+              {isProdFiltered && (
+                <button
+                  onClick={resetProdFilters}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
                 >
-                  <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
-                  {availableMonths.map((m) => (
-                    <option key={m} value={m}>
-                      {formatMonthLabel(m)}
-                    </option>
-                  ))}
-                </select>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Filters</span>
+                </button>
+              )}
+            </div>
+
+            {/* Product Filter Toolbar */}
+            <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+                <input
+                  type="text"
+                  placeholder="Search species / commodity or HS code..."
+                  value={prodSearch}
+                  onChange={(e) => setProdSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+                />
               </div>
+
+              <select
+                value={prodMonth}
+                onChange={(e) => setProdMonth(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="ALL">All FY 2026-27</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {formatMonthLabel(m)}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={prodFormFilter}
+                onChange={(e) => setProdFormFilter(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="">All Product Forms ({availableForms.length})</option>
+                {availableForms.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={prodSortBy}
+                onChange={(e) => setProdSortBy(e.target.value as any)}
+                className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+              >
+                <option value="usd">Sort by: Export Value (USD)</option>
+                <option value="weight">Sort by: Net Weight (Kg)</option>
+                <option value="rate">Sort by: Weighted Avg Rate</option>
+              </select>
             </div>
 
             <div className="overflow-x-auto">
@@ -1007,7 +2392,7 @@ export const SalesReportsHub: React.FC = () => {
                   {productBreakdown.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-ink-500">
-                        No product line items found for the selected period.
+                        No product line items found for the selected filter criteria.
                       </td>
                     </tr>
                   ) : (
@@ -1034,9 +2419,22 @@ export const SalesReportsHub: React.FC = () => {
 
           {/* Sizes Table */}
           <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
-            <h3 className="text-sm font-bold text-ink-900">
-              Physical Grade / Size Breakdown ({sizeBreakdown.length} active sizes)
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-gray-100">
+              <h3 className="text-sm font-bold text-ink-900">
+                Physical Grade / Size Breakdown ({sizeBreakdown.length} active sizes)
+              </h3>
+              <div className="relative w-64">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+                <input
+                  type="text"
+                  placeholder="Filter grade size (e.g. 6/8, 10/20)..."
+                  value={prodSizeSearch}
+                  onChange={(e) => setProdSizeSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none"
+                />
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -1053,7 +2451,7 @@ export const SalesReportsHub: React.FC = () => {
                   {sizeBreakdown.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-ink-500">
-                        No size breakdown available for the selected period.
+                        No size breakdown available for the selected filters.
                       </td>
                     </tr>
                   ) : (
@@ -1080,33 +2478,81 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 4. DESTINATION & PORT ANALYSIS */}
+      {/* 5. DESTINATION & PORT ANALYSIS */}
       {/* ==================================================================== */}
       {activeReport === 'destination-analysis' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">
-                Destination Ports &amp; Overseas Terminal Volume ({formatMonthLabel(selectedMonth)})
-              </h3>
-              <p className="text-xs text-ink-500">Volume and value breakdown by Port of Discharge (POD).</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">
+                  Destination Ports &amp; Overseas Terminal Volume
+                </h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {podBreakdown.length} discharge terminals
+                </span>
+              </div>
+              <p className="text-xs text-ink-500">Volume and value breakdown by Port of Discharge (POD) and arrival country.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-ink-700">Filter Period:</span>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                aria-label="Filter destination analysis by period"
-                className="p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none text-ink-800 focus:border-rose-500 focus:bg-white transition"
+            {isDestFiltered && (
+              <button
+                onClick={resetDestFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
               >
-                <option value="ALL">All FY 2026-27 (Full Year Overview)</option>
-                {availableMonths.map((m) => (
-                  <option key={m} value={m}>
-                    {formatMonthLabel(m)}
-                  </option>
-                ))}
-              </select>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Destination Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search port name, country, UN/LOCODE..."
+                value={destSearch}
+                onChange={(e) => setDestSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
             </div>
+
+            <select
+              value={destMonth}
+              onChange={(e) => setDestMonth(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All FY 2026-27</option>
+              {availableMonths.map((m) => (
+                <option key={m} value={m}>
+                  {formatMonthLabel(m)}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={destCountryFilter}
+              onChange={(e) => setDestCountryFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Destination Countries ({availableCountries.length})</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={destSortBy}
+              onChange={(e) => setDestSortBy(e.target.value as any)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="usd">Sort by: Value (USD)</option>
+              <option value="weight">Sort by: Volume (Kg)</option>
+              <option value="count">Sort by: Shipments Count</option>
+            </select>
           </div>
 
           <div className="overflow-x-auto">
@@ -1143,19 +2589,83 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 5. REALIZATION & OUTSTANDING AGEING */}
+      {/* 6. REALIZATION & OUTSTANDING AGEING */}
       {/* ==================================================================== */}
       {activeReport === 'realization-ageing' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">
-                Inward Realization &amp; Export Receivables Ageing Schedule
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">
+                  Inward Realization &amp; Export Receivables Ageing Schedule
+                </h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {filteredAgeingInvoices.length} outstanding invoices
+                </span>
+              </div>
               <p className="text-xs text-ink-500">
                 Tracks pending foreign remittances across 0–30, 31–60, 61–90, 91–180, and 180+ days.
               </p>
             </div>
+            {isAgeingFiltered && (
+              <button
+                onClick={resetAgeingFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Ageing Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search invoice #, customer name..."
+                value={ageingSearch}
+                onChange={(e) => setAgeingSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            <select
+              value={ageingBucketFilter}
+              onChange={(e) => setAgeingBucketFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All Ageing Buckets</option>
+              <option value="0-30">0–30 Days ({ageingBuckets['0-30'].count})</option>
+              <option value="31-60">31–60 Days ({ageingBuckets['31-60'].count})</option>
+              <option value="61-90">61–90 Days ({ageingBuckets['61-90'].count})</option>
+              <option value="91-180">91–180 Days ({ageingBuckets['91-180'].count})</option>
+              <option value="180+">180+ Days ({ageingBuckets['180+'].count})</option>
+            </select>
+
+            <select
+              value={ageingCustomerFilter}
+              onChange={(e) => setAgeingCustomerFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Customers ({customers.length})</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={ageingStatusFilter}
+              onChange={(e) => setAgeingStatusFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All Pending Balances</option>
+              <option value="unrealized_only">Fully Pending (0% Recd)</option>
+              <option value="partial_only">Partially Realized (Advance Recd)</option>
+            </select>
           </div>
 
           {/* Ageing Summary Cards */}
@@ -1165,7 +2675,7 @@ export const SalesReportsHub: React.FC = () => {
               <span className="text-base font-extrabold text-ink-900 mt-1 block">
                 ${totalOutstandingUSD.toLocaleString()}
               </span>
-              <span className="text-[10px] text-ink-500 mt-0.5 block">{outstandingInvoices.length} invoices</span>
+              <span className="text-[10px] text-ink-500 mt-0.5 block">{filteredAgeingInvoices.length} invoices</span>
             </div>
 
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
@@ -1227,14 +2737,14 @@ export const SalesReportsHub: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 font-medium">
-                {outstandingInvoices.length === 0 ? (
+                {filteredAgeingInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-8 text-center text-ink-500">
-                      All export invoices are 100% fully realized! Zero outstanding receivables.
+                      No invoices found matching the selected ageing criteria.
                     </td>
                   </tr>
                 ) : (
-                  outstandingInvoices.map((inv) => (
+                  filteredAgeingInvoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-rose-50/20">
                       <td className="py-2.5 px-3 font-bold text-rose-700">{inv.invoiceNo}</td>
                       <td className="py-2.5 px-3 text-ink-700">{inv.invoiceDate}</td>
@@ -1296,15 +2806,67 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 6. HS CODE / COMPLIANCE SUMMARY */}
+      {/* 7. HS CODE / COMPLIANCE SUMMARY */}
       {/* ==================================================================== */}
       {activeReport === 'hs-code-summary' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">Harmonized Tariff (HS Code) Compliance Register</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">Harmonized Tariff (HS Code) Compliance Register</h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {hsCodeBreakdown.length} HS classifications
+                </span>
+              </div>
               <p className="text-xs text-ink-500">Summary of export consignments and trade values grouped by 8-digit Customs Tariff code.</p>
             </div>
+            {isHsFiltered && (
+              <button
+                onClick={resetHsFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* HS Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search HS Code (e.g. 03061790)..."
+                value={hsSearch}
+                onChange={(e) => setHsSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            <select
+              value={hsMonth}
+              onChange={(e) => setHsMonth(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All FY 2026-27</option>
+              {availableMonths.map((m) => (
+                <option key={m} value={m}>
+                  {formatMonthLabel(m)}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={hsSortBy}
+              onChange={(e) => setHsSortBy(e.target.value as any)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="usd">Sort by: Declared USD</option>
+              <option value="weight">Sort by: Net Weight</option>
+              <option value="invoices">Sort by: Invoices Count</option>
+              <option value="rate">Sort by: Avg USD/Kg</option>
+            </select>
           </div>
 
           <div className="overflow-x-auto">
@@ -1339,18 +2901,71 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 7. EXCEPTION REPORT */}
+      {/* 8. EXCEPTION REPORT */}
       {/* ==================================================================== */}
       {activeReport === 'exceptions' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">Commercial Audit &amp; Exception Surveillance</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">Commercial Audit &amp; Exception Surveillance</h3>
+                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                  exceptionItems.length === 0 ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                }`}>
+                  {exceptionItems.length} issues flagged
+                </span>
+              </div>
               <p className="text-xs text-ink-500">
                 Automated detection of missing compliance data, duplicate invoice numbers, zero weights/rates, and overdue remittances.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            {isExcFiltered && (
+              <button
+                onClick={resetExcFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Exception Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search invoice #, customer name, issue description..."
+                value={excSearch}
+                onChange={(e) => setExcSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            <select
+              value={excTypeFilter}
+              onChange={(e) => setExcTypeFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All Exception Categories</option>
+              <option value="Overdue Realization">Overdue Realization</option>
+              <option value="Missing Data">Missing Data</option>
+              <option value="Duplicate Invoice No">Duplicate Invoice No</option>
+              <option value="Zero / Negative Value">Zero / Negative Value</option>
+            </select>
+
+            <select
+              value={excSeverityFilter}
+              onChange={(e) => setExcSeverityFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All Severities</option>
+              <option value="High">High Severity</option>
+              <option value="Medium">Medium Severity</option>
+            </select>
+
+            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-gray-200">
               <span className="text-xs font-semibold text-ink-700">Overdue Days:</span>
               <input
                 type="number"
@@ -1358,7 +2973,7 @@ export const SalesReportsHub: React.FC = () => {
                 max="365"
                 value={overdueThresholdDays}
                 onChange={(e) => setOverdueThresholdDays(parseInt(e.target.value) || 60)}
-                className="w-16 p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold outline-none text-center"
+                className="w-14 text-xs font-bold outline-none text-center bg-transparent"
               />
             </div>
           </div>
@@ -1367,7 +2982,7 @@ export const SalesReportsHub: React.FC = () => {
             {exceptionItems.length === 0 ? (
               <div className="p-8 text-center bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900 font-semibold text-xs space-y-1">
                 <CheckCircle2 className="w-6 h-6 mx-auto text-emerald-600" />
-                <p>100% Clean Audit Status: Zero commercial compliance exceptions detected.</p>
+                <p>100% Clean Audit Status: Zero commercial compliance exceptions detected with current filters.</p>
               </div>
             ) : (
               exceptionItems.map((exc) => (
@@ -1388,7 +3003,7 @@ export const SalesReportsHub: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="font-bold">{exc.type}</span>
                       <span
-                        className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold ${
+                        className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-extrabold ${
                           exc.severity === 'High'
                             ? 'bg-rose-200 text-rose-900'
                             : 'bg-amber-200 text-amber-900'
@@ -1410,35 +3025,88 @@ export const SalesReportsHub: React.FC = () => {
       )}
 
       {/* ==================================================================== */}
-      {/* 8. LANDED COST VS SALES REALIZATION */}
+      {/* 9. LANDED COST VS SALES REALIZATION */}
       {/* ==================================================================== */}
       {activeReport === 'margin-analysis' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>
-              <h3 className="text-sm font-bold text-ink-900">
-                Period Landed Cost vs. Sales Realization Margin
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink-900">
+                  Period Landed Cost vs. Sales Realization Margin
+                </h3>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  {productMarginAnalysis.length} commodity reconciliations
+                </span>
+              </div>
               <p className="text-xs text-ink-500">
                 Period-level margin approximation comparing Purchase/Production Cost per Kg against Realized Export Amount in INR per Kg for matching species.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-ink-700">From:</span>
+            {isMarginFiltered && (
+              <button
+                onClick={resetMarginFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Margin Filter Toolbar */}
+          <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold outline-none"
-              />
-              <span className="text-xs font-semibold text-ink-700">To:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold outline-none"
+                type="text"
+                placeholder="Search species / commodity name..."
+                value={marginSearch}
+                onChange={(e) => setMarginSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition"
               />
             </div>
+
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200">
+              <span className="text-[11px] font-semibold text-ink-500">From:</span>
+              <input
+                type="date"
+                value={marginStartDate}
+                onChange={(e) => setMarginStartDate(e.target.value)}
+                className="p-1 text-xs font-semibold outline-none bg-transparent"
+              />
+              <span className="text-[11px] font-semibold text-ink-500">To:</span>
+              <input
+                type="date"
+                value={marginEndDate}
+                onChange={(e) => setMarginEndDate(e.target.value)}
+                className="p-1 text-xs font-semibold outline-none bg-transparent"
+              />
+            </div>
+
+            <select
+              value={marginSpeciesFilter}
+              onChange={(e) => setMarginSpeciesFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Species ({species.length})</option>
+              {species.map((sp) => (
+                <option key={sp.id} value={sp.id}>
+                  {sp.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={marginHealthFilter}
+              onChange={(e) => setMarginHealthFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="ALL">All Margin Ranges</option>
+              <option value="profitable">Profitable Only (&gt; 0%)</option>
+              <option value="high_margin">High Margin (&ge; 20%)</option>
+              <option value="negative">Negative Margin (&lt; 0%)</option>
+            </select>
           </div>
 
           <div className="overflow-x-auto">

@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V10 - Pure 71 Invoices with Complete Shipping & Origin Particulars)
-const CACHE_VERSION = 'seafood-pwa-v10';
+// Seafood Purchase App - Offline PWA Service Worker (V11 - Commercial Reports Hub Multi-Filter & Invoice-Product Cross-Analysis)
+const CACHE_VERSION = 'seafood-pwa-v11';
 const STATIC_ASSETS = [
   './',
   './index.html',

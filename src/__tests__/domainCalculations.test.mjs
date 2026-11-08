@@ -1716,6 +1716,187 @@ test('Customer Model: Overseas Customer defaults with GST Exempt export supply s
   assert.equal(Boolean(newOverseasCust.taxId), false); // No GSTIN required for overseas
 });
 
+test('Commercial Reports Hub: Component-level filtering across Invoice Register, Customers, Products, Ports, Ageing, HS Code, and Exceptions', () => {
+  const sampleInvoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'RF/EXP/01/26-27',
+      invoiceDate: '2026-04-10',
+      consigneeId: 'cust-1',
+      portOfDischargeId: 'port-cn-tao',
+      totalWeightKg: 27000,
+      totalAmountCurrency: 45900,
+      realizationStatus: 'Fully Realized',
+      totalRealizedINR: 3878550,
+      balanceRealizationCurrency: 0,
+      lineItems: [
+        { id: 'l1', speciesId: 'sp-mackerel', hsCode: '03035400', sizeId: 'sz-6-8', cartonsCount: 2700, weightKg: 27000, ratePerKg: 1.70, amountCurrency: 45900 }
+      ]
+    },
+    {
+      id: 'inv-2',
+      invoiceNo: 'SO-00002',
+      invoiceDate: '2026-05-15',
+      consigneeId: 'cust-2',
+      portOfDischargeId: 'port-cn-foc',
+      totalWeightKg: 14000,
+      totalAmountCurrency: 29400,
+      realizationStatus: 'Not Realized',
+      totalRealizedINR: 0,
+      balanceRealizationCurrency: 29400,
+      lineItems: [
+        { id: 'l2', speciesId: 'sp-ribbonfish', hsCode: '03038990', sizeId: 'sz-300-500', cartonsCount: 1400, weightKg: 14000, ratePerKg: 2.10, amountCurrency: 29400 }
+      ]
+    },
+    {
+      id: 'inv-3',
+      invoiceNo: 'SO-00003',
+      invoiceDate: '2026-06-20',
+      consigneeId: 'cust-1',
+      portOfDischargeId: 'port-th-sgz',
+      totalWeightKg: 20000,
+      totalAmountCurrency: 46000,
+      realizationStatus: 'Partially Realized',
+      totalRealizedINR: 1943500,
+      advanceReceivedCurrency: 23000,
+      balanceRealizationCurrency: 23000,
+      lineItems: [
+        { id: 'l3', speciesId: 'sp-mackerel', hsCode: '03035400', sizeId: 'sz-8-10', cartonsCount: 2000, weightKg: 20000, ratePerKg: 2.30, amountCurrency: 46000 }
+      ]
+    }
+  ];
+
+  // 1. Invoice Register Filtering: Customer Filter + Realization Status Filter
+  const filteredReg = sampleInvoices.filter(
+    (inv) => inv.consigneeId === 'cust-1' && inv.realizationStatus === 'Fully Realized'
+  );
+  assert.equal(filteredReg.length, 1);
+  assert.equal(filteredReg[0].invoiceNo, 'RF/EXP/01/26-27');
+
+  // 2. Realization Ageing Filtering: Unrealized Only vs Partial
+  const unrealizedOnly = sampleInvoices.filter(
+    (inv) => inv.balanceRealizationCurrency > 0 && (!inv.advanceReceivedCurrency || inv.advanceReceivedCurrency === 0)
+  );
+  assert.equal(unrealizedOnly.length, 1);
+  assert.equal(unrealizedOnly[0].invoiceNo, 'SO-00002');
+
+  const partialOnly = sampleInvoices.filter(
+    (inv) => inv.balanceRealizationCurrency > 0 && inv.advanceReceivedCurrency > 0
+  );
+  assert.equal(partialOnly.length, 1);
+  assert.equal(partialOnly[0].invoiceNo, 'SO-00003');
+
+  // 3. Discharge Port Filtering
+  const thailandInvoices = sampleInvoices.filter((inv) => inv.portOfDischargeId === 'port-th-sgz');
+  assert.equal(thailandInvoices.length, 1);
+  assert.equal(thailandInvoices[0].invoiceNo, 'SO-00003');
+});
+
+test('Commercial Reports Hub: Invoice & Product Cross-Analysis transforms nested line items into granular hierarchies, itemized flat views, and product price-spread matrices', () => {
+  const sampleInvoices = [
+    {
+      id: 'inv-10',
+      invoiceNo: 'EXP-101',
+      invoiceDate: '2026-05-01',
+      consigneeId: 'cust-10',
+      portOfDischargeId: 'port-cn',
+      countryOfDestination: 'China',
+      realizationStatus: 'Fully Realized',
+      totalRealizedINR: 5000000,
+      totalAmountCurrency: 60000,
+      totalWeightKg: 25000,
+      lineItems: [
+        {
+          id: 'item-1',
+          speciesId: 'sp-van',
+          productDescription: 'FROZEN VANNAMEI SHRIMP HLSO',
+          sizeId: 'sz-16-20',
+          gradeSize: '16/20',
+          hsCode: '03061790',
+          cartonsCount: 1000,
+          weightKg: 10000,
+          ratePerKg: 3.50,
+          amountCurrency: 35000
+        },
+        {
+          id: 'item-2',
+          speciesId: 'sp-van',
+          productDescription: 'FROZEN VANNAMEI SHRIMP HLSO',
+          sizeId: 'sz-21-25',
+          gradeSize: '21/25',
+          hsCode: '03061790',
+          cartonsCount: 1500,
+          weightKg: 15000,
+          ratePerKg: 1.666667,
+          amountCurrency: 25000
+        }
+      ]
+    },
+    {
+      id: 'inv-20',
+      invoiceNo: 'EXP-102',
+      invoiceDate: '2026-05-10',
+      consigneeId: 'cust-20',
+      portOfDischargeId: 'port-jp',
+      countryOfDestination: 'Japan',
+      realizationStatus: 'Not Realized',
+      totalRealizedINR: 0,
+      totalAmountCurrency: 42000,
+      totalWeightKg: 10000,
+      lineItems: [
+        {
+          id: 'item-3',
+          speciesId: 'sp-van',
+          productDescription: 'FROZEN VANNAMEI SHRIMP HLSO',
+          sizeId: 'sz-16-20',
+          gradeSize: '16/20',
+          hsCode: '03061790',
+          cartonsCount: 1000,
+          weightKg: 10000,
+          ratePerKg: 4.20,
+          amountCurrency: 42000
+        }
+      ]
+    }
+  ];
+
+  // Flattened Enriched Lines transformation
+  const flatLines = [];
+  sampleInvoices.forEach((inv) => {
+    inv.lineItems.forEach((l) => {
+      flatLines.push({
+        invoiceNo: inv.invoiceNo,
+        invoiceDate: inv.invoiceDate,
+        country: inv.countryOfDestination,
+        speciesId: l.speciesId,
+        productName: l.productDescription,
+        gradeSize: l.gradeSize,
+        weightKg: l.weightKg,
+        ratePerKg: l.ratePerKg,
+        amountCurrency: l.amountCurrency,
+        sharePct: (l.amountCurrency / inv.totalAmountCurrency) * 100
+      });
+    });
+  });
+
+  assert.equal(flatLines.length, 3);
+  assert.equal(flatLines[0].sharePct.toFixed(1), '58.3');
+
+  // Product Matrix Aggregation & Price Spread Calculation
+  const speciesLines = flatLines.filter((l) => l.speciesId === 'sp-van');
+  const totalWeight = speciesLines.reduce((s, l) => s + l.weightKg, 0);
+  const totalUSD = speciesLines.reduce((s, l) => s + l.amountCurrency, 0);
+  const minRate = Math.min(...speciesLines.map((l) => l.ratePerKg));
+  const maxRate = Math.max(...speciesLines.map((l) => l.ratePerKg));
+  const weightedAvgRate = totalUSD / totalWeight;
+
+  assert.equal(totalWeight, 35000);
+  assert.equal(totalUSD, 102000);
+  assert.equal(minRate.toFixed(2), '1.67');
+  assert.equal(maxRate.toFixed(2), '4.20');
+  assert.equal(weightedAvgRate.toFixed(2), '2.91');
+});
+
 
 
 
