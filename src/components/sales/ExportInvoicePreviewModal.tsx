@@ -47,15 +47,15 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const rawBuyerAddress = invoice.buyerAddress || foundBuyer?.address || '';
   const buyerAddress = rawBuyerAddress !== 'Bangkok, Thailand' ? rawBuyerAddress : '';
 
-  const countryOfOrigin = invoice.countryOfOrigin || '';
+  const countryOfOrigin = invoice.countryOfOrigin || 'India';
   const countryOfDestination = invoice.countryOfDestination || foundConsignee?.country || foundPod?.country || '';
   const preCarriageBy = invoice.preCarriageBy || '';
   const placeOfReceipt = invoice.placeOfReceipt || '';
-  const termsOfPayment = invoice.termsOfPayment || '';
-  const priceTerms = invoice.priceTerms || '';
+  const termsOfPayment = invoice.termsOfPayment || 'Net 45';
+  const priceTerms = invoice.priceTerms || 'FOB Cochin';
   const vesselFlightNo = invoice.vesselFlightNo && invoice.vesselFlightNo !== 'MOGRAL 119W' ? invoice.vesselFlightNo : '';
-  const portOfLoading = invoice.portOfLoading || (foundPol ? `${foundPol.name}, ${foundPol.country}` : '');
-  const portOfDischarge = invoice.portOfDischarge || foundPod?.name || '';
+  const portOfLoading = invoice.portOfLoading || (foundPol ? `${foundPol.name}, ${foundPol.country}` : 'Cochin Port, India');
+  const portOfDischarge = invoice.portOfDischarge || (foundPod ? `${foundPod.name}, ${foundPod.country}` : '');
   const finalDestination = invoice.finalDestination || (foundDest ? `${foundDest.name}, ${foundDest.country}` : '');
   const currency = invoice.currency || 'USD';
 

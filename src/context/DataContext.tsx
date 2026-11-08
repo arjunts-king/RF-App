@@ -50,9 +50,6 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_SLAB_TYPES,
   INITIAL_PROCESSING_ENTRIES,
-  INITIAL_CUSTOMERS,
-  INITIAL_PORTS,
-  INITIAL_SALES_INVOICES,
   INITIAL_INVENTORY_ITEMS,
   INITIAL_INVENTORY_MAPPINGS,
   INITIAL_OPENING_STOCKS,
@@ -480,12 +477,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
+    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
+    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
+    if (currentVersion !== DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(VERIFIED_CUSTOMERS));
+      return VERIFIED_CUSTOMERS;
+    }
     const saved = localStorage.getItem(`${DB_PREFIX}customers`);
-    const rawList: Customer[] = saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+    const rawList: Customer[] = saved ? JSON.parse(saved) : VERIFIED_CUSTOMERS;
     const existingNames = new Set(rawList.map((c) => c.name.trim().toLowerCase()));
     const missing = VERIFIED_CUSTOMERS.filter((c) => !existingNames.has(c.name.trim().toLowerCase()));
     const merged = [...rawList, ...missing];
-    // Default all customers to Overseas Customers with GST Exempt export supply status
     return merged.map((c) => ({
       ...c,
       customerType: c.customerType || 'Overseas',
@@ -495,8 +497,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
+    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
+    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
+    if (currentVersion !== DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}ports`, JSON.stringify(VERIFIED_PORTS));
+      return VERIFIED_PORTS;
+    }
     const saved = localStorage.getItem(`${DB_PREFIX}ports`);
-    const list: PortMaster[] = saved ? JSON.parse(saved) : INITIAL_PORTS;
+    const list: PortMaster[] = saved ? JSON.parse(saved) : VERIFIED_PORTS;
     const existingNames = new Set(list.map((p) => p.name.trim().toLowerCase()));
     const missing = VERIFIED_PORTS.filter((p) => !existingNames.has(p.name.trim().toLowerCase()));
     return [...list, ...missing];
@@ -508,29 +516,62 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
+    const DATASET_VERSION = 'v71_pure_uploaded_invoices_v2';
+    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
+
+    // Force-sync to pure 71 uploaded export invoices from the uploaded Excel
+    if (currentVersion !== DATASET_VERSION) {
+      localStorage.setItem(`${DB_PREFIX}sales_dataset_version`, DATASET_VERSION);
+      localStorage.setItem(`${DB_PREFIX}sales_invoices`, JSON.stringify(VERIFIED_SALES_INVOICES));
+      return VERIFIED_SALES_INVOICES;
+    }
+
     const saved = localStorage.getItem(`${DB_PREFIX}sales_invoices`);
-    let list: SalesInvoice[] = saved ? JSON.parse(saved) : INITIAL_SALES_INVOICES;
+    let list: SalesInvoice[] = saved ? JSON.parse(saved) : VERIFIED_SALES_INVOICES;
+
+    // Filter out domestic job work or external non-uploaded records (e.g. GWE-001)
+    list = list.filter((inv) => inv.invoiceNo !== 'GWE-001');
+
     const verifiedMap = new Map(VERIFIED_SALES_INVOICES.map((inv) => [inv.invoiceNo.trim().toUpperCase(), inv]));
 
     if (list && list.length > 0) {
       list = list.map((inv) => {
         const clean = { ...inv };
+        const v = verifiedMap.get(clean.invoiceNo.trim().toUpperCase());
+
+        // Always ensure Country of Origin, Final Destination, POL, POD from verified Excel data
+        clean.countryOfOrigin = clean.countryOfOrigin || v?.countryOfOrigin || 'India';
+        clean.countryOfDestination = clean.countryOfDestination || v?.countryOfDestination || 'China';
+        clean.portOfLoading = clean.portOfLoading || v?.portOfLoading || 'Cochin Port, India';
+        clean.portOfLoadingId = clean.portOfLoadingId || v?.portOfLoadingId || 'port-cok';
+        clean.portOfDischarge = clean.portOfDischarge || v?.portOfDischarge;
+        clean.portOfDischargeId = clean.portOfDischargeId || v?.portOfDischargeId || 'port-tao';
+        clean.finalDestination = clean.finalDestination || v?.finalDestination;
+        clean.finalDestinationId = clean.finalDestinationId || v?.finalDestinationId || 'port-tao';
+        clean.exporterName = clean.exporterName || v?.exporterName || 'M/s RELISH FOODS';
+        clean.exporterAddress = clean.exporterAddress || v?.exporterAddress || '14/190-192 VALANJAVAZHI AMBALAPPUZHA, ALAPPUZHA, KERALA 688005, INDIA';
+        clean.consigneeName = clean.consigneeName || v?.consigneeName;
+        clean.consigneeAddress = clean.consigneeAddress || v?.consigneeAddress;
+        clean.buyerName = clean.buyerName || v?.buyerName;
+        clean.buyerAddress = clean.buyerAddress || v?.buyerAddress;
+        clean.termsOfPayment = clean.termsOfPayment || v?.termsOfPayment;
+        clean.priceTerms = clean.priceTerms || v?.priceTerms;
+
         // Sanitize legacy mock defaults stored in previously created invoices
         if (clean.containerNo === 'ONEU90399086') clean.containerNo = undefined;
         if (clean.sealNo === 'IN567892') clean.sealNo = undefined;
         if (clean.vesselFlightNo === 'MOGRAL 119W') clean.vesselFlightNo = undefined;
         if (clean.scientificName === 'RASTRELLIGER KANAGURTA') clean.scientificName = undefined;
         if (clean.shippingMarks === 'MERIT D.S') clean.shippingMarks = undefined;
-        if (clean.consigneeName === 'John Trading Co.,') clean.consigneeName = undefined;
-        if (clean.buyerName === 'ABC Pvt. Ltd.') clean.buyerName = undefined;
+        if (clean.consigneeName === 'John Trading Co.,') clean.consigneeName = v?.consigneeName;
+        if (clean.buyerName === 'ABC Pvt. Ltd.') clean.buyerName = v?.buyerName;
         if (clean.commodityDescription === 'FROZEN SEAFOOD') clean.commodityDescription = undefined;
         if (clean.packingDescription === '1X10KG') clean.packingDescription = undefined;
         if (!clean.totalRealizedCurrency || clean.totalRealizedCurrency <= 0) {
           clean.totalRealizedINR = 0;
         }
 
-        // Auto-enrich invoices with verified line items from Sales_Order.xlsx if missing or generic
-        const verified = verifiedMap.get(clean.invoiceNo.trim().toUpperCase());
+        // Auto-enrich invoices with verified line items if missing or generic
         const needsItemEnrichment =
           !clean.lineItems ||
           clean.lineItems.length === 0 ||
@@ -538,57 +579,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             (l) => !l.productDescription || l.productDescription === 'FROZEN SEAFOOD' || l.productDescription === 'Export Finish'
           );
 
-        if (verified && needsItemEnrichment && verified.lineItems && verified.lineItems.length > 0) {
-          clean.lineItems = verified.lineItems;
-          clean.totalWeightKg = verified.totalWeightKg || clean.totalWeightKg;
-          clean.totalCartons = verified.totalCartons || clean.totalCartons;
-          clean.consigneeId = clean.consigneeId || verified.consigneeId;
-          clean.portOfDischargeId = clean.portOfDischargeId || verified.portOfDischargeId;
-          clean.finalDestinationId = clean.finalDestinationId || verified.finalDestinationId;
+        if (v && needsItemEnrichment && v.lineItems && v.lineItems.length > 0) {
+          clean.lineItems = v.lineItems;
+          clean.totalWeightKg = v.totalWeightKg || clean.totalWeightKg;
+          clean.totalCartons = v.totalCartons || clean.totalCartons;
+          clean.consigneeId = clean.consigneeId || v.consigneeId;
+          clean.portOfDischargeId = clean.portOfDischargeId || v.portOfDischargeId;
+          clean.finalDestinationId = clean.finalDestinationId || v.finalDestinationId;
           if (!clean.totalAmountCurrency || clean.totalAmountCurrency <= 0) {
-            clean.totalAmountCurrency = verified.totalAmountCurrency;
+            clean.totalAmountCurrency = v.totalAmountCurrency;
           }
           if (!clean.totalFobValueCurrency || clean.totalFobValueCurrency <= 0) {
-            clean.totalFobValueCurrency = verified.totalFobValueCurrency;
+            clean.totalFobValueCurrency = v.totalFobValueCurrency;
           }
           if (!clean.totalFobValueINR || clean.totalFobValueINR <= 0) {
-            clean.totalFobValueINR = verified.totalFobValueINR;
+            clean.totalFobValueINR = v.totalFobValueINR;
           }
-        }
-
-        // Auto-enrich existing line items with grade/size and carton counts from productDescription
-        if (clean.lineItems && clean.lineItems.length > 0) {
-          clean.lineItems = clean.lineItems.map((l) => {
-            let extractedSize = l.gradeSize;
-            const desc = l.productDescription || '';
-            if (!extractedSize && desc) {
-              const m = desc.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
-              if (m) extractedSize = m[1].toUpperCase();
-            }
-            if (!extractedSize && clean.commodityDescription) {
-              const m = clean.commodityDescription.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
-              if (m) extractedSize = m[1].toUpperCase();
-            }
-
-            let cartons = l.cartonsCount;
-            if ((!cartons || cartons <= 0) && desc) {
-              const ctnMatch = desc.match(/(\d+)\s*(?:cases|case|cartons|carton|ctns|ctn|boxes|box|pkgs|pkg)/i) ||
-                               desc.match(/(?:No\.?\s*of\s*Cartons|Total\s*Cartons)\s*[:=]\s*(\d+)/i);
-              if (ctnMatch) cartons = parseInt(ctnMatch[1], 10);
-            }
-
-            let cleanDesc = desc;
-            if (extractedSize && desc) {
-              cleanDesc = desc.replace(new RegExp(`\\s*\\b${extractedSize.replace('/', '\\/')}\\b\\s*$`, 'i'), '').trim() || desc;
-            }
-
-            return {
-              ...l,
-              productDescription: cleanDesc,
-              gradeSize: extractedSize || l.gradeSize,
-              cartonsCount: cartons !== undefined && cartons > 0 ? cartons : l.cartonsCount
-            };
-          });
         }
 
         return clean;

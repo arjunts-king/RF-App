@@ -626,10 +626,10 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                         )}
                       </td>
 
-                      {/* Port of Discharge */}
+                      {/* Port of Discharge & Destination */}
                       <td className="py-3 px-3">
-                        <div className="font-semibold text-ink-800">{pod?.name || 'POD'}</div>
-                        <div className="text-[10px] text-ink-500 font-mono">{pod?.code}</div>
+                        <div className="font-semibold text-ink-800">{inv.portOfDischarge || pod?.name || 'POD'}</div>
+                        <div className="text-[10px] text-ink-500 font-medium">{inv.finalDestination || pod?.code || ''}</div>
                       </td>
 
                       {/* Total Weight */}
@@ -775,6 +775,26 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                               <span className="text-ink-500 font-normal text-[11px]">
                                 Invoice: <strong className="font-mono text-ink-900">{inv.invoiceNo}</strong>
                               </span>
+                            </div>
+
+                            {/* Origin, POL, POD, Final Destination particulars from Excel */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200 text-[11px]">
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">Country of Origin</span>
+                                <span className="font-bold text-ink-900">{inv.countryOfOrigin || 'India'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">Port of Loading</span>
+                                <span className="font-bold text-ink-900">{inv.portOfLoading || 'Cochin Port, India'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">Port of Discharge</span>
+                                <span className="font-bold text-rose-700">{inv.portOfDischarge || pod?.name || 'POD'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">Final Destination</span>
+                                <span className="font-bold text-ink-900">{inv.finalDestination || consignee?.country || 'Export'}</span>
+                              </div>
                             </div>
                             <div className="overflow-x-auto">
                               <table className="w-full text-left text-xs border-collapse">

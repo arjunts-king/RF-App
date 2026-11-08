@@ -229,10 +229,17 @@ export const SalesReportsHub: React.FC = () => {
   // --------------------------------------------------------------------------
   // 4. DESTINATION & PORT ANALYSIS
   // --------------------------------------------------------------------------
-  const podAggMap = new Map<string, { weight: number; usd: number; count: number }>();
+  const podAggMap = new Map<string, { name: string; code: string; country: string; weight: number; usd: number; count: number }>();
   periodInvoices.forEach((inv) => {
-    const cur = podAggMap.get(inv.portOfDischargeId) || { weight: 0, usd: 0, count: 0 };
-    podAggMap.set(inv.portOfDischargeId, {
+    const p = portMap.get(inv.portOfDischargeId);
+    const podName = inv.portOfDischarge || p?.name || 'Port of Qingdao, China';
+    const podCode = p?.code || 'POD';
+    const podCountry = p?.country || inv.countryOfDestination || 'Export';
+    const key = podName;
+
+    const cur = podAggMap.get(key) || { name: podName, code: podCode, country: podCountry, weight: 0, usd: 0, count: 0 };
+    podAggMap.set(key, {
+      ...cur,
       weight: cur.weight + inv.totalWeightKg,
       usd: cur.usd + inv.totalAmountCurrency,
       count: cur.count + 1
@@ -240,14 +247,10 @@ export const SalesReportsHub: React.FC = () => {
   });
 
   const podBreakdown = Array.from(podAggMap.entries())
-    .map(([podId, data]) => {
-      const p = portMap.get(podId);
+    .map(([key, data]) => {
       const pct = totalPeriodUSD > 0 ? (data.usd / totalPeriodUSD) * 100 : 0;
       return {
-        id: podId,
-        name: p?.name || 'Overseas Port',
-        code: p?.code || 'POD',
-        country: p?.country || 'Export Market',
+        id: key,
         ...data,
         pct
       };
