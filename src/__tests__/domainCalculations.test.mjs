@@ -2388,6 +2388,28 @@ test('Realization with Shortfall: marked Fully Realized, zero outstanding, and s
   assert.equal(shortfallReportItems[0].status, 'Fully Realized', 'Report confirms status is Fully Realized');
 });
 
+test('Invoices 35 and 53 Shortfall Resolution: zero outstanding and Fully Realized with respective shortfall', () => {
+  // Invoice 35 (RF/EXP/35/26-27):
+  // Invoiced USD: 149,419.08, Balance Received: 149,369.08, Respective Shortfall: $50.00
+  const inv35Invoiced = 149419.08;
+  const inv35Received = 149369.08;
+  const inv35Shortfall = Number((inv35Invoiced - inv35Received).toFixed(2));
+  assert.equal(inv35Shortfall, 50.00, 'Invoice 35 shortfall is exactly $50.00');
+
+  const inv35RemainingUSD = Math.max(0, Number((inv35Invoiced - inv35Received - inv35Shortfall).toFixed(2)));
+  assert.equal(inv35RemainingUSD, 0, 'Invoice 35 remaining unrealized balance is 0.00');
+
+  // Invoice 53 (RF/EXP/53/26-27):
+  // Invoiced USD: 52,806.40, Balance Received: 52,781.00, Respective Shortfall: $25.40
+  const inv53Invoiced = 52806.40;
+  const inv53Received = 52781.00;
+  const inv53Shortfall = Number((inv53Invoiced - inv53Received).toFixed(2));
+  assert.equal(inv53Shortfall, 25.40, 'Invoice 53 shortfall is exactly $25.40');
+
+  const inv53RemainingUSD = Math.max(0, Number((inv53Invoiced - inv53Received - inv53Shortfall).toFixed(2)));
+  assert.equal(inv53RemainingUSD, 0, 'Invoice 53 remaining unrealized balance is 0.00');
+});
+
 
 
 

@@ -165,7 +165,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   }, 0);
   const totalRealizedUSD = activeInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
   const totalRealizedINR = activeInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
-  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => {
+    if (inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05) return s;
+    return s + inv.balanceRealizationCurrency;
+  }, 0);
 
   const totalAdvanceShortfallUSD = activeInvoices.reduce((s, inv) => {
     const adv = inv.advanceReceivedCurrency || 0;
@@ -378,7 +381,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
         BankExchangeRate: bankRate,
         TotalRealizedUSD: inv.totalRealizedCurrency,
         TotalRealizedINR: inv.totalRealizedINR,
-        UnrealizedBalanceUSD: inv.balanceRealizationCurrency,
+        UnrealizedBalanceUSD: inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05 ? 0 : inv.balanceRealizationCurrency,
         Status: inv.realizationStatus,
         Voided: inv.isVoided ? 'Yes' : 'No'
       };
@@ -1159,13 +1162,21 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div
                           className={`font-black tabular-nums ${
-                            inv.balanceRealizationCurrency > 0.05 ? 'text-rose-700' : 'text-emerald-700'
+                            inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
+                              ? 'text-emerald-700'
+                              : 'text-rose-700'
                           }`}
                         >
-                          {inv.currency} {inv.balanceRealizationCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {inv.currency}{' '}
+                          {(inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
+                            ? 0
+                            : inv.balanceRealizationCurrency
+                          ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-ink-500">
-                          {inv.balanceRealizationCurrency > 0.05 ? 'Unsettled' : 'Fully Cleared'}
+                          {inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
+                            ? 'Fully Cleared'
+                            : 'Unsettled'}
                         </div>
                       </td>
 

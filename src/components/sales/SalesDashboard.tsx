@@ -154,7 +154,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const avgUSDPerKg = totalWeightKg > 0 ? totalUSD / totalWeightKg : 0;
   const totalRealizedINR = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const totalRealizedUSD = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
-  const totalOutstandingUSD = filteredInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+  const totalOutstandingUSD = filteredInvoices.reduce(
+    (s, inv) => (inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05 ? s : s + inv.balanceRealizationCurrency),
+    0
+  );
   const totalShortfallUSD = filteredInvoices.reduce(
     (s, inv) => s + (inv.totalShortfallUSD || ((inv.advanceShortfallUSD || 0) + (inv.balanceShortfallUSD || 0)) || 0),
     0
