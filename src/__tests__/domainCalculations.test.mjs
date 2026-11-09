@@ -2608,6 +2608,92 @@ test('Commercial Product Masters from Import Template & Searchable Selection', a
   assert.equal(blankLine.hsCode, '', 'New line hsCode must be blank');
 });
 
+test('Unified Searchable Comboboxes: Size, Customer, and Port drag down lists', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  // 1. Verify Sizes search filtering
+  const szPrefix = 'export const VERIFIED_SIZES: Size[] = ';
+  const szStart = content.indexOf(szPrefix);
+  const szEnd = content.indexOf('export const VERIFIED_SALES_INVOICES');
+  const sizes = JSON.parse(content.slice(szStart + szPrefix.length, szEnd).trim().replace(/;$/, ''));
+
+  assert.ok(sizes.length >= 20, 'Verified sizes list must be present');
+
+  const filterSizes = (q, list) => {
+    const query = q.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((sz) => {
+      const matchName = (sz.name || '').toLowerCase().includes(query);
+      const matchCode = (sz.code || '').toLowerCase().includes(query);
+      const matchDesc = (sz.description || '').toLowerCase().includes(query);
+      return matchName || matchCode || matchDesc;
+    });
+  };
+
+  const count7190 = filterSizes('71/90', sizes);
+  assert.equal(count7190.length, 1, 'Search for "71/90" returns exact matching size');
+  assert.equal(count7190[0].name, '71/90');
+
+  const count100 = filterSizes('100', sizes);
+  assert.ok(count100.length >= 1, 'Search for "100" returns matching sizes like 100/200');
+
+  // 2. Verify Customer search filtering
+  const custPrefix = 'export const VERIFIED_CUSTOMERS: Customer[] = ';
+  const custStart = content.indexOf(custPrefix);
+  const custEnd = content.indexOf('export const VERIFIED_PORTS');
+  const customers = JSON.parse(content.slice(custStart + custPrefix.length, custEnd).trim().replace(/;$/, ''));
+
+  const filterCustomers = (q, list) => {
+    const query = q.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((c) => {
+      const matchName = (c.name || '').toLowerCase().includes(query);
+      const matchCode = (c.code || '').toLowerCase().includes(query);
+      const matchCountry = (c.country || '').toLowerCase().includes(query);
+      const matchAddress = (c.address || '').toLowerCase().includes(query);
+      return matchName || matchCode || matchCountry || matchAddress;
+    });
+  };
+
+  const thailandCustomers = filterCustomers('Thailand', customers);
+  assert.equal(thailandCustomers.length, 3, 'Search for "Thailand" filters all Thai consignees');
+  assert.ok(thailandCustomers.every((c) => c.country.toLowerCase().includes('thailand') || c.address.toLowerCase().includes('thailand')));
+
+  const chinaCustomers = filterCustomers('China', customers);
+  assert.ok(chinaCustomers.length >= 10, 'Search for "China" filters Chinese consignees');
+
+  const cust15 = filterCustomers('CUST-015', customers);
+  assert.equal(cust15.length, 1, 'Search by code returns single matching consignee');
+  assert.equal(cust15[0].name, 'GLOBAL FISH CO., LTD');
+
+  // 3. Verify Ports search filtering
+  const portPrefix = 'export const VERIFIED_PORTS: PortMaster[] = ';
+  const portStart = content.indexOf(portPrefix);
+  const portEnd = content.indexOf('export const VERIFIED_SPECIES');
+  const ports = JSON.parse(content.slice(portStart + portPrefix.length, portEnd).trim().replace(/;$/, ''));
+
+  const filterPorts = (q, list) => {
+    const query = q.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((p) => {
+      const matchName = (p.name || '').toLowerCase().includes(query);
+      const matchCode = (p.code || '').toLowerCase().includes(query);
+      const matchCountry = (p.country || '').toLowerCase().includes(query);
+      return matchName || matchCode || matchCountry;
+    });
+  };
+
+  const cochinPort = filterPorts('Cochin', ports);
+  assert.equal(cochinPort.length, 1, 'Search for "Cochin" returns Cochin Port');
+  assert.equal(cochinPort[0].code, 'INCOK');
+
+  const chinaPorts = filterPorts('China', ports);
+  assert.ok(chinaPorts.length >= 5, 'Search for "China" returns all Chinese ports (Qingdao, Fuzhou, Xiamen, etc.)');
+});
+
 
 
 

@@ -46,7 +46,7 @@ export function FlyoutSidebar<T extends string>({
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
-  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine which subheading currently owns the activeTab
   const activeSubHeading = subHeadings.find((sh) =>

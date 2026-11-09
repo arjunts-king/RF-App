@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
-import { SalesCurrency, Species } from '../../types';
+import { SalesCurrency, Species, Size } from '../../types';
 import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
 import { ProductCombobox } from './ProductCombobox';
+import { SizeCombobox } from './SizeCombobox';
+import { CustomerCombobox } from './CustomerCombobox';
+import { PortCombobox } from './PortCombobox';
 import {
   FileText,
   PlusCircle,
@@ -262,10 +265,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   };
 
   // Handle Size change
-  const handleSizeChange = (lineId: string, szId: string) => {
-    const found = sizes.find((s) => s.id === szId);
+  const handleSizeChange = (lineId: string, sz: Size | null) => {
     setLines((prev) =>
-      prev.map((l) => (l.id === lineId ? { ...l, sizeId: szId, gradeSize: found?.name || l.gradeSize } : l))
+      prev.map((l) =>
+        l.id === lineId
+          ? {
+              ...l,
+              sizeId: sz ? sz.id : '',
+              gradeSize: sz?.name ? sz.name : (sz === null ? '' : l.gradeSize)
+            }
+          : l
+      )
     );
   };
 
@@ -649,24 +659,16 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
           {/* Consignee */}
           <div className="p-4 bg-gray-50/70 rounded-xl border border-gray-100 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-ink-900 uppercase tracking-wider">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-ink-900 uppercase tracking-wider shrink-0">
                 Consignee <span className="text-rose-600">*</span>
               </span>
-              <select
+              <CustomerCombobox
                 value={consigneeId}
-                onChange={(e) => handleConsigneeChange(e.target.value)}
-                className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-bold outline-none focus:border-rose-400"
-              >
-                <option value="">Quick select from Master...</option>
-                {customers
-                  .filter((c) => c.active)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.country})
-                    </option>
-                  ))}
-              </select>
+                customerList={customers.filter((c) => c.active)}
+                onChange={(c) => handleConsigneeChange(c ? c.id : '')}
+                placeholder="Quick select from Customer Master..."
+              />
             </div>
 
             <div>
@@ -695,24 +697,18 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
           {/* Buyer */}
           <div className="p-4 bg-gray-50/70 rounded-xl border border-gray-100 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-ink-900 uppercase tracking-wider">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-ink-900 uppercase tracking-wider shrink-0">
                 Buyer (if other than consignee)
               </span>
-              <select
+              <CustomerCombobox
                 value={buyerId}
-                onChange={(e) => handleBuyerChange(e.target.value)}
-                className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-medium outline-none focus:border-rose-400"
-              >
-                <option value="">N.A. (Same as Consignee)</option>
-                {customers
-                  .filter((c) => c.active)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.country})
-                    </option>
-                  ))}
-              </select>
+                customerList={customers.filter((c) => c.active)}
+                onChange={(c) => handleBuyerChange(c ? c.id : '')}
+                placeholder="Select Buyer..."
+                allowNoneOption
+                noneOptionLabel="N.A. (Same as Consignee)"
+              />
             </div>
 
             <div>
@@ -820,7 +816,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             <label className="block text-[11px] font-bold text-ink-700 mb-1">
               Port of Loading (POL)
             </label>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <input
                 type="text"
                 value={portOfLoading}
@@ -828,24 +824,18 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 placeholder="COCHIN, INDIA"
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
               />
-              <select
+              <PortCombobox
                 value={portOfLoadingId}
-                onChange={(e) => handlePortOfLoadingChange(e.target.value)}
-                className="w-full px-2 py-1 bg-white border border-gray-200 rounded-lg text-[10px] text-ink-500"
-              >
-                <option value="">Load from Port Master...</option>
-                {ports.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.country})
-                  </option>
-                ))}
-              </select>
+                portList={ports}
+                onChange={(p) => handlePortOfLoadingChange(p ? p.id : '')}
+                placeholder="Load from Port Master..."
+              />
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Port of Discharge (POD)</label>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <input
                 type="text"
                 value={portOfDischarge}
@@ -853,24 +843,18 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 placeholder="LAEM CHABANG"
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
               />
-              <select
+              <PortCombobox
                 value={portOfDischargeId}
-                onChange={(e) => handlePortOfDischargeChange(e.target.value)}
-                className="w-full px-2 py-1 bg-white border border-gray-200 rounded-lg text-[10px] text-ink-500"
-              >
-                <option value="">Load from Port Master...</option>
-                {ports.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.country})
-                  </option>
-                ))}
-              </select>
+                portList={ports}
+                onChange={(p) => handlePortOfDischargeChange(p ? p.id : '')}
+                placeholder="Load from Port Master..."
+              />
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Final Destination</label>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <input
                 type="text"
                 value={finalDestination}
@@ -878,18 +862,12 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 placeholder="LAT KRABANG, THAILAND"
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
               />
-              <select
+              <PortCombobox
                 value={finalDestinationId}
-                onChange={(e) => handleFinalDestinationChange(e.target.value)}
-                className="w-full px-2 py-1 bg-white border border-gray-200 rounded-lg text-[10px] text-ink-500"
-              >
-                <option value="">Load from Port Master...</option>
-                {ports.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.country})
-                  </option>
-                ))}
-              </select>
+                portList={ports}
+                onChange={(p) => handleFinalDestinationChange(p ? p.id : '')}
+                placeholder="Load from Port Master..."
+              />
             </div>
           </div>
         </div>
@@ -1133,7 +1111,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
                 <th className="py-2.5 px-3">#</th>
                 <th className="py-2.5 px-3 min-w-[320px]">Description of Goods</th>
-                <th className="py-2.5 px-3 min-w-[130px]">Grade / Size</th>
+                <th className="py-2.5 px-3 min-w-[180px]">Grade / Size</th>
                 <th className="py-2.5 px-3 text-right min-w-[100px]">No. of Cartons</th>
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Quantity (Kgs)</th>
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Rate ({currency}/Kg)</th>
@@ -1182,27 +1160,21 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
                   {/* Grade / Size */}
                   <td className="py-2 px-3">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <input
                         type="text"
                         value={l.gradeSize}
                         onChange={(e) => updateLine(l.id, 'gradeSize', e.target.value)}
                         placeholder="e.g. 6/8"
                         required
-                        className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-rose-400"
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                       />
-                      <select
+                      <SizeCombobox
                         value={l.sizeId}
-                        onChange={(e) => handleSizeChange(l.id, e.target.value)}
-                        className="w-full px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] text-ink-500"
-                      >
-                        <option value="">Select Master size...</option>
-                        {sizes.map((sz) => (
-                          <option key={sz.id} value={sz.id}>
-                            {sz.name}
-                          </option>
-                        ))}
-                      </select>
+                        sizeList={sizes}
+                        onChange={(sz) => handleSizeChange(l.id, sz)}
+                        placeholder="Select Grade / Size..."
+                      />
                     </div>
                   </td>
 
