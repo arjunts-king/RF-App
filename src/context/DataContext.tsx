@@ -307,7 +307,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
-  const SALES_DATASET_VERSION = 'v71_pure_uploaded_invoices_v4';
+  const SALES_DATASET_VERSION = 'v71_pure_uploaded_invoices_v5';
 
   const [species, setSpecies] = useState<Species[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
@@ -598,12 +598,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (!clean.totalAmountCurrency || clean.totalAmountCurrency <= 0) {
             clean.totalAmountCurrency = v.totalAmountCurrency;
           }
-          if (!clean.totalFobValueCurrency || clean.totalFobValueCurrency <= 0) {
-            clean.totalFobValueCurrency = v.totalFobValueCurrency;
-          }
-          if (!clean.totalFobValueINR || clean.totalFobValueINR <= 0) {
-            clean.totalFobValueINR = v.totalFobValueINR;
-          }
+          clean.totalFobValueCurrency = v.totalFobValueCurrency ?? 0;
+          clean.totalFobValueINR = v.totalFobValueINR ?? 0;
         }
 
         return clean;

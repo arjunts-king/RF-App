@@ -6419,8 +6419,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 54676.5,
-    "totalFobValueCurrency": 54676.5,
-    "totalFobValueINR": 5237163.95,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5237163.95,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -6443,8 +6443,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1020,
         "ratePerKg": 1.6,
         "amountCurrency": 1632,
-        "fobValueCurrency": 1632,
-        "fobValueINR": 156320.39
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-2",
@@ -6457,8 +6457,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3020,
         "ratePerKg": 2.25,
         "amountCurrency": 6795,
-        "fobValueCurrency": 6795,
-        "fobValueINR": 650856.02
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-3",
@@ -6471,8 +6471,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3550,
         "ratePerKg": 2.69,
         "amountCurrency": 9549.5,
-        "fobValueCurrency": 9549.5,
-        "fobValueINR": 914694.56
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-4",
@@ -6485,8 +6485,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1130,
         "ratePerKg": 2.8,
         "amountCurrency": 3164,
-        "fobValueCurrency": 3164,
-        "fobValueINR": 303062.32
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-5",
@@ -6499,8 +6499,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3500,
         "ratePerKg": 1.3,
         "amountCurrency": 4550,
-        "fobValueCurrency": 4550,
-        "fobValueINR": 435819.7
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-6",
@@ -6513,8 +6513,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7990,
         "ratePerKg": 1.95,
         "amountCurrency": 15580.5,
-        "fobValueCurrency": 15580.5,
-        "fobValueINR": 1492371.18
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-7",
@@ -6527,8 +6527,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4710,
         "ratePerKg": 2.25,
         "amountCurrency": 10597.5,
-        "fobValueCurrency": 10597.5,
-        "fobValueINR": 1015076.77
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-42-26-27-8",
@@ -6541,8 +6541,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1080,
         "ratePerKg": 2.6,
         "amountCurrency": 2808,
-        "fobValueCurrency": 2808,
-        "fobValueINR": 268963.02
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -6592,8 +6592,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 49562,
-    "totalFobValueCurrency": 49562,
-    "totalFobValueINR": 4747273.87,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4747273.87,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -6616,8 +6616,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4110,
         "ratePerKg": 2.2,
         "amountCurrency": 9042,
-        "fobValueCurrency": 9042,
-        "fobValueINR": 866083.9
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-43-26-27-2",
@@ -6630,8 +6630,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 14580,
         "ratePerKg": 1.95,
         "amountCurrency": 28431,
-        "fobValueCurrency": 28431,
-        "fobValueINR": 2723250.54
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-43-26-27-3",
@@ -6644,8 +6644,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 110,
         "ratePerKg": 1.9,
         "amountCurrency": 209,
-        "fobValueCurrency": 209,
-        "fobValueINR": 20018.97
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-43-26-27-4",
@@ -6658,8 +6658,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7200,
         "ratePerKg": 1.65,
         "amountCurrency": 11880,
-        "fobValueCurrency": 11880,
-        "fobValueINR": 1137920.45
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -6709,8 +6709,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 55902,
-    "totalFobValueCurrency": 55902,
-    "totalFobValueINR": 5352546.9,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5352546.9,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -6733,8 +6733,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19940,
         "ratePerKg": 2.22,
         "amountCurrency": 44266.8,
-        "fobValueCurrency": 44266.8,
-        "fobValueINR": 4238490.99
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-44-26-27-2",
@@ -6747,8 +6747,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6060,
         "ratePerKg": 1.92,
         "amountCurrency": 11635.2,
-        "fobValueCurrency": 11635.2,
-        "fobValueINR": 1114055.91
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -6798,8 +6798,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2500,
     "totalWeightKg": 25000,
     "totalAmountCurrency": 53811,
-    "totalFobValueCurrency": 53811,
-    "totalFobValueINR": 5158263.05,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5158263.05,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -6822,8 +6822,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 170,
         "ratePerKg": 2.35,
         "amountCurrency": 399.5,
-        "fobValueCurrency": 399.5,
-        "fobValueINR": 38295.63
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-45-26-27-2",
@@ -6836,8 +6836,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21360,
         "ratePerKg": 2.2,
         "amountCurrency": 46992,
-        "fobValueCurrency": 46992,
-        "fobValueINR": 4504601.24
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-45-26-27-3",
@@ -6850,8 +6850,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3470,
         "ratePerKg": 1.85,
         "amountCurrency": 6419.5,
-        "fobValueCurrency": 6419.5,
-        "fobValueINR": 615366.18
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -6902,8 +6902,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 130370.4,
-    "totalFobValueCurrency": 130370.4,
-    "totalFobValueINR": 12491175.62,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 12491175.62,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -6926,8 +6926,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1584,
         "ratePerKg": 6.2,
         "amountCurrency": 9820.8,
-        "fobValueCurrency": 9820.8,
-        "fobValueINR": 940960.05
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-46-26-27-2",
@@ -6940,8 +6940,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9696,
         "ratePerKg": 6.1,
         "amountCurrency": 59145.6,
-        "fobValueCurrency": 59145.6,
-        "fobValueINR": 5666915.78
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-46-26-27-3",
@@ -6954,8 +6954,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 10320,
         "ratePerKg": 5.95,
         "amountCurrency": 61404,
-        "fobValueCurrency": 61404,
-        "fobValueINR": 5883299.79
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7005,8 +7005,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 1539,
     "totalWeightKg": 15396,
     "totalAmountCurrency": 93332.4,
-    "totalFobValueCurrency": 93332.4,
-    "totalFobValueINR": 8946740.83,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 8946740.83,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7029,8 +7029,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 14424,
         "ratePerKg": 6.1,
         "amountCurrency": 87986.4,
-        "fobValueCurrency": 87986.4,
-        "fobValueINR": 8434279.17
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-47-26-27-2",
@@ -7043,8 +7043,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 972,
         "ratePerKg": 5.5,
         "amountCurrency": 5346,
-        "fobValueCurrency": 5346,
-        "fobValueINR": 512461.66
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7095,8 +7095,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 61150,
-    "totalFobValueCurrency": 61150,
-    "totalFobValueINR": 5861771.49,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5861771.49,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7119,8 +7119,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1000,
         "ratePerKg": 1.7,
         "amountCurrency": 1700,
-        "fobValueCurrency": 1700,
-        "fobValueINR": 162960.12
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-2",
@@ -7133,8 +7133,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2000,
         "ratePerKg": 2.4,
         "amountCurrency": 4800,
-        "fobValueCurrency": 4800,
-        "fobValueINR": 460122.7
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-3",
@@ -7147,8 +7147,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4500,
         "ratePerKg": 2.8,
         "amountCurrency": 12600,
-        "fobValueCurrency": 12600,
-        "fobValueINR": 1207822.09
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-4",
@@ -7161,8 +7161,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2000,
         "ratePerKg": 3,
         "amountCurrency": 6000,
-        "fobValueCurrency": 6000,
-        "fobValueINR": 575153.38
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-5",
@@ -7175,8 +7175,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3000,
         "ratePerKg": 1.5,
         "amountCurrency": 4500,
-        "fobValueCurrency": 4500,
-        "fobValueINR": 431365.03
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-6",
@@ -7189,8 +7189,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5000,
         "ratePerKg": 2.05,
         "amountCurrency": 10250,
-        "fobValueCurrency": 10250,
-        "fobValueINR": 982553.68
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-7",
@@ -7203,8 +7203,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5500,
         "ratePerKg": 2.4,
         "amountCurrency": 13200,
-        "fobValueCurrency": 13200,
-        "fobValueINR": 1265337.43
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-48-26-27-8",
@@ -7217,8 +7217,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3000,
         "ratePerKg": 2.7,
         "amountCurrency": 8100,
-        "fobValueCurrency": 8100,
-        "fobValueINR": 776457.06
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7268,8 +7268,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 52503.2,
-    "totalFobValueCurrency": 52503.2,
-    "totalFobValueINR": 5040145.91,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5040145.91,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7292,8 +7292,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 13760,
         "ratePerKg": 2.17,
         "amountCurrency": 29859.2,
-        "fobValueCurrency": 29859.2,
-        "fobValueINR": 2866391.47
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-49-26-27-2",
@@ -7306,8 +7306,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 12240,
         "ratePerKg": 1.85,
         "amountCurrency": 22644,
-        "fobValueCurrency": 22644,
-        "fobValueINR": 2173754.44
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7357,8 +7357,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 54469,
-    "totalFobValueCurrency": 54469,
-    "totalFobValueINR": 5236396.87,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5236396.87,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7381,8 +7381,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 20570,
         "ratePerKg": 2.15,
         "amountCurrency": 44225.5,
-        "fobValueCurrency": 44225.5,
-        "fobValueINR": 4251634.32
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-50-26-27-2",
@@ -7395,8 +7395,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1470,
         "ratePerKg": 1.85,
         "amountCurrency": 2719.5,
-        "fobValueCurrency": 2719.5,
-        "fobValueINR": 261440.11
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-50-26-27-3",
@@ -7409,8 +7409,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3960,
         "ratePerKg": 1.9,
         "amountCurrency": 7524,
-        "fobValueCurrency": 7524,
-        "fobValueINR": 723322.44
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7460,8 +7460,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 50726,
-    "totalFobValueCurrency": 50726,
-    "totalFobValueINR": 4882664.36,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4882664.36,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7484,8 +7484,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 290,
         "ratePerKg": 2.35,
         "amountCurrency": 681.5,
-        "fobValueCurrency": 681.5,
-        "fobValueINR": 65598.23
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-2",
@@ -7498,8 +7498,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 9250,
         "ratePerKg": 2.15,
         "amountCurrency": 19887.5,
-        "fobValueCurrency": 19887.5,
-        "fobValueINR": 1914284.34
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-3",
@@ -7512,8 +7512,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 11840,
         "ratePerKg": 1.85,
         "amountCurrency": 21904,
-        "fobValueCurrency": 21904,
-        "fobValueINR": 2108383.87
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-4",
@@ -7526,8 +7526,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 880,
         "ratePerKg": 1.6,
         "amountCurrency": 1408,
-        "fobValueCurrency": 1408,
-        "fobValueINR": 135527.96
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-5",
@@ -7540,8 +7540,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2970,
         "ratePerKg": 1.9,
         "amountCurrency": 5643,
-        "fobValueCurrency": 5643,
-        "fobValueINR": 543170.66
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-6",
@@ -7554,8 +7554,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 650,
         "ratePerKg": 1.6,
         "amountCurrency": 1040,
-        "fobValueCurrency": 1040,
-        "fobValueINR": 100105.88
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-51-26-27-7",
@@ -7568,8 +7568,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 120,
         "ratePerKg": 1.35,
         "amountCurrency": 162,
-        "fobValueCurrency": 162,
-        "fobValueINR": 15593.42
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7619,8 +7619,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51220,
-    "totalFobValueCurrency": 51220,
-    "totalFobValueINR": 4958373.66,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4958373.66,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7643,8 +7643,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 820,
         "ratePerKg": 2.3,
         "amountCurrency": 1886,
-        "fobValueCurrency": 1886,
-        "fobValueINR": 182575.02
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-52-26-27-2",
@@ -7657,8 +7657,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 13300,
         "ratePerKg": 2.12,
         "amountCurrency": 28196,
-        "fobValueCurrency": 28196,
-        "fobValueINR": 2729525.65
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-52-26-27-3",
@@ -7671,8 +7671,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 11060,
         "ratePerKg": 1.8,
         "amountCurrency": 19908,
-        "fobValueCurrency": 19908,
-        "fobValueINR": 1927202.32
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-52-26-27-4",
@@ -7685,8 +7685,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 820,
         "ratePerKg": 1.5,
         "amountCurrency": 1230,
-        "fobValueCurrency": 1230,
-        "fobValueINR": 119070.67
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7736,8 +7736,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 52806.4,
-    "totalFobValueCurrency": 52806.4,
-    "totalFobValueINR": 5112440.69,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5112440.69,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7760,8 +7760,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 18770,
         "ratePerKg": 2.12,
         "amountCurrency": 39792.4,
-        "fobValueCurrency": 39792.4,
-        "fobValueINR": 3852492.97
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-53-26-27-2",
@@ -7774,8 +7774,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7230,
         "ratePerKg": 1.8,
         "amountCurrency": 13014,
-        "fobValueCurrency": 13014,
-        "fobValueINR": 1259947.72
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7825,8 +7825,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 52807.8,
-    "totalFobValueCurrency": 52807.8,
-    "totalFobValueINR": 5117034.89,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5117034.89,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7849,8 +7849,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 470,
         "ratePerKg": 2.3,
         "amountCurrency": 1081,
-        "fobValueCurrency": 1081,
-        "fobValueINR": 104748.06
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-54-26-27-2",
@@ -7863,8 +7863,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 18040,
         "ratePerKg": 2.12,
         "amountCurrency": 38244.8,
-        "fobValueCurrency": 38244.8,
-        "fobValueINR": 3705891.48
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-54-26-27-3",
@@ -7877,8 +7877,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7490,
         "ratePerKg": 1.8,
         "amountCurrency": 13482,
-        "fobValueCurrency": 13482,
-        "fobValueINR": 1306395.35
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -7928,8 +7928,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2103,
     "totalWeightKg": 21032.4,
     "totalAmountCurrency": 143836.2,
-    "totalFobValueCurrency": 143836.2,
-    "totalFobValueINR": 13907967.49,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 13907967.49,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -7952,8 +7952,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4514.4,
         "ratePerKg": 8.3,
         "amountCurrency": 37469.52,
-        "fobValueCurrency": 37469.52,
-        "fobValueINR": 3623043.89
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-55-26-27-2",
@@ -7966,8 +7966,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8758.8,
         "ratePerKg": 7.3,
         "amountCurrency": 63939.24,
-        "fobValueCurrency": 63939.24,
-        "fobValueINR": 6182483.07
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-55-26-27-3",
@@ -7980,8 +7980,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2991.6,
         "ratePerKg": 6.2,
         "amountCurrency": 18547.92,
-        "fobValueCurrency": 18547.92,
-        "fobValueINR": 1793455.81
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-55-26-27-4",
@@ -7994,8 +7994,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3855.6,
         "ratePerKg": 5.2,
         "amountCurrency": 20049.12,
-        "fobValueCurrency": 20049.12,
-        "fobValueINR": 1938611.48
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-55-26-27-5",
@@ -8008,8 +8008,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 912,
         "ratePerKg": 4.2,
         "amountCurrency": 3830.4,
-        "fobValueCurrency": 3830.4,
-        "fobValueINR": 370373.23
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8059,8 +8059,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 54515,
-    "totalFobValueCurrency": 54515,
-    "totalFobValueINR": 5276325.97,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5276325.97,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8083,8 +8083,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1030,
         "ratePerKg": 2.3,
         "amountCurrency": 2369,
-        "fobValueCurrency": 2369,
-        "fobValueINR": 229287.65
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-56-26-27-2",
@@ -8097,8 +8097,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 22500,
         "ratePerKg": 2.12,
         "amountCurrency": 47700,
-        "fobValueCurrency": 47700,
-        "fobValueINR": 4616724.73
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-56-26-27-3",
@@ -8111,8 +8111,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2470,
         "ratePerKg": 1.8,
         "amountCurrency": 4446,
-        "fobValueCurrency": 4446,
-        "fobValueINR": 430313.59
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8162,8 +8162,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 49826,
-    "totalFobValueCurrency": 49826,
-    "totalFobValueINR": 4763024.59,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4763024.59,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8186,8 +8186,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2130,
         "ratePerKg": 2.1,
         "amountCurrency": 4473,
-        "fobValueCurrency": 4473,
-        "fobValueINR": 427588.19
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-57-26-27-2",
@@ -8200,8 +8200,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 23870,
         "ratePerKg": 1.9,
         "amountCurrency": 45353,
-        "fobValueCurrency": 45353,
-        "fobValueINR": 4335436.4
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8252,8 +8252,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 62202.5,
-    "totalFobValueCurrency": 62202.5,
-    "totalFobValueINR": 5914471.78,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5914471.78,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8276,8 +8276,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2500,
         "ratePerKg": 1.9,
         "amountCurrency": 4750,
-        "fobValueCurrency": 4750,
-        "fobValueINR": 451649.71
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-2",
@@ -8290,8 +8290,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3800,
         "ratePerKg": 2.55,
         "amountCurrency": 9690,
-        "fobValueCurrency": 9690,
-        "fobValueINR": 921365.4
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-3",
@@ -8304,8 +8304,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2970,
         "ratePerKg": 2.95,
         "amountCurrency": 8761.5,
-        "fobValueCurrency": 8761.5,
-        "fobValueINR": 833079.77
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-4",
@@ -8318,8 +8318,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2630,
         "ratePerKg": 3.2,
         "amountCurrency": 8416,
-        "fobValueCurrency": 8416,
-        "fobValueINR": 800228.2
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-5",
@@ -8332,8 +8332,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4300,
         "ratePerKg": 1.65,
         "amountCurrency": 7095,
-        "fobValueCurrency": 7095,
-        "fobValueINR": 674622.04
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-6",
@@ -8346,8 +8346,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4200,
         "ratePerKg": 2.1,
         "amountCurrency": 8820,
-        "fobValueCurrency": 8820,
-        "fobValueINR": 838642.19
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-7",
@@ -8360,8 +8360,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4040,
         "ratePerKg": 2.55,
         "amountCurrency": 10302,
-        "fobValueCurrency": 10302,
-        "fobValueINR": 979556.9
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-58-26-27-8",
@@ -8374,8 +8374,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1560,
         "ratePerKg": 2.8,
         "amountCurrency": 4368,
-        "fobValueCurrency": 4368,
-        "fobValueINR": 415327.56
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8425,8 +8425,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 50334,
-    "totalFobValueCurrency": 50334,
-    "totalFobValueINR": 4796912.24,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4796912.24,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8449,8 +8449,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2330,
         "ratePerKg": 2.1,
         "amountCurrency": 4893,
-        "fobValueCurrency": 4893,
-        "fobValueINR": 466310.88
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-59-26-27-2",
@@ -8463,8 +8463,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21330,
         "ratePerKg": 1.9,
         "amountCurrency": 40527,
-        "fobValueCurrency": 40527,
-        "fobValueINR": 3862289.16
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-59-26-27-3",
@@ -8477,8 +8477,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2340,
         "ratePerKg": 2.1,
         "amountCurrency": 4914,
-        "fobValueCurrency": 4914,
-        "fobValueINR": 468312.21
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8528,8 +8528,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 51045,
-    "totalFobValueCurrency": 51045,
-    "totalFobValueINR": 4845277.67,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4845277.67,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8552,8 +8552,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2250,
         "ratePerKg": 2.3,
         "amountCurrency": 5175,
-        "fobValueCurrency": 5175,
-        "fobValueINR": 491219.75
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-2",
@@ -8566,8 +8566,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 7840,
         "ratePerKg": 2.1,
         "amountCurrency": 16464,
-        "fobValueCurrency": 16464,
-        "fobValueINR": 1562790.7
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-3",
@@ -8580,8 +8580,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4040,
         "ratePerKg": 1.75,
         "amountCurrency": 7070,
-        "fobValueCurrency": 7070,
-        "fobValueINR": 671096.35
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-4",
@@ -8594,8 +8594,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3820,
         "ratePerKg": 1.85,
         "amountCurrency": 7067,
-        "fobValueCurrency": 7067,
-        "fobValueINR": 670811.58
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-5",
@@ -8608,8 +8608,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 470,
         "ratePerKg": 1.5,
         "amountCurrency": 705,
-        "fobValueCurrency": 705,
-        "fobValueINR": 66919.79
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-6",
@@ -8622,8 +8622,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 810,
         "ratePerKg": 2.1,
         "amountCurrency": 1701,
-        "fobValueCurrency": 1701,
-        "fobValueINR": 161461.79
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-60-26-27-7",
@@ -8636,8 +8636,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6770,
         "ratePerKg": 1.9,
         "amountCurrency": 12863,
-        "fobValueCurrency": 12863,
-        "fobValueINR": 1220977.7
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8687,8 +8687,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 50222,
-    "totalFobValueCurrency": 50222,
-    "totalFobValueINR": 4771233.13,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4771233.13,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8711,8 +8711,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 560,
         "ratePerKg": 2.2,
         "amountCurrency": 1232,
-        "fobValueCurrency": 1232,
-        "fobValueINR": 117043.51
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-61-26-27-2",
@@ -8725,8 +8725,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5720,
         "ratePerKg": 2.1,
         "amountCurrency": 12012,
-        "fobValueCurrency": 12012,
-        "fobValueINR": 1141174.23
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-61-26-27-3",
@@ -8739,8 +8739,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2270,
         "ratePerKg": 2.1,
         "amountCurrency": 4767,
-        "fobValueCurrency": 4767,
-        "fobValueINR": 452878.59
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-61-26-27-4",
@@ -8753,8 +8753,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 15090,
         "ratePerKg": 1.9,
         "amountCurrency": 28671,
-        "fobValueCurrency": 28671,
-        "fobValueINR": 2723826.71
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-61-26-27-5",
@@ -8767,8 +8767,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2360,
         "ratePerKg": 1.5,
         "amountCurrency": 3540,
-        "fobValueCurrency": 3540,
-        "fobValueINR": 336310.09
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8819,8 +8819,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 101520,
-    "totalFobValueCurrency": 101520,
-    "totalFobValueINR": 9639194.87,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 9639194.87,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8843,8 +8843,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21600,
         "ratePerKg": 4.7,
         "amountCurrency": 101520,
-        "fobValueCurrency": 101520,
-        "fobValueINR": 9639194.87
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8895,8 +8895,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 132360,
-    "totalFobValueCurrency": 132360,
-    "totalFobValueINR": 12556683.48,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 12556683.48,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -8919,8 +8919,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1200,
         "ratePerKg": 6.4,
         "amountCurrency": 7680,
-        "fobValueCurrency": 7680,
-        "fobValueINR": 728583.63
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-63-26-27-2",
@@ -8933,8 +8933,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 8400,
         "ratePerKg": 6.2,
         "amountCurrency": 52080,
-        "fobValueCurrency": 52080,
-        "fobValueINR": 4940707.73
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-63-26-27-3",
@@ -8947,8 +8947,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 12000,
         "ratePerKg": 6.05,
         "amountCurrency": 72600,
-        "fobValueCurrency": 72600,
-        "fobValueINR": 6887392.12
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -8998,8 +8998,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 49761.1,
-    "totalFobValueCurrency": 49761.1,
-    "totalFobValueINR": 4705096.47,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4705096.47,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9022,8 +9022,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3570,
         "ratePerKg": 1.8,
         "amountCurrency": 6426,
-        "fobValueCurrency": 6426,
-        "fobValueINR": 607602.12
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-64-26-27-2",
@@ -9036,8 +9036,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 730,
         "ratePerKg": 2.13,
         "amountCurrency": 1554.9,
-        "fobValueCurrency": 1554.9,
-        "fobValueINR": 147021.56
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-64-26-27-3",
@@ -9050,8 +9050,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 21420,
         "ratePerKg": 1.93,
         "amountCurrency": 41340.6,
-        "fobValueCurrency": 41340.6,
-        "fobValueINR": 3908906.98
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-64-26-27-4",
@@ -9064,8 +9064,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 280,
         "ratePerKg": 1.57,
         "amountCurrency": 439.6,
-        "fobValueCurrency": 439.6,
-        "fobValueINR": 41565.81
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9116,8 +9116,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2401,
     "totalWeightKg": 24010,
     "totalAmountCurrency": 57642.5,
-    "totalFobValueCurrency": 57642.5,
-    "totalFobValueINR": 5473082.05,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 5473082.05,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9140,8 +9140,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 940,
         "ratePerKg": 1.95,
         "amountCurrency": 1833,
-        "fobValueCurrency": 1833,
-        "fobValueINR": 174041.02
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-2",
@@ -9154,8 +9154,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1910,
         "ratePerKg": 2.65,
         "amountCurrency": 5061.5,
-        "fobValueCurrency": 5061.5,
-        "fobValueINR": 480582.99
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-3",
@@ -9168,8 +9168,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3200,
         "ratePerKg": 3,
         "amountCurrency": 9600,
-        "fobValueCurrency": 9600,
-        "fobValueINR": 911507.79
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-4",
@@ -9182,8 +9182,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1280,
         "ratePerKg": 3.2,
         "amountCurrency": 4096,
-        "fobValueCurrency": 4096,
-        "fobValueINR": 388909.99
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-5",
@@ -9196,8 +9196,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3940,
         "ratePerKg": 1.6,
         "amountCurrency": 6304,
-        "fobValueCurrency": 6304,
-        "fobValueINR": 598556.78
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-6",
@@ -9210,8 +9210,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5070,
         "ratePerKg": 2.1,
         "amountCurrency": 10647,
-        "fobValueCurrency": 10647,
-        "fobValueINR": 1010919.11
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-7",
@@ -9224,8 +9224,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6080,
         "ratePerKg": 2.6,
         "amountCurrency": 15808,
-        "fobValueCurrency": 15808,
-        "fobValueINR": 1500949.49
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-65-26-27-8",
@@ -9238,8 +9238,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1590,
         "ratePerKg": 2.7,
         "amountCurrency": 4293,
-        "fobValueCurrency": 4293,
-        "fobValueINR": 407614.89
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9290,8 +9290,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2472,
     "totalWeightKg": 24720,
     "totalAmountCurrency": 76430,
-    "totalFobValueCurrency": 76430,
-    "totalFobValueINR": 7256931.28,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 7256931.28,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9314,8 +9314,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 150,
         "ratePerKg": 3.7,
         "amountCurrency": 555,
-        "fobValueCurrency": 555,
-        "fobValueINR": 52696.54
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-66-26-27-2",
@@ -9328,8 +9328,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 11780,
         "ratePerKg": 3.3,
         "amountCurrency": 38874,
-        "fobValueCurrency": 38874,
-        "fobValueINR": 3691036.85
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-66-26-27-3",
@@ -9342,8 +9342,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 12610,
         "ratePerKg": 2.9,
         "amountCurrency": 36569,
-        "fobValueCurrency": 36569,
-        "fobValueINR": 3472180.03
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-66-26-27-4",
@@ -9356,8 +9356,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 180,
         "ratePerKg": 2.4,
         "amountCurrency": 432,
-        "fobValueCurrency": 432,
-        "fobValueINR": 41017.85
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9408,8 +9408,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2160,
     "totalWeightKg": 21600,
     "totalAmountCurrency": 133279.8,
-    "totalFobValueCurrency": 133279.8,
-    "totalFobValueINR": 12689688.64,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 12689688.64,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9432,8 +9432,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 3828,
         "ratePerKg": 6.45,
         "amountCurrency": 24690.6,
-        "fobValueCurrency": 24690.6,
-        "fobValueINR": 2350814.05
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-67-26-27-2",
@@ -9446,8 +9446,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1800,
         "ratePerKg": 6.2,
         "amountCurrency": 11160,
-        "fobValueCurrency": 11160,
-        "fobValueINR": 1062553.55
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-67-26-27-3",
@@ -9460,8 +9460,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 15972,
         "ratePerKg": 6.1,
         "amountCurrency": 97429.2,
-        "fobValueCurrency": 97429.2,
-        "fobValueINR": 9276321.04
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9511,8 +9511,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 49140.4,
-    "totalFobValueCurrency": 49140.4,
-    "totalFobValueINR": 4677365.34,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4677365.34,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9535,8 +9535,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2740,
         "ratePerKg": 2.13,
         "amountCurrency": 5836.2,
-        "fobValueCurrency": 5836.2,
-        "fobValueINR": 555511.14
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-68-26-27-2",
@@ -9549,8 +9549,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 18850,
         "ratePerKg": 1.93,
         "amountCurrency": 36380.5,
-        "fobValueCurrency": 36380.5,
-        "fobValueINR": 3462830.78
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-68-26-27-3",
@@ -9563,8 +9563,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4410,
         "ratePerKg": 1.57,
         "amountCurrency": 6923.7,
-        "fobValueCurrency": 6923.7,
-        "fobValueINR": 659023.42
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9614,8 +9614,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 48496,
-    "totalFobValueCurrency": 48496,
-    "totalFobValueINR": 4615589.58,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4615589.58,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9638,8 +9638,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1700,
         "ratePerKg": 2.13,
         "amountCurrency": 3621,
-        "fobValueCurrency": 3621,
-        "fobValueINR": 344627.39
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-69-26-27-2",
@@ -9652,8 +9652,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19240,
         "ratePerKg": 1.93,
         "amountCurrency": 37133.2,
-        "fobValueCurrency": 37133.2,
-        "fobValueINR": 3534139.13
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-69-26-27-3",
@@ -9666,8 +9666,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 5060,
         "ratePerKg": 1.53,
         "amountCurrency": 7741.8,
-        "fobValueCurrency": 7741.8,
-        "fobValueINR": 736823.07
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9717,8 +9717,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 48544,
-    "totalFobValueCurrency": 48544,
-    "totalFobValueINR": 4619278.69,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4619278.69,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9741,8 +9741,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 1620,
         "ratePerKg": 2.13,
         "amountCurrency": 3450.6,
-        "fobValueCurrency": 3450.6,
-        "fobValueINR": 328347.13
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-70-26-27-2",
@@ -9755,8 +9755,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 19480,
         "ratePerKg": 1.93,
         "amountCurrency": 37596.4,
-        "fobValueCurrency": 37596.4,
-        "fobValueINR": 3577543.04
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-70-26-27-3",
@@ -9769,8 +9769,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 4900,
         "ratePerKg": 1.53,
         "amountCurrency": 7497,
-        "fobValueCurrency": 7497,
-        "fobValueINR": 713388.52
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   },
@@ -9820,8 +9820,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalCartons": 2600,
     "totalWeightKg": 26000,
     "totalAmountCurrency": 50927.6,
-    "totalFobValueCurrency": 50927.6,
-    "totalFobValueINR": 4833675,
+    "totalFobValueCurrency": 0,
+    "totalFobValueINR": 0,
     "estimatedAmountINR": 4833675,
     "realizations": [],
     "totalRealizedCurrency": 0,
@@ -9844,8 +9844,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 12340,
         "ratePerKg": 2.12,
         "amountCurrency": 26160.8,
-        "fobValueCurrency": 26160.8,
-        "fobValueINR": 2482991.64
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-71-26-27-2",
@@ -9858,8 +9858,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 6990,
         "ratePerKg": 1.8,
         "amountCurrency": 12582,
-        "fobValueCurrency": 12582,
-        "fobValueINR": 1194191.34
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-71-26-27-3",
@@ -9872,8 +9872,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 830,
         "ratePerKg": 1.6,
         "amountCurrency": 1328,
-        "fobValueCurrency": 1328,
-        "fobValueINR": 126044.04
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-71-26-27-4",
@@ -9886,8 +9886,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2790,
         "ratePerKg": 1.87,
         "amountCurrency": 5217.3,
-        "fobValueCurrency": 5217.3,
-        "fobValueINR": 495187.93
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-71-26-27-5",
@@ -9900,8 +9900,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 650,
         "ratePerKg": 1.55,
         "amountCurrency": 1007.5,
-        "fobValueCurrency": 1007.5,
-        "fobValueINR": 95624.53
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       },
       {
         "id": "line-rf-exp-71-26-27-6",
@@ -9914,8 +9914,8 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "weightKg": 2400,
         "ratePerKg": 1.93,
         "amountCurrency": 4632,
-        "fobValueCurrency": 4632,
-        "fobValueINR": 439635.53
+        "fobValueCurrency": 0,
+        "fobValueINR": 0
       }
     ]
   }

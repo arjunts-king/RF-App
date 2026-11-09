@@ -1988,6 +1988,60 @@ test('FOB Valuation Derivation & Currency Key Isolation: prevents cross-currency
   assert.equal(lines[0].fobInr + lines[1].fobInr, targetFobInr);
 });
 
+test('FOB Dashboard & Sales Ledger: Authentic FOB Totals & Zero Realization Accounting', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  const prefix = 'export const VERIFIED_SALES_INVOICES: SalesInvoice[] = ';
+  const idx = content.indexOf(prefix);
+  assert.ok(idx > 0, 'VERIFIED_SALES_INVOICES must be present in exportSalesData.ts');
+
+  const invoices = JSON.parse(content.slice(idx + prefix.length).trim().replace(/;$/, ''));
+  assert.equal(invoices.length, 71, 'Must strictly maintain pure 71 export invoices');
+
+  // Verify Invoices 1-41 FOB Sales Value
+  const invs1to41 = invoices.slice(0, 41);
+  const fob1to41Usd = invs1to41.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
+  const fob1to41Inr = invs1to41.reduce((s, i) => s + (i.totalFobValueINR || 0), 0);
+
+  assert.equal(Number(fob1to41Usd.toFixed(2)), 3619758.47, 'Authentic FOB USD from user spreadsheet must equal $3,619,758.47');
+  assert.equal(Math.round(fob1to41Inr), 341021446, 'Authentic FOB INR from user spreadsheet must equal ₹34,10,21,446');
+
+  // Verify Invoices 42-71 have FOB = 0 (Awaiting FOB finalization)
+  const invs42to71 = invoices.slice(41);
+  invs42to71.forEach((inv) => {
+    assert.equal(inv.totalFobValueCurrency, 0, `Invoice ${inv.invoiceNo} must have FOB USD = 0`);
+    assert.equal(inv.totalFobValueINR, 0, `Invoice ${inv.invoiceNo} must have FOB INR = 0`);
+    if (inv.lineItems) {
+      inv.lineItems.forEach((l) => {
+        assert.equal(l.fobValueCurrency, 0);
+        assert.equal(l.fobValueINR, 0);
+      });
+    }
+  });
+
+  // Verify Overall Dataset FOB Total equals the exact $3,619,758.47
+  const overallFobUsd = invoices.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
+  assert.equal(Number(overallFobUsd.toFixed(2)), 3619758.47);
+
+  // Verify Zero Realization Across Entire Dataset
+  const totalRealizedUSD = invoices.reduce((s, i) => s + (i.totalRealizedCurrency || 0), 0);
+  const totalRealizedINR = invoices.reduce((s, i) => s + (i.totalRealizedINR || 0), 0);
+  assert.equal(totalRealizedUSD, 0, 'No amount must be realized in USD');
+  assert.equal(totalRealizedINR, 0, 'No amount must be realized in INR');
+
+  const unRealizedCount = invoices.filter((i) => i.realizationStatus === 'Not Realized').length;
+  assert.equal(unRealizedCount, 71, 'All 71 invoices must have realizationStatus = Not Realized');
+
+  // Verify Undiluted FOB Average Rate Per Kg (calculated over 41 FOB shipments)
+  const fobShipments = invoices.filter((i) => (i.totalFobValueCurrency || 0) > 0);
+  const fobWeight = fobShipments.reduce((s, i) => s + i.totalWeightKg, 0);
+  const avgFobRate = Number((overallFobUsd / fobWeight).toFixed(2));
+  assert.equal(avgFobRate, 3.89, 'Avg FOB Rate should be $3.89/Kg (not diluted by 30 non-FOB shipments)');
+});
+
 
 
 
