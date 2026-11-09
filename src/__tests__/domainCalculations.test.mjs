@@ -2869,6 +2869,72 @@ test('Optional Pre-Determined Bank Exchange Rate in Invoice Entry', async () => 
   assert.ok(!formCode.includes('placeholder="e.g. 84.5000000"\r\n              required'));
 });
 
+// ============================================================================
+// SUITE 50: Distinct Commercial Size Master for Sales Module
+// ============================================================================
+test('Distinct Commercial Size Master for Sales Module', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  // 1. Verify VERIFIED_SIZES contains all 27 verified commercial sizes
+  const szPrefix = 'export const VERIFIED_SIZES: Size[] = ';
+  const szStart = content.indexOf(szPrefix);
+  const szEnd = content.indexOf('export const VERIFIED_SALES_INVOICES');
+  const purchaseSizes = JSON.parse(content.slice(szStart + szPrefix.length, szEnd).trim().replace(/;$/, ''));
+
+  assert.equal(purchaseSizes.length, 27, 'Purchase sizes contains all 27 starter sizes');
+
+  // 2. Simulate initializing sales sizes from purchase sizes
+  let salesSizes = JSON.parse(JSON.stringify(purchaseSizes));
+  assert.equal(salesSizes.length, 27, 'Sales sizes initially brought all 27 sizes from purchase');
+
+  // 3. Adding a new size in sales sizes is completely isolated from purchase sizes
+  const newSalesSize = {
+    id: `ssiz-${Date.now()}`,
+    code: 'SZ-NEW-01',
+    name: '5/7 U',
+    description: 'Special Export Grade 5/7 U',
+    active: true
+  };
+  salesSizes.push(newSalesSize);
+
+  assert.equal(salesSizes.length, 28, 'Sales sizes now has 28 sizes');
+  assert.equal(purchaseSizes.length, 27, 'Purchase sizes remains completely unchanged at 27 sizes');
+
+  // 4. Updating a size in sales does not mutate purchase sizes
+  const targetSalesSize = salesSizes.find((s) => s.code === '71-90');
+  assert.ok(targetSalesSize);
+  targetSalesSize.description = 'Export customized description';
+
+  const originalPurchaseSize = purchaseSizes.find((s) => s.code === '71-90');
+  assert.notEqual(originalPurchaseSize.description, 'Export customized description', 'Purchase size description remains unaltered');
+
+  // 5. Deleting a size in sales does not delete from purchase
+  salesSizes = salesSizes.filter((s) => s.id !== newSalesSize.id);
+  assert.equal(salesSizes.length, 27);
+  assert.equal(purchaseSizes.length, 27);
+
+  // 6. Verify SalesSizeManager component file exists and exports SalesSizeManager
+  const salesSizeManagerPath = path.resolve('src/components/sales/SalesSizeManager.tsx');
+  assert.ok(fs.existsSync(salesSizeManagerPath), 'SalesSizeManager.tsx must exist');
+  const mgrContent = fs.readFileSync(salesSizeManagerPath, 'utf8');
+  assert.ok(mgrContent.includes('export const SalesSizeManager'), 'SalesSizeManager component must be exported');
+
+  // 7. Verify SalesSidebar includes sales-sizes under Commercial Masters
+  const sidebarPath = path.resolve('src/components/sales/SalesSidebar.tsx');
+  const sidebarContent = fs.readFileSync(sidebarPath, 'utf8');
+  assert.ok(sidebarContent.includes("'sales-sizes'"), 'SalesSidebar must route sales-sizes');
+  assert.ok(sidebarContent.includes("label: 'Grade / Size Master'"), 'SalesSidebar must show Grade / Size Master');
+
+  // 8. Verify SalesInvoiceEntryForm and SalesReportsHub use salesSizes
+  const entryFormPath = path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx');
+  const entryContent = fs.readFileSync(entryFormPath, 'utf8');
+  assert.ok(entryContent.includes('salesSizes'), 'SalesInvoiceEntryForm must use salesSizes');
+  assert.ok(entryContent.includes('sizeList={salesSizes}'), 'SizeCombobox must receive salesSizes');
+});
+
 
 
 

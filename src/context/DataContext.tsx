@@ -87,6 +87,7 @@ interface DataContextType {
   slabTypes: SlabType[];
   customers: Customer[];
   ports: PortMaster[];
+  salesSizes: Size[];
   purchases: Purchase[];
   payments: PaymentRecord[];
   purchaseReturns: PurchaseReturn[];
@@ -157,6 +158,14 @@ interface DataContextType {
   deletePort: (id: string) => { success: boolean; message?: string };
   togglePortActive: (id: string) => void;
   bulkImportPorts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+
+  // Commercial Grade / Size Master Actions (Independent from Purchase Sizes)
+  addSalesSize: (size: Omit<Size, 'id'>) => void;
+  updateSalesSize: (id: string, updates: Partial<Size>) => void;
+  deleteSalesSize: (id: string) => { success: boolean; message?: string };
+  toggleSalesSizeActive: (id: string) => void;
+  bulkImportSalesSizes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  syncSalesSizesFromPurchase: () => { addedCount: number };
 
   // Transaction Actions
   addPurchase: (purchaseData: Partial<Purchase>) => { success: boolean; purchaseId?: string; warnings?: string[] };
@@ -555,6 +564,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return [...list, ...missing];
   });
 
+  // Distinct Commercial Grade / Size Master for Sales (Separate from Purchase Sizes)
+  const [salesSizes, setSalesSizes] = useState<Size[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}sales_sizes`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error('Failed to parse sales sizes from storage:', e);
+      }
+    }
+    // Fallback: bring all sizes from purchase size master as default initial sales sizes
+    const purchaseSaved = localStorage.getItem(`${DB_PREFIX}sizes`);
+    if (purchaseSaved) {
+      try {
+        const parsed = JSON.parse(purchaseSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localStorage.setItem(`${DB_PREFIX}sales_sizes`, JSON.stringify(parsed));
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse purchase sizes for sales fallback:', e);
+      }
+    }
+    localStorage.setItem(`${DB_PREFIX}sales_sizes`, JSON.stringify(VERIFIED_SIZES));
+    return VERIFIED_SIZES;
+  });
+
   const [processingEntries, setProcessingEntries] = useState<DailyProcessingEntry[]>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}processing_entries`);
     return saved ? JSON.parse(saved) : INITIAL_PROCESSING_ENTRIES;
@@ -859,6 +896,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes]);
   useEffect(() => { safeSet(`${DB_PREFIX}customers`, customers); }, [customers]);
   useEffect(() => { safeSet(`${DB_PREFIX}ports`, ports); }, [ports]);
+  useEffect(() => { safeSet(`${DB_PREFIX}sales_sizes`, salesSizes); }, [salesSizes]);
   useEffect(() => { safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries]);
   useEffect(() => { safeSet(`${DB_PREFIX}sales_invoices`, salesInvoices); }, [salesInvoices]);
   useEffect(() => { safeSet(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
@@ -1505,6 +1543,124 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setPorts(currentList);
     return { added, updated, errors };
+  };
+
+  // --------------------------------------------------------------------------
+  // COMMERCIAL GRADE & SIZE MASTER (Distinct from Purchase Sizes)
+  // --------------------------------------------------------------------------
+
+  const addSalesSize = (sizeData: Omit<Size, 'id'>) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) return;
+    const newSize: Size = {
+      ...sizeData,
+      id: `ssiz-${Date.now()}`
+    };
+    setSalesSizes((prev) => [...prev, newSize]);
+    logAudit('CREATE', 'SalesSize', newSize.code, { newValues: newSize });
+    showToast(`Commercial Grade / Size "${newSize.name}" added to sales master.`, 'success');
+  };
+
+  const updateSalesSize = (id: string, updates: Partial<Size>) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) return;
+    setSalesSizes((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    logAudit('EDIT', 'SalesSize', id, { newValues: updates });
+    showToast('Commercial size updated.', 'success');
+  };
+
+  const deleteSalesSize = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) {
+      return { success: false, message: 'Unauthorized' };
+    }
+    const hasTransactions = salesInvoices.some((inv) =>
+      !inv.isVoided && inv.lineItems?.some((l) => l.sizeId === id)
+    );
+    if (hasTransactions) {
+      showToast('Cannot delete size referenced in commercial sales invoices. Deactivate instead.', 'error');
+      return { success: false, message: 'Referenced in sales invoices' };
+    }
+    const old = salesSizes.find((s) => s.id === id);
+    setSalesSizes((prev) => prev.filter((s) => s.id !== id));
+    logAudit('DELETE', 'SalesSize', old?.name || id);
+    showToast(`Commercial size "${old?.name || id}" deleted.`, 'info');
+    return { success: true };
+  };
+
+  const toggleSalesSizeActive = (id: string) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) return;
+    setSalesSizes((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
+  };
+
+  const bulkImportSalesSizes = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...salesSizes];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const name = String(getFlexibleValue(row, ['name', 'sizename', 'size', 'grade', 'gradename']) || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 2}: Size name is required.`);
+        return;
+      }
+
+      const code = String(getFlexibleValue(row, ['code', 'sizecode', 'id']) || `SZ-${String(currentList.length + 1).padStart(3, '0')}`).trim();
+      const description = String(getFlexibleValue(row, ['description', 'desc', 'specifications']) || `Grade / Size ${name}`).trim();
+
+      const existingIdx = currentList.findIndex(
+        (s) => s.code.toLowerCase() === code.toLowerCase() || s.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          code,
+          name,
+          description: description || currentList[existingIdx].description
+        };
+        updated++;
+      } else {
+        currentList.push({
+          id: `ssiz-${Date.now()}-${idx}`,
+          code,
+          name,
+          description,
+          active: true
+        });
+        added++;
+      }
+    });
+
+    setSalesSizes(currentList);
+    return { added, updated, errors };
+  };
+
+  const syncSalesSizesFromPurchase = (): { addedCount: number } => {
+    const currentSalesNames = new Set(salesSizes.map((s) => s.name.trim().toUpperCase()));
+    const newFromPurchase: Size[] = [];
+    sizes.forEach((ps, idx) => {
+      if (!currentSalesNames.has(ps.name.trim().toUpperCase())) {
+        newFromPurchase.push({
+          id: `ssiz-sync-${Date.now()}-${idx}`,
+          code: ps.code,
+          name: ps.name,
+          description: ps.description,
+          active: ps.active
+        });
+        currentSalesNames.add(ps.name.trim().toUpperCase());
+      }
+    });
+
+    if (newFromPurchase.length > 0) {
+      setSalesSizes((prev) => [...prev, ...newFromPurchase]);
+      showToast(`Imported ${newFromPurchase.length} size(s) from purchase master into sales.`, 'success');
+      return { addedCount: newFromPurchase.length };
+    } else {
+      showToast('All purchase sizes already exist in the sales size master.', 'info');
+      return { addedCount: 0 };
+    }
   };
 
   // --------------------------------------------------------------------------
@@ -6602,6 +6758,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     slabTypes,
     customers,
     ports,
+    salesSizes,
     purchases,
     payments,
     purchaseReturns,
@@ -6670,6 +6827,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     deletePort,
     togglePortActive,
     bulkImportPorts,
+
+    addSalesSize,
+    updateSalesSize,
+    deleteSalesSize,
+    toggleSalesSizeActive,
+    bulkImportSalesSizes,
+    syncSalesSizesFromPurchase,
 
     addPurchase,
     updatePurchase,
@@ -6765,6 +6929,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     slabTypes,
     customers,
     ports,
+    salesSizes,
     purchases,
     payments,
     purchaseReturns,

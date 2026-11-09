@@ -82,7 +82,7 @@ export const SalesReportsHub: React.FC = () => {
     customers,
     ports,
     species,
-    sizes
+    salesSizes
   } = useData();
 
   const [activeReport, setActiveReport] = useState<SalesReportTab>('invoice-register');
@@ -100,7 +100,7 @@ export const SalesReportsHub: React.FC = () => {
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
   const portMap = useMemo(() => new Map(ports.map((p) => [p.id, p])), [ports]);
   const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
-  const sizeMap = useMemo(() => new Map(sizes.map((sz) => [sz.id, sz])), [sizes]);
+  const sizeMap = useMemo(() => new Map(salesSizes.map((sz) => [sz.id, sz])), [salesSizes]);
 
   const activeInvoices = useMemo(() => salesInvoices.filter((inv) => !inv.isVoided), [salesInvoices]);
 
@@ -1868,8 +1868,8 @@ export const SalesReportsHub: React.FC = () => {
                 onChange={(e) => setInvProdSize(e.target.value)}
                 className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
               >
-                <option value="">All Grade Sizes ({sizes.length})</option>
-                {sizes.map((sz) => (
+                <option value="">All Grade Sizes ({salesSizes.length})</option>
+                {salesSizes.map((sz) => (
                   <option key={sz.id} value={sz.id}>
                     {sz.name}
                   </option>

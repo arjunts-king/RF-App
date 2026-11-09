@@ -11,7 +11,8 @@ import {
   FileSpreadsheet,
   BarChart3,
   ShieldAlert,
-  PlusCircle
+  PlusCircle,
+  Scale
 } from 'lucide-react';
 
 export type SalesNavTab =
@@ -23,6 +24,7 @@ export type SalesNavTab =
   | 'customers'
   | 'ports'
   | 'species'
+  | 'sales-sizes'
   | 'sales-reports'
   | 'audit-log'
   | 'sales-excel-import';
@@ -120,6 +122,14 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           icon: Fish,
           badge: 'Export/HSN',
           desc: 'Export-ready products & customs HSN codes',
+          show: permissions.canManageSalesMasterData || permissions.canManageMasterData
+        },
+        {
+          id: 'sales-sizes',
+          label: 'Grade / Size Master',
+          icon: Scale,
+          badge: 'Size',
+          desc: 'Commercial packaging grades & export count sizes',
           show: permissions.canManageSalesMasterData || permissions.canManageMasterData
         }
       ]

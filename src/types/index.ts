@@ -94,6 +94,8 @@ export interface Size {
   active: boolean;
 }
 
+export type SalesSize = Size;
+
 export interface Count {
   id: string;
   code: string;

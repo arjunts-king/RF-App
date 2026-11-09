@@ -40,6 +40,7 @@ const SalesRealizationView = lazy(() => import('./components/sales/SalesRealizat
 const CustomerManager = lazy(() => import('./components/sales/CustomerManager').then(m => ({ default: m.CustomerManager })));
 const PortManager = lazy(() => import('./components/sales/PortManager').then(m => ({ default: m.PortManager })));
 const CommercialSpeciesManager = lazy(() => import('./components/sales/CommercialSpeciesManager').then(m => ({ default: m.CommercialSpeciesManager })));
+const SalesSizeManager = lazy(() => import('./components/sales/SalesSizeManager').then(m => ({ default: m.SalesSizeManager })));
 const SalesReportsHub = lazy(() => import('./components/sales/SalesReportsHub').then(m => ({ default: m.SalesReportsHub })));
 
 import { InventorySidebar, InventoryNavTab } from './components/inventory/InventorySidebar';
@@ -413,6 +414,7 @@ const MainLayout: React.FC = () => {
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
               {salesTab === 'species' && <CommercialSpeciesManager />}
+              {salesTab === 'sales-sizes' && <SalesSizeManager />}
 
               {salesTab === 'sales-reports' && <SalesReportsHub />}
               {salesTab === 'audit-log' && <AuditLogView />}

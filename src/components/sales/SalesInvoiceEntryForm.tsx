@@ -44,7 +44,7 @@ interface LineItemDraft {
 }
 
 export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { customers, ports, species, sizes, salesInvoices, businessSettings, addSalesInvoice } = useData();
+  const { customers, ports, species, salesSizes, salesInvoices, businessSettings, addSalesInvoice } = useData();
   const { showToast } = useToast();
 
   const today = new Date().toISOString().split('T')[0];
@@ -1228,7 +1228,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                       />
                       <SizeCombobox
                         value={l.sizeId}
-                        sizeList={sizes}
+                        sizeList={salesSizes}
                         onChange={(sz) => handleSizeChange(l.id, sz)}
                         placeholder="Select Grade / Size..."
                       />
