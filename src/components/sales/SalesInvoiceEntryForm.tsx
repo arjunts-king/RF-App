@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
-import { SalesCurrency } from '../../types';
+import { SalesCurrency, Species } from '../../types';
 import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
+import { ProductCombobox } from './ProductCombobox';
 import {
   FileText,
   PlusCircle,
@@ -40,7 +41,7 @@ interface LineItemDraft {
 }
 
 export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { customers, ports, species, sizes, counts, salesInvoices, businessSettings, addSalesInvoice } = useData();
+  const { customers, ports, species, sizes, salesInvoices, businessSettings, addSalesInvoice } = useData();
   const { showToast } = useToast();
 
   const today = new Date().toISOString().split('T')[0];
@@ -94,7 +95,36 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [grossWeightKg, setGrossWeightKg] = useState<number | ''>('');
 
   // --- Section 5: Line Items ---
-  const [lines, setLines] = useState<LineItemDraft[]>([]);
+  // Helper to create a clean, blank line item (never defaulting to Vannamei Shrimps)
+  const createBlankLine = (index = 0): LineItemDraft => ({
+    id: `line-${Date.now()}-${index}`,
+    speciesId: '',
+    hsCode: '',
+    sizeId: '',
+    countId: '',
+    productDescription: '',
+    gradeSize: '',
+    cartonsCount: '',
+    weightKg: '',
+    ratePerKg: '',
+    fobValueCurrency: ''
+  });
+
+  const [lines, setLines] = useState<LineItemDraft[]>([
+    {
+      id: 'line-init-1',
+      speciesId: '',
+      hsCode: '',
+      sizeId: '',
+      countId: '',
+      productDescription: '',
+      gradeSize: '',
+      cartonsCount: '',
+      weightKg: '',
+      ratePerKg: '',
+      fobValueCurrency: ''
+    }
+  ]);
 
   // --- Section 6: Factory, Statutory Declaration & Signatory ---
   const [amountInWordsCustom, setAmountInWordsCustom] = useState('');
@@ -198,22 +228,36 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   };
 
   // Handle Species selection for a line - auto-fills HS Code and trade name
-  const handleSpeciesChange = (lineId: string, spId: string) => {
-    const found = species.find((s) => s.id === spId);
+  const handleSpeciesChange = (lineId: string, sp: Species | null) => {
+    if (!sp) {
+      setLines((prev) =>
+        prev.map((l) =>
+          l.id === lineId
+            ? {
+                ...l,
+                speciesId: '',
+                hsCode: ''
+              }
+            : l
+        )
+      );
+      return;
+    }
+
     setLines((prev) =>
       prev.map((l) =>
         l.id === lineId
           ? {
               ...l,
-              speciesId: spId,
-              hsCode: found?.hsCode || '03061790',
-              productDescription: l.productDescription || `${found?.name.toUpperCase()} - ${found?.productForm?.toUpperCase() || 'GRADE A'}`
+              speciesId: sp.id,
+              hsCode: sp.hsCode || l.hsCode || '',
+              productDescription: l.productDescription.trim() ? l.productDescription : sp.name.toUpperCase()
             }
           : l
       )
     );
-    if (found?.scientificName && !scientificName) {
-      setScientificName(found.scientificName.toUpperCase());
+    if (sp.scientificName && !scientificName) {
+      setScientificName(sp.scientificName.toUpperCase());
     }
   };
 
@@ -226,21 +270,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   };
 
   const handleAddLine = () => {
-    const defaultSpecies = species.find((s) => s.active) || species[0];
-    const newLine: LineItemDraft = {
-      id: `line-${Date.now()}-${lines.length}`,
-      speciesId: defaultSpecies?.id || '',
-      hsCode: defaultSpecies?.hsCode || '03061790',
-      sizeId: sizes[0]?.id || '',
-      countId: counts[0]?.id || '',
-      productDescription: defaultSpecies ? `${defaultSpecies.name.toUpperCase()} - GRADE A` : 'SEAFOOD PRODUCT',
-      gradeSize: sizes[0]?.name || '6/8',
-      cartonsCount: '',
-      weightKg: '',
-      ratePerKg: '',
-      fobValueCurrency: ''
-    };
-    setLines((prev) => [...prev, newLine]);
+    setLines((prev) => [...prev, createBlankLine(prev.length)]);
   };
 
   const handleRemoveLine = (lineId: string) => {
@@ -424,6 +454,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setExporterRef(`EXP-${currentYear}-${nextSeq}`);
     setOrderNo('');
     setRemarks('');
+    setLines([createBlankLine(0)]);
   };
 
   return (
@@ -1096,12 +1127,12 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto min-h-[380px] rounded-xl border border-gray-200">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
                 <th className="py-2.5 px-3">#</th>
-                <th className="py-2.5 px-3 min-w-[220px]">Description of Goods</th>
+                <th className="py-2.5 px-3 min-w-[320px]">Description of Goods</th>
                 <th className="py-2.5 px-3 min-w-[130px]">Grade / Size</th>
                 <th className="py-2.5 px-3 text-right min-w-[100px]">No. of Cartons</th>
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Quantity (Kgs)</th>
@@ -1118,37 +1149,31 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
                   {/* Description of Goods */}
                   <td className="py-2 px-3">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <input
                         type="text"
                         value={l.productDescription}
                         onChange={(e) => updateLine(l.id, 'productDescription', e.target.value)}
-                        placeholder="e.g. FROZEN INDIAN MACKEREL – A GRADE"
+                        placeholder="e.g. FROZEN RIBBONFISH B GRADE"
                         required
-                        className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-rose-400"
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                       />
                       <div className="flex items-center gap-1.5">
-                        <select
+                        <ProductCombobox
                           value={l.speciesId}
-                          onChange={(e) => handleSpeciesChange(l.id, e.target.value)}
-                          className="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] text-ink-500"
-                        >
-                          <option value="">Select Product...</option>
-                          {species.map((sp) => (
-                            <option key={sp.id} value={sp.id}>
-                              {sp.name} {sp.rawSpeciesName ? `(Raw: ${sp.rawSpeciesName})` : ''} {sp.hsCode ? `[HSN: ${sp.hsCode}]` : ''}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5" title="Harmonized System Code (HSN/SAC)">
-                          <span className="text-[9px] font-bold text-gray-500 uppercase">HSN:</span>
+                          speciesList={species}
+                          onChange={(sp) => handleSpeciesChange(l.id, sp)}
+                          placeholder="Search & select commercial product..."
+                        />
+                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 shrink-0" title="Harmonized System Code (HSN/SAC)">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">HSN:</span>
                           <input
                             type="text"
                             value={l.hsCode}
                             onChange={(e) => updateLine(l.id, 'hsCode', e.target.value)}
-                            placeholder="03061790"
+                            placeholder="03038930"
                             maxLength={12}
-                            className="w-16 bg-transparent text-[10px] font-mono font-bold text-ink-800 outline-none"
+                            className="w-20 bg-transparent text-[11px] font-mono font-bold text-ink-800 outline-none"
                           />
                         </div>
                       </div>

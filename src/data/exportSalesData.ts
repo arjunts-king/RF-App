@@ -644,417 +644,387 @@ export const VERIFIED_PORTS: PortMaster[] = [
 
 export const VERIFIED_SPECIES: Species[] = [
   {
-    "id": "sp-1",
-    "code": "FROZ",
-    "name": "FROZEN VANAMEI PVPD",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
-    "active": true
-  },
-  {
-    "id": "sp-2",
-    "code": "FROZ",
-    "name": "Frozen PVPD Vannamei Shrimps",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061720",
-    "active": true
-  },
-  {
-    "id": "sp-3",
-    "code": "FROZ",
-    "name": "Frozen PVPD Vanamei Shrimps",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061720",
-    "active": true
-  },
-  {
-    "id": "sp-4",
-    "code": "FROZ",
-    "name": "Frozen Vanamei PUD Shrimps",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
-    "active": true
-  },
-  {
-    "id": "sp-5",
-    "code": "FROZ",
-    "name": "Frozen Leather Jacket",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038990",
-    "active": true
-  },
-  {
-    "id": "sp-6",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH A GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-7",
-    "code": "FROZ",
+    "id": "prd-001",
+    "code": "PRD-001",
     "name": "Frozen RibbonFish B Grade",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03038930",
     "active": true
   },
   {
-    "id": "sp-8",
-    "code": "FROZ",
-    "name": "Frozen Leather Jacket 100/200-S",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-9",
-    "code": "FROZ",
-    "name": "Frozen Deepsea PUD Shrimp",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
-    "active": true
-  },
-  {
-    "id": "sp-10",
-    "code": "FROZ",
-    "name": "Frozen Raw Vannamei Shrimps Hed-Less Shell-On",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
-    "active": true
-  },
-  {
-    "id": "sp-11",
-    "code": "FROZ",
-    "name": "Frozen Raw Vanamei Shrimps Head-Less Shell-On",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
-    "active": true
-  },
-  {
-    "id": "sp-12",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH B GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-13",
-    "code": "FROZ",
+    "id": "prd-002",
+    "code": "PRD-002",
     "name": "Frozen RibbonFish C Grade",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03038930",
     "active": true
   },
   {
-    "id": "sp-14",
-    "code": "FROZ",
+    "id": "prd-003",
+    "code": "PRD-003",
+    "name": "Frozen Indian Mackerel",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03035910",
+    "active": true
+  },
+  {
+    "id": "prd-004",
+    "code": "PRD-004",
+    "name": "FROZEN INDIAN MACKEREL A GRADE",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03035910",
+    "active": true
+  },
+  {
+    "id": "prd-005",
+    "code": "PRD-005",
+    "name": "FROZEN OCTOPUS WHOLE (SHORT LEG)",
+    "rawSpeciesName": "Octopus",
+    "scientificName": "Octopus Vulgaris",
+    "category": "Octopus",
+    "productForm": "Whole octopus",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03075200",
+    "active": true
+  },
+  {
+    "id": "prd-006",
+    "code": "PRD-006",
     "name": "Frozen RibbonFish A Grade (IWP/IF)",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Ribbonfish Hook",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, hook-and-line caught (usually better condition, less scale and skin damage than net-caught)",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03038930",
     "active": true
   },
   {
-    "id": "sp-15",
-    "code": "FROZ",
+    "id": "prd-007",
+    "code": "PRD-007",
     "name": "FROZEN RIBBONFISH B GRADE (IWP/IF)",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Ribbonfish Hook",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03038930",
     "active": true
   },
   {
-    "id": "sp-16",
-    "code": "FROZ",
-    "name": "Frozen RaW Headless Shell On Vanamei Shrimps",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061790",
+    "id": "prd-008",
+    "code": "PRD-008",
+    "name": "FROZEN RIBBONFISH A GRADE",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03038930",
     "active": true
   },
   {
-    "id": "sp-17",
-    "code": "FROZ",
-    "name": "Frozen Headless Shell-On Vanamei Shrimps-G1",
-    "scientificName": "",
-    "category": "Export Finish",
+    "id": "prd-009",
+    "code": "PRD-009",
+    "name": "Frozen PVPD Vannamei Shrimps",
+    "rawSpeciesName": "Vannamei",
+    "scientificName": "Litopenaeus Vannamei",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on shell-on shrimp Peel deveined",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03061720",
     "active": true
   },
   {
-    "id": "sp-18",
-    "code": "FROZ",
-    "name": "Frozen Squid Semi Needle A Grade",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-19",
-    "code": "FROZ",
-    "name": "Frozen Loligo Squid Whole A Grade",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-20",
-    "code": "FROZ",
-    "name": "Frozen Squid Whole",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-21",
-    "code": "FROZ",
-    "name": "Frozen Squid",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-22",
-    "code": "FROZ",
-    "name": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1",
-    "scientificName": "",
-    "category": "Export Finish",
+    "id": "prd-010",
+    "code": "PRD-010",
+    "name": "Frozen Raw Headless Shell On Vanamei Shrimps",
+    "rawSpeciesName": "Vannamei HL",
+    "scientificName": "Litopenaeus Vannamei",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on shell-on shrimp Peel deveined",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03061790",
     "active": true
   },
   {
-    "id": "sp-23",
-    "code": "FROZ",
-    "name": "FROZEN SQUID A GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "030743",
-    "active": true
-  },
-  {
-    "id": "sp-24",
-    "code": "FROZ",
-    "name": "FROZEN SQUID B GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "030743",
-    "active": true
-  },
-  {
-    "id": "sp-25",
-    "code": "FROZ",
+    "id": "prd-011",
+    "code": "PRD-011",
     "name": "Frozen Indian Mackerel - A Grade",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03035910",
     "active": true
   },
   {
-    "id": "sp-26",
-    "code": "FROZ",
-    "name": "Frozen Indian Mackerel",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
-    "active": true
-  },
-  {
-    "id": "sp-27",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH C GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-28",
-    "code": "FROZ",
-    "name": "FROZEN INDIAN MACKEREL A GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
-    "active": true
-  },
-  {
-    "id": "sp-29",
-    "code": "FROZ",
-    "name": "FROZEN INDIAN MACKEREL B GARDE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
-    "active": true
-  },
-  {
-    "id": "sp-30",
-    "code": "FROZ",
-    "name": "FROZEN INDIAN MACKEREL B GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
-    "active": true
-  },
-  {
-    "id": "sp-31",
-    "code": "FROZ",
-    "name": "FROZEN INDIAN MACKEREL",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
-    "active": true
-  },
-  {
-    "id": "sp-32",
-    "code": "FROZ",
-    "name": "Frozen Squid Whole Semi Needle A Grade",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-33",
-    "code": "FROZ",
+    "id": "prd-012",
+    "code": "PRD-012",
     "name": "FROZEN PUD POOVALAN SHRIMPS",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Poovalan",
+    "scientificName": "Metapenaeus Dobsoni",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on prawn",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03061790",
     "active": true
   },
   {
-    "id": "sp-34",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH WHOLE A GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-35",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH WHOLE B GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-36",
-    "code": "FROZ",
-    "name": "FROZEN RIBBONFISH WHOLE C GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03038930",
-    "active": true
-  },
-  {
-    "id": "sp-37",
-    "code": "FROZ",
-    "name": "FROZEN SQUID WHOLE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
-    "active": true
-  },
-  {
-    "id": "sp-38",
-    "code": "FROZ",
+    "id": "prd-013",
+    "code": "PRD-013",
     "name": "FROZEN MONSOON POOVALAN PUD SHRIMPS",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Poovalan",
+    "scientificName": "Metapenaeus Dobsoni",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on prawn",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03061790",
     "active": true
   },
   {
-    "id": "sp-39",
-    "code": "FROZ",
+    "id": "prd-014",
+    "code": "PRD-014",
+    "name": "FROZEN INDIAN MACKEREL B GRADE",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03035910",
+    "active": true
+  },
+  {
+    "id": "prd-015",
+    "code": "PRD-015",
     "name": "FROZEN LOLIGO SQUID",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Loligo Squid",
+    "scientificName": "Uroteuthis Duvaucelii",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03074320",
     "active": true
   },
   {
-    "id": "sp-40",
-    "code": "FROZ",
+    "id": "prd-016",
+    "code": "PRD-016",
     "name": "FROZEN OCTOPUS WHOLE",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03074320",
+    "rawSpeciesName": "Octopus",
+    "scientificName": "Octopus Vulgaris",
+    "category": "Octopus",
+    "productForm": "Whole octopus",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03075200",
     "active": true
   },
   {
-    "id": "sp-41",
-    "code": "FROZ",
+    "id": "prd-017",
+    "code": "PRD-017",
     "name": "FROZEN INDIAN MACKEREL D.S",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03035910",
     "active": true
   },
   {
-    "id": "sp-42",
-    "code": "FROZ",
+    "id": "prd-018",
+    "code": "PRD-018",
     "name": "FROZEN INDIAN MACKEREL D.S B GRADE",
-    "scientificName": "",
-    "category": "Export Finish",
+    "rawSpeciesName": "Mackerel",
+    "scientificName": "Rastrelliger kanagurta",
+    "category": "Fish",
+    "productForm": "Whole fish, boat-landed",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03035910",
     "active": true
   },
   {
-    "id": "sp-43",
-    "code": "FROZ",
+    "id": "prd-019",
+    "code": "PRD-019",
     "name": "Frozen PUD Vannamei Shrimps",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "030617",
+    "rawSpeciesName": "Vannamei",
+    "scientificName": "Litopenaeus Vannamei",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on shell-on shrimp Peel undeveined",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03061720",
     "active": true
   },
   {
-    "id": "sp-44",
-    "code": "FROZ",
-    "name": "FROZEN LEATHER JACKET FISH",
-    "scientificName": "",
-    "category": "Export Finish",
+    "id": "prd-020",
+    "code": "PRD-020",
+    "name": "Frozen Leather Jacket",
+    "rawSpeciesName": "Leather Jacket",
+    "scientificName": "Aluterus Monoceros",
+    "category": "Fish",
+    "productForm": "Whole fish (skin-on)",
+    "processingType": "Blast/ Tunnel Freezing",
     "hsCode": "03038990",
     "active": true
   },
   {
-    "id": "sp-45",
-    "code": "FROZ",
-    "name": "FROZEN PVPD VANNAMEI SHRIMPS",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03061720",
+    "id": "prd-021",
+    "code": "PRD-021",
+    "name": "Frozen Deepsea PUD Shrimp",
+    "rawSpeciesName": "Shrimp",
+    "scientificName": "Solenocera Crassicornis",
+    "category": "Shrimp",
+    "productForm": "Deepsea catch Shrimp",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03061790",
     "active": true
   },
   {
-    "id": "sp-46",
-    "code": "FROZ",
-    "name": "FROZEN INDIAN MACKEREL D.S.",
-    "scientificName": "",
-    "category": "Export Finish",
-    "hsCode": "03035910",
+    "id": "prd-022",
+    "code": "PRD-022",
+    "name": "Frozen Headless Shell-On Vanamei Shrimps-G1",
+    "rawSpeciesName": "Vannamei HL",
+    "scientificName": "Litopenaeus Vannamei",
+    "category": "Shrimp",
+    "productForm": "Whole, head-on shell-on shrimp Peel undeveined",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03061790",
+    "active": true
+  },
+  {
+    "id": "prd-023",
+    "code": "PRD-023",
+    "name": "Frozen Squid Semi Needle A Grade",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-024",
+    "code": "PRD-024",
+    "name": "Frozen Loligo Squid Whole A Grade",
+    "rawSpeciesName": "Loligo Squid (W)",
+    "scientificName": "Uroteuthis Duvaucelii",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-025",
+    "code": "PRD-025",
+    "name": "FROZEN RIBBONFISH WHOLE A GRADE",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03038930",
+    "active": true
+  },
+  {
+    "id": "prd-026",
+    "code": "PRD-026",
+    "name": "FROZEN RIBBONFISH WHOLE B GRADE",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03038930",
+    "active": true
+  },
+  {
+    "id": "prd-027",
+    "code": "PRD-027",
+    "name": "FROZEN SQUID WHOLE",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-028",
+    "code": "PRD-028",
+    "name": "FROZEN RIBBONFISH WHOLE C GRADE",
+    "rawSpeciesName": "Ribbonfish Net",
+    "scientificName": "Lepturacanthus Savala",
+    "category": "Fish",
+    "productForm": "Whole fish, net-caught",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03038930",
+    "active": true
+  },
+  {
+    "id": "prd-029",
+    "code": "PRD-029",
+    "name": "Frozen Squid Whole Semi Needle A Grade",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-030",
+    "code": "PRD-030",
+    "name": "Frozen Squid",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-031",
+    "code": "PRD-031",
+    "name": "FROZEN SQUID A GRADE",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
+    "active": true
+  },
+  {
+    "id": "prd-032",
+    "code": "PRD-032",
+    "name": "FROZEN SQUID B GRADE",
+    "rawSpeciesName": "Squid",
+    "scientificName": "Hemiramphus",
+    "category": "Squid",
+    "productForm": "Whole squid",
+    "processingType": "Blast/ Tunnel Freezing",
+    "hsCode": "03074320",
     "active": true
   }
 ];
@@ -1314,11 +1284,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-01-26-27-1",
-        "speciesId": "sp-1",
+        "speciesId": "prd-009",
         "sizeId": "sz-1",
         "productDescription": "FROZEN VANAMEI PVPD",
         "gradeSize": "71/90",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 200,
         "weightKg": 2400,
         "ratePerKg": 6.3,
@@ -1328,11 +1298,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-01-26-27-2",
-        "speciesId": "sp-1",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "FROZEN VANAMEI PVPD",
         "gradeSize": "91/110",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 300,
         "weightKg": 3600,
         "ratePerKg": 6.1,
@@ -1342,11 +1312,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-01-26-27-3",
-        "speciesId": "sp-1",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "FROZEN VANAMEI PVPD",
         "gradeSize": "111/130",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 200,
         "weightKg": 2400,
         "ratePerKg": 6,
@@ -1356,11 +1326,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-01-26-27-4",
-        "speciesId": "sp-1",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "FROZEN VANAMEI PVPD",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 500,
         "weightKg": 6000,
         "ratePerKg": 5.8,
@@ -1370,11 +1340,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-01-26-27-5",
-        "speciesId": "sp-1",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "FROZEN VANAMEI PVPD",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 600,
         "weightKg": 7200,
         "ratePerKg": 5.7,
@@ -1446,7 +1416,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-02-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
@@ -1460,7 +1430,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-02-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -1474,7 +1444,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-02-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -1550,7 +1520,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-03-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
@@ -1564,7 +1534,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-03-26-27-2",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-6",
         "productDescription": "Frozen PVPD Vanamei Shrimps 111/150",
         "gradeSize": "111/150",
@@ -1578,7 +1548,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-03-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -1592,7 +1562,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-03-26-27-4",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -1668,7 +1638,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-04-26-27-1",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 50/100",
         "gradeSize": "50/100",
@@ -1682,7 +1652,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-2",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
         "gradeSize": "100/200",
@@ -1696,7 +1666,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-3",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 200/300",
         "gradeSize": "200/300",
@@ -1710,7 +1680,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-4",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 300/500",
         "gradeSize": "300/500",
@@ -1724,7 +1694,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-5",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 500/700",
         "gradeSize": "500/700",
@@ -1738,7 +1708,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-6",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 700/1000",
         "gradeSize": "700/1000",
@@ -1752,7 +1722,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-7",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-13",
         "productDescription": "Frozen Leather Jacket 1000/1500",
         "gradeSize": "1000/1500",
@@ -1766,7 +1736,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-8",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-14",
         "productDescription": "Frozen Leather Jacket 1500/UP",
         "gradeSize": "1500/UP",
@@ -1780,7 +1750,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-9",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -1794,7 +1764,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-10",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -1808,7 +1778,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-11",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -1822,7 +1792,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-12",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
         "gradeSize": "200/300",
@@ -1836,7 +1806,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-13",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
         "gradeSize": "300/500",
@@ -1850,7 +1820,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-04-26-27-14",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
         "gradeSize": "500/700",
@@ -1926,7 +1896,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-05-26-27-1",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 50/100",
         "gradeSize": "50/100",
@@ -1940,11 +1910,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-2",
-        "speciesId": "sp-8",
+        "speciesId": "prd-020",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200-S",
         "gradeSize": "100/200",
-        "hsCode": "03038930",
+        "hsCode": "03038990",
         "cartonsCount": 210,
         "weightKg": 2100,
         "ratePerKg": 5.1,
@@ -1954,7 +1924,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-3",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
         "gradeSize": "100/200",
@@ -1968,7 +1938,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-4",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 200/300",
         "gradeSize": "200/300",
@@ -1982,7 +1952,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-5",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 300/500",
         "gradeSize": "300/500",
@@ -1996,7 +1966,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-6",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 500/700",
         "gradeSize": "500/700",
@@ -2010,7 +1980,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-7",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 700/1000",
         "gradeSize": "700/1000",
@@ -2024,7 +1994,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-8",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-13",
         "productDescription": "Frozen Leather Jacket 1000/1500",
         "gradeSize": "1000/1500",
@@ -2038,7 +2008,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-9",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-14",
         "productDescription": "Frozen Leather Jacket 1500/UP",
         "gradeSize": "1500/UP",
@@ -2052,7 +2022,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-10",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -2066,7 +2036,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-11",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -2080,7 +2050,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-12",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -2094,7 +2064,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-13",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
         "gradeSize": "200/300",
@@ -2108,7 +2078,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-14",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
         "gradeSize": "300/500",
@@ -2122,7 +2092,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-05-26-27-15",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
         "gradeSize": "500/700",
@@ -2198,11 +2168,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-06-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-7",
         "productDescription": "Frozen PVPD Vannamei Shrimps 61/70",
         "gradeSize": "61/70",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 126,
         "weightKg": 1260,
         "ratePerKg": 6.2,
@@ -2212,7 +2182,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
         "gradeSize": "71/90",
@@ -2226,11 +2196,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-3",
-        "speciesId": "sp-4",
+        "speciesId": "prd-019",
         "sizeId": "sz-4",
         "productDescription": "Frozen Vanamei PUD Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 102,
         "weightKg": 1020,
         "ratePerKg": 4.5,
@@ -2240,11 +2210,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-4",
-        "speciesId": "sp-4",
+        "speciesId": "prd-019",
         "sizeId": "sz-8",
         "productDescription": "Frozen Vanamei PUD Shrimps 200/300",
         "gradeSize": "200/300",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 740,
         "weightKg": 7404,
         "ratePerKg": 4.3,
@@ -2254,11 +2224,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-5",
-        "speciesId": "sp-4",
+        "speciesId": "prd-019",
         "sizeId": "sz-9",
         "productDescription": "Frozen Vanamei PUD Shrimps 300/500",
         "gradeSize": "300/500",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 74,
         "weightKg": 744,
         "ratePerKg": 4,
@@ -2268,7 +2238,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-6",
-        "speciesId": "sp-9",
+        "speciesId": "prd-021",
         "sizeId": "sz-5",
         "productDescription": "Frozen Deepsea PUD Shrimp 100/200",
         "gradeSize": "100/200",
@@ -2282,7 +2252,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-06-26-27-7",
-        "speciesId": "sp-9",
+        "speciesId": "prd-021",
         "sizeId": "sz-8",
         "productDescription": "Frozen Deepsea PUD Shrimp 200/300",
         "gradeSize": "200/300",
@@ -2358,7 +2328,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-07-26-27-1",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-10",
         "productDescription": "Frozen Leather Jacket 50/100",
         "gradeSize": "50/100",
@@ -2372,7 +2342,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-2",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
         "gradeSize": "100/200",
@@ -2386,7 +2356,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-3",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 200/300",
         "gradeSize": "200/300",
@@ -2400,7 +2370,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-4",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 300/500",
         "gradeSize": "300/500",
@@ -2414,7 +2384,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-5",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 500/700",
         "gradeSize": "500/700",
@@ -2428,7 +2398,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-6",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 700/1000",
         "gradeSize": "700/1000",
@@ -2442,7 +2412,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-7",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-13",
         "productDescription": "Frozen Leather Jacket 1000/1500",
         "gradeSize": "1000/1500",
@@ -2456,7 +2426,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-07-26-27-8",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-14",
         "productDescription": "Frozen Leather Jacket 1500/UP",
         "gradeSize": "1500/UP",
@@ -2532,7 +2502,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-08-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
         "gradeSize": "71/90",
@@ -2546,7 +2516,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-08-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
@@ -2560,7 +2530,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-08-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
@@ -2574,7 +2544,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-08-26-27-4",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -2588,7 +2558,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-08-26-27-5",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -2664,7 +2634,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-09-26-27-1",
-        "speciesId": "sp-10",
+        "speciesId": "prd-010",
         "sizeId": "sz-7",
         "productDescription": "Frozen Raw Vannamei Shrimps Hed-Less Shell-On 61/70",
         "gradeSize": "61/70",
@@ -2740,7 +2710,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-10-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
         "gradeSize": "71/90",
@@ -2754,7 +2724,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-10-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
@@ -2768,7 +2738,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-10-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
@@ -2782,7 +2752,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-10-26-27-4",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -2796,7 +2766,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-10-26-27-5",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -2872,7 +2842,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-11-26-27-1",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-5",
         "productDescription": "Frozen Leather Jacket 100/200",
         "gradeSize": "100/200",
@@ -2886,7 +2856,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-2",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-8",
         "productDescription": "Frozen Leather Jacket 200/300",
         "gradeSize": "200/300",
@@ -2900,7 +2870,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-3",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-9",
         "productDescription": "Frozen Leather Jacket 300/500",
         "gradeSize": "300/500",
@@ -2914,7 +2884,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-4",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-11",
         "productDescription": "Frozen Leather Jacket 500/700",
         "gradeSize": "500/700",
@@ -2928,7 +2898,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-5",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-12",
         "productDescription": "Frozen Leather Jacket 700/1000",
         "gradeSize": "700/1000",
@@ -2942,7 +2912,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-6",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-13",
         "productDescription": "Frozen Leather Jacket 1000/1500",
         "gradeSize": "1000/1500",
@@ -2956,7 +2926,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-7",
-        "speciesId": "sp-5",
+        "speciesId": "prd-020",
         "sizeId": "sz-14",
         "productDescription": "Frozen Leather Jacket 1500/UP",
         "gradeSize": "1500/UP",
@@ -2970,7 +2940,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-8",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -2984,7 +2954,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-9",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -2998,7 +2968,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-10",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -3012,7 +2982,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-11",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-12",
         "productDescription": "FROZEN RIBBONFISH A GRADE 700/1000",
         "gradeSize": "700/1000",
@@ -3026,7 +2996,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-12",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
         "gradeSize": "100/200",
@@ -3040,7 +3010,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-13",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "Frozen RibbonFish B Grade 200/300",
         "gradeSize": "200/300",
@@ -3054,7 +3024,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-14",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish B Grade 300/500",
         "gradeSize": "300/500",
@@ -3068,7 +3038,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-15",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "Frozen RibbonFish B Grade 500/700",
         "gradeSize": "500/700",
@@ -3082,7 +3052,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-16",
-        "speciesId": "sp-7",
+        "speciesId": "prd-001",
         "sizeId": "sz-12",
         "productDescription": "Frozen RibbonFish B Grade 700/1000",
         "gradeSize": "700/1000",
@@ -3096,7 +3066,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-17",
-        "speciesId": "sp-13",
+        "speciesId": "prd-002",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish C Grade 300/500",
         "gradeSize": "300/500",
@@ -3110,7 +3080,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-18",
-        "speciesId": "sp-14",
+        "speciesId": "prd-006",
         "sizeId": "sz-9",
         "productDescription": "Frozen RibbonFish A Grade (IWP/IF) 300/500",
         "gradeSize": "300/500",
@@ -3124,7 +3094,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-19",
-        "speciesId": "sp-14",
+        "speciesId": "prd-006",
         "sizeId": "sz-11",
         "productDescription": "Frozen RibbonFish A Grade (IWP/IF) 500/700",
         "gradeSize": "500/700",
@@ -3138,7 +3108,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-20",
-        "speciesId": "sp-15",
+        "speciesId": "prd-007",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE (IWP/IF) 300/500",
         "gradeSize": "300/500",
@@ -3152,7 +3122,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-11-26-27-21",
-        "speciesId": "sp-15",
+        "speciesId": "prd-007",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH B GRADE (IWP/IF) 500/700",
         "gradeSize": "500/700",
@@ -3228,7 +3198,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-12-26-27-1",
-        "speciesId": "sp-11",
+        "speciesId": "prd-010",
         "sizeId": "sz-1",
         "productDescription": "Frozen Raw Vanamei Shrimps Head-Less Shell-On 71/90",
         "gradeSize": "71/90",
@@ -3304,11 +3274,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-13-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 1080,
         "weightKg": 10800,
         "ratePerKg": 6.1,
@@ -3318,11 +3288,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-13-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 240,
         "weightKg": 2400,
         "ratePerKg": 6,
@@ -3332,11 +3302,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-13-26-27-3",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 840,
         "weightKg": 8400,
         "ratePerKg": 5.85,
@@ -3408,11 +3378,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-14-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 360,
         "weightKg": 3600,
         "ratePerKg": 6.2,
@@ -3422,11 +3392,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-14-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 720,
         "weightKg": 7200,
         "ratePerKg": 6.1,
@@ -3436,11 +3406,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-14-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 360,
         "weightKg": 3600,
         "ratePerKg": 6,
@@ -3450,11 +3420,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-14-26-27-4",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 720,
         "weightKg": 7200,
         "ratePerKg": 5.85,
@@ -3525,7 +3495,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-15-26-27-1",
-        "speciesId": "sp-16",
+        "speciesId": "prd-010",
         "sizeId": "sz-15",
         "productDescription": "Frozen RaW Headless Shell On Vanamei Shrimps 51/60",
         "gradeSize": "51/60",
@@ -3601,11 +3571,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-16-26-27-1",
-        "speciesId": "sp-17",
+        "speciesId": "prd-022",
         "sizeId": "sz-7",
         "productDescription": "Frozen Headless Shell-On Vanamei Shrimps-G1 61/70",
         "gradeSize": "61/70",
-        "hsCode": "03061720",
+        "hsCode": "03061790",
         "cartonsCount": 1920,
         "weightKg": 19200,
         "ratePerKg": 4.55,
@@ -3676,7 +3646,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-17-26-27-1",
-        "speciesId": "sp-18",
+        "speciesId": "prd-023",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid Semi Needle A Grade U/3",
         "gradeSize": "U/3",
@@ -3690,7 +3660,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-2",
-        "speciesId": "sp-18",
+        "speciesId": "prd-023",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid Semi Needle A Grade 3/6",
         "gradeSize": "3/6",
@@ -3704,7 +3674,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-3",
-        "speciesId": "sp-18",
+        "speciesId": "prd-023",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Semi Needle A Grade 6/10",
         "gradeSize": "6/10",
@@ -3718,7 +3688,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-4",
-        "speciesId": "sp-18",
+        "speciesId": "prd-023",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Semi Needle A Grade 10/20",
         "gradeSize": "10/20",
@@ -3732,7 +3702,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-5",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-16",
         "productDescription": "Frozen Loligo Squid Whole A Grade U/3",
         "gradeSize": "U/3",
@@ -3746,7 +3716,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-6",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-17",
         "productDescription": "Frozen Loligo Squid Whole A Grade 3/6",
         "gradeSize": "3/6",
@@ -3760,7 +3730,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-7",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-18",
         "productDescription": "Frozen Loligo Squid Whole A Grade 6/10",
         "gradeSize": "6/10",
@@ -3774,7 +3744,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-17-26-27-8",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-19",
         "productDescription": "Frozen Loligo Squid Whole A Grade 10/20",
         "gradeSize": "10/20",
@@ -3850,7 +3820,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-18-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-1",
         "productDescription": "Frozen PVPD Vannamei Shrimps 71/90",
         "gradeSize": "71/90",
@@ -3864,7 +3834,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-18-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
@@ -3878,7 +3848,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-18-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -3892,7 +3862,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-18-26-27-4",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -3968,7 +3938,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-19-26-27-1",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole 6/10",
         "gradeSize": "6/10",
@@ -3982,7 +3952,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-19-26-27-2",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
         "gradeSize": "10/20",
@@ -4058,7 +4028,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-20-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
@@ -4072,7 +4042,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-20-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -4086,7 +4056,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-20-26-27-3",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -4162,7 +4132,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-21-26-27-1",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-20",
         "productDescription": "Frozen Squid Whole 20/40",
         "gradeSize": "20/40",
@@ -4238,7 +4208,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-22-26-27-1",
-        "speciesId": "sp-21",
+        "speciesId": "prd-030",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid U/3",
         "gradeSize": "U/3",
@@ -4252,7 +4222,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-22-26-27-2",
-        "speciesId": "sp-21",
+        "speciesId": "prd-030",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid 3/6",
         "gradeSize": "3/6",
@@ -4266,7 +4236,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-22-26-27-3",
-        "speciesId": "sp-21",
+        "speciesId": "prd-030",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid 6/10",
         "gradeSize": "6/10",
@@ -4280,7 +4250,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-22-26-27-4",
-        "speciesId": "sp-21",
+        "speciesId": "prd-030",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid 10/20",
         "gradeSize": "10/20",
@@ -4356,7 +4326,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-23-26-27-1",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole 6/10",
         "gradeSize": "6/10",
@@ -4370,7 +4340,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-23-26-27-2",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
         "gradeSize": "10/20",
@@ -4446,11 +4416,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-24-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 372,
         "weightKg": 3720,
         "ratePerKg": 6.1,
@@ -4460,11 +4430,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-24-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 926,
         "weightKg": 9264,
         "ratePerKg": 6,
@@ -4474,11 +4444,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-24-26-27-3",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 720,
         "weightKg": 7200,
         "ratePerKg": 5.9,
@@ -4550,7 +4520,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-25-26-27-1",
-        "speciesId": "sp-22",
+        "speciesId": "prd-022",
         "sizeId": "sz-21",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 41/50",
         "gradeSize": "41/50",
@@ -4564,7 +4534,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-25-26-27-2",
-        "speciesId": "sp-22",
+        "speciesId": "prd-022",
         "sizeId": "sz-15",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 51/60",
         "gradeSize": "51/60",
@@ -4578,7 +4548,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-25-26-27-3",
-        "speciesId": "sp-22",
+        "speciesId": "prd-022",
         "sizeId": "sz-1",
         "productDescription": "FROZEN HEADLESS SHELL ON VANNAMEI SHRIMPS-G1 71/90",
         "gradeSize": "71/90",
@@ -4654,11 +4624,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-26-26-27-1",
-        "speciesId": "sp-23",
+        "speciesId": "prd-031",
         "sizeId": "sz-16",
         "productDescription": "FROZEN SQUID A GRADE U/3",
         "gradeSize": "U/3",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 56,
         "weightKg": 561.6,
         "ratePerKg": 7,
@@ -4668,11 +4638,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-2",
-        "speciesId": "sp-23",
+        "speciesId": "prd-031",
         "sizeId": "sz-17",
         "productDescription": "FROZEN SQUID A GRADE 3/6",
         "gradeSize": "3/6",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 762,
         "weightKg": 7624.8,
         "ratePerKg": 5.85,
@@ -4682,11 +4652,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-3",
-        "speciesId": "sp-23",
+        "speciesId": "prd-031",
         "sizeId": "sz-18",
         "productDescription": "FROZEN SQUID A GRADE 6/10",
         "gradeSize": "6/10",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 731,
         "weightKg": 7311.6,
         "ratePerKg": 4.65,
@@ -4696,11 +4666,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-4",
-        "speciesId": "sp-23",
+        "speciesId": "prd-031",
         "sizeId": "sz-19",
         "productDescription": "FROZEN SQUID A GRADE 10/20",
         "gradeSize": "10/20",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 282,
         "weightKg": 2818.8,
         "ratePerKg": 3.4,
@@ -4710,11 +4680,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-5",
-        "speciesId": "sp-24",
+        "speciesId": "prd-032",
         "sizeId": "sz-16",
         "productDescription": "FROZEN SQUID B GRADE U/3",
         "gradeSize": "U/3",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 2,
         "weightKg": 21.6,
         "ratePerKg": 6,
@@ -4724,11 +4694,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-6",
-        "speciesId": "sp-24",
+        "speciesId": "prd-032",
         "sizeId": "sz-17",
         "productDescription": "FROZEN SQUID B GRADE 3/6",
         "gradeSize": "3/6",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 151,
         "weightKg": 1512,
         "ratePerKg": 4.85,
@@ -4738,11 +4708,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-26-26-27-7",
-        "speciesId": "sp-24",
+        "speciesId": "prd-032",
         "sizeId": "sz-18",
         "productDescription": "FROZEN SQUID B GRADE 6/10",
         "gradeSize": "6/10",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 122,
         "weightKg": 1220.4,
         "ratePerKg": 3.65,
@@ -4814,11 +4784,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-27-26-27-1",
-        "speciesId": "sp-20",
+        "speciesId": "prd-027",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole 10/20",
         "gradeSize": "10/20",
-        "hsCode": "030743",
+        "hsCode": "03074320",
         "cartonsCount": 2400,
         "weightKg": 24000,
         "ratePerKg": 2.95,
@@ -4889,7 +4859,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-28-26-27-1",
-        "speciesId": "sp-25",
+        "speciesId": "prd-004",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel - A Grade 12/15",
         "gradeSize": "12/15",
@@ -4964,7 +4934,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-29-26-27-1",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "Frozen Indian Mackerel 10/12",
         "gradeSize": "10/12",
@@ -4978,7 +4948,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-29-26-27-2",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel 12/15",
         "gradeSize": "12/15",
@@ -4992,7 +4962,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-29-26-27-3",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-24",
         "productDescription": "Frozen Indian Mackerel 15/20",
         "gradeSize": "15/20",
@@ -5067,7 +5037,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-30-26-27-1",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "Frozen Indian Mackerel 10/12",
         "gradeSize": "10/12",
@@ -5081,7 +5051,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-30-26-27-2",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-22",
         "productDescription": "Frozen Indian Mackerel 12/15",
         "gradeSize": "12/15",
@@ -5095,7 +5065,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-30-26-27-3",
-        "speciesId": "sp-26",
+        "speciesId": "prd-003",
         "sizeId": "sz-24",
         "productDescription": "Frozen Indian Mackerel 15/20",
         "gradeSize": "15/20",
@@ -5171,7 +5141,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-31-26-27-1",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
         "gradeSize": "100/200",
@@ -5185,7 +5155,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-2",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -5199,7 +5169,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-3",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -5213,7 +5183,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-4",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -5227,7 +5197,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-5",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
         "gradeSize": "100/200",
@@ -5241,7 +5211,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-6",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
         "gradeSize": "200/300",
@@ -5255,7 +5225,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-7",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
         "gradeSize": "300/500",
@@ -5269,7 +5239,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-8",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
         "gradeSize": "500/700",
@@ -5283,7 +5253,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-9",
-        "speciesId": "sp-27",
+        "speciesId": "prd-002",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH C GRADE 100/200",
         "gradeSize": "100/200",
@@ -5297,7 +5267,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-10",
-        "speciesId": "sp-27",
+        "speciesId": "prd-002",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH C GRADE 200/300",
         "gradeSize": "200/300",
@@ -5311,7 +5281,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-11",
-        "speciesId": "sp-27",
+        "speciesId": "prd-002",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH C GRADE 300/500",
         "gradeSize": "300/500",
@@ -5325,7 +5295,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-31-26-27-12",
-        "speciesId": "sp-13",
+        "speciesId": "prd-002",
         "sizeId": "sz-11",
         "productDescription": "Frozen RibbonFish C Grade 500/700",
         "gradeSize": "500/700",
@@ -5400,7 +5370,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-32-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -5414,7 +5384,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -5428,7 +5398,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-3",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
         "gradeSize": "12/15",
@@ -5442,7 +5412,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-4",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-24",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 15/20",
         "gradeSize": "15/20",
@@ -5456,7 +5426,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-5",
-        "speciesId": "sp-29",
+        "speciesId": "prd-014",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GARDE 10/12",
         "gradeSize": "10/12",
@@ -5470,7 +5440,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-6",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 12/15",
         "gradeSize": "12/15",
@@ -5484,7 +5454,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-32-26-27-7",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-24",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 15/20",
         "gradeSize": "15/20",
@@ -5559,7 +5529,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-33-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -5573,7 +5543,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-33-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -5648,7 +5618,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-34-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -5662,7 +5632,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-34-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -5737,7 +5707,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-35-26-27-1",
-        "speciesId": "sp-32",
+        "speciesId": "prd-029",
         "sizeId": "sz-16",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade U/3",
         "gradeSize": "U/3",
@@ -5751,7 +5721,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-2",
-        "speciesId": "sp-32",
+        "speciesId": "prd-029",
         "sizeId": "sz-17",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 3/6",
         "gradeSize": "3/6",
@@ -5765,7 +5735,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-3",
-        "speciesId": "sp-32",
+        "speciesId": "prd-029",
         "sizeId": "sz-18",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 6/10",
         "gradeSize": "6/10",
@@ -5779,7 +5749,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-4",
-        "speciesId": "sp-32",
+        "speciesId": "prd-029",
         "sizeId": "sz-19",
         "productDescription": "Frozen Squid Whole Semi Needle A Grade 10/20",
         "gradeSize": "10/20",
@@ -5793,7 +5763,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-5",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-16",
         "productDescription": "Frozen Loligo Squid Whole A Grade U/3",
         "gradeSize": "U/3",
@@ -5807,7 +5777,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-6",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-17",
         "productDescription": "Frozen Loligo Squid Whole A Grade 3/6",
         "gradeSize": "3/6",
@@ -5821,7 +5791,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-35-26-27-7",
-        "speciesId": "sp-19",
+        "speciesId": "prd-024",
         "sizeId": "sz-18",
         "productDescription": "Frozen Loligo Squid Whole A Grade 6/10",
         "gradeSize": "6/10",
@@ -5897,11 +5867,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-36-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "Frozen PVPD Vannamei Shrimps 91/110",
         "gradeSize": "91/110",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 91,
         "weightKg": 912,
         "ratePerKg": 6.2,
@@ -5911,11 +5881,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-36-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 712,
         "weightKg": 7116,
         "ratePerKg": 6.1,
@@ -5925,11 +5895,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-36-26-27-3",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 1298,
         "weightKg": 12984,
         "ratePerKg": 5.95,
@@ -6000,7 +5970,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-37-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -6014,7 +5984,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-37-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -6089,7 +6059,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-38-26-27-1",
-        "speciesId": "sp-33",
+        "speciesId": "prd-012",
         "sizeId": "sz-26",
         "productDescription": "FROZEN PUD POOVALAN SHRIMPS 80/120",
         "gradeSize": "80/120",
@@ -6164,7 +6134,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-39-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -6178,7 +6148,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-39-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -6254,7 +6224,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-40-26-27-1",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 100/200",
         "gradeSize": "100/200",
@@ -6268,7 +6238,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-2",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 200/300",
         "gradeSize": "200/300",
@@ -6282,7 +6252,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-3",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 300/500",
         "gradeSize": "300/500",
@@ -6296,7 +6266,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-4",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 500/700",
         "gradeSize": "500/700",
@@ -6310,7 +6280,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-5",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 100/200",
         "gradeSize": "100/200",
@@ -6324,7 +6294,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-6",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 200/300",
         "gradeSize": "200/300",
@@ -6338,7 +6308,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-7",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 300/500",
         "gradeSize": "300/500",
@@ -6352,7 +6322,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-8",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 500/700",
         "gradeSize": "500/700",
@@ -6366,7 +6336,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-9",
-        "speciesId": "sp-36",
+        "speciesId": "prd-028",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 100/200",
         "gradeSize": "100/200",
@@ -6380,7 +6350,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-10",
-        "speciesId": "sp-36",
+        "speciesId": "prd-028",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 200/300",
         "gradeSize": "200/300",
@@ -6394,7 +6364,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-40-26-27-11",
-        "speciesId": "sp-36",
+        "speciesId": "prd-028",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH WHOLE C GRADE 500/700",
         "gradeSize": "500/700",
@@ -6470,7 +6440,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-41-26-27-1",
-        "speciesId": "sp-37",
+        "speciesId": "prd-027",
         "sizeId": "sz-19",
         "productDescription": "FROZEN SQUID WHOLE 10/20",
         "gradeSize": "10/20",
@@ -6546,7 +6516,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-42-26-27-1",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 100/200",
         "gradeSize": "100/200",
@@ -6560,7 +6530,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-2",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 200/300",
         "gradeSize": "200/300",
@@ -6574,7 +6544,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-3",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 300/500",
         "gradeSize": "300/500",
@@ -6588,7 +6558,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-4",
-        "speciesId": "sp-34",
+        "speciesId": "prd-025",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH WHOLE A GRADE 500/700",
         "gradeSize": "500/700",
@@ -6602,7 +6572,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-5",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 100/200",
         "gradeSize": "100/200",
@@ -6616,7 +6586,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-6",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 200/300",
         "gradeSize": "200/300",
@@ -6630,7 +6600,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-7",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 300/500",
         "gradeSize": "300/500",
@@ -6644,7 +6614,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-42-26-27-8",
-        "speciesId": "sp-35",
+        "speciesId": "prd-026",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH WHOLE B GRADE 500/700",
         "gradeSize": "500/700",
@@ -6719,7 +6689,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-43-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -6733,7 +6703,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-43-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -6747,7 +6717,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-43-26-27-3",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
         "gradeSize": "8/10",
@@ -6761,7 +6731,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-43-26-27-4",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
         "gradeSize": "10/12",
@@ -6836,7 +6806,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-44-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -6850,7 +6820,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-44-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -6925,7 +6895,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-45-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -6939,7 +6909,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-45-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -6953,7 +6923,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-45-26-27-3",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -7029,11 +6999,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-46-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 158,
         "weightKg": 1584,
         "ratePerKg": 6.2,
@@ -7043,11 +7013,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-46-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 970,
         "weightKg": 9696,
         "ratePerKg": 6.1,
@@ -7057,11 +7027,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-46-26-27-3",
-        "speciesId": "sp-3",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vanamei Shrimps 100/200",
         "gradeSize": "100/200",
-        "hsCode": "03061790",
+        "hsCode": "03061720",
         "cartonsCount": 1032,
         "weightKg": 10320,
         "ratePerKg": 5.95,
@@ -7132,7 +7102,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-47-26-27-1",
-        "speciesId": "sp-38",
+        "speciesId": "prd-013",
         "sizeId": "sz-5",
         "productDescription": "FROZEN MONSOON POOVALAN PUD SHRIMPS 100/200",
         "gradeSize": "100/200",
@@ -7146,7 +7116,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-47-26-27-2",
-        "speciesId": "sp-38",
+        "speciesId": "prd-013",
         "sizeId": "sz-8",
         "productDescription": "FROZEN MONSOON POOVALAN PUD SHRIMPS 200/300",
         "gradeSize": "200/300",
@@ -7222,7 +7192,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-48-26-27-1",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
         "gradeSize": "100/200",
@@ -7236,7 +7206,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-2",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -7250,7 +7220,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-3",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -7264,7 +7234,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-4",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -7278,7 +7248,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-5",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
         "gradeSize": "100/200",
@@ -7292,7 +7262,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-6",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
         "gradeSize": "200/300",
@@ -7306,7 +7276,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-7",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
         "gradeSize": "300/500",
@@ -7320,7 +7290,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-48-26-27-8",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
         "gradeSize": "500/700",
@@ -7395,7 +7365,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-49-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -7409,7 +7379,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-49-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -7484,7 +7454,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-50-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -7498,7 +7468,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-50-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -7512,7 +7482,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-50-26-27-3",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
         "gradeSize": "8/10",
@@ -7587,7 +7557,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-51-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
         "gradeSize": "6/8",
@@ -7601,7 +7571,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -7615,7 +7585,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-3",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -7629,7 +7599,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-4",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
         "gradeSize": "12/15",
@@ -7643,7 +7613,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-5",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
         "gradeSize": "8/10",
@@ -7657,7 +7627,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-6",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
         "gradeSize": "10/12",
@@ -7671,7 +7641,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-51-26-27-7",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 12/15",
         "gradeSize": "12/15",
@@ -7746,7 +7716,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-52-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -7760,7 +7730,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-52-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -7774,7 +7744,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-52-26-27-3",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -7788,7 +7758,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-52-26-27-4",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL 12/15",
         "gradeSize": "12/15",
@@ -7863,7 +7833,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-53-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -7877,7 +7847,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-53-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -7952,7 +7922,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-54-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -7966,7 +7936,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-54-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -7980,7 +7950,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-54-26-27-3",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -8055,7 +8025,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-55-26-27-1",
-        "speciesId": "sp-39",
+        "speciesId": "prd-015",
         "sizeId": "sz-16",
         "productDescription": "FROZEN LOLIGO SQUID U/3",
         "gradeSize": "U/3",
@@ -8069,7 +8039,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-55-26-27-2",
-        "speciesId": "sp-39",
+        "speciesId": "prd-015",
         "sizeId": "sz-17",
         "productDescription": "FROZEN LOLIGO SQUID 3/6",
         "gradeSize": "3/6",
@@ -8083,7 +8053,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-55-26-27-3",
-        "speciesId": "sp-39",
+        "speciesId": "prd-015",
         "sizeId": "sz-18",
         "productDescription": "FROZEN LOLIGO SQUID 6/10",
         "gradeSize": "6/10",
@@ -8097,7 +8067,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-55-26-27-4",
-        "speciesId": "sp-39",
+        "speciesId": "prd-015",
         "sizeId": "sz-19",
         "productDescription": "FROZEN LOLIGO SQUID 10/20",
         "gradeSize": "10/20",
@@ -8111,11 +8081,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-55-26-27-5",
-        "speciesId": "sp-40",
+        "speciesId": "prd-016",
         "sizeId": "sz-9",
         "productDescription": "FROZEN OCTOPUS WHOLE 300/500",
         "gradeSize": "300/500",
-        "hsCode": "03074320",
+        "hsCode": "03075200",
         "cartonsCount": 91,
         "weightKg": 912,
         "ratePerKg": 4.2,
@@ -8186,7 +8156,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-56-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -8200,7 +8170,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-56-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -8214,7 +8184,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-56-26-27-3",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -8289,7 +8259,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-57-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -8303,7 +8273,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-57-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -8379,7 +8349,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-58-26-27-1",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
         "gradeSize": "100/200",
@@ -8393,7 +8363,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-2",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -8407,7 +8377,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-3",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -8421,7 +8391,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-4",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -8435,7 +8405,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-5",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
         "gradeSize": "100/200",
@@ -8449,7 +8419,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-6",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
         "gradeSize": "200/300",
@@ -8463,7 +8433,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-7",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
         "gradeSize": "300/500",
@@ -8477,7 +8447,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-58-26-27-8",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
         "gradeSize": "500/700",
@@ -8552,7 +8522,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-59-26-27-1",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
         "gradeSize": "6/8",
@@ -8566,7 +8536,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-59-26-27-2",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
         "gradeSize": "8/10",
@@ -8580,7 +8550,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-59-26-27-3",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -8655,7 +8625,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-60-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
         "gradeSize": "6/8",
@@ -8669,7 +8639,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -8683,7 +8653,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-3",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -8697,7 +8667,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-4",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
         "gradeSize": "8/10",
@@ -8711,7 +8681,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-5",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
         "gradeSize": "10/12",
@@ -8725,7 +8695,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-6",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
         "gradeSize": "6/8",
@@ -8739,7 +8709,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-60-26-27-7",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
         "gradeSize": "8/10",
@@ -8814,7 +8784,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-61-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
         "gradeSize": "6/8",
@@ -8828,7 +8798,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-61-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -8842,7 +8812,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-61-26-27-3",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
         "gradeSize": "6/8",
@@ -8856,7 +8826,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-61-26-27-4",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
         "gradeSize": "8/10",
@@ -8870,7 +8840,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-61-26-27-5",
-        "speciesId": "sp-42",
+        "speciesId": "prd-018",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
         "gradeSize": "8/10",
@@ -8946,11 +8916,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-62-26-27-1",
-        "speciesId": "sp-43",
+        "speciesId": "prd-019",
         "sizeId": "sz-8",
         "productDescription": "Frozen PUD Vannamei Shrimps 200/300",
         "gradeSize": "200/300",
-        "hsCode": "030617",
+        "hsCode": "03061720",
         "cartonsCount": 2160,
         "weightKg": 21600,
         "ratePerKg": 4.7,
@@ -9022,7 +8992,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-63-26-27-1",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-3",
         "productDescription": "Frozen PVPD Vannamei Shrimps 111/130",
         "gradeSize": "111/130",
@@ -9036,7 +9006,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-63-26-27-2",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "Frozen PVPD Vannamei Shrimps 130/150",
         "gradeSize": "130/150",
@@ -9050,7 +9020,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-63-26-27-3",
-        "speciesId": "sp-2",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "Frozen PVPD Vannamei Shrimps 100/200",
         "gradeSize": "100/200",
@@ -9125,7 +9095,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-64-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -9139,7 +9109,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-64-26-27-2",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 6/8",
         "gradeSize": "6/8",
@@ -9153,7 +9123,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-64-26-27-3",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 8/10",
         "gradeSize": "8/10",
@@ -9167,7 +9137,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-64-26-27-4",
-        "speciesId": "sp-41",
+        "speciesId": "prd-017",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL D.S 10/12",
         "gradeSize": "10/12",
@@ -9243,7 +9213,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-65-26-27-1",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH A GRADE 100/200",
         "gradeSize": "100/200",
@@ -9257,7 +9227,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-2",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH A GRADE 200/300",
         "gradeSize": "200/300",
@@ -9271,7 +9241,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-3",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH A GRADE 300/500",
         "gradeSize": "300/500",
@@ -9285,7 +9255,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-4",
-        "speciesId": "sp-6",
+        "speciesId": "prd-008",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH A GRADE 500/700",
         "gradeSize": "500/700",
@@ -9299,7 +9269,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-5",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-5",
         "productDescription": "FROZEN RIBBONFISH B GRADE 100/200",
         "gradeSize": "100/200",
@@ -9313,7 +9283,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-6",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-8",
         "productDescription": "FROZEN RIBBONFISH B GRADE 200/300",
         "gradeSize": "200/300",
@@ -9327,7 +9297,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-7",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-9",
         "productDescription": "FROZEN RIBBONFISH B GRADE 300/500",
         "gradeSize": "300/500",
@@ -9341,7 +9311,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-65-26-27-8",
-        "speciesId": "sp-12",
+        "speciesId": "prd-001",
         "sizeId": "sz-11",
         "productDescription": "FROZEN RIBBONFISH B GRADE 500/700",
         "gradeSize": "500/700",
@@ -9417,7 +9387,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-66-26-27-1",
-        "speciesId": "sp-44",
+        "speciesId": "prd-020",
         "sizeId": "sz-9",
         "productDescription": "FROZEN LEATHER JACKET FISH 300/500",
         "gradeSize": "300/500",
@@ -9431,7 +9401,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-66-26-27-2",
-        "speciesId": "sp-44",
+        "speciesId": "prd-020",
         "sizeId": "sz-11",
         "productDescription": "FROZEN LEATHER JACKET FISH 500/700",
         "gradeSize": "500/700",
@@ -9445,7 +9415,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-66-26-27-3",
-        "speciesId": "sp-44",
+        "speciesId": "prd-020",
         "sizeId": "sz-12",
         "productDescription": "FROZEN LEATHER JACKET FISH  700/1000",
         "gradeSize": "700/1000",
@@ -9459,7 +9429,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-66-26-27-4",
-        "speciesId": "sp-44",
+        "speciesId": "prd-020",
         "sizeId": "sz-13",
         "productDescription": "FROZEN LEATHER JACKET FISH  1000/1500",
         "gradeSize": "1000/1500",
@@ -9535,7 +9505,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-67-26-27-1",
-        "speciesId": "sp-45",
+        "speciesId": "prd-009",
         "sizeId": "sz-2",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 91/110",
         "gradeSize": "91/110",
@@ -9549,7 +9519,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-67-26-27-2",
-        "speciesId": "sp-45",
+        "speciesId": "prd-009",
         "sizeId": "sz-4",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 130/150",
         "gradeSize": "130/150",
@@ -9563,7 +9533,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-67-26-27-3",
-        "speciesId": "sp-45",
+        "speciesId": "prd-009",
         "sizeId": "sz-5",
         "productDescription": "FROZEN PVPD VANNAMEI SHRIMPS 100/200",
         "gradeSize": "100/200",
@@ -9638,7 +9608,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-68-26-27-1",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL 6/8",
         "gradeSize": "6/8",
@@ -9652,7 +9622,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-68-26-27-2",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL 8/10",
         "gradeSize": "8/10",
@@ -9666,7 +9636,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-68-26-27-3",
-        "speciesId": "sp-31",
+        "speciesId": "prd-003",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL 10/12",
         "gradeSize": "10/12",
@@ -9741,7 +9711,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-69-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
         "gradeSize": "6/8",
@@ -9755,7 +9725,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-69-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -9769,7 +9739,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-69-26-27-3",
-        "speciesId": "sp-42",
+        "speciesId": "prd-018",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
         "gradeSize": "8/10",
@@ -9844,7 +9814,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-70-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-27",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 6/8",
         "gradeSize": "6/8",
@@ -9858,7 +9828,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-70-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -9872,7 +9842,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-70-26-27-3",
-        "speciesId": "sp-42",
+        "speciesId": "prd-018",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S B GRADE 8/10",
         "gradeSize": "8/10",
@@ -9947,7 +9917,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "lineItems": [
       {
         "id": "line-rf-exp-71-26-27-1",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 8/10",
         "gradeSize": "8/10",
@@ -9961,7 +9931,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-71-26-27-2",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 10/12",
         "gradeSize": "10/12",
@@ -9975,7 +9945,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-71-26-27-3",
-        "speciesId": "sp-28",
+        "speciesId": "prd-004",
         "sizeId": "sz-22",
         "productDescription": "FROZEN INDIAN MACKEREL A GRADE 12/15",
         "gradeSize": "12/15",
@@ -9989,7 +9959,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-71-26-27-4",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 8/10",
         "gradeSize": "8/10",
@@ -10003,7 +9973,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-71-26-27-5",
-        "speciesId": "sp-30",
+        "speciesId": "prd-014",
         "sizeId": "sz-23",
         "productDescription": "FROZEN INDIAN MACKEREL B GRADE 10/12",
         "gradeSize": "10/12",
@@ -10017,7 +9987,7 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
       },
       {
         "id": "line-rf-exp-71-26-27-6",
-        "speciesId": "sp-46",
+        "speciesId": "prd-017",
         "sizeId": "sz-25",
         "productDescription": "FROZEN INDIAN MACKEREL D.S. 8/10",
         "gradeSize": "8/10",
@@ -10032,3 +10002,5 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     ]
   }
 ];
+
+

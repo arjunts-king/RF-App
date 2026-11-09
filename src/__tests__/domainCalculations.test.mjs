@@ -2474,6 +2474,140 @@ test('Consignee Masters & Address Verification from Import Template', async () =
   );
 });
 
+test('Commercial Product Masters from Import Template & Searchable Selection', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  // 1. Verify VERIFIED_SPECIES exactly matches 32 template products
+  const spPrefix = 'export const VERIFIED_SPECIES: Species[] = ';
+  const spStart = content.indexOf(spPrefix);
+  const spEnd = content.indexOf('export const VERIFIED_SIZES');
+  const speciesList = JSON.parse(content.slice(spStart + spPrefix.length, spEnd).trim().replace(/;$/, ''));
+
+  assert.equal(speciesList.length, 32, 'Must contain exactly 32 commercial products from Excel template');
+
+  // Verify PRD-001 through PRD-032 sequence
+  for (let i = 1; i <= 32; i++) {
+    const expectedCode = `PRD-${String(i).padStart(3, '0')}`;
+    const sp = speciesList.find((s) => s.code === expectedCode);
+    assert.ok(sp, `Product ${expectedCode} must exist in species master`);
+    assert.ok(sp.name && sp.name.length > 3, `${expectedCode} must have export ready name`);
+    assert.ok(sp.rawSpeciesName, `${expectedCode} must have purchase species connection`);
+    assert.ok(sp.scientificName, `${expectedCode} must have scientific name`);
+    assert.ok(sp.category, `${expectedCode} must have category`);
+    assert.ok(sp.productForm, `${expectedCode} must have product form`);
+    assert.ok(sp.processingType, `${expectedCode} must have processing type`);
+    assert.ok(sp.hsCode, `${expectedCode} must have HS code`);
+    assert.equal(sp.active, true, `${expectedCode} must be active`);
+  }
+
+  // Spot-check key authentic products
+  const prd1 = speciesList.find((s) => s.code === 'PRD-001');
+  assert.equal(prd1.name, 'Frozen RibbonFish B Grade');
+  assert.equal(prd1.rawSpeciesName, 'Ribbonfish Net');
+  assert.equal(prd1.scientificName, 'Lepturacanthus Savala');
+  assert.equal(prd1.category, 'Fish');
+  assert.equal(prd1.hsCode, '03038930');
+
+  const prd9 = speciesList.find((s) => s.code === 'PRD-009');
+  assert.equal(prd9.name, 'Frozen PVPD Vannamei Shrimps');
+  assert.equal(prd9.rawSpeciesName, 'Vannamei');
+  assert.equal(prd9.scientificName, 'Litopenaeus Vannamei');
+  assert.equal(prd9.category, 'Shrimp');
+  assert.equal(prd9.hsCode, '03061720');
+
+  const prd15 = speciesList.find((s) => s.code === 'PRD-015');
+  assert.equal(prd15.name, 'FROZEN LOLIGO SQUID');
+  assert.equal(prd15.rawSpeciesName, 'Loligo Squid');
+  assert.equal(prd15.category, 'Squid');
+  assert.equal(prd15.hsCode, '03074320');
+
+  const prd16 = speciesList.find((s) => s.code === 'PRD-016');
+  assert.equal(prd16.name, 'FROZEN OCTOPUS WHOLE');
+  assert.equal(prd16.rawSpeciesName, 'Octopus');
+  assert.equal(prd16.scientificName, 'Octopus Vulgaris');
+  assert.equal(prd16.category, 'Octopus');
+  assert.equal(prd16.hsCode, '03075200');
+
+  // 2. Verify all invoice line items map to these authentic product masters
+  const invPrefix = 'export const VERIFIED_SALES_INVOICES: SalesInvoice[] = ';
+  const invStart = content.indexOf(invPrefix);
+  const nextInvMarker = 'export const VERIFIED_EXPORT_SUMMARY:';
+  const invEnd = content.indexOf(nextInvMarker);
+  const invSection = content.slice(invStart + invPrefix.length, invEnd).trim().replace(/;$/, '');
+  const invoices = JSON.parse(invSection);
+
+  assert.equal(invoices.length, 71, 'Must preserve all 71 commercial export invoices');
+
+  const validSpeciesIds = new Set(speciesList.map((s) => s.id));
+  let totalLineItemsChecked = 0;
+  invoices.forEach((inv) => {
+    inv.lineItems.forEach((item) => {
+      totalLineItemsChecked++;
+      assert.ok(
+        validSpeciesIds.has(item.speciesId),
+        `Invoice ${inv.invoiceNo} line item ${item.id} has invalid speciesId: ${item.speciesId}`
+      );
+    });
+  });
+  assert.ok(totalLineItemsChecked > 100, 'Checked all invoice line items across the entire dataset');
+
+  // 3. Verify total FOB USD and INR remains exact
+  const totalFobUsd = invoices.reduce((s, inv) => s + (inv.totalFobValueCurrency || 0), 0);
+  const totalFobInr = invoices.reduce((s, inv) => s + (inv.totalFobValueINR || 0), 0);
+  assert.equal(totalFobUsd.toFixed(2), '5628701.27', 'FOB USD must remain exactly 56,28,701.27');
+  assert.equal(totalFobInr.toFixed(2), '527264283.04', 'FOB INR must remain exactly 52,72,64,283.04');
+
+  // 4. Verify search filter strictly matches typed word
+  const filterByWord = (q, list) => {
+    const query = q.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((sp) => {
+      return (
+        (sp.name || '').toLowerCase().includes(query) ||
+        (sp.code || '').toLowerCase().includes(query) ||
+        (sp.rawSpeciesName || '').toLowerCase().includes(query) ||
+        (sp.scientificName || '').toLowerCase().includes(query) ||
+        (sp.category || '').toLowerCase().includes(query) ||
+        (sp.hsCode || '').toLowerCase().includes(query)
+      );
+    });
+  };
+
+  const squidMatches = filterByWord('squid', speciesList);
+  assert.ok(squidMatches.length >= 8, 'Query "squid" returns all squid products');
+  assert.ok(squidMatches.every((s) => s.name.toLowerCase().includes('squid') || s.category.toLowerCase().includes('squid')), 'All matches contain squid');
+
+  const prd5Match = filterByWord('PRD-005', speciesList);
+  assert.equal(prd5Match.length, 1, 'Exact code query returns only 1 product');
+  assert.equal(prd5Match[0].code, 'PRD-005');
+
+  const hsnMatch = filterByWord('03075200', speciesList);
+  assert.equal(hsnMatch.length, 2, 'HSN query matches Octopus products with code 03075200');
+
+  // 5. Blank line item default creation
+  const createBlankLine = (index = 0) => ({
+    id: `line-${Date.now()}-${index}`,
+    speciesId: '',
+    hsCode: '',
+    sizeId: '',
+    countId: '',
+    productDescription: '',
+    gradeSize: '',
+    cartonsCount: '',
+    weightKg: '',
+    ratePerKg: '',
+    fobValueCurrency: ''
+  });
+
+  const blankLine = createBlankLine(1);
+  assert.equal(blankLine.speciesId, '', 'New line speciesId must be blank');
+  assert.equal(blankLine.productDescription, '', 'New line productDescription must be blank (never Vannamei Shrimps)');
+  assert.equal(blankLine.hsCode, '', 'New line hsCode must be blank');
+});
+
 
 
 

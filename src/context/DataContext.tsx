@@ -308,7 +308,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
-  const SALES_DATASET_VERSION = 'v71_authentic_fob_5628701_v6';
+  const SALES_DATASET_VERSION = 'v71_authentic_fob_5628701_v7';
 
   const [species, setSpecies] = useState<Species[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
@@ -318,9 +318,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
-    const existingNames = new Set(list.map((sp) => sp.name.trim().toLowerCase()));
+    const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
+    const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
+    const reconciled = list.map((sp) => {
+      const v = verifiedMap.get(sp.code.toLowerCase()) || verifiedNameMap.get(sp.name.trim().toLowerCase());
+      if (v) {
+        return {
+          ...sp,
+          code: v.code,
+          name: v.name,
+          rawSpeciesName: v.rawSpeciesName || sp.rawSpeciesName,
+          scientificName: v.scientificName || sp.scientificName,
+          category: v.category || sp.category,
+          productForm: v.productForm || sp.productForm,
+          processingType: v.processingType || sp.processingType,
+          hsCode: v.hsCode || sp.hsCode,
+          active: v.active !== undefined ? v.active : sp.active
+        };
+      }
+      return sp;
+    });
+    const existingNames = new Set(reconciled.map((sp) => sp.name.trim().toLowerCase()));
     const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase()));
-    return [...list, ...missing];
+    const result = [...reconciled, ...missing];
+    localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(result));
+    return result;
   });
 
   const [grades, setGrades] = useState<Grade[]>(() => {
@@ -3677,19 +3699,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'purchasespecies',
         'rawspeciesname',
         'rawspecies',
+        'purchaseconnection',
+        'rawspeciesconnection',
         'speciesfrompurchase',
         'origincatchspecies',
         'speciesorigin'
       ]);
       const rawSpeciesName = rawPurchaseSpecies ? String(rawPurchaseSpecies).trim() : undefined;
-      const rawCode = getFlexibleValue(row, ['speciescode', 'code', 'productcode', 'itemcode']);
+      const rawCode = getFlexibleValue(row, ['productcode', 'speciescode', 'code', 'prdcode', 'itemcode']);
       const code = rawCode ? String(rawCode).trim() : name.slice(0, 3).toUpperCase();
-      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
-      const category = String(getFlexibleValue(row, ['category', 'type', 'group']) || 'Fish').trim();
+      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific', 'zoologicalname', 'latinname']) || '').trim();
+      const category = String(getFlexibleValue(row, ['category', 'productcategory', 'type', 'group']) || 'Fish').trim();
 
-      const rawHsCode = String(getFlexibleValue(row, ['hsn', 'hsncode', 'hscode', 'hs_code', 'tariff', 'tariffcode']) || '').trim();
-      const productForm = String(getFlexibleValue(row, ['productform', 'form']) || '').trim();
-      const processingType = String(getFlexibleValue(row, ['processingtype', 'processing']) || '').trim();
+      const rawHsCode = String(
+        getFlexibleValue(row, [
+          'hsnhscode',
+          'hsnhs',
+          'hsn',
+          'hsncode',
+          'hscode',
+          'hs_code',
+          'tariff',
+          'tariffcode',
+          'harmonizedcode'
+        ]) || ''
+      ).trim();
+      const productForm = String(getFlexibleValue(row, ['productform', 'form', 'producttype', 'formtype']) || '').trim();
+      const processingType = String(getFlexibleValue(row, ['processingtype', 'processing', 'freezingtype', 'freezing']) || '').trim();
+
+      const rawActive = getFlexibleValue(row, ['active', 'status', 'isactive']);
+      const active = rawActive !== undefined && rawActive !== null && String(rawActive).trim() !== ''
+        ? ['yes', 'true', '1', 'active'].includes(String(rawActive).trim().toLowerCase())
+        : true;
 
       const existingIdx = currentList.findIndex(
         (s) =>
@@ -3700,18 +3741,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (existingIdx >= 0) {
         currentList[existingIdx] = {
           ...currentList[existingIdx],
+          code: code || currentList[existingIdx].code,
           name,
-          rawSpeciesName: rawSpeciesName || currentList[existingIdx].rawSpeciesName,
+          rawSpeciesName: rawSpeciesName !== undefined ? rawSpeciesName : currentList[existingIdx].rawSpeciesName,
           scientificName: scientificName || currentList[existingIdx].scientificName,
           category: category || currentList[existingIdx].category,
           hsCode: rawHsCode || currentList[existingIdx].hsCode,
           productForm: productForm || currentList[existingIdx].productForm,
-          processingType: processingType || currentList[existingIdx].processingType
+          processingType: processingType || currentList[existingIdx].processingType,
+          active
         };
         updated++;
       } else {
         currentList.push({
-          id: `sp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          id: code.toLowerCase().startsWith('prd-') ? code.toLowerCase() : `sp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
           code,
           name,
           rawSpeciesName,
@@ -3720,7 +3763,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           hsCode: rawHsCode,
           productForm,
           processingType,
-          active: true
+          active
         });
         added++;
       }
