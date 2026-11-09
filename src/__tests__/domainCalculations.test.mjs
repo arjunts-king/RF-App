@@ -2001,45 +2001,48 @@ test('FOB Dashboard & Sales Ledger: Authentic FOB Totals & Zero Realization Acco
   const invoices = JSON.parse(content.slice(idx + prefix.length).trim().replace(/;$/, ''));
   assert.equal(invoices.length, 71, 'Must strictly maintain pure 71 export invoices');
 
-  // Verify Invoices 1-41 FOB Sales Value
-  const invs1to41 = invoices.slice(0, 41);
-  const fob1to41Usd = invs1to41.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
-  const fob1to41Inr = invs1to41.reduce((s, i) => s + (i.totalFobValueINR || 0), 0);
+  // Verify Invoices 1-48 FOB Sales Value from FOB Value.xlsx
+  const invs1to48 = invoices.slice(0, 48);
+  const fob1to48Usd = invs1to48.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
+  const fob1to48Inr = invs1to48.reduce((s, i) => s + (i.totalFobValueINR || 0), 0);
 
-  assert.equal(Number(fob1to41Usd.toFixed(2)), 3619758.47, 'Authentic FOB USD from user spreadsheet must equal $3,619,758.47');
-  assert.equal(Math.round(fob1to41Inr), 341021446, 'Authentic FOB INR from user spreadsheet must equal ₹34,10,21,446');
+  assert.equal(Number(fob1to48Usd.toFixed(2)), 4104086.77, 'Authentic FOB USD for invoices 1-48 must equal $4,104,086.77');
+  assert.equal(Number(fob1to48Inr.toFixed(2)), 387081067.48, 'Authentic FOB INR for invoices 1-48 must equal ₹38,70,81,067.48');
 
-  // Verify Invoices 42-71 have FOB = 0 (Awaiting FOB finalization)
-  const invs42to71 = invoices.slice(41);
-  invs42to71.forEach((inv) => {
-    assert.equal(inv.totalFobValueCurrency, 0, `Invoice ${inv.invoiceNo} must have FOB USD = 0`);
-    assert.equal(inv.totalFobValueINR, 0, `Invoice ${inv.invoiceNo} must have FOB INR = 0`);
-    if (inv.lineItems) {
-      inv.lineItems.forEach((l) => {
-        assert.equal(l.fobValueCurrency, 0);
-        assert.equal(l.fobValueINR, 0);
-      });
-    }
-  });
+  // Verify Invoices 49-71 FOB Sales Value
+  const invs49to71 = invoices.slice(48);
+  const fob49to71Usd = invs49to71.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
+  const fob49to71Inr = invs49to71.reduce((s, i) => s + (i.totalFobValueINR || 0), 0);
 
-  // Verify Overall Dataset FOB Total equals the exact $3,619,758.47
+  assert.equal(Number(fob49to71Usd.toFixed(2)), 1524614.50, 'Authentic FOB USD for invoices 49-71 must equal $1,524,614.50');
+  assert.equal(Number(fob49to71Inr.toFixed(2)), 140183215.56, 'Authentic FOB INR for invoices 49-71 must equal ₹14,01,83,215.56');
+
+  // Verify Overall Dataset FOB Totals equal the exact $5,628,701.27 and ₹52,72,64,283.04
   const overallFobUsd = invoices.reduce((s, i) => s + (i.totalFobValueCurrency || 0), 0);
-  assert.equal(Number(overallFobUsd.toFixed(2)), 3619758.47);
+  const overallFobInr = invoices.reduce((s, i) => s + (i.totalFobValueINR || 0), 0);
+  assert.equal(Number(overallFobUsd.toFixed(2)), 5628701.27, 'Total FOB USD must equal $5,628,701.27');
+  assert.equal(Number(overallFobInr.toFixed(2)), 527264283.04, 'Total FOB INR must equal ₹52,72,64,283.04');
 
-  // Verify Zero Realization Across Entire Dataset
+  // Verify Zero Realization Across Entire Dataset & Invoices Show Zero INR
   const totalRealizedUSD = invoices.reduce((s, i) => s + (i.totalRealizedCurrency || 0), 0);
   const totalRealizedINR = invoices.reduce((s, i) => s + (i.totalRealizedINR || 0), 0);
+  const totalEstimatedINR = invoices.reduce((s, i) => s + (i.estimatedAmountINR || 0), 0);
+
   assert.equal(totalRealizedUSD, 0, 'No amount must be realized in USD');
   assert.equal(totalRealizedINR, 0, 'No amount must be realized in INR');
+  assert.equal(totalEstimatedINR, 0, 'Invoice INR values must be 0 (unrealized)');
 
   const unRealizedCount = invoices.filter((i) => i.realizationStatus === 'Not Realized').length;
   assert.equal(unRealizedCount, 71, 'All 71 invoices must have realizationStatus = Not Realized');
 
-  // Verify Undiluted FOB Average Rate Per Kg (calculated over 41 FOB shipments)
+  // Verify Undiluted FOB Average Rate Per Kg across all 71 FOB shipments
   const fobShipments = invoices.filter((i) => (i.totalFobValueCurrency || 0) > 0);
+  assert.equal(fobShipments.length, 71, 'All 71 shipments have verified FOB values');
   const fobWeight = fobShipments.reduce((s, i) => s + i.totalWeightKg, 0);
   const avgFobRate = Number((overallFobUsd / fobWeight).toFixed(2));
-  assert.equal(avgFobRate, 3.89, 'Avg FOB Rate should be $3.89/Kg (not diluted by 30 non-FOB shipments)');
+  assert.equal(avgFobRate, 3.37, 'Avg FOB Rate should be $3.37/Kg');
+  const avgFobInrRate = Number((overallFobInr / fobWeight).toFixed(2));
+  assert.equal(avgFobInrRate, 315.36, 'Avg FOB INR Rate should be ₹315.36/Kg');
 });
 
 

@@ -139,7 +139,6 @@ export const SalesReportsHub: React.FC = () => {
   const realizationRatePct = totalPeriodUSD > 0
     ? Math.min(100, Math.max(0, ((totalPeriodUSD - totalPeriodOutstandingUSD) / totalPeriodUSD) * 100))
     : 0;
-  const estimatedINRValue = totalPeriodUSD * 84.5;
 
   // --------------------------------------------------------------------------
   // 1. INVOICE REGISTER STATE & FILTERING
@@ -1334,7 +1333,7 @@ export const SalesReportsHub: React.FC = () => {
                 ${totalPeriodUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
               <span className="text-[11px] text-amber-700 font-bold mt-0.5 block truncate">
-                ≈ {formatINR(estimatedINRValue)}
+                {totalPeriodRealizedINR > 0 ? formatINR(totalPeriodRealizedINR) : '₹0.00 (Unrealized)'}
               </span>
             </div>
 

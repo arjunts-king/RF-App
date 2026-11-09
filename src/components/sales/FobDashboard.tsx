@@ -172,17 +172,18 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
     // Sales Values
     const totalSalesUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0).toFixed(2));
+    // Since no amount has been realized yet, invoice INR value is strictly 0 until realization
     const totalSalesINR = Number(
       filteredInvoices
-        .reduce((s, inv) => s + (inv.estimatedAmountINR || Number((inv.totalAmountCurrency * inv.exchangeRate).toFixed(2))), 0)
+        .reduce((s, inv) => s + (inv.totalRealizedINR || 0), 0)
         .toFixed(2)
     );
 
     // FOB Values (Dual-currency export valuation)
-    const totalFobUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.totalFobValueCurrency, 0).toFixed(2));
+    const totalFobUSD = Number(filteredInvoices.reduce((s, inv) => s + (inv.totalFobValueCurrency || 0), 0).toFixed(2));
     const totalFobINR = Number(
       filteredInvoices
-        .reduce((s, inv) => s + (inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2))), 0)
+        .reduce((s, inv) => s + (inv.totalFobValueINR || 0), 0)
         .toFixed(2)
     );
 
@@ -212,11 +213,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     const totalRealizedUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0).toFixed(2));
     const totalRealizedINR = Number(filteredInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0).toFixed(2));
     const totalOutstandingUSD = Number(filteredInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0).toFixed(2));
-    const totalOutstandingINR = Number(
-      filteredInvoices
-        .reduce((s, inv) => s + Number((inv.balanceRealizationCurrency * inv.exchangeRate).toFixed(2)), 0)
-        .toFixed(2)
-    );
+    const totalOutstandingINR = 0;
     const realizationPct = totalSalesUSD > 0 ? Number(((totalRealizedUSD / totalSalesUSD) * 100).toFixed(1)) : 0;
 
     // Averages (FOB averages calculated strictly over shipments with verified FOB to prevent rate dilution)
@@ -554,7 +551,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                   Executive FOB Valuation Ledger
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 font-mono text-rose-800 border border-rose-200">
-                  {stats.totalInvoices} Invoices (41 Verified FOB) • {stats.totalCartons.toLocaleString()} Cartons
+                  {stats.totalInvoices} Invoices (All 71 Verified FOB) • {stats.totalCartons.toLocaleString()} Cartons
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-ink-950">
@@ -885,13 +882,13 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                   <span className="text-2xl font-black text-rose-900 tracking-tight">
                     {formatUSD(stats.totalFobUSD)}
                   </span>
-                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">USD (41 FOB)</span>
+                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">USD (All 71 Invoices)</span>
                 </div>
               )}
               {(currencyMode === 'dual' || currencyMode === 'inr') && (
                 <div className="flex items-baseline justify-between border-t border-gray-100 pt-1.5">
                   <span className="text-lg font-black text-ink-900">
-                    {stats.totalFobINR > 0 ? formatINR(stats.totalFobINR) : '—'}
+                    {stats.totalFobINR > 0 ? formatINR(stats.totalFobINR) : '₹0.00'}
                   </span>
                   <span className="text-xs font-bold text-ink-600 bg-gray-100 px-2 py-0.5 rounded-md">FOB INR Valuation</span>
                 </div>
@@ -899,7 +896,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
             </div>
           </div>
           <div className="text-[11px] text-ink-500 pt-3 flex items-center justify-between border-t border-gray-100 mt-2">
-            <span>Avg FOB Rate (41 Shipments):</span>
+            <span>Avg FOB Rate (71 Shipments):</span>
             <strong className="text-ink-800">
               {formatUSD(stats.avgFobPerKgUSD)}/Kg {stats.avgFobPerKgINR > 0 ? `• ${formatINR(stats.avgFobPerKgINR)}/Kg` : ''}
             </strong>
@@ -925,7 +922,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               {(currencyMode === 'dual' || currencyMode === 'inr') && (
                 <div className="flex items-baseline justify-between border-t border-gray-100 pt-1.5">
                   <span className="text-lg font-black text-ink-900">
-                    {stats.totalSalesINR > 0 ? formatINR(stats.totalSalesINR) : '—'}
+                    {stats.totalSalesINR > 0 ? formatINR(stats.totalSalesINR) : '₹0.00'}
                   </span>
                   <span className="text-xs font-bold text-ink-600 bg-gray-100 px-2 py-0.5 rounded-md">Invoice INR Value</span>
                 </div>
@@ -935,7 +932,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
           <div className="text-[11px] text-ink-500 pt-3 flex items-center justify-between border-t border-gray-100 mt-2">
             <span>Avg Sales Rate:</span>
             <strong className="text-emerald-700 font-bold">
-              {formatUSD(stats.avgSalesPerKgUSD)}/Kg {stats.avgSalesPerKgINR > 0 ? `• ${formatINR(stats.avgSalesPerKgINR)}/Kg` : ''}
+              {formatUSD(stats.avgSalesPerKgUSD)}/Kg {stats.avgSalesPerKgINR > 0 ? `• ${formatINR(stats.avgSalesPerKgINR)}/Kg` : '• Awaiting Realization'}
             </strong>
           </div>
         </div>
@@ -1027,9 +1024,9 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               {(currencyMode === 'dual' || currencyMode === 'inr') && (
                 <div className="flex items-baseline justify-between border-t border-gray-100 pt-1.5">
                   <span className="text-lg font-black text-rose-900">
-                    {stats.totalOutstandingINR > 0 ? formatINR(stats.totalOutstandingINR) : '—'}
+                    ₹0.00
                   </span>
-                  <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">Pending INR</span>
+                  <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">Pending Remittance</span>
                 </div>
               )}
             </div>

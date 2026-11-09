@@ -134,7 +134,8 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const totalInvoices = filteredInvoices.length;
   const totalWeightKg = filteredInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
   const totalUSD = filteredInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
-  const totalFOB = filteredInvoices.reduce((s, inv) => s + inv.totalFobValueCurrency, 0);
+  const totalFOB = filteredInvoices.reduce((s, inv) => s + (inv.totalFobValueCurrency || 0), 0);
+  const totalFobINR = filteredInvoices.reduce((s, inv) => s + (inv.totalFobValueINR || 0), 0);
   const avgUSDPerKg = totalWeightKg > 0 ? totalUSD / totalWeightKg : 0;
   const totalRealizedINR = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const totalRealizedUSD = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
@@ -455,10 +456,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             <div className="text-[10px] uppercase font-bold text-rose-700">Total Net FOB Valuation</div>
             <div className="text-sm font-black text-ink-950 flex items-center gap-2 justify-end">
               <span>${totalFOB.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              {totalRealizedINR > 0 && (
+              {totalFobINR > 0 && (
                 <>
                   <span className="text-rose-300">&bull;</span>
-                  <span className="text-emerald-700 font-bold">Realized: {formatINR(totalRealizedINR)}</span>
+                  <span className="text-rose-700 font-bold">FOB: {formatINR(totalFobINR)}</span>
                 </>
               )}
             </div>
