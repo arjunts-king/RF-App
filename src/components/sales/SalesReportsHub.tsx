@@ -25,7 +25,9 @@ import {
   Package,
   Boxes,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  Receipt,
+  ShieldCheck
 } from 'lucide-react';
 import { SalesInvoice } from '../../types';
 
@@ -38,7 +40,8 @@ export type SalesReportTab =
   | 'realization-ageing'
   | 'hs-code-summary'
   | 'exceptions'
-  | 'margin-analysis';
+  | 'margin-analysis'
+  | 'shortfall-breakup';
 
 export interface EnrichedInvoiceProductLine {
   id: string;
@@ -88,6 +91,11 @@ export const SalesReportsHub: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
 
+  // Shortfall Report Filters
+  const [shortfallSearch, setShortfallSearch] = useState('');
+  const [shortfallLegFilter, setShortfallLegFilter] = useState<'all' | 'advance-only' | 'balance-only' | 'both'>('all');
+  const [shortfallCustomerFilter, setShortfallCustomerFilter] = useState('');
+
   // Lookups
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
   const portMap = useMemo(() => new Map(ports.map((p) => [p.id, p])), [ports]);
@@ -95,6 +103,71 @@ export const SalesReportsHub: React.FC = () => {
   const sizeMap = useMemo(() => new Map(sizes.map((sz) => [sz.id, sz])), [sizes]);
 
   const activeInvoices = useMemo(() => salesInvoices.filter((inv) => !inv.isVoided), [salesInvoices]);
+
+  // Shortfall Breakup Items
+  const shortfallReportRows = useMemo(() => {
+    return activeInvoices
+      .map((inv) => {
+        const advUSD = inv.advanceReceivedCurrency || 0;
+        const termsUSD = inv.advanceTermsUSD ?? (advUSD > 0 ? advUSD : undefined);
+        const advShortfall = inv.advanceShortfallUSD ?? (termsUSD && advUSD && termsUSD > advUSD ? Number((termsUSD - advUSD).toFixed(2)) : 0);
+
+        const balUSD = inv.balancePaymentAmountCurrency || 0;
+        const priceUSD = inv.balanceActualPriceUSD ?? (balUSD > 0 ? Number((inv.totalAmountCurrency - (termsUSD || advUSD || 0)).toFixed(2)) : undefined);
+        const balShortfall = inv.balanceShortfallUSD ?? (priceUSD && balUSD && priceUSD > balUSD ? Number((priceUSD - balUSD).toFixed(2)) : 0);
+
+        const totalShortfall = inv.totalShortfallUSD ?? Number((advShortfall + balShortfall).toFixed(2));
+
+        const bankRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
+        const advRate = inv.advanceExchangeRate || bankRate;
+        const balRate = inv.balanceExchangeRate || bankRate;
+        const advShortfallINR = Number((advShortfall * advRate).toFixed(2));
+        const balShortfallINR = Number((balShortfall * balRate).toFixed(2));
+        const totalShortfallINR = Number((advShortfallINR + balShortfallINR).toFixed(2));
+
+        const consignee = customerMap.get(inv.consigneeId);
+        const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
+
+        return {
+          ...inv,
+          termsUSD,
+          advUSD,
+          advShortfall,
+          advRate,
+          advShortfallINR,
+          priceUSD,
+          balUSD,
+          balShortfall,
+          balRate,
+          balShortfallINR,
+          totalShortfall,
+          totalShortfallINR,
+          customerName: consignee?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer',
+          buyerName: buyer?.name || '',
+          country: consignee?.country || 'Export'
+        };
+      })
+      .filter((inv) => inv.totalShortfall > 0);
+  }, [activeInvoices, customerMap]);
+
+  const filteredShortfallRows = useMemo(() => {
+    return shortfallReportRows.filter((inv) => {
+      if (selectedMonth !== 'ALL' && !inv.invoiceDate.startsWith(selectedMonth)) return false;
+      if (shortfallCustomerFilter && inv.consigneeId !== shortfallCustomerFilter) return false;
+      if (shortfallLegFilter === 'advance-only' && (inv.advShortfall <= 0 || inv.balShortfall > 0)) return false;
+      if (shortfallLegFilter === 'balance-only' && (inv.balShortfall <= 0 || inv.advShortfall > 0)) return false;
+      if (shortfallLegFilter === 'both' && (inv.advShortfall <= 0 || inv.balShortfall <= 0)) return false;
+
+      if (shortfallSearch.trim()) {
+        const q = shortfallSearch.toLowerCase().trim();
+        const matchNo = inv.invoiceNo.toLowerCase().includes(q);
+        const matchCust = inv.customerName.toLowerCase().includes(q) || inv.buyerName.toLowerCase().includes(q);
+        const matchOrder = inv.orderNo?.toLowerCase().includes(q) || inv.salesOrderNo?.toLowerCase().includes(q);
+        return matchNo || matchCust || matchOrder;
+      }
+      return true;
+    });
+  }, [shortfallReportRows, selectedMonth, shortfallCustomerFilter, shortfallLegFilter, shortfallSearch]);
 
   // Available unique months from commercial invoice dates
   const availableMonths = useMemo(() => {
@@ -1033,7 +1106,8 @@ export const SalesReportsHub: React.FC = () => {
     { id: 'realization-ageing', label: '6. Realization & Ageing', icon: Clock, count: filteredAgeingInvoices.length },
     { id: 'hs-code-summary', label: '7. HS Code / Compliance', icon: Percent, count: hsCodeBreakdown.length },
     { id: 'exceptions', label: '8. Exception Audit', icon: ShieldAlert, count: exceptionItems.length },
-    { id: 'margin-analysis', label: '9. Margin Reconciliation', icon: DollarSign, count: productMarginAnalysis.length }
+    { id: 'margin-analysis', label: '9. Margin Reconciliation', icon: DollarSign, count: productMarginAnalysis.length },
+    { id: 'shortfall-breakup', label: '10. Shortfall & Deductions Breakup', icon: Receipt, count: filteredShortfallRows.length }
   ];
 
   // --------------------------------------------------------------------------
@@ -1228,6 +1302,50 @@ export const SalesReportsHub: React.FC = () => {
         { key: 'GrossMarginPct', label: 'Gross Margin %' }
       ]);
       downloadFile(csv, `Export_Margin_Analysis_${marginStartDate}_${marginEndDate}.csv`);
+    } else if (activeReport === 'shortfall-breakup') {
+      const data = filteredShortfallRows.map((inv) => ({
+        InvoiceNo: inv.invoiceNo,
+        Date: inv.invoiceDate,
+        Customer: inv.customerName,
+        Country: inv.country,
+        InvoicedUSD: inv.totalAmountCurrency,
+        AdvanceTermsUSD: inv.termsUSD ?? '',
+        ActualAdvanceUSD: inv.advUSD,
+        AdvanceShortfallUSD: inv.advShortfall,
+        AdvanceRateINR: inv.advRate,
+        AdvanceShortfallINR: inv.advShortfallINR,
+        BalancePriceUSD: inv.priceUSD ?? '',
+        ActualBalanceUSD: inv.balUSD,
+        BalanceShortfallUSD: inv.balShortfall,
+        BalanceRateINR: inv.balRate,
+        BalanceShortfallINR: inv.balShortfallINR,
+        TotalShortfallUSD: inv.totalShortfall,
+        TotalShortfallINR: inv.totalShortfallINR,
+        RealizationStatus: 'Fully Realized',
+        PendingOutstandingUSD: 0
+      }));
+      const csv = convertToCSV(data, [
+        { key: 'InvoiceNo', label: 'Commercial Invoice No' },
+        { key: 'Date', label: 'Invoice Date' },
+        { key: 'Customer', label: 'Customer / Consignee' },
+        { key: 'Country', label: 'Destination Country' },
+        { key: 'InvoicedUSD', label: 'Invoiced Amount (USD)' },
+        { key: 'AdvanceTermsUSD', label: 'Advance Contract Terms (USD)' },
+        { key: 'ActualAdvanceUSD', label: 'Actual Advance Received (USD)' },
+        { key: 'AdvanceShortfallUSD', label: 'Advance Shortfall (USD)' },
+        { key: 'AdvanceRateINR', label: 'Advance Forward Rate (INR)' },
+        { key: 'AdvanceShortfallINR', label: 'Advance Shortfall (INR)' },
+        { key: 'BalancePriceUSD', label: 'Balance Actual Price (USD)' },
+        { key: 'ActualBalanceUSD', label: 'Actual Balance Received (USD)' },
+        { key: 'BalanceShortfallUSD', label: 'Balance Shortfall (USD)' },
+        { key: 'BalanceRateINR', label: 'Balance Forward Rate (INR)' },
+        { key: 'BalanceShortfallINR', label: 'Balance Shortfall (INR)' },
+        { key: 'TotalShortfallUSD', label: 'Total Shortfall Deductions (USD)' },
+        { key: 'TotalShortfallINR', label: 'Total Shortfall Deductions (INR)' },
+        { key: 'RealizationStatus', label: 'Realization Status' },
+        { key: 'PendingOutstandingUSD', label: 'Pending Outstanding (USD)' }
+      ]);
+      downloadFile(csv, `Sales_Shortfall_Deductions_Breakup_${new Date().toISOString().split('T')[0]}.csv`);
     } else {
       const data = customerBreakdown.map((c) => ({
         Customer: c.name,
@@ -3228,6 +3346,279 @@ export const SalesReportsHub: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* 10. Shortfall & Deductions Breakup Report */}
+      {activeReport === 'shortfall-breakup' && (
+        <div className="space-y-4">
+          {/* Policy Banner */}
+          <div className="p-4 bg-gradient-to-r from-amber-50 via-white to-blue-50 border border-amber-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-amber-950 font-bold text-xs uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Commercial Realization Shortfall &amp; Deductions Breakup</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">
+                  Zero Outstanding · Fully Realized
+                </span>
+              </div>
+              <p className="text-xs text-ink-600 max-w-4xl">
+                Audit report of remittance shortfalls (bank wire fee deductions, exchange differences, or contractual adjustments). These invoices are settled as <strong>Fully Realized</strong> with <strong>$0.00 Outstanding Balance</strong>; all shortfalls are itemized separately by advance and balance legs below.
+              </p>
+            </div>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Total Shortfall (USD)</span>
+              <span className="text-lg font-black text-amber-900 block tabular-nums">
+                -${filteredShortfallRows.reduce((s, i) => s + i.totalShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-ink-500">{filteredShortfallRows.length} adjusted invoices</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Total Shortfall (INR)</span>
+              <span className="text-lg font-black text-ink-950 block tabular-nums">
+                {formatINR(filteredShortfallRows.reduce((s, i) => s + i.totalShortfallINR, 0))}
+              </span>
+              <span className="text-[10px] text-ink-500">Converted at forward rates</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Advance Leg Shortfall</span>
+              <span className="text-lg font-black text-blue-900 block tabular-nums">
+                -${filteredShortfallRows.reduce((s, i) => s + i.advShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-ink-500">Contract terms vs actual</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Balance Leg Shortfall</span>
+              <span className="text-lg font-black text-emerald-900 block tabular-nums">
+                -${filteredShortfallRows.reduce((s, i) => s + i.balShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-ink-500">Actual price vs wire credit</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Shortfall Invoices</span>
+              <span className="text-lg font-black text-ink-900 block tabular-nums">
+                {filteredShortfallRows.length}
+              </span>
+              <span className="text-[10px] text-emerald-700 font-bold">100% Fully Realized</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-emerald-100 bg-emerald-50/20 shadow-2xs space-y-1">
+              <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">Pending Outstanding</span>
+              <span className="text-lg font-black text-emerald-700 block tabular-nums">
+                $0.00
+              </span>
+              <span className="text-[10px] text-emerald-600 font-semibold">Zero Outstanding Balance</span>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Filter by invoice #, customer, order ref..."
+                  value={shortfallSearch}
+                  onChange={(e) => setShortfallSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <select
+                value={shortfallLegFilter}
+                onChange={(e) => setShortfallLegFilter(e.target.value as any)}
+                className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-ink-700"
+              >
+                <option value="all">All Shortfall Legs</option>
+                <option value="advance-only">Advance Shortfall Only</option>
+                <option value="balance-only">Balance Shortfall Only</option>
+                <option value="both">Both Advance &amp; Balance Shortfall</option>
+              </select>
+
+              <select
+                value={shortfallCustomerFilter}
+                onChange={(e) => setShortfallCustomerFilter(e.target.value)}
+                className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-ink-700 max-w-[200px]"
+              >
+                <option value="">All Customers</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <span className="text-xs font-bold text-ink-500">
+              {filteredShortfallRows.length} shortfall entries
+            </span>
+          </div>
+
+          {/* Itemized Table */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50 text-ink-500 uppercase text-[10px] font-bold border-b border-gray-100">
+                  <tr>
+                    <th className="py-2.5 px-3 text-center">#</th>
+                    <th className="py-2.5 px-3">Invoice No &amp; Date</th>
+                    <th className="py-2.5 px-3">Customer &amp; Country</th>
+                    <th className="py-2.5 px-3 text-right">Invoiced USD</th>
+                    <th className="py-2.5 px-3 text-right bg-blue-50/50">Adv Terms / Actual</th>
+                    <th className="py-2.5 px-3 text-right bg-blue-50/50">Adv Shortfall</th>
+                    <th className="py-2.5 px-3 text-right bg-emerald-50/50">Bal Price / Actual</th>
+                    <th className="py-2.5 px-3 text-right bg-emerald-50/50">Bal Shortfall</th>
+                    <th className="py-2.5 px-3 text-right bg-amber-50/60 font-black">Total Shortfall (USD)</th>
+                    <th className="py-2.5 px-3 text-right bg-amber-50/60 font-black">Total Shortfall (INR)</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                    <th className="py-2.5 px-3 text-right">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredShortfallRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-12 text-center text-ink-400">
+                        <Receipt className="w-8 h-8 mx-auto text-ink-300 mb-2 opacity-60" />
+                        <p className="font-bold text-sm text-ink-800">No shortfall invoices found</p>
+                        <p className="text-xs text-ink-500 mt-1">All invoices are settled without wire deductions</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredShortfallRows.map((inv, idx) => (
+                      <tr key={inv.id} className="hover:bg-amber-50/20 transition">
+                        <td className="py-2.5 px-3 text-center font-mono text-[11px] text-ink-400">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2.5 px-3 align-middle">
+                          <div className="font-bold text-ink-900">{inv.invoiceNo}</div>
+                          <div className="text-[10px] text-ink-500">{inv.invoiceDate}</div>
+                          {inv.orderNo && <div className="text-[9px] text-ink-400 font-mono">PO: {inv.orderNo}</div>}
+                        </td>
+                        <td className="py-2.5 px-3 align-middle max-w-[200px]">
+                          <div className="font-bold text-ink-900 truncate" title={inv.customerName}>{inv.customerName}</div>
+                          <div className="text-[10px] text-ink-500">{inv.country}</div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                          <div className="font-black text-ink-950 tabular-nums">
+                            ${inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[10px] text-ink-500">
+                            Realized: ${(inv.totalRealizedCurrency || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
+                          <div className="font-bold text-blue-900 tabular-nums">
+                            Terms: ${inv.termsUSD ? inv.termsUSD.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                          </div>
+                          <div className="text-[10px] text-blue-700 tabular-nums">
+                            Actual: ${inv.advUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
+                          {inv.advShortfall > 0 ? (
+                            <div>
+                              <div className="font-black text-rose-700 tabular-nums">
+                                -${inv.advShortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </div>
+                              <div className="text-[10px] text-blue-800 font-semibold tabular-nums">
+                                {formatINR(inv.advShortfallINR)}
+                              </div>
+                              <div className="text-[9px] text-ink-400">@ ₹{formatForwardRate(inv.advRate)}</div>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-emerald-600 font-bold">Nil Shortfall</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
+                          <div className="font-bold text-emerald-900 tabular-nums">
+                            Price: ${inv.priceUSD ? inv.priceUSD.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                          </div>
+                          <div className="text-[10px] text-emerald-700 tabular-nums">
+                            Actual: ${inv.balUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
+                          {inv.balShortfall > 0 ? (
+                            <div>
+                              <div className="font-black text-rose-700 tabular-nums">
+                                -${inv.balShortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </div>
+                              <div className="text-[10px] text-emerald-800 font-semibold tabular-nums">
+                                {formatINR(inv.balShortfallINR)}
+                              </div>
+                              <div className="text-[9px] text-ink-400">@ ₹{formatForwardRate(inv.balRate)}</div>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-emerald-600 font-bold">Nil Shortfall</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-amber-50/50">
+                          <div className="font-black text-amber-900 text-sm tabular-nums">
+                            -${inv.totalShortfall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[9px] text-amber-700 font-bold uppercase tracking-wider">Deductions Cleared</div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap bg-amber-50/50">
+                          <div className="font-black text-ink-950 tabular-nums">
+                            {formatINR(inv.totalShortfallINR)}
+                          </div>
+                          <div className="text-[9px] text-ink-500">Bank Forward Equiv</div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-center whitespace-nowrap">
+                          <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
+                            Fully Realized
+                          </span>
+                          <div className="text-[9px] text-amber-700 font-semibold mt-0.5">Shortfall Cleared</div>
+                        </td>
+                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap">
+                          <div className="font-black text-emerald-700 tabular-nums">$0.00</div>
+                          <div className="text-[10px] text-emerald-600 font-semibold">Cleared</div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                {filteredShortfallRows.length > 0 && (
+                  <tfoot className="bg-gray-50 font-bold text-ink-900 border-t-2 border-gray-200">
+                    <tr>
+                      <td colSpan={3} className="py-3 px-3 uppercase text-xs">
+                        Total Shortfall ({filteredShortfallRows.length} Invoices)
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums">
+                        ${filteredShortfallRows.reduce((s, i) => s + i.totalAmountCurrency, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-blue-50/30">
+                        ${filteredShortfallRows.reduce((s, i) => s + (i.termsUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-rose-700 bg-blue-50/30">
+                        -${filteredShortfallRows.reduce((s, i) => s + i.advShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-emerald-50/30">
+                        ${filteredShortfallRows.reduce((s, i) => s + (i.priceUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-rose-700 bg-emerald-50/30">
+                        -${filteredShortfallRows.reduce((s, i) => s + i.balShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-amber-900 bg-amber-50/60 text-sm font-black">
+                        -${filteredShortfallRows.reduce((s, i) => s + i.totalShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-amber-50/60 font-black">
+                        {formatINR(filteredShortfallRows.reduce((s, i) => s + i.totalShortfallINR, 0))}
+                      </td>
+                      <td className="py-3 px-3 text-center text-[10px] text-emerald-800">
+                        All Fully Realized
+                      </td>
+                      <td className="py-3 px-3 text-right font-black text-emerald-700 tabular-nums">
+                        $0.00
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
           </div>
         </div>
       )}

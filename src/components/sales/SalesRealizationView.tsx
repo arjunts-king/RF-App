@@ -42,7 +42,9 @@ import {
   BarChart3,
   Users,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Receipt,
+  ShieldCheck
 } from 'lucide-react';
 
 export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -61,8 +63,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showVoided, setShowVoided] = useState(false);
 
-  // View mode switcher: Settlement Register vs Receivables Collection Period Analysis
-  const [activeTab, setActiveTab] = useState<'register' | 'collection-analysis'>('register');
+  // View mode switcher: Settlement Register vs Receivables Collection Period Analysis vs Shortfall Breakup
+  const [activeTab, setActiveTab] = useState<'register' | 'collection-analysis' | 'shortfall-breakup'>('register');
+
+  // Shortfall Breakup Filter & Sort States
+  const [shortfallSearch, setShortfallSearch] = useState('');
+  const [shortfallLegFilter, setShortfallLegFilter] = useState<'all' | 'advance-only' | 'balance-only' | 'both'>('all');
+  const [shortfallCustomerFilter, setShortfallCustomerFilter] = useState('');
+  const [shortfallSortBy, setShortfallSortBy] = useState<'total-desc' | 'total-asc' | 'date-desc' | 'inv-asc'>('total-desc');
+  const [shortfallPage, setShortfallPage] = useState(1);
+  const [shortfallPageSize, setShortfallPageSize] = useState(15);
 
   // Collection Analysis Filter State
   const [consigneeSearchTerm, setConsigneeSearchTerm] = useState('');
@@ -156,6 +166,123 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   const totalRealizedUSD = activeInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
   const totalRealizedINR = activeInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+
+  const totalAdvanceShortfallUSD = activeInvoices.reduce((s, inv) => {
+    const adv = inv.advanceReceivedCurrency || 0;
+    const terms = inv.advanceTermsUSD || 0;
+    const sf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    return s + (sf || 0);
+  }, 0);
+
+  const totalBalanceShortfallUSD = activeInvoices.reduce((s, inv) => {
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const sf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
+    return s + (sf || 0);
+  }, 0);
+
+  const totalShortfallUSD = activeInvoices.reduce((s, inv) => {
+    const adv = inv.advanceReceivedCurrency || 0;
+    const terms = inv.advanceTermsUSD || 0;
+    const advSf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const balSf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
+    const total = inv.totalShortfallUSD ?? (advSf + balSf);
+    return s + (total || 0);
+  }, 0);
+
+  const totalShortfallINR = activeInvoices.reduce((s, inv) => {
+    const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
+    const advRate = inv.advanceExchangeRate || rate;
+    const balRate = inv.balanceExchangeRate || rate;
+    const adv = inv.advanceReceivedCurrency || 0;
+    const terms = inv.advanceTermsUSD || 0;
+    const advSf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const balSf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
+    return s + ((advSf || 0) * advRate) + ((balSf || 0) * balRate);
+  }, 0);
+
+  // Shortfall enriched invoices list
+  const shortfallInvoicesList = useMemo(() => {
+    return activeInvoices
+      .map((inv) => {
+        const advUSD = inv.advanceReceivedCurrency || 0;
+        const termsUSD = inv.advanceTermsUSD ?? (advUSD > 0 ? advUSD : undefined);
+        const advShortfall = inv.advanceShortfallUSD ?? (termsUSD && advUSD && termsUSD > advUSD ? Number((termsUSD - advUSD).toFixed(2)) : 0);
+
+        const balUSD = inv.balancePaymentAmountCurrency || 0;
+        const priceUSD = inv.balanceActualPriceUSD ?? (balUSD > 0 ? Number((inv.totalAmountCurrency - (termsUSD || advUSD || 0)).toFixed(2)) : undefined);
+        const balShortfall = inv.balanceShortfallUSD ?? (priceUSD && balUSD && priceUSD > balUSD ? Number((priceUSD - balUSD).toFixed(2)) : 0);
+
+        const totalShortfall = inv.totalShortfallUSD ?? Number((advShortfall + balShortfall).toFixed(2));
+
+        const bankRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
+        const advRate = inv.advanceExchangeRate || bankRate;
+        const balRate = inv.balanceExchangeRate || bankRate;
+        const advShortfallINR = Number((advShortfall * advRate).toFixed(2));
+        const balShortfallINR = Number((balShortfall * balRate).toFixed(2));
+        const totalShortfallINR = Number((advShortfallINR + balShortfallINR).toFixed(2));
+
+        const consignee = customerMap.get(inv.consigneeId);
+        const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
+
+        return {
+          ...inv,
+          termsUSD,
+          advUSD,
+          advShortfall,
+          advRate,
+          advShortfallINR,
+          priceUSD,
+          balUSD,
+          balShortfall,
+          balRate,
+          balShortfallINR,
+          totalShortfall,
+          totalShortfallINR,
+          consigneeNameDisplay: consignee?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer',
+          buyerNameDisplay: buyer?.name || '',
+          countryDisplay: consignee?.country || 'Export'
+        };
+      })
+      .filter((inv) => inv.totalShortfall > 0);
+  }, [activeInvoices, customerMap]);
+
+  const filteredShortfallInvoices = useMemo(() => {
+    return shortfallInvoicesList
+      .filter((inv) => {
+        if (shortfallCustomerFilter && inv.consigneeId !== shortfallCustomerFilter) return false;
+        if (shortfallLegFilter === 'advance-only' && (inv.advShortfall <= 0 || inv.balShortfall > 0)) return false;
+        if (shortfallLegFilter === 'balance-only' && (inv.balShortfall <= 0 || inv.advShortfall > 0)) return false;
+        if (shortfallLegFilter === 'both' && (inv.advShortfall <= 0 || inv.balShortfall <= 0)) return false;
+
+        if (shortfallSearch.trim()) {
+          const q = shortfallSearch.toLowerCase().trim();
+          const matchNo = inv.invoiceNo.toLowerCase().includes(q);
+          const matchCust = inv.consigneeNameDisplay.toLowerCase().includes(q) || inv.buyerNameDisplay.toLowerCase().includes(q);
+          const matchOrder = inv.orderNo?.toLowerCase().includes(q) || inv.salesOrderNo?.toLowerCase().includes(q);
+          const matchAdvRef = inv.advanceBankRef?.toLowerCase().includes(q);
+          const matchBalRef = inv.balanceBankRef?.toLowerCase().includes(q);
+          return matchNo || matchCust || matchOrder || matchAdvRef || matchBalRef;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (shortfallSortBy === 'total-desc') return b.totalShortfall - a.totalShortfall;
+        if (shortfallSortBy === 'total-asc') return a.totalShortfall - b.totalShortfall;
+        if (shortfallSortBy === 'date-desc') return b.invoiceDate.localeCompare(a.invoiceDate);
+        if (shortfallSortBy === 'inv-asc') return a.invoiceNo.localeCompare(b.invoiceNo);
+        return 0;
+      });
+  }, [shortfallInvoicesList, shortfallCustomerFilter, shortfallLegFilter, shortfallSearch, shortfallSortBy]);
+
+  const paginatedShortfallInvoices = useMemo(() => {
+    const start = (shortfallPage - 1) * shortfallPageSize;
+    return filteredShortfallInvoices.slice(start, start + shortfallPageSize);
+  }, [filteredShortfallInvoices, shortfallPage, shortfallPageSize]);
 
   const overallProgressPct =
     totalInvoicedUSD > 0 ? Math.min(100, Math.round((totalRealizedUSD / totalInvoicedUSD) * 100)) : 0;
@@ -373,6 +500,71 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     }
   };
 
+  // Export Shortfall & Deductions Breakup CSV
+  const handleExportShortfallCSV = () => {
+    const exportData = filteredShortfallInvoices.map((inv) => ({
+      InvoiceNo: inv.invoiceNo,
+      Date: inv.invoiceDate,
+      Consignee: inv.consigneeNameDisplay,
+      Buyer: inv.buyerNameDisplay,
+      Country: inv.countryDisplay,
+      TotalAmountUSD: inv.totalAmountCurrency,
+      AdvanceTermsUSD: inv.termsUSD ?? '',
+      ActualAdvanceReceivedUSD: inv.advUSD,
+      AdvanceShortfallUSD: inv.advShortfall,
+      AdvanceForwardRate: inv.advRate,
+      AdvanceShortfallINR: inv.advShortfallINR,
+      AdvanceDate: inv.advanceReceivedDate || '',
+      AdvanceBankRef: inv.advanceBankRef || '',
+      BalanceActualPriceUSD: inv.priceUSD ?? '',
+      ActualBalanceReceivedUSD: inv.balUSD,
+      BalanceShortfallUSD: inv.balShortfall,
+      BalanceForwardRate: inv.balRate,
+      BalanceShortfallINR: inv.balShortfallINR,
+      BalanceDate: inv.balancePaymentDate || '',
+      BalanceBankRef: inv.balanceBankRef || '',
+      TotalShortfallUSD: inv.totalShortfall,
+      TotalShortfallINR: inv.totalShortfallINR,
+      TotalRealizedUSD: inv.totalRealizedCurrency,
+      TotalRealizedINR: inv.totalRealizedINR,
+      UnrealizedBalanceUSD: 0,
+      RealizationStatus: 'Fully Realized',
+      Notes: inv.realizations?.[0]?.notes || 'Settled with shortfall deductions'
+    }));
+
+    const csvStr = convertToCSV(exportData, [
+      { key: 'InvoiceNo', label: 'Commercial Invoice No' },
+      { key: 'Date', label: 'Invoice Date' },
+      { key: 'Consignee', label: 'Consignee / Customer' },
+      { key: 'Buyer', label: 'Buyer' },
+      { key: 'Country', label: 'Destination Country' },
+      { key: 'TotalAmountUSD', label: 'Invoiced Amount (USD)' },
+      { key: 'AdvanceTermsUSD', label: 'Advance Contract Terms (USD)' },
+      { key: 'ActualAdvanceReceivedUSD', label: 'Actual Advance Received (USD)' },
+      { key: 'AdvanceShortfallUSD', label: 'Advance Shortfall (USD)' },
+      { key: 'AdvanceForwardRate', label: 'Advance Forward Rate (INR)' },
+      { key: 'AdvanceShortfallINR', label: 'Advance Shortfall (INR)' },
+      { key: 'AdvanceDate', label: 'Advance Receipt Date' },
+      { key: 'AdvanceBankRef', label: 'Advance Bank Ref / FIRC' },
+      { key: 'BalanceActualPriceUSD', label: 'Balance Actual Price (USD)' },
+      { key: 'ActualBalanceReceivedUSD', label: 'Actual Balance Received (USD)' },
+      { key: 'BalanceShortfallUSD', label: 'Balance Shortfall (USD)' },
+      { key: 'BalanceForwardRate', label: 'Balance Forward Rate (INR)' },
+      { key: 'BalanceShortfallINR', label: 'Balance Shortfall (INR)' },
+      { key: 'BalanceDate', label: 'Balance Receipt Date' },
+      { key: 'BalanceBankRef', label: 'Balance Bank Ref / FIRC' },
+      { key: 'TotalShortfallUSD', label: 'Total Shortfall Deductions (USD)' },
+      { key: 'TotalShortfallINR', label: 'Total Shortfall Deductions (INR)' },
+      { key: 'TotalRealizedUSD', label: 'Total Realized (USD)' },
+      { key: 'TotalRealizedINR', label: 'Total Realized (INR)' },
+      { key: 'UnrealizedBalanceUSD', label: 'Pending Outstanding (USD)' },
+      { key: 'RealizationStatus', label: 'Realization Status' },
+      { key: 'Notes', label: 'Audit Notes' }
+    ]);
+
+    downloadFile(csvStr, `Realization_Shortfall_Breakup_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
   // Apply Bulk Settlement Import
   const handleApplySettlementImport = () => {
     if (parsedRows.length === 0) return;
@@ -510,6 +702,25 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                 : 'DSO'}
             </span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('shortfall-breakup')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeTab === 'shortfall-breakup'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'text-ink-700 hover:bg-amber-50 hover:text-amber-800'
+            }`}
+          >
+            <Receipt className="w-4 h-4 text-amber-500" />
+            <span>Shortfall Breakup &amp; Audit</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                activeTab === 'shortfall-breakup' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              ${totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </button>
         </div>
 
         {activeTab === 'collection-analysis' && (
@@ -521,12 +732,22 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             <span>Export Collection Analysis CSV</span>
           </button>
         )}
+
+        {activeTab === 'shortfall-breakup' && (
+          <button
+            onClick={handleExportShortfallCSV}
+            className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs mr-1 whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-600" />
+            <span>Export Shortfall Breakup CSV</span>
+          </button>
+        )}
       </div>
 
       {activeTab === 'register' && (
         <div className="space-y-6">
           {/* Bento Settlement KPI Row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3.5">
             <BentoCard
               label="Total Invoiced (USD)"
               value={`$${totalInvoicedUSD.toLocaleString()}`}
@@ -550,6 +771,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
               value={`$${totalBalanceUSD.toLocaleString()}`}
               caption={`₹${(totalBalanceINR / 100000).toFixed(2)} L credited`}
               variant="default"
+            />
+            <BentoCard
+              label="Accounted Shortfall"
+              value={`$${totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              caption={`₹${(totalShortfallINR / 100000).toFixed(2)} L deductions`}
+              variant={totalShortfallUSD > 0 ? 'warning' : 'default'}
+              linkText={totalShortfallUSD > 0 ? 'Audit Breakup' : undefined}
+              onLinkClick={() => setActiveTab('shortfall-breakup')}
             />
             <BentoCard
               label="Total Realized (INR)"
@@ -951,6 +1180,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                               : 'Not realized'
                           }
                         />
+                        {inv.totalShortfallUSD && inv.totalShortfallUSD > 0 ? (
+                          <div className="mt-1">
+                            <button
+                              onClick={() => setActiveTab('shortfall-breakup')}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[9px] font-bold cursor-pointer hover:bg-amber-100 transition"
+                              title={`Shortfall Deductions: -$${inv.totalShortfallUSD.toFixed(2)}. Fully cleared from receivables.`}
+                            >
+                              <Receipt className="w-2.5 h-2.5 text-amber-600" />
+                              <span>-${inv.totalShortfallUSD.toFixed(2)} shortfall</span>
+                            </button>
+                          </div>
+                        ) : null}
                       </td>
 
                       {/* Action */}
@@ -1433,6 +1674,440 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
       </div>
     </div>
   )}
+
+      {/* ============================================================== */}
+      {/* SHORTFALL & DEDUCTIONS BREAKUP AUDIT VIEW */}
+      {/* ============================================================== */}
+      {activeTab === 'shortfall-breakup' && (
+        <div className="space-y-6">
+          {/* Executive Policy Banner */}
+          <div className="p-4 bg-gradient-to-r from-amber-50 via-white to-blue-50 border border-amber-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-amber-950 font-bold text-xs uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Shortfall Accounting Policy &amp; Breakup Audit</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">
+                  Zero Outstanding · Fully Realized
+                </span>
+              </div>
+              <p className="text-xs text-ink-600 max-w-4xl">
+                Remittance shortfalls (arising from overseas intermediary bank charges, wire deductions, or contract discrepancies) are accounted as recognized deductions. These invoices are marked as <strong>Fully Realized</strong> with <strong>$0.00 Outstanding Balance</strong>. Full itemized advance and balance leg breakups are audited below.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportShortfallCSV}
+                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Audit CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Bento KPI Summary Row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
+            <BentoCard
+              label="Total Shortfall (USD)"
+              value={`$${totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              caption={`${shortfallInvoicesList.length} invoices adjusted`}
+              variant="warning"
+            />
+            <BentoCard
+              label="Total Shortfall (INR)"
+              value={formatINR(totalShortfallINR)}
+              caption="Converted at forward rates"
+              variant="highlight"
+            />
+            <BentoCard
+              label="Advance Leg Shortfall"
+              value={`$${totalAdvanceShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              caption="Terms vs actual advance"
+              variant="default"
+            />
+            <BentoCard
+              label="Balance Leg Shortfall"
+              value={`$${totalBalanceShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              caption="Final price vs wire credit"
+              variant="default"
+            />
+            <BentoCard
+              label="Invoices With Shortfall"
+              value={shortfallInvoicesList.length}
+              caption="All marked Fully Realized"
+              variant="info"
+            />
+            <BentoCard
+              label="Net Receivables Balance"
+              value="$0.00"
+              caption="Zero pending outstanding"
+              variant="success"
+            />
+          </div>
+
+          {/* Search, Filter & Controls */}
+          <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by invoice #, consignee, buyer, bank ref..."
+                  value={shortfallSearch}
+                  onChange={(e) => {
+                    setShortfallSearch(e.target.value);
+                    setShortfallPage(1);
+                  }}
+                  className="w-full pl-9 pr-4 py-2 bg-white/70 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition shadow-2xs font-medium"
+                />
+              </div>
+
+              {/* Leg Filter */}
+              <select
+                value={shortfallLegFilter}
+                onChange={(e) => {
+                  setShortfallLegFilter(e.target.value as any);
+                  setShortfallPage(1);
+                }}
+                className="px-3 py-2 bg-white/70 border border-gray-200 rounded-xl text-xs text-ink-700 font-semibold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+              >
+                <option value="all">All Shortfall Legs</option>
+                <option value="advance-only">Advance Shortfall Only</option>
+                <option value="balance-only">Balance Shortfall Only</option>
+                <option value="both">Both Advance &amp; Balance Shortfall</option>
+              </select>
+
+              {/* Customer Filter */}
+              <select
+                value={shortfallCustomerFilter}
+                onChange={(e) => {
+                  setShortfallCustomerFilter(e.target.value);
+                  setShortfallPage(1);
+                }}
+                className="px-3 py-2 bg-white/70 border border-gray-200 rounded-xl text-xs text-ink-700 font-semibold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs max-w-[200px]"
+              >
+                <option value="">All Consignees</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Sorting */}
+              <select
+                value={shortfallSortBy}
+                onChange={(e) => setShortfallSortBy(e.target.value as any)}
+                className="px-3 py-2 bg-white/70 border border-gray-200 rounded-xl text-xs text-ink-700 font-semibold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+              >
+                <option value="total-desc">Highest Shortfall (USD)</option>
+                <option value="total-asc">Lowest Shortfall (USD)</option>
+                <option value="date-desc">Latest Invoice Date</option>
+                <option value="inv-asc">Invoice No (A-Z)</option>
+              </select>
+            </div>
+
+            <span className="text-xs font-bold text-ink-500">
+              Showing {filteredShortfallInvoices.length} of {shortfallInvoicesList.length} shortfall invoices
+            </span>
+          </div>
+
+          {/* Shortfall Breakup Table */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50/80 text-ink-500 uppercase text-[10px] font-bold border-b border-gray-100">
+                  <tr>
+                    <th className="py-3 px-3 text-center">#</th>
+                    <th className="py-3 px-3">Commercial Invoice</th>
+                    <th className="py-3 px-3">Consignee &amp; Destination</th>
+                    <th className="py-3 px-3 text-right">Invoiced USD</th>
+                    <th className="py-3 px-3 text-right bg-blue-50/50">Adv Terms vs Actual</th>
+                    <th className="py-3 px-3 text-right bg-blue-50/50">Adv Shortfall</th>
+                    <th className="py-3 px-3 text-right bg-emerald-50/50">Bal Price vs Actual</th>
+                    <th className="py-3 px-3 text-right bg-emerald-50/50">Bal Shortfall</th>
+                    <th className="py-3 px-3 text-right bg-amber-50/60 font-black">Total Shortfall (USD)</th>
+                    <th className="py-3 px-3 text-right bg-amber-50/60 font-black">Shortfall (INR)</th>
+                    <th className="py-3 px-3 text-center">Status</th>
+                    <th className="py-3 px-3 text-right">Outstanding</th>
+                    <th className="py-3 px-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredShortfallInvoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="py-12 text-center text-ink-400">
+                        <Receipt className="w-8 h-8 mx-auto text-ink-300 mb-2 opacity-60" />
+                        <p className="font-bold text-sm text-ink-800">No shortfall invoices match your filters</p>
+                        <p className="text-xs text-ink-500 mt-1">Try clearing search terms or selecting 'All Shortfall Legs'</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedShortfallInvoices.map((inv, idx) => {
+                      const globalIdx = (shortfallPage - 1) * shortfallPageSize + idx + 1;
+                      return (
+                        <tr key={inv.id} className="hover:bg-amber-50/20 transition group">
+                          {/* # */}
+                          <td className="py-3 px-3 text-center font-mono text-[11px] text-ink-400">
+                            {globalIdx}
+                          </td>
+
+                          {/* Commercial Invoice */}
+                          <td className="py-3 px-3 align-middle">
+                            <div className="font-bold text-ink-900 group-hover:text-rose-700 transition">
+                              {inv.invoiceNo}
+                            </div>
+                            <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5">
+                              <Calendar className="w-3 h-3 text-ink-400" />
+                              <span>{inv.invoiceDate}</span>
+                            </div>
+                            {inv.orderNo && (
+                              <div className="text-[9px] text-ink-400 font-mono">PO: {inv.orderNo}</div>
+                            )}
+                          </td>
+
+                          {/* Consignee */}
+                          <td className="py-3 px-3 align-middle max-w-[200px]">
+                            <div className="font-bold text-ink-900 truncate" title={inv.consigneeNameDisplay}>
+                              {inv.consigneeNameDisplay}
+                            </div>
+                            <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5 truncate">
+                              <Globe className="w-3 h-3 text-ink-400 shrink-0" />
+                              <span>{inv.countryDisplay}</span>
+                              {inv.buyerNameDisplay && inv.buyerNameDisplay !== inv.consigneeNameDisplay && (
+                                <span className="text-ink-400">· {inv.buyerNameDisplay}</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Invoiced USD */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
+                            <div className="font-black text-ink-950 tabular-nums">
+                              ${inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[10px] text-ink-500">
+                              Realized: ${(inv.totalRealizedCurrency || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                          </td>
+
+                          {/* Advance Terms vs Actual */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
+                            <div className="font-bold text-blue-900 tabular-nums">
+                              Terms: ${inv.termsUSD ? inv.termsUSD.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                            </div>
+                            <div className="text-[10px] text-blue-700 tabular-nums">
+                              Actual: ${inv.advUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            {inv.advanceReceivedDate && (
+                              <div className="text-[9px] text-ink-400 mt-0.5">
+                                Recd: {inv.advanceReceivedDate}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Advance Shortfall */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-blue-50/30">
+                            {inv.advShortfall > 0 ? (
+                              <div>
+                                <div className="font-black text-rose-700 tabular-nums">
+                                  -${inv.advShortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                                <div className="text-[10px] text-blue-800 font-semibold tabular-nums">
+                                  {formatINR(inv.advShortfallINR)}
+                                </div>
+                                <div className="text-[9px] text-ink-400">
+                                  @ ₹{formatForwardRate(inv.advRate)}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-emerald-600 font-bold">Nil Shortfall</span>
+                            )}
+                          </td>
+
+                          {/* Balance Price vs Actual */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
+                            <div className="font-bold text-emerald-900 tabular-nums">
+                              Price: ${inv.priceUSD ? inv.priceUSD.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                            </div>
+                            <div className="text-[10px] text-emerald-700 tabular-nums">
+                              Actual: ${inv.balUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            {inv.balancePaymentDate && (
+                              <div className="text-[9px] text-ink-400 mt-0.5">
+                                Recd: {inv.balancePaymentDate}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Balance Shortfall */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-emerald-50/30">
+                            {inv.balShortfall > 0 ? (
+                              <div>
+                                <div className="font-black text-rose-700 tabular-nums">
+                                  -${inv.balShortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                                <div className="text-[10px] text-emerald-800 font-semibold tabular-nums">
+                                  {formatINR(inv.balShortfallINR)}
+                                </div>
+                                <div className="text-[9px] text-ink-400">
+                                  @ ₹{formatForwardRate(inv.balRate)}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-emerald-600 font-bold">Nil Shortfall</span>
+                            )}
+                          </td>
+
+                          {/* Total Shortfall USD */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-amber-50/50">
+                            <div className="font-black text-amber-900 text-sm tabular-nums">
+                              -${inv.totalShortfall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[9px] text-amber-700 font-bold uppercase tracking-wider">
+                              Deductions Cleared
+                            </div>
+                          </td>
+
+                          {/* Total Shortfall INR */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-amber-50/50">
+                            <div className="font-black text-ink-950 tabular-nums">
+                              {formatINR(inv.totalShortfallINR)}
+                            </div>
+                            <div className="text-[9px] text-ink-500 font-medium">
+                              Bank Forward Equiv
+                            </div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                            <StatusBadge status="Realized" />
+                            <div className="mt-1">
+                              <span className="inline-block px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-bold">
+                                Settled w/ Shortfall
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Outstanding */}
+                          <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
+                            <div className="font-black text-emerald-700 tabular-nums">
+                              $0.00
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-semibold">
+                              Fully Cleared
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                            <button
+                              onClick={() => setRealizationTarget(inv)}
+                              title="Inspect or Edit Settlement Details"
+                              className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs"
+                            >
+                              <BadgeDollarSign className="w-3.5 h-3.5 text-amber-600" />
+                              <span>View</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+
+                {/* Table Footer Summary */}
+                {filteredShortfallInvoices.length > 0 && (
+                  <tfoot className="bg-gray-50/95 font-bold text-ink-900 border-t-2 border-gray-200">
+                    <tr>
+                      <td colSpan={3} className="py-3 px-3 text-left font-black uppercase text-xs">
+                        Total Shortfall Summary ({filteredShortfallInvoices.length} Invoices)
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums">
+                        ${filteredShortfallInvoices.reduce((s, i) => s + i.totalAmountCurrency, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-blue-50/30">
+                        ${filteredShortfallInvoices.reduce((s, i) => s + (i.termsUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-rose-700 bg-blue-50/30">
+                        -${filteredShortfallInvoices.reduce((s, i) => s + i.advShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-emerald-50/30">
+                        ${filteredShortfallInvoices.reduce((s, i) => s + (i.priceUSD || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-rose-700 bg-emerald-50/30">
+                        -${filteredShortfallInvoices.reduce((s, i) => s + i.balShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums text-amber-900 bg-amber-50/60 text-sm font-black">
+                        -${filteredShortfallInvoices.reduce((s, i) => s + i.totalShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap tabular-nums bg-amber-50/60 font-black">
+                        {formatINR(filteredShortfallInvoices.reduce((s, i) => s + i.totalShortfallINR, 0))}
+                      </td>
+                      <td className="py-3 px-3 text-center text-[10px] text-emerald-800">
+                        All Fully Realized
+                      </td>
+                      <td className="py-3 px-3 text-right font-black text-emerald-700 tabular-nums">
+                        $0.00
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        —
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {filteredShortfallInvoices.length > 0 && (
+              <div className="p-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs bg-gray-50/30">
+                <div className="flex items-center gap-2 text-ink-500">
+                  <span>Rows per page:</span>
+                  <select
+                    value={shortfallPageSize}
+                    onChange={(e) => {
+                      setShortfallPageSize(Number(e.target.value));
+                      setShortfallPage(1);
+                    }}
+                    className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-ink-800 font-bold shadow-2xs"
+                  >
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-ink-600 font-medium">
+                    Page {shortfallPage} of {Math.max(1, Math.ceil(filteredShortfallInvoices.length / shortfallPageSize))}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setShortfallPage((p) => Math.max(1, p - 1))}
+                      disabled={shortfallPage === 1}
+                      className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-ink-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 shadow-2xs font-bold"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      onClick={() =>
+                        setShortfallPage((p) =>
+                          p < Math.ceil(filteredShortfallInvoices.length / shortfallPageSize) ? p + 1 : p
+                        )
+                      }
+                      disabled={shortfallPage >= Math.ceil(filteredShortfallInvoices.length / shortfallPageSize)}
+                      className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-ink-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 shadow-2xs font-bold"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Manual Realization & Settlement Modal */}
       {realizationTarget && (

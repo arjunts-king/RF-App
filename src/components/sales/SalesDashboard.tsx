@@ -155,6 +155,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const totalRealizedINR = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const totalRealizedUSD = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
   const totalOutstandingUSD = filteredInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+  const totalShortfallUSD = filteredInvoices.reduce(
+    (s, inv) => s + (inv.totalShortfallUSD || ((inv.advanceShortfallUSD || 0) + (inv.balanceShortfallUSD || 0)) || 0),
+    0
+  );
   const uniqueCustomerCount = new Set(filteredInvoices.map((inv) => inv.consigneeId)).size;
 
   // Monthly Sales Value Trend Data (Last 6 Months)
@@ -393,7 +397,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const pendingOutstandingInvoices = useMemo(() => {
     const nowMs = new Date().getTime();
     return filteredInvoices
-      .filter((inv) => !inv.isVoided && (inv.balanceRealizationCurrency > 0 || inv.realizationStatus !== 'Fully Realized'))
+      .filter((inv) => !inv.isVoided && inv.realizationStatus !== 'Fully Realized' && inv.balanceRealizationCurrency > 0.05)
       .map((inv) => {
         const consignee = customerMap.get(inv.consigneeId);
         const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
@@ -955,8 +959,11 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
 
           {/* Progress / Share Bar */}
           <div className="space-y-3 py-2">
-            <div className="flex items-center justify-between text-xs font-bold">
+            <div className="flex flex-wrap items-center justify-between text-xs font-bold gap-1">
               <span className="text-emerald-700">Realized: ${totalRealizedUSD.toLocaleString()}</span>
+              {totalShortfallUSD > 0 && (
+                <span className="text-amber-700">Shortfall: ${totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              )}
               <span className="text-rose-700">Outstanding: ${totalOutstandingUSD.toLocaleString()}</span>
             </div>
 
@@ -964,19 +971,34 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               <div
                 className="bg-emerald-500 transition-all duration-500"
                 style={{ width: `${totalUSD > 0 ? (totalRealizedUSD / totalUSD) * 100 : 0}%` }}
-                title="Realized Remittances"
+                title={`Realized Remittances: $${totalRealizedUSD.toLocaleString()}`}
               />
+              {totalShortfallUSD > 0 && (
+                <div
+                  className="bg-amber-400 transition-all duration-500"
+                  style={{ width: `${totalUSD > 0 ? (totalShortfallUSD / totalUSD) * 100 : 0}%` }}
+                  title={`Accounted Shortfall / Deductions: $${totalShortfallUSD.toLocaleString()}`}
+                />
+              )}
               <div
                 className="bg-rose-600 transition-all duration-500"
                 style={{ width: `${totalUSD > 0 ? (totalOutstandingUSD / totalUSD) * 100 : 100}%` }}
-                title="Pending Outstanding"
+                title={`Pending Outstanding: $${totalOutstandingUSD.toLocaleString()}`}
               />
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-ink-500 font-medium">
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-ink-500 font-medium gap-1">
               <span>{totalUSD > 0 ? ((totalRealizedUSD / totalUSD) * 100).toFixed(1) : 0}% Realized</span>
+              {totalShortfallUSD > 0 && (
+                <span className="text-amber-800 font-semibold">{totalUSD > 0 ? ((totalShortfallUSD / totalUSD) * 100).toFixed(1) : 0}% Shortfall</span>
+              )}
               <span>{totalUSD > 0 ? ((totalOutstandingUSD / totalUSD) * 100).toFixed(1) : 0}% Pending</span>
             </div>
+            {totalShortfallUSD > 0 && (
+              <p className="text-[10px] text-ink-500 italic mt-0.5">
+                * Invoices settled with wire/discrepancy shortfalls are marked Fully Realized and excluded from Pending Outstanding.
+              </p>
+            )}
           </div>
 
           {/* Ageing Breakdown */}

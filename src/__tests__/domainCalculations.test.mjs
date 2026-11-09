@@ -2273,6 +2273,121 @@ test('Commercial Dashboard: filters and aggregates pending outstanding unrealize
   assert.equal(totalIndicativeINR, 10175000, 'Indicative outstanding INR should equal ₹1,01,75,000');
 });
 
+// ============================================================================
+// SUITE 19: Realization with Shortfall Accounting & Zero Outstanding
+// ============================================================================
+
+test('Realization with Shortfall: marked Fully Realized, zero outstanding, and separate breakup reporting', () => {
+  // Scenario 1: Invoice settled with bank wire fee / terms shortfall
+  // Invoiced: $50,000. Advance Terms: $10,000. Actual Advance: $9,950 (Shortfall: $50)
+  // Balance Price: $40,000. Actual Balance: $39,940 (Shortfall: $60)
+  // Total Shortfall: $110. Total Realized: $49,890.
+  const totalAmountCurrency = 50000;
+  const advanceTermsUSD = 10000;
+  const advanceReceivedUSD = 9950;
+  const advanceExchangeRate = 84.5512345;
+  const advanceShortfallUSD = Number((advanceTermsUSD - advanceReceivedUSD).toFixed(2)); // 50.00
+
+  const balanceActualPriceUSD = 40000;
+  const balanceReceivedUSD = 39940;
+  const balanceExchangeRate = 85.1234567;
+  const balanceShortfallUSD = Number((balanceActualPriceUSD - balanceReceivedUSD).toFixed(2)); // 60.00
+
+  const totalRealizedUSD = Number((advanceReceivedUSD + balanceReceivedUSD).toFixed(2)); // 49890.00
+  const totalShortfallUSD = Number((advanceShortfallUSD + balanceShortfallUSD).toFixed(2)); // 110.00
+
+  // Calculation rule: Shortfall accounts for deductions; it should NOT be shown as outstanding
+  const accountedShortfall = totalShortfallUSD > 0 ? totalShortfallUSD : 0;
+  const isSettledWithShortfall = Boolean(balanceReceivedUSD) &&
+    (totalRealizedUSD + accountedShortfall >= totalAmountCurrency - 0.05);
+
+  const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedUSD >= totalAmountCurrency - 0.05)
+    ? 0
+    : Math.max(0, Number((totalAmountCurrency - totalRealizedUSD - accountedShortfall).toFixed(2)));
+
+  let realizationStatus = 'Not Realized';
+  if (totalRealizedUSD > 0 || accountedShortfall > 0) {
+    if (
+      balanceRealizationCurrency <= 0.05 ||
+      totalRealizedUSD >= totalAmountCurrency - 0.05 ||
+      isSettledWithShortfall
+    ) {
+      realizationStatus = 'Fully Realized';
+    } else {
+      realizationStatus = 'Partially Realized';
+    }
+  }
+
+  assert.equal(isSettledWithShortfall, true, 'Settled invoice with shortfall recognized');
+  assert.equal(balanceRealizationCurrency, 0, 'Pending outstanding balance must be 0, NOT the shortfall amount');
+  assert.equal(realizationStatus, 'Fully Realized', 'Realization status must be Fully Realized');
+
+  // Shortfall Breakup in USD and INR
+  const advShortfallINR = Number((advanceShortfallUSD * advanceExchangeRate).toFixed(2));
+  const balShortfallINR = Number((balanceShortfallUSD * balanceExchangeRate).toFixed(2));
+  const totalShortfallINR = Number((advShortfallINR + balShortfallINR).toFixed(2));
+
+  assert.equal(advanceShortfallUSD, 50, 'Advance shortfall is $50.00');
+  assert.equal(balanceShortfallUSD, 60, 'Balance shortfall is $60.00');
+  assert.equal(totalShortfallUSD, 110, 'Total shortfall is $110.00');
+  assert.equal(advShortfallINR, Number((50 * 84.5512345).toFixed(2)), 'Advance shortfall INR computed accurately');
+  assert.equal(balShortfallINR, Number((60 * 85.1234567).toFixed(2)), 'Balance shortfall INR computed accurately');
+
+  // Scenario 2: Pending Outstanding Ledger must exclude invoices settled with shortfall
+  const invoicePool = [
+    {
+      id: 'inv-unrealized-1',
+      invoiceNo: 'EXP/26-27/001',
+      totalAmountCurrency: 30000,
+      balanceRealizationCurrency: 30000,
+      realizationStatus: 'Not Realized',
+      isVoided: false
+    },
+    {
+      id: 'inv-shortfall-2',
+      invoiceNo: 'EXP/26-27/002',
+      totalAmountCurrency: 50000,
+      balanceRealizationCurrency: 0, // Cleared to 0
+      realizationStatus: 'Fully Realized',
+      totalShortfallUSD: 110,
+      isVoided: false
+    },
+    {
+      id: 'inv-regular-settled-3',
+      invoiceNo: 'EXP/26-27/003',
+      totalAmountCurrency: 20000,
+      balanceRealizationCurrency: 0,
+      realizationStatus: 'Fully Realized',
+      totalShortfallUSD: 0,
+      isVoided: false
+    }
+  ];
+
+  const pendingOutstanding = invoicePool.filter(
+    (inv) => !inv.isVoided && inv.realizationStatus !== 'Fully Realized' && inv.balanceRealizationCurrency > 0.05
+  );
+
+  assert.equal(pendingOutstanding.length, 1, 'Only truly outstanding invoices must appear');
+  assert.equal(pendingOutstanding[0].id, 'inv-unrealized-1', 'Only inv-unrealized-1 is pending');
+  assert.equal(pendingOutstanding.some((i) => i.id === 'inv-shortfall-2'), false, 'Shortfall invoice must be excluded from pending outstanding');
+
+  // Scenario 3: Shortfall Breakup Report aggregates
+  const shortfallReportItems = invoicePool
+    .filter((inv) => (inv.totalShortfallUSD || 0) > 0)
+    .map((inv) => ({
+      invoiceNo: inv.invoiceNo,
+      totalAmountUSD: inv.totalAmountCurrency,
+      shortfallUSD: inv.totalShortfallUSD,
+      outstandingUSD: inv.balanceRealizationCurrency,
+      status: inv.realizationStatus
+    }));
+
+  assert.equal(shortfallReportItems.length, 1, 'Shortfall report extracts invoices with shortfall deductions');
+  assert.equal(shortfallReportItems[0].shortfallUSD, 110, 'Shortfall reported separately as $110.00');
+  assert.equal(shortfallReportItems[0].outstandingUSD, 0, 'Report confirms $0.00 pending outstanding');
+  assert.equal(shortfallReportItems[0].status, 'Fully Realized', 'Report confirms status is Fully Realized');
+});
+
 
 
 

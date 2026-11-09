@@ -581,6 +581,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           clean.totalRealizedINR = 0;
         }
 
+        // Reconcile realization with shortfall: shortfall is NOT outstanding; invoice is Fully Realized
+        const totalShortfall = clean.totalShortfallUSD || ((clean.advanceShortfallUSD || 0) + (clean.balanceShortfallUSD || 0)) || 0;
+        if (totalShortfall > 0 && (clean.totalRealizedCurrency || 0) + totalShortfall >= clean.totalAmountCurrency - 0.05) {
+          clean.balanceRealizationCurrency = 0;
+          clean.realizationStatus = 'Fully Realized';
+        }
+
         // Auto-enrich invoices with verified line items if missing or generic
         const needsItemEnrichment =
           !clean.lineItems ||
@@ -2474,14 +2481,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const realizations = updates.realizations !== undefined ? updates.realizations : existing.realizations;
     const totalRealizedCurrency = Number(realizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2));
-    const balanceRealizationCurrency = Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
+    const accountedShortfall = (updates.totalShortfallUSD !== undefined ? updates.totalShortfallUSD : existing.totalShortfallUSD) || 0;
+    const isSettledWithShortfall = accountedShortfall > 0 && (totalRealizedCurrency + accountedShortfall >= totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= totalAmountCurrency - 0.05)
+      ? 0
+      : Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
     const totalRealizedINR = Number(realizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0) {
-      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= totalAmountCurrency) {
+    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
+      if (
+        balanceRealizationCurrency <= 0.05 ||
+        totalRealizedCurrency >= totalAmountCurrency - 0.05 ||
+        isSettledWithShortfall
+      ) {
         realizationStatus = 'Fully Realized';
       } else {
         realizationStatus = 'Partially Realized';
@@ -2555,17 +2570,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalRealizedCurrency = Number(
       updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
     );
-    const balanceRealizationCurrency = Math.max(
-      0,
-      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
-    );
+    const accountedShortfall = invoice.totalShortfallUSD || ((invoice.advanceShortfallUSD || 0) + (invoice.balanceShortfallUSD || 0)) || 0;
+    const isSettledWithShortfall = accountedShortfall > 0 && (totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
+      ? 0
+      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0) {
-      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
+      if (
+        balanceRealizationCurrency <= 0.05 ||
+        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
+        isSettledWithShortfall
+      ) {
         realizationStatus = 'Fully Realized';
       } else {
         realizationStatus = 'Partially Realized';
@@ -2683,17 +2703,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const totalRealizedCurrency = Number((advanceUSD + balanceUSD).toFixed(2));
     const totalRealizedINR = Number((advanceINR + balanceINR).toFixed(2));
-    const balanceRealizationCurrency = Math.max(
-      0,
-      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
-    );
+    const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
+    const isSettledWithShortfall = (balanceUSD > 0 || (advanceUSD > 0 && !balanceUSD && !balanceActualPriceUSD)) &&
+      (totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
+
+    // Shortfall accounts for deductions; it should NOT be shown as outstanding
+    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
+      ? 0
+      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0) {
+    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
       if (
         balanceRealizationCurrency <= 0.05 ||
-        totalRealizedCurrency >= invoice.totalAmountCurrency ||
-        (balanceUSD > 0 && totalRealizedCurrency + (totalShortfallUSD || 0) >= invoice.totalAmountCurrency - 0.05)
+        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
+        isSettledWithShortfall
       ) {
         realizationStatus = 'Fully Realized';
       } else {
@@ -2825,17 +2849,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalRealizedCurrency = Number(
       updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
     );
-    const balanceRealizationCurrency = Math.max(
-      0,
-      Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
-    );
+    const accountedShortfall = invoice.totalShortfallUSD || ((invoice.advanceShortfallUSD || 0) + (invoice.balanceShortfallUSD || 0)) || 0;
+    const isSettledWithShortfall = accountedShortfall > 0 && (totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
+      ? 0
+      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0) {
-      if (balanceRealizationCurrency <= 0.05 || totalRealizedCurrency >= invoice.totalAmountCurrency) {
+    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
+      if (
+        balanceRealizationCurrency <= 0.05 ||
+        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
+        isSettledWithShortfall
+      ) {
         realizationStatus = 'Fully Realized';
       } else {
         realizationStatus = 'Partially Realized';
@@ -5798,14 +5827,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const totalRealizedCurrency = Number(((advanceReceivedCurrency || 0) + (balancePaymentAmountCurrency || 0)).toFixed(2));
       const totalRealizedINR = Number(((advanceReceivedINR || 0) + (balancePaymentINR || 0)).toFixed(2));
-      const balanceRealizationCurrency = Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
+      const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
+      const isSettledWithShortfall = (Boolean(balancePaymentAmountCurrency) || (Boolean(advanceReceivedCurrency) && !balancePaymentAmountCurrency && !balanceActualPriceUSD)) &&
+        (totalRealizedCurrency + accountedShortfall >= totalAmountCurrency - 0.05);
+      const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= totalAmountCurrency - 0.05)
+        ? 0
+        : Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
 
       let realizationStatus: RealizationStatus = 'Not Realized';
-      if (totalRealizedCurrency > 0) {
+      if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
         if (
           balanceRealizationCurrency <= 0.05 ||
-          totalRealizedCurrency >= totalAmountCurrency ||
-          (balancePaymentAmountCurrency && totalRealizedCurrency + (totalShortfallUSD || 0) >= totalAmountCurrency - 0.05)
+          totalRealizedCurrency >= totalAmountCurrency - 0.05 ||
+          isSettledWithShortfall
         ) {
           realizationStatus = 'Fully Realized';
         } else {
@@ -6213,17 +6247,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const balINR = Number((balUSD * balanceRate).toFixed(2));
       const totalRealizedCurrency = Number((advUSD + balUSD).toFixed(2));
       const totalRealizedINR = Number((advINR + balINR).toFixed(2));
-      const balanceRealizationCurrency = Math.max(
-        0,
-        Number((baseInv.totalAmountCurrency - totalRealizedCurrency).toFixed(2))
-      );
+      const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
+      const isSettledWithShortfall = (balUSD > 0 || (advUSD > 0 && !balUSD && !balanceActualPriceUSD)) &&
+        (totalRealizedCurrency + accountedShortfall >= baseInv.totalAmountCurrency - 0.05);
+      const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= baseInv.totalAmountCurrency - 0.05)
+        ? 0
+        : Math.max(0, Number((baseInv.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
 
       let realizationStatus: RealizationStatus = 'Not Realized';
-      if (totalRealizedCurrency > 0) {
+      if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
         if (
           balanceRealizationCurrency <= 0.05 ||
-          totalRealizedCurrency >= baseInv.totalAmountCurrency ||
-          (balUSD > 0 && totalRealizedCurrency + (totalShortfallUSD || 0) >= baseInv.totalAmountCurrency - 0.05)
+          totalRealizedCurrency >= baseInv.totalAmountCurrency - 0.05 ||
+          isSettledWithShortfall
         ) {
           realizationStatus = 'Fully Realized';
         } else {
