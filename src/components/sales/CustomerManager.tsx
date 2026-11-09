@@ -20,7 +20,8 @@ import {
   Download,
   Building,
   ShieldCheck,
-  CreditCard
+  CreditCard,
+  MapPin
 } from 'lucide-react';
 
 export const CustomerManager: React.FC = () => {
@@ -493,15 +494,18 @@ export const CustomerManager: React.FC = () => {
               )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-[11px] text-ink-400 truncate max-w-[180px]">
-                {c.address || 'No registered address'}
-              </span>
+            <div className="mt-4 pt-3 border-t border-gray-100 flex items-start justify-between gap-2">
+              <div className="flex items-start gap-1.5 text-[11px] text-ink-600 min-w-0" title={c.address || 'No registered address'}>
+                <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                <span className="line-clamp-2 leading-relaxed font-medium">
+                  {c.address || 'No registered address'}
+                </span>
+              </div>
 
               {permissions.canManageSalesMasterData && (
                 <button
                   onClick={() => toggleCustomerActive(c.id)}
-                  className="transition"
+                  className="transition shrink-0 ml-auto"
                 >
                   <StatusBadge status={c.active ? 'Active' : 'Inactive'} />
                 </button>

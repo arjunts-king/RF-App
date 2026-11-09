@@ -2410,6 +2410,70 @@ test('Invoices 35 and 53 Shortfall Resolution: zero outstanding and Fully Realiz
   assert.equal(inv53RemainingUSD, 0, 'Invoice 53 remaining unrealized balance is 0.00');
 });
 
+test('Consignee Masters & Address Verification from Import Template', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  const custPrefix = 'export const VERIFIED_CUSTOMERS: Customer[] = ';
+  const custStart = content.indexOf(custPrefix);
+  const custEnd = content.indexOf('export const VERIFIED_PORTS');
+  const custs = JSON.parse(content.slice(custStart + custPrefix.length, custEnd).trim().replace(/;$/, ''));
+
+  assert.ok(custs.length >= 31, 'Consignee masters must contain all 31 verified consignees');
+
+  const invPrefix = 'export const VERIFIED_SALES_INVOICES: SalesInvoice[] = ';
+  const invStart = content.indexOf(invPrefix);
+  const invoices = JSON.parse(content.slice(invStart + invPrefix.length).trim().replace(/;$/, ''));
+
+  // Verify specific authentic addresses from Excel
+  const wealthOcean = custs.find((c) => c.name === 'WEALTHOCEANSUPPLY CO. LTD.');
+  assert.ok(wealthOcean, 'WEALTHOCEANSUPPLY CO. LTD. must exist');
+  assert.ok(
+    wealthOcean.address.includes('Phawong Subdistrict') && wealthOcean.address.includes('Songkhla'),
+    'WEALTHOCEANSUPPLY CO. LTD. address must contain authentic street details'
+  );
+
+  const jiraSmith = custs.find((c) => c.name === 'JIRA SMITH TRADING CO. LTD.');
+  assert.ok(jiraSmith, 'JIRA SMITH TRADING CO. LTD. must exist');
+  assert.ok(
+    jiraSmith.address.includes('411 MOO.7, T. TAIBAN A. MUANG'),
+    'JIRA SMITH TRADING CO. LTD. address must contain authentic street details'
+  );
+
+  const xiamen = custs.find((c) => c.name === 'XIAMEN BOYUANSHUN TRADE AGENT CO. LTD');
+  assert.ok(xiamen, 'XIAMEN BOYUANSHUN TRADE AGENT CO. LTD must exist');
+  assert.ok(
+    xiamen.address.includes('XINSHIDAI BUILDING') && xiamen.address.includes('HULI AVENUE'),
+    'XIAMEN address must contain authentic building details'
+  );
+
+  const leeHup = custs.find((c) => c.name === 'LEE HUP GUAN SDN BHD');
+  assert.ok(leeHup, 'LEE HUP GUAN SDN BHD must exist');
+  assert.ok(
+    leeHup.address.includes('LOT 1044, JALAN DUA') && leeHup.address.includes('BATU CAVES'),
+    'LEE HUP GUAN address must contain authentic Malaysian street details'
+  );
+
+  const umios = custs.find((c) => c.name === 'UMIOS CORPORATION');
+  assert.ok(umios, 'UMIOS CORPORATION must exist');
+  assert.ok(
+    umios.address.includes('2-21-2, TAKANAWA MINATO-KU Tokyo Japan'),
+    'UMIOS address must contain authentic Tokyo street details'
+  );
+
+  // Invoices must reference non-empty authentic addresses
+  const invoicesWithAddresses = invoices.filter(
+    (inv) => inv.consigneeAddress && inv.consigneeAddress.length > 15
+  );
+  assert.equal(
+    invoicesWithAddresses.length,
+    invoices.length,
+    'All 71 commercial invoices must have complete consignee addresses populated'
+  );
+});
+
 
 
 

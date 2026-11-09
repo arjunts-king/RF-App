@@ -500,12 +500,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const existingNames = new Set(rawList.map((c) => c.name.trim().toLowerCase()));
     const missing = VERIFIED_CUSTOMERS.filter((c) => !existingNames.has(c.name.trim().toLowerCase()));
     const merged = [...rawList, ...missing];
-    return merged.map((c) => ({
-      ...c,
-      customerType: c.customerType || 'Overseas',
-      gstTreatment: c.gstTreatment || 'Overseas (GST Exempt Export Supply)',
-      isGstExempt: c.isGstExempt !== undefined ? c.isGstExempt : true
-    }));
+    const verifiedMap = new Map(VERIFIED_CUSTOMERS.map((v) => [v.name.trim().toLowerCase(), v]));
+    const verifiedCodeMap = new Map(VERIFIED_CUSTOMERS.map((v) => [v.code.trim().toLowerCase(), v]));
+    const result = merged.map((c) => {
+      const v = verifiedMap.get(c.name.trim().toLowerCase()) || verifiedCodeMap.get(c.code.trim().toLowerCase());
+      const needsAddressUpdate = !c.address || c.address.trim().toLowerCase() === c.country.trim().toLowerCase() || c.address.length < 15;
+      return {
+        ...c,
+        address: (v && v.address && needsAddressUpdate) ? v.address : (c.address || v?.address || ''),
+        phone: c.phone || v?.phone || '',
+        email: c.email || v?.email || '',
+        contactPerson: c.contactPerson || v?.contactPerson || '',
+        customerType: c.customerType || v?.customerType || 'Overseas',
+        gstTreatment: c.gstTreatment || v?.gstTreatment || 'Overseas (GST Exempt Export Supply)',
+        isGstExempt: c.isGstExempt !== undefined ? c.isGstExempt : true
+      };
+    });
+    localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(result));
+    return result;
   });
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
@@ -711,6 +723,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           clean.totalFobValueCurrency = v.totalFobValueCurrency ?? 0;
           clean.totalFobValueINR = v.totalFobValueINR ?? 0;
+        }
+
+        // Auto-enrich consignee and buyer addresses from verified consignee masters if missing or generic
+        if (v && v.consigneeAddress) {
+          if (
+            !clean.consigneeAddress ||
+            clean.consigneeAddress.length < 15 ||
+            clean.consigneeAddress.trim().toLowerCase() === clean.countryOfDestination?.trim().toLowerCase()
+          ) {
+            clean.consigneeAddress = v.consigneeAddress;
+          }
+          if (
+            !clean.buyerAddress ||
+            clean.buyerAddress.length < 15 ||
+            clean.buyerAddress.trim().toLowerCase() === clean.countryOfDestination?.trim().toLowerCase()
+          ) {
+            clean.buyerAddress = v.buyerAddress || v.consigneeAddress;
+          }
         }
 
         return clean;
@@ -1295,7 +1325,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const code = String(getFlexibleValue(row, ['customercode', 'code', 'id']) || `CUST-${String(currentList.length + 1).padStart(3, '0')}`).trim();
       const country = String(getFlexibleValue(row, ['country', 'destinationcountry']) || 'Unknown').trim();
-      const address = String(getFlexibleValue(row, ['address', 'location']) || '').trim();
+      const address = String(getFlexibleValue(row, ['address', 'location', 'consigneeaddress', 'buyeraddress', 'registeredaddress', 'destinationaddress', 'consigneelocation']) || '').trim();
       const contactPerson = String(getFlexibleValue(row, ['contactperson', 'contact', 'person']) || '').trim();
       const phone = String(getFlexibleValue(row, ['phone', 'mobile', 'tel']) || '').trim();
       const email = String(getFlexibleValue(row, ['email', 'mail']) || '').trim();
@@ -1321,7 +1351,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           gstTreatment,
           isGstExempt,
           country,
-          address,
+          address: address || currentList[existingIdx].address,
           contactPerson,
           phone,
           email,
