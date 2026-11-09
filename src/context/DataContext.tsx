@@ -317,7 +317,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
-  const SALES_DATASET_VERSION = 'v71_authentic_fob_5628701_v7';
+  const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
 
   const [species, setSpecies] = useState<Species[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
@@ -6476,15 +6476,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'advancereceivedusd',
           'advancereceived',
           'advancereceivedcurrency',
-          'advanceamount',
-          'advanceusd',
-          'advance'
+          'advanceamountreceived',
+          'advanceusdreceived'
         ]) || ''
       );
       const advUSD =
-        !isNaN(rawAdvUSD) && rawAdvUSD >= 0
+        !isNaN(rawAdvUSD) && rawAdvUSD > 0
           ? Number(rawAdvUSD.toFixed(2))
-          : baseInv.advanceReceivedCurrency || 0;
+          : 0;
 
       const rawAdvTermsUSD = parseFloat(
         getFlexibleValue(row, [
@@ -6493,11 +6492,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'advancecontracttermsusd',
           'advancecontractterms',
           'contractadvanceusd',
-          'contractadvance',
-          'contractualadvanceusd',
-          'contractualadvance',
-          'advanceaspertcontracttermsusd',
-          'advanceaspertcontractterms'
+          'contractualadvanceusd'
         ]) || ''
       );
       const advanceTermsUSD =
@@ -6506,7 +6501,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : (advUSD > 0 ? (baseInv.advanceTermsUSD || advUSD) : undefined);
 
       const advShortfallUSD =
-        advanceTermsUSD && advanceTermsUSD > advUSD
+        advanceTermsUSD && advUSD > 0 && advanceTermsUSD > advUSD
           ? Number((advanceTermsUSD - advUSD).toFixed(2))
           : undefined;
 
@@ -6533,20 +6528,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         getFlexibleValue(row, [
           'actualbalancereceivedusd',
           'actualbalancereceived',
+          'balancereceivedusd',
+          'balancereceived',
           'balancepaymentamountusd',
           'balanacepaymentamount',
           'balancepaymentamount',
-          'balancepaymentamountcurrency',
-          'balancepayment',
-          'balanceamount',
-          'balanceusd',
-          'balance'
+          'balancepaymentamountcurrency'
         ]) || ''
       );
       let balUSD =
-        !isNaN(rawBalUSD) && rawBalUSD >= 0
+        !isNaN(rawBalUSD) && rawBalUSD > 0
           ? Number(rawBalUSD.toFixed(2))
-          : baseInv.balancePaymentAmountCurrency || 0;
+          : 0;
 
       const rawBalPriceUSD = parseFloat(
         getFlexibleValue(row, [
@@ -6567,7 +6560,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               : undefined);
 
       let balShortfallUSD =
-        balanceActualPriceUSD && balanceActualPriceUSD > balUSD
+        balUSD > 0 && balanceActualPriceUSD && balanceActualPriceUSD > balUSD
           ? Number((balanceActualPriceUSD - balUSD).toFixed(2))
           : undefined;
 
@@ -6587,6 +6580,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           balShortfallUSD = Math.max(balShortfallUSD || 0, remainingDiff);
         }
       }
+
+      const rawStatus = String(
+        getFlexibleValue(row, [
+          'currentrealizationstatus',
+          'realizationstatus',
+          'settlementstatus',
+          'status'
+        ]) || ''
+      ).trim();
 
       const totalShortfallUSD =
         (advShortfallUSD || 0) + (balShortfallUSD || 0) > 0
@@ -6650,6 +6652,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
           realizationStatus = 'Partially Realized';
         }
+      } else if (rawStatus === 'Not Realized') {
+        realizationStatus = 'Not Realized';
       }
 
       const updatedRealizations: RealizationRecord[] = [];

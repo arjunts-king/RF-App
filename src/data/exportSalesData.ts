@@ -1272,11 +1272,39 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 125570,
     "totalFobValueINR": 11615225,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 127320,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-01-26-27",
+        "settlementDate": "2026-05-29",
+        "realizedAmountCurrency": 9955,
+        "exchangeRateRealized": 95.1575,
+        "amountINR": 947292.91,
+        "bankRefNo": "ADV-RF/EXP/01/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-01-26-27",
+        "settlementDate": "2026-05-18",
+        "realizedAmountCurrency": 117320,
+        "exchangeRateRealized": 96.23,
+        "amountINR": 11289703.6,
+        "bankRefNo": "BAL-RF/EXP/01/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 117320,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 127275,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12236996.51,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-04-28T00:00:00.000Z",
@@ -1352,7 +1380,22 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 40475.91,
         "fobValueINR": 3744021.63
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9955,
+    "advanceShortfallUSD": 45,
+    "advanceExchangeRate": 95.1575,
+    "advanceReceivedDate": "2026-05-29",
+    "advanceReceivedINR": 947292.91,
+    "balanceActualPriceUSD": 117320,
+    "balancePaymentAmountCurrency": 117320,
+    "balanceExchangeRate": 96.23,
+    "balancePaymentDate": "2026-05-18",
+    "balancePaymentINR": 11289703.6,
+    "totalShortfallUSD": 45,
+    "bankPreDeterminedExchangeRate": 96.23,
+    "lastRealizationDate": "2026-05-18",
+    "averageRealizedExchangeRate": 96.1461128
   },
   {
     "id": "inv-rf-exp-02-26-27",
@@ -1404,11 +1447,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 123680,
     "totalFobValueINR": 11440400,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 125430,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-02-26-27",
+        "settlementDate": "2026-04-29",
+        "realizedAmountCurrency": 9972.5,
+        "exchangeRateRealized": 94.555,
+        "amountINR": 942949.74,
+        "bankRefNo": "ADV-RF/EXP/02/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 27.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-02-26-27",
+        "settlementDate": "2026-05-18",
+        "realizedAmountCurrency": 115392,
+        "exchangeRateRealized": 96.23,
+        "amountINR": 11104172.16,
+        "bankRefNo": "BAL-RF/EXP/02/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 115430,
+        "shortfallUSD": 38,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 125364.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12047121.9,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-04-30T00:00:00.000Z",
@@ -1456,7 +1528,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42153.55,
         "fobValueINR": 3899203.54
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9972.5,
+    "advanceShortfallUSD": 27.5,
+    "advanceExchangeRate": 94.555,
+    "advanceReceivedDate": "2026-04-29",
+    "advanceReceivedINR": 942949.74,
+    "balanceActualPriceUSD": 115430,
+    "balancePaymentAmountCurrency": 115392,
+    "balanceShortfallUSD": 38,
+    "balanceExchangeRate": 96.23,
+    "balancePaymentDate": "2026-05-18",
+    "balancePaymentINR": 11104172.16,
+    "totalShortfallUSD": 65.5,
+    "bankPreDeterminedExchangeRate": 96.23,
+    "lastRealizationDate": "2026-05-18",
+    "averageRealizedExchangeRate": 96.0967571
   },
   {
     "id": "inv-rf-exp-03-26-27",
@@ -1508,11 +1596,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 124138.4,
     "totalFobValueINR": 11842011.44,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 126038.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-03-26-27",
+        "settlementDate": "2026-05-04",
+        "realizedAmountCurrency": 9972.5,
+        "exchangeRateRealized": 94.7275,
+        "amountINR": 944669.99,
+        "bankRefNo": "ADV-RF/EXP/03/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 27.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-03-26-27",
+        "settlementDate": "2026-07-10",
+        "realizedAmountCurrency": 115988.4,
+        "exchangeRateRealized": 95.245,
+        "amountINR": 11047315.16,
+        "bankRefNo": "BAL-RF/EXP/03/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 116038.4,
+        "shortfallUSD": 50,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 125960.9,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 11991985.15,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-05-30T00:00:00.000Z",
@@ -1574,7 +1691,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 50526.66,
         "fobValueINR": 4819921.44
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9972.5,
+    "advanceShortfallUSD": 27.5,
+    "advanceExchangeRate": 94.7275,
+    "advanceReceivedDate": "2026-05-04",
+    "advanceReceivedINR": 944669.99,
+    "balanceActualPriceUSD": 116038.4,
+    "balancePaymentAmountCurrency": 115988.4,
+    "balanceShortfallUSD": 50,
+    "balanceExchangeRate": 95.245,
+    "balancePaymentDate": "2026-07-10",
+    "balancePaymentINR": 11047315.16,
+    "totalShortfallUSD": 77.5,
+    "bankPreDeterminedExchangeRate": 95.245,
+    "lastRealizationDate": "2026-07-10",
+    "averageRealizedExchangeRate": 95.2040288
   },
   {
     "id": "inv-rf-exp-04-26-27",
@@ -1626,11 +1759,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 84420,
     "totalFobValueINR": 8049447,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 86520,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-04-26-27",
+        "settlementDate": "2026-06-01",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 94.775,
+        "amountINR": 944432.88,
+        "bankRefNo": "ADV-RF/EXP/04/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-04-26-27",
+        "settlementDate": "2026-06-25",
+        "realizedAmountCurrency": 76480,
+        "exchangeRateRealized": 94.235,
+        "amountINR": 7207092.8,
+        "bankRefNo": "BAL-RF/EXP/04/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 76520,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 86445,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8151525.68,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-05-30T00:00:00.000Z",
@@ -1832,7 +1994,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 409.81,
         "fobValueINR": 39074.98
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 94.775,
+    "advanceReceivedDate": "2026-06-01",
+    "advanceReceivedINR": 944432.88,
+    "balanceActualPriceUSD": 76520,
+    "balancePaymentAmountCurrency": 76480,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 94.235,
+    "balancePaymentDate": "2026-06-25",
+    "balancePaymentINR": 7207092.8,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 94.235,
+    "lastRealizationDate": "2026-06-25",
+    "averageRealizedExchangeRate": 94.2972489
   },
   {
     "id": "inv-rf-exp-05-26-27",
@@ -1884,11 +2062,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 83144,
     "totalFobValueINR": 7927780.4,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 85244,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-05-26-27",
+        "settlementDate": "2026-06-03",
+        "realizedAmountCurrency": 4965,
+        "exchangeRateRealized": 95.605,
+        "amountINR": 474678.83,
+        "bankRefNo": "ADV-RF/EXP/05/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-05-26-27",
+        "settlementDate": "2026-06-30",
+        "realizedAmountCurrency": 80194,
+        "exchangeRateRealized": 94.5115,
+        "amountINR": 7579255.23,
+        "bankRefNo": "BAL-RF/EXP/05/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 80244,
+        "shortfallUSD": 50,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 85159,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8053934.06,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-06-03T00:00:00.000Z",
@@ -2104,7 +2311,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 622.29,
         "fobValueINR": 59334.66
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.605,
+    "advanceReceivedDate": "2026-06-03",
+    "advanceReceivedINR": 474678.83,
+    "balanceActualPriceUSD": 80244,
+    "balancePaymentAmountCurrency": 80194,
+    "balanceShortfallUSD": 50,
+    "balanceExchangeRate": 94.5115,
+    "balancePaymentDate": "2026-06-30",
+    "balancePaymentINR": 7579255.23,
+    "totalShortfallUSD": 85,
+    "bankPreDeterminedExchangeRate": 94.5115,
+    "lastRealizationDate": "2026-06-30",
+    "averageRealizedExchangeRate": 94.5752541
   },
   {
     "id": "inv-rf-exp-06-26-27",
@@ -2156,11 +2379,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 91180.2,
     "totalFobValueINR": 8694032.07,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 92980.2,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-06-26-27",
+        "settlementDate": "2026-06-04",
+        "realizedAmountCurrency": 9960,
+        "exchangeRateRealized": 95.565,
+        "amountINR": 951827.4,
+        "bankRefNo": "ADV-RF/EXP/06/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-06-26-27",
+        "settlementDate": "2026-06-23",
+        "realizedAmountCurrency": 82935.2,
+        "exchangeRateRealized": 94.6885,
+        "amountINR": 7853009.69,
+        "bankRefNo": "BAL-RF/EXP/06/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 82980.2,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 92895.2,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8804837.09,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-06-04T00:00:00.000Z",
@@ -2264,7 +2516,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 32437.88,
         "fobValueINR": 3092951.82
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9960,
+    "advanceShortfallUSD": 40,
+    "advanceExchangeRate": 95.565,
+    "advanceReceivedDate": "2026-06-04",
+    "advanceReceivedINR": 951827.4,
+    "balanceActualPriceUSD": 82980.2,
+    "balancePaymentAmountCurrency": 82935.2,
+    "balanceShortfallUSD": 45,
+    "balanceExchangeRate": 94.6885,
+    "balancePaymentDate": "2026-06-23",
+    "balancePaymentINR": 7853009.69,
+    "totalShortfallUSD": 85,
+    "bankPreDeterminedExchangeRate": 94.6885,
+    "lastRealizationDate": "2026-06-23",
+    "averageRealizedExchangeRate": 94.7824763
   },
   {
     "id": "inv-rf-exp-07-26-27",
@@ -2316,11 +2584,25 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 91864.5,
     "totalFobValueINR": 8518561.05,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 91864.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-07-26-27",
+        "settlementDate": "2026-06-25",
+        "realizedAmountCurrency": 91864.5,
+        "exchangeRateRealized": 94.235,
+        "amountINR": 8656851.16,
+        "bankRefNo": "BAL-RF/EXP/07/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 91864.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 91864.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8656851.16,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-06-05T00:00:00.000Z",
@@ -2438,7 +2720,16 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3552.5,
         "fobValueINR": 329422.02
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.9,
+    "balanceActualPriceUSD": 91864.5,
+    "balancePaymentAmountCurrency": 91864.5,
+    "balanceExchangeRate": 94.235,
+    "balancePaymentDate": "2026-06-25",
+    "balancePaymentINR": 8656851.16,
+    "bankPreDeterminedExchangeRate": 94.235,
+    "lastRealizationDate": "2026-06-25",
+    "averageRealizedExchangeRate": 94.235
   },
   {
     "id": "inv-rf-exp-08-26-27",
@@ -2490,11 +2781,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 127500,
     "totalFobValueINR": 11934000,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 129300,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-08-26-27",
+        "settlementDate": "2026-06-29",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 94.157,
+        "amountINR": 938274.51,
+        "bankRefNo": "ADV-RF/EXP/08/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-08-26-27",
+        "settlementDate": "2026-08-12",
+        "realizedAmountCurrency": 119260,
+        "exchangeRateRealized": 95.315,
+        "amountINR": 11367266.9,
+        "bankRefNo": "BAL-RF/EXP/08/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 119300,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 129225,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12305541.41,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-06-24T00:00:00.000Z",
@@ -2570,7 +2890,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 34907.19,
         "fobValueINR": 3267313.22
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 94.157,
+    "advanceReceivedDate": "2026-06-29",
+    "advanceReceivedINR": 938274.51,
+    "balanceActualPriceUSD": 119300,
+    "balancePaymentAmountCurrency": 119260,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.315,
+    "balancePaymentDate": "2026-08-12",
+    "balancePaymentINR": 11367266.9,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.315,
+    "lastRealizationDate": "2026-08-12",
+    "averageRealizedExchangeRate": 95.2257025
   },
   {
     "id": "inv-rf-exp-09-26-27",
@@ -2622,11 +2958,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 88212.99,
     "totalFobValueINR": 8247915,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 90240,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-09-26-27",
+        "settlementDate": "2026-07-09",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.235,
+        "amountINR": 949016.78,
+        "bankRefNo": "ADV-RF/EXP/09/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-09-26-27",
+        "settlementDate": "2026-07-28",
+        "realizedAmountCurrency": 80200,
+        "exchangeRateRealized": 95.67,
+        "amountINR": 7672734,
+        "bankRefNo": "BAL-RF/EXP/09/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 80240,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 90165,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8621750.78,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-07T00:00:00.000Z",
@@ -2646,7 +3011,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 88212.99,
         "fobValueINR": 8247915
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.235,
+    "advanceReceivedDate": "2026-07-09",
+    "advanceReceivedINR": 949016.78,
+    "balanceActualPriceUSD": 80240,
+    "balancePaymentAmountCurrency": 80200,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.67,
+    "balancePaymentDate": "2026-07-28",
+    "balancePaymentINR": 7672734,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.67,
+    "lastRealizationDate": "2026-07-28",
+    "averageRealizedExchangeRate": 95.621924
   },
   {
     "id": "inv-rf-exp-10-26-27",
@@ -2698,11 +3079,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 126022,
     "totalFobValueINR": 11783057,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 127908,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-10-26-27",
+        "settlementDate": "2026-07-15",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 96.035,
+        "amountINR": 956988.78,
+        "bankRefNo": "ADV-RF/EXP/10/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-10-26-27",
+        "settlementDate": "2026-08-17",
+        "realizedAmountCurrency": 117868,
+        "exchangeRateRealized": 95.52,
+        "amountINR": 11258751.36,
+        "bankRefNo": "BAL-RF/EXP/10/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 117908,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 127833,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12215740.14,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-09T00:00:00.000Z",
@@ -2778,7 +3188,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 48553.77,
         "fobValueINR": 4539776.73
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 96.035,
+    "advanceReceivedDate": "2026-07-15",
+    "advanceReceivedINR": 956988.78,
+    "balanceActualPriceUSD": 117908,
+    "balancePaymentAmountCurrency": 117868,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.52,
+    "balancePaymentDate": "2026-08-17",
+    "balancePaymentINR": 11258751.36,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.52,
+    "lastRealizationDate": "2026-08-17",
+    "averageRealizedExchangeRate": 95.560146
   },
   {
     "id": "inv-rf-exp-11-26-27",
@@ -2830,11 +3256,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 81068.5,
     "totalFobValueINR": 7579904.75,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 83154.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-11-26-27",
+        "settlementDate": "2026-07-14",
+        "realizedAmountCurrency": 9960,
+        "exchangeRateRealized": 95.965,
+        "amountINR": 955811.4,
+        "bankRefNo": "ADV-RF/EXP/11/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-11-26-27",
+        "settlementDate": "2026-08-05",
+        "realizedAmountCurrency": 73119.5,
+        "exchangeRateRealized": 95.0625,
+        "amountINR": 6950922.47,
+        "bankRefNo": "BAL-RF/EXP/11/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 73154.5,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 83079.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 7906733.87,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-10T00:00:00.000Z",
@@ -3134,7 +3589,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 73.1,
         "fobValueINR": 6836.57
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9960,
+    "advanceShortfallUSD": 40,
+    "advanceExchangeRate": 95.965,
+    "advanceReceivedDate": "2026-07-14",
+    "advanceReceivedINR": 955811.4,
+    "balanceActualPriceUSD": 73154.5,
+    "balancePaymentAmountCurrency": 73119.5,
+    "balanceShortfallUSD": 35,
+    "balanceExchangeRate": 95.0625,
+    "balancePaymentDate": "2026-08-05",
+    "balancePaymentINR": 6950922.47,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.0625,
+    "lastRealizationDate": "2026-08-05",
+    "averageRealizedExchangeRate": 95.1706964
   },
   {
     "id": "inv-rf-exp-12-26-27",
@@ -3186,11 +3657,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 86353.46,
     "totalFobValueINR": 8242437.76,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 88320,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-12-26-27",
+        "settlementDate": "2026-07-17",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 96.1675,
+        "amountINR": 958309.14,
+        "bankRefNo": "ADV-RF/EXP/12/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-12-26-27",
+        "settlementDate": "2026-09-03",
+        "realizedAmountCurrency": 78280,
+        "exchangeRateRealized": 94.31,
+        "amountINR": 7382586.8,
+        "bankRefNo": "BAL-RF/EXP/12/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 78320,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 88245,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8340895.94,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-17T00:00:00.000Z",
@@ -3210,7 +3710,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 86353.46,
         "fobValueINR": 8242437.76
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 96.1675,
+    "advanceReceivedDate": "2026-07-17",
+    "advanceReceivedINR": 958309.14,
+    "balanceActualPriceUSD": 78320,
+    "balancePaymentAmountCurrency": 78280,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 94.31,
+    "balancePaymentDate": "2026-09-03",
+    "balancePaymentINR": 7382586.8,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 94.31,
+    "lastRealizationDate": "2026-09-03",
+    "averageRealizedExchangeRate": 94.5197568
   },
   {
     "id": "inv-rf-exp-13-26-27",
@@ -3262,11 +3778,38 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 127470,
     "totalFobValueINR": 12167011.5,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 129420,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-13-26-27",
+        "settlementDate": "2026-07-21",
+        "realizedAmountCurrency": 10000,
+        "exchangeRateRealized": 96.17,
+        "amountINR": 961700,
+        "bankRefNo": "ADV-RF/EXP/13/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-13-26-27",
+        "settlementDate": "2026-08-19",
+        "realizedAmountCurrency": 119420,
+        "exchangeRateRealized": 95.665,
+        "amountINR": 11424314.3,
+        "bankRefNo": "BAL-RF/EXP/13/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 119420,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 129420,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12386014.3,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-21T00:00:00.000Z",
@@ -3314,7 +3857,20 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 48399.6,
         "fobValueINR": 4619741.5
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 10000,
+    "advanceExchangeRate": 96.17,
+    "advanceReceivedDate": "2026-07-21",
+    "advanceReceivedINR": 961700,
+    "balanceActualPriceUSD": 119420,
+    "balancePaymentAmountCurrency": 119420,
+    "balanceExchangeRate": 95.665,
+    "balancePaymentDate": "2026-08-19",
+    "balancePaymentINR": 11424314.3,
+    "bankPreDeterminedExchangeRate": 95.665,
+    "lastRealizationDate": "2026-08-19",
+    "averageRealizedExchangeRate": 95.7040202
   },
   {
     "id": "inv-rf-exp-14-26-27",
@@ -3366,11 +3922,38 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 128074,
     "totalFobValueINR": 12224663.3,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 129960,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-14-26-27",
+        "settlementDate": "2026-07-29",
+        "realizedAmountCurrency": 10000,
+        "exchangeRateRealized": 95.5525,
+        "amountINR": 955525,
+        "bankRefNo": "ADV-RF/EXP/14/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-14-26-27",
+        "settlementDate": "2026-09-03",
+        "realizedAmountCurrency": 119960,
+        "exchangeRateRealized": 94.35,
+        "amountINR": 11318226,
+        "bankRefNo": "BAL-RF/EXP/14/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 119960,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 129960,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12273751,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-07-29T00:00:00.000Z",
@@ -3432,7 +4015,20 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 41508.74,
         "fobValueINR": 3962009.99
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 10000,
+    "advanceExchangeRate": 95.5525,
+    "advanceReceivedDate": "2026-07-29",
+    "advanceReceivedINR": 955525,
+    "balanceActualPriceUSD": 119960,
+    "balancePaymentAmountCurrency": 119960,
+    "balanceExchangeRate": 94.35,
+    "balancePaymentDate": "2026-09-03",
+    "balancePaymentINR": 11318226,
+    "bankPreDeterminedExchangeRate": 94.35,
+    "lastRealizationDate": "2026-09-03",
+    "averageRealizedExchangeRate": 94.4425285
   },
   {
     "id": "inv-rf-exp-15-26-27",
@@ -3483,11 +4079,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 89200,
     "totalFobValueINR": 8514140,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 91200,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-15-26-27",
+        "settlementDate": "2026-08-27",
+        "realizedAmountCurrency": 91170,
+        "exchangeRateRealized": 95.325,
+        "amountINR": 8690780.25,
+        "bankRefNo": "BAL-RF/EXP/15/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 91200,
+        "shortfallUSD": 30,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 91170,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8690780.25,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-04T00:00:00.000Z",
@@ -3507,7 +4118,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 89200,
         "fobValueINR": 8514140
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.5,
+    "balanceActualPriceUSD": 91200,
+    "balancePaymentAmountCurrency": 91170,
+    "balanceShortfallUSD": 30,
+    "balanceExchangeRate": 95.325,
+    "balancePaymentDate": "2026-08-27",
+    "balancePaymentINR": 8690780.25,
+    "totalShortfallUSD": 30,
+    "bankPreDeterminedExchangeRate": 95.325,
+    "lastRealizationDate": "2026-08-27",
+    "averageRealizedExchangeRate": 95.325
   },
   {
     "id": "inv-rf-exp-16-26-27",
@@ -3559,11 +4181,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 85745.3,
     "totalFobValueINR": 8085781.79,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 87360,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-16-26-27",
+        "settlementDate": "2026-08-12",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.165,
+        "amountINR": 948319.23,
+        "bankRefNo": "ADV-RF/EXP/16/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-16-26-27",
+        "settlementDate": "2026-09-07",
+        "realizedAmountCurrency": 77320,
+        "exchangeRateRealized": 94.3475,
+        "amountINR": 7294948.7,
+        "bankRefNo": "BAL-RF/EXP/16/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 77360,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 87285,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8243267.93,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-07T00:00:00.000Z",
@@ -3583,7 +4234,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 85745.3,
         "fobValueINR": 8085781.79
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.165,
+    "advanceReceivedDate": "2026-08-12",
+    "advanceReceivedINR": 948319.23,
+    "balanceActualPriceUSD": 77360,
+    "balancePaymentAmountCurrency": 77320,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 94.3475,
+    "balancePaymentDate": "2026-09-07",
+    "balancePaymentINR": 7294948.7,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 94.3475,
+    "lastRealizationDate": "2026-09-07",
+    "averageRealizedExchangeRate": 94.440831
   },
   {
     "id": "inv-rf-exp-17-26-27",
@@ -3634,11 +4301,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 125623.32,
     "totalFobValueINR": 11846279.08,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 127498.32,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-17-26-27",
+        "settlementDate": "2026-08-10",
+        "realizedAmountCurrency": 9980,
+        "exchangeRateRealized": 95.115,
+        "amountINR": 949247.7,
+        "bankRefNo": "ADV-RF/EXP/17/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 20,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-17-26-27",
+        "settlementDate": "2026-08-24",
+        "realizedAmountCurrency": 117473.32,
+        "exchangeRateRealized": 95.6325,
+        "amountINR": 11234267.27,
+        "bankRefNo": "BAL-RF/EXP/17/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 117498.32,
+        "shortfallUSD": 25,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 127453.32,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12183514.97,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-08T00:00:00.000Z",
@@ -3756,7 +4452,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 10402.81,
         "fobValueINR": 980985.18
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9980,
+    "advanceShortfallUSD": 20,
+    "advanceExchangeRate": 95.115,
+    "advanceReceivedDate": "2026-08-10",
+    "advanceReceivedINR": 949247.7,
+    "balanceActualPriceUSD": 117498.32,
+    "balancePaymentAmountCurrency": 117473.32,
+    "balanceShortfallUSD": 25,
+    "balanceExchangeRate": 95.6325,
+    "balancePaymentDate": "2026-08-24",
+    "balancePaymentINR": 11234267.27,
+    "totalShortfallUSD": 45,
+    "bankPreDeterminedExchangeRate": 95.6325,
+    "lastRealizationDate": "2026-08-24",
+    "averageRealizedExchangeRate": 95.5919781
   },
   {
     "id": "inv-rf-exp-18-26-27",
@@ -3808,11 +4520,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 122124,
     "totalFobValueINR": 11516293.2,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 124110,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-18-26-27",
+        "settlementDate": "2026-08-18",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.51,
+        "amountINR": 951757.15,
+        "bankRefNo": "ADV-RF/EXP/18/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-18-26-27",
+        "settlementDate": "2026-09-15",
+        "realizedAmountCurrency": 114070,
+        "exchangeRateRealized": 95.86,
+        "amountINR": 10934750.2,
+        "bankRefNo": "BAL-RF/EXP/18/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 114110,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 124035,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 11886507.35,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-14T00:00:00.000Z",
@@ -3874,7 +4615,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 30818.82,
         "fobValueINR": 2906214.67
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.51,
+    "advanceReceivedDate": "2026-08-18",
+    "advanceReceivedINR": 951757.15,
+    "balanceActualPriceUSD": 114110,
+    "balancePaymentAmountCurrency": 114070,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.86,
+    "balancePaymentDate": "2026-09-15",
+    "balancePaymentINR": 10934750.2,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.86,
+    "lastRealizationDate": "2026-09-15",
+    "averageRealizedExchangeRate": 95.8318809
   },
   {
     "id": "inv-rf-exp-19-26-27",
@@ -3926,11 +4683,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 68160,
     "totalFobValueINR": 6427488,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 70560,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-19-26-27",
+        "settlementDate": "2026-08-13",
+        "realizedAmountCurrency": 4955,
+        "exchangeRateRealized": 95.03,
+        "amountINR": 470873.65,
+        "bankRefNo": "ADV-RF/EXP/19/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-19-26-27",
+        "settlementDate": "2026-09-30",
+        "realizedAmountCurrency": 65515,
+        "exchangeRateRealized": 95.7375,
+        "amountINR": 6272242.31,
+        "bankRefNo": "BAL-RF/EXP/19/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 65560,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 70470,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 6743115.96,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-17T00:00:00.000Z",
@@ -3964,7 +4750,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 59466.12,
         "fobValueINR": 5607655.35
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4955,
+    "advanceShortfallUSD": 45,
+    "advanceExchangeRate": 95.03,
+    "advanceReceivedDate": "2026-08-13",
+    "advanceReceivedINR": 470873.65,
+    "balanceActualPriceUSD": 65560,
+    "balancePaymentAmountCurrency": 65515,
+    "balanceShortfallUSD": 45,
+    "balanceExchangeRate": 95.7375,
+    "balancePaymentDate": "2026-09-30",
+    "balancePaymentINR": 6272242.31,
+    "totalShortfallUSD": 90,
+    "bankPreDeterminedExchangeRate": 95.7375,
+    "lastRealizationDate": "2026-09-30",
+    "averageRealizedExchangeRate": 95.6877531
   },
   {
     "id": "inv-rf-exp-20-26-27",
@@ -4016,11 +4818,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 119048.4,
     "totalFobValueINR": 11226264.12,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 121034.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-20-26-27",
+        "settlementDate": "2026-08-17",
+        "realizedAmountCurrency": 9972.5,
+        "exchangeRateRealized": 95.445,
+        "amountINR": 951825.26,
+        "bankRefNo": "ADV-RF/EXP/20/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 27.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-20-26-27",
+        "settlementDate": "2026-09-09",
+        "realizedAmountCurrency": 111001.9,
+        "exchangeRateRealized": 95.08,
+        "amountINR": 10554060.65,
+        "bankRefNo": "BAL-RF/EXP/20/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 111034.4,
+        "shortfallUSD": 32.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 120974.4,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 11505885.91,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-17T00:00:00.000Z",
@@ -4068,7 +4899,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 51371.81,
         "fobValueINR": 4844360.81
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9972.5,
+    "advanceShortfallUSD": 27.5,
+    "advanceExchangeRate": 95.445,
+    "advanceReceivedDate": "2026-08-17",
+    "advanceReceivedINR": 951825.26,
+    "balanceActualPriceUSD": 111034.4,
+    "balancePaymentAmountCurrency": 111001.9,
+    "balanceShortfallUSD": 32.5,
+    "balanceExchangeRate": 95.08,
+    "balancePaymentDate": "2026-09-09",
+    "balancePaymentINR": 10554060.65,
+    "totalShortfallUSD": 60,
+    "bankPreDeterminedExchangeRate": 95.08,
+    "lastRealizationDate": "2026-09-09",
+    "averageRealizedExchangeRate": 95.1100887
   },
   {
     "id": "inv-rf-exp-21-26-27",
@@ -4120,11 +4967,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 39915.2,
     "totalFobValueINR": 3764003.36,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 42055.2,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-21-26-27",
+        "settlementDate": "2026-08-13",
+        "realizedAmountCurrency": 4965,
+        "exchangeRateRealized": 95.03,
+        "amountINR": 471823.95,
+        "bankRefNo": "ADV-RF/EXP/21/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-21-26-27",
+        "settlementDate": "2026-09-28",
+        "realizedAmountCurrency": 37020.2,
+        "exchangeRateRealized": 95.8425,
+        "amountINR": 3548108.52,
+        "bankRefNo": "BAL-RF/EXP/21/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 37055.2,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 41985.2,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4019932.47,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-17T00:00:00.000Z",
@@ -4144,7 +5020,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 39915.2,
         "fobValueINR": 3764003.36
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.03,
+    "advanceReceivedDate": "2026-08-13",
+    "advanceReceivedINR": 471823.95,
+    "balanceActualPriceUSD": 37055.2,
+    "balancePaymentAmountCurrency": 37020.2,
+    "balanceShortfallUSD": 35,
+    "balanceExchangeRate": 95.8425,
+    "balancePaymentDate": "2026-09-28",
+    "balancePaymentINR": 3548108.52,
+    "totalShortfallUSD": 70,
+    "bankPreDeterminedExchangeRate": 95.8425,
+    "lastRealizationDate": "2026-09-28",
+    "averageRealizedExchangeRate": 95.7464171
   },
   {
     "id": "inv-rf-exp-22-26-27",
@@ -4196,11 +5088,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 112160.72,
     "totalFobValueINR": 10632836.26,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 114300.72,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-22-26-27",
+        "settlementDate": "2026-08-18",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.515,
+        "amountINR": 951806.97,
+        "bankRefNo": "ADV-RF/EXP/22/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-22-26-27",
+        "settlementDate": "2026-09-02",
+        "realizedAmountCurrency": 104260.72,
+        "exchangeRateRealized": 94.88,
+        "amountINR": 9892257.11,
+        "bankRefNo": "BAL-RF/EXP/22/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 104300.72,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 114225.72,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 10844064.08,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-21T00:00:00.000Z",
@@ -4262,7 +5183,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11214.59,
         "fobValueINR": 1063142.98
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.515,
+    "advanceReceivedDate": "2026-08-18",
+    "advanceReceivedINR": 951806.97,
+    "balanceActualPriceUSD": 104300.72,
+    "balancePaymentAmountCurrency": 104260.72,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 94.88,
+    "balancePaymentDate": "2026-09-02",
+    "balancePaymentINR": 9892257.11,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 94.88,
+    "lastRealizationDate": "2026-09-02",
+    "averageRealizedExchangeRate": 94.935397
   },
   {
     "id": "inv-rf-exp-23-26-27",
@@ -4314,11 +5251,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 76163.88,
     "totalFobValueINR": 7220335.82,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 78600,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-23-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 78561,
+        "exchangeRateRealized": 95.7975,
+        "amountINR": 7525947.4,
+        "bankRefNo": "BAL-RF/EXP/23/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 78600,
+        "shortfallUSD": 39,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 78561,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 7525947.4,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-24T00:00:00.000Z",
@@ -4352,7 +5304,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 59477.59,
         "fobValueINR": 5638475.99
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.8,
+    "balanceActualPriceUSD": 78600,
+    "balancePaymentAmountCurrency": 78561,
+    "balanceShortfallUSD": 39,
+    "balanceExchangeRate": 95.7975,
+    "balancePaymentDate": "2026-09-24",
+    "balancePaymentINR": 7525947.4,
+    "totalShortfallUSD": 39,
+    "bankPreDeterminedExchangeRate": 95.7975,
+    "lastRealizationDate": "2026-09-24",
+    "averageRealizedExchangeRate": 95.7975
   },
   {
     "id": "inv-rf-exp-24-26-27",
@@ -4404,11 +5367,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 118770,
     "totalFobValueINR": 11259396,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 120756,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-24-26-27",
+        "settlementDate": "2026-08-27",
+        "realizedAmountCurrency": 9960,
+        "exchangeRateRealized": 95.3225,
+        "amountINR": 949412.1,
+        "bankRefNo": "ADV-RF/EXP/24/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-24-26-27",
+        "settlementDate": "2026-09-15",
+        "realizedAmountCurrency": 110711,
+        "exchangeRateRealized": 95.86,
+        "amountINR": 10612756.46,
+        "bankRefNo": "BAL-RF/EXP/24/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 110756,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 120671,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 11562168.56,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-24T00:00:00.000Z",
@@ -4456,7 +5448,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 41781.36,
         "fobValueINR": 3960872.69
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9960,
+    "advanceShortfallUSD": 40,
+    "advanceExchangeRate": 95.3225,
+    "advanceReceivedDate": "2026-08-27",
+    "advanceReceivedINR": 949412.1,
+    "balanceActualPriceUSD": 110756,
+    "balancePaymentAmountCurrency": 110711,
+    "balanceShortfallUSD": 45,
+    "balanceExchangeRate": 95.86,
+    "balancePaymentDate": "2026-09-15",
+    "balancePaymentINR": 10612756.46,
+    "totalShortfallUSD": 85,
+    "bankPreDeterminedExchangeRate": 95.86,
+    "lastRealizationDate": "2026-09-15",
+    "averageRealizedExchangeRate": 95.8156356
   },
   {
     "id": "inv-rf-exp-25-26-27",
@@ -4508,11 +5516,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 81514.4,
     "totalFobValueINR": 7727565.12,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 83414.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-25-26-27",
+        "settlementDate": "2026-08-12",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.2525,
+        "amountINR": 949191.16,
+        "bankRefNo": "ADV-RF/EXP/25/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-25-26-27",
+        "settlementDate": "2026-10-12",
+        "realizedAmountCurrency": 73379.4,
+        "exchangeRateRealized": 95.595,
+        "amountINR": 7014703.74,
+        "bankRefNo": "BAL-RF/EXP/25/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 73414.4,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 83344.4,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 7963894.9,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-27T00:00:00.000Z",
@@ -4560,7 +5597,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 37308.38,
         "fobValueINR": 3536835.14
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.2525,
+    "advanceReceivedDate": "2026-08-12",
+    "advanceReceivedINR": 949191.16,
+    "balanceActualPriceUSD": 73414.4,
+    "balancePaymentAmountCurrency": 73379.4,
+    "balanceShortfallUSD": 35,
+    "balanceExchangeRate": 95.595,
+    "balancePaymentDate": "2026-10-12",
+    "balancePaymentINR": 7014703.74,
+    "totalShortfallUSD": 70,
+    "bankPreDeterminedExchangeRate": 95.595,
+    "lastRealizationDate": "2026-10-12",
+    "averageRealizedExchangeRate": 95.5540492
   },
   {
     "id": "inv-rf-exp-26-26-27",
@@ -4612,11 +5665,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 101896.4,
     "totalFobValueINR": 9659778.72,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 104036.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-26-26-27",
+        "settlementDate": "2026-08-31",
+        "realizedAmountCurrency": 9965,
+        "exchangeRateRealized": 95.2825,
+        "amountINR": 949490.11,
+        "bankRefNo": "ADV-RF/EXP/26/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-26-26-27",
+        "settlementDate": "2026-09-23",
+        "realizedAmountCurrency": 93996.4,
+        "exchangeRateRealized": 95.61,
+        "amountINR": 8986995.8,
+        "bankRefNo": "BAL-RF/EXP/26/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 94036.4,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 103961.4,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 9936485.91,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-31T00:00:00.000Z",
@@ -4720,7 +5802,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4362.83,
         "fobValueINR": 413596.56
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 9965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.2825,
+    "advanceReceivedDate": "2026-08-31",
+    "advanceReceivedINR": 949490.11,
+    "balanceActualPriceUSD": 94036.4,
+    "balancePaymentAmountCurrency": 93996.4,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.61,
+    "balancePaymentDate": "2026-09-23",
+    "balancePaymentINR": 8986995.8,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 95.61,
+    "lastRealizationDate": "2026-09-23",
+    "averageRealizedExchangeRate": 95.5786081
   },
   {
     "id": "inv-rf-exp-27-26-27",
@@ -4772,11 +5870,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 68272.42,
     "totalFobValueINR": 6472225.42,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 70800,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-27-26-27",
+        "settlementDate": "2026-10-01",
+        "realizedAmountCurrency": 70755,
+        "exchangeRateRealized": 95.9325,
+        "amountINR": 6787704.04,
+        "bankRefNo": "BAL-RF/EXP/27/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 70800,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 70755,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 6787704.04,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-08-31T00:00:00.000Z",
@@ -4796,7 +5909,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 68272.42,
         "fobValueINR": 6472225.42
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.8,
+    "balanceActualPriceUSD": 70800,
+    "balancePaymentAmountCurrency": 70755,
+    "balanceShortfallUSD": 45,
+    "balanceExchangeRate": 95.9325,
+    "balancePaymentDate": "2026-10-01",
+    "balancePaymentINR": 6787704.04,
+    "totalShortfallUSD": 45,
+    "bankPreDeterminedExchangeRate": 95.9325,
+    "lastRealizationDate": "2026-10-01",
+    "averageRealizedExchangeRate": 95.9325
   },
   {
     "id": "inv-rf-exp-28-26-27",
@@ -4847,11 +5971,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 42500,
     "totalFobValueINR": 4029000,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 44200,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-28-26-27",
+        "settlementDate": "2026-10-07",
+        "realizedAmountCurrency": 44150,
+        "exchangeRateRealized": 96.55,
+        "amountINR": 4262682.5,
+        "bankRefNo": "BAL-RF/EXP/28/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 44200,
+        "shortfallUSD": 50,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 44150,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4262682.5,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-01T00:00:00.000Z",
@@ -4871,7 +6010,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42500,
         "fobValueINR": 4029000
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.8,
+    "balanceActualPriceUSD": 44200,
+    "balancePaymentAmountCurrency": 44150,
+    "balanceShortfallUSD": 50,
+    "balanceExchangeRate": 96.55,
+    "balancePaymentDate": "2026-10-07",
+    "balancePaymentINR": 4262682.5,
+    "totalShortfallUSD": 50,
+    "bankPreDeterminedExchangeRate": 96.55,
+    "lastRealizationDate": "2026-10-07",
+    "averageRealizedExchangeRate": 96.55
   },
   {
     "id": "inv-rf-exp-29-26-27",
@@ -4922,11 +6072,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 42206.5,
     "totalFobValueINR": 4001176.2,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 43906.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-29-26-27",
+        "settlementDate": "2026-09-15",
+        "realizedAmountCurrency": 43851.5,
+        "exchangeRateRealized": 95.8075,
+        "amountINR": 4201302.59,
+        "bankRefNo": "BAL-RF/EXP/29/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 43906.5,
+        "shortfallUSD": 55,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 43851.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4201302.59,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-01T00:00:00.000Z",
@@ -4974,7 +6139,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 830.54,
         "fobValueINR": 78735.87
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.8,
+    "balanceActualPriceUSD": 43906.5,
+    "balancePaymentAmountCurrency": 43851.5,
+    "balanceShortfallUSD": 55,
+    "balanceExchangeRate": 95.8075,
+    "balancePaymentDate": "2026-09-15",
+    "balancePaymentINR": 4201302.59,
+    "totalShortfallUSD": 55,
+    "bankPreDeterminedExchangeRate": 95.8075,
+    "lastRealizationDate": "2026-09-15",
+    "averageRealizedExchangeRate": 95.8075001
   },
   {
     "id": "inv-rf-exp-30-26-27",
@@ -5025,11 +6201,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 43842.5,
     "totalFobValueINR": 4101465.88,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 45542.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-30-26-27",
+        "settlementDate": "2026-09-22",
+        "realizedAmountCurrency": 45032.5,
+        "exchangeRateRealized": 95.6575,
+        "amountINR": 4307696.37,
+        "bankRefNo": "BAL-RF/EXP/30/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 45542.5,
+        "shortfallUSD": 510,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 45032.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4307696.37,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-04T00:00:00.000Z",
@@ -5077,7 +6268,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 402.88,
         "fobValueINR": 37689.27
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 45542.5,
+    "balancePaymentAmountCurrency": 45032.5,
+    "balanceShortfallUSD": 510,
+    "balanceExchangeRate": 95.6575,
+    "balancePaymentDate": "2026-09-22",
+    "balancePaymentINR": 4307696.37,
+    "totalShortfallUSD": 510,
+    "bankPreDeterminedExchangeRate": 95.6575,
+    "lastRealizationDate": "2026-09-22",
+    "averageRealizedExchangeRate": 95.6575
   },
   {
     "id": "inv-rf-exp-31-26-27",
@@ -5129,11 +6331,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 47545,
     "totalFobValueINR": 4447834.75,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 49595,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-31-26-27",
+        "settlementDate": "2026-09-07",
+        "realizedAmountCurrency": 4965,
+        "exchangeRateRealized": 94.305,
+        "amountINR": 468224.33,
+        "bankRefNo": "ADV-RF/EXP/31/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-31-26-27",
+        "settlementDate": "2026-09-17",
+        "realizedAmountCurrency": 44580,
+        "exchangeRateRealized": 95.7775,
+        "amountINR": 4269760.95,
+        "bankRefNo": "BAL-RF/EXP/31/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 44595,
+        "shortfallUSD": 15,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 49545,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4737985.28,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-04T00:00:00.000Z",
@@ -5307,7 +6538,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 306.77,
         "fobValueINR": 28698.61
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 94.305,
+    "advanceReceivedDate": "2026-09-07",
+    "advanceReceivedINR": 468224.33,
+    "balanceActualPriceUSD": 44595,
+    "balancePaymentAmountCurrency": 44580,
+    "balanceShortfallUSD": 15,
+    "balanceExchangeRate": 95.7775,
+    "balancePaymentDate": "2026-09-17",
+    "balancePaymentINR": 4269760.95,
+    "totalShortfallUSD": 50,
+    "bankPreDeterminedExchangeRate": 95.7775,
+    "lastRealizationDate": "2026-09-17",
+    "averageRealizedExchangeRate": 95.629938
   },
   {
     "id": "inv-rf-exp-32-26-27",
@@ -5358,11 +6605,25 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 49311.5,
     "totalFobValueINR": 4613090.83,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 51161.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-32-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 51161.5,
+        "exchangeRateRealized": 95.8175,
+        "amountINR": 4902167.03,
+        "bankRefNo": "BAL-RF/EXP/32/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 51161.5,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 51161.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4902167.03,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-07T00:00:00.000Z",
@@ -5466,7 +6727,16 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 115.66,
         "fobValueINR": 10820.06
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 51161.5,
+    "balancePaymentAmountCurrency": 51161.5,
+    "balanceExchangeRate": 95.8175,
+    "balancePaymentDate": "2026-09-24",
+    "balancePaymentINR": 4902167.03,
+    "bankPreDeterminedExchangeRate": 95.8175,
+    "lastRealizationDate": "2026-09-24",
+    "averageRealizedExchangeRate": 95.8175001
   },
   {
     "id": "inv-rf-exp-33-26-27",
@@ -5517,11 +6787,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 51172.5,
     "totalFobValueINR": 4787187.38,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 53022.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-33-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 52967.5,
+        "exchangeRateRealized": 95.8175,
+        "amountINR": 5075213.43,
+        "bankRefNo": "BAL-RF/EXP/33/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 53022.5,
+        "shortfallUSD": 55,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 52967.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5075213.43,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-08T00:00:00.000Z",
@@ -5555,7 +6840,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 42291.08,
         "fobValueINR": 3956330.82
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 53022.5,
+    "balancePaymentAmountCurrency": 52967.5,
+    "balanceShortfallUSD": 55,
+    "balanceExchangeRate": 95.8175,
+    "balancePaymentDate": "2026-09-24",
+    "balancePaymentINR": 5075213.43,
+    "totalShortfallUSD": 55,
+    "bankPreDeterminedExchangeRate": 95.8175,
+    "lastRealizationDate": "2026-09-24",
+    "averageRealizedExchangeRate": 95.8175
   },
   {
     "id": "inv-rf-exp-34-26-27",
@@ -5606,11 +6902,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 49450,
     "totalFobValueINR": 4626047.5,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 51200,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-34-26-27",
+        "settlementDate": "2026-10-23",
+        "realizedAmountCurrency": 50454,
+        "exchangeRateRealized": 94.71,
+        "amountINR": 4778498.34,
+        "bankRefNo": "BAL-RF/EXP/34/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 51200,
+        "shortfallUSD": 746,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 50454,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4778498.34,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-09T00:00:00.000Z",
@@ -5644,7 +6955,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 36701.17,
         "fobValueINR": 3433394.63
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 51200,
+    "balancePaymentAmountCurrency": 50454,
+    "balanceShortfallUSD": 746,
+    "balanceExchangeRate": 94.71,
+    "balancePaymentDate": "2026-10-23",
+    "balancePaymentINR": 4778498.34,
+    "totalShortfallUSD": 746,
+    "bankPreDeterminedExchangeRate": 94.71,
+    "lastRealizationDate": "2026-10-23",
+    "averageRealizedExchangeRate": 94.71
   },
   {
     "id": "inv-rf-exp-35-26-27",
@@ -5695,11 +7017,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 147569.08,
     "totalFobValueINR": 13805087.43,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 149419.08,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-35-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 149369.08,
+        "exchangeRateRealized": 95.845,
+        "amountINR": 14316279.47,
+        "bankRefNo": "BAL-RF/EXP/35/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 149419.08,
+        "shortfallUSD": 50,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 149369.08,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 14316279.47,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-10T00:00:00.000Z",
@@ -5803,7 +7140,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 35816.31,
         "fobValueINR": 3350615.68
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 149419.08,
+    "balancePaymentAmountCurrency": 149369.08,
+    "balanceShortfallUSD": 50,
+    "balanceExchangeRate": 95.845,
+    "balancePaymentDate": "2026-09-24",
+    "balancePaymentINR": 14316279.47,
+    "totalShortfallUSD": 50,
+    "bankPreDeterminedExchangeRate": 95.845,
+    "lastRealizationDate": "2026-09-24",
+    "averageRealizedExchangeRate": 95.845
   },
   {
     "id": "inv-rf-exp-36-26-27",
@@ -5855,11 +7203,38 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 124566.8,
     "totalFobValueINR": 11653224.14,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 126316.8,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-36-26-27",
+        "settlementDate": "2026-09-12",
+        "realizedAmountCurrency": 10000,
+        "exchangeRateRealized": 96.63,
+        "amountINR": 966300,
+        "bankRefNo": "ADV-RF/EXP/36/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-36-26-27",
+        "settlementDate": "2026-10-09",
+        "realizedAmountCurrency": 116316.8,
+        "exchangeRateRealized": 96.63,
+        "amountINR": 11239692.38,
+        "bankRefNo": "BAL-RF/EXP/36/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 116316.8,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 126316.8,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12205992.38,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-12T00:00:00.000Z",
@@ -5907,7 +7282,20 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 76184.51,
         "fobValueINR": 7127060.7
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 10000,
+    "advanceExchangeRate": 96.63,
+    "advanceReceivedDate": "2026-09-12",
+    "advanceReceivedINR": 966300,
+    "balanceActualPriceUSD": 116316.8,
+    "balancePaymentAmountCurrency": 116316.8,
+    "balanceExchangeRate": 96.63,
+    "balancePaymentDate": "2026-10-09",
+    "balancePaymentINR": 11239692.38,
+    "bankPreDeterminedExchangeRate": 96.63,
+    "lastRealizationDate": "2026-10-09",
+    "averageRealizedExchangeRate": 96.63
   },
   {
     "id": "inv-rf-exp-37-26-27",
@@ -5958,11 +7346,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 49200,
     "totalFobValueINR": 4602660,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 50950,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-37-26-27",
+        "settlementDate": "2026-10-15",
+        "realizedAmountCurrency": 50909,
+        "exchangeRateRealized": 94.7725,
+        "amountINR": 4824773.2,
+        "bankRefNo": "BAL-RF/EXP/37/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 50950,
+        "shortfallUSD": 41,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 50909,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4824773.2,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-12T00:00:00.000Z",
@@ -5996,7 +7399,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 47075.56,
         "fobValueINR": 4403919.04
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 50950,
+    "balancePaymentAmountCurrency": 50909,
+    "balanceShortfallUSD": 41,
+    "balanceExchangeRate": 94.7725,
+    "balancePaymentDate": "2026-10-15",
+    "balancePaymentINR": 4824773.2,
+    "totalShortfallUSD": 41,
+    "bankPreDeterminedExchangeRate": 94.7725,
+    "lastRealizationDate": "2026-10-15",
+    "averageRealizedExchangeRate": 94.7725
   },
   {
     "id": "inv-rf-exp-38-26-27",
@@ -6047,11 +7461,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 113615.2,
     "totalFobValueINR": 10628701.96,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 115315.2,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-38-26-27",
+        "settlementDate": "2026-10-22",
+        "realizedAmountCurrency": 115290.2,
+        "exchangeRateRealized": 94.6,
+        "amountINR": 10906452.92,
+        "bankRefNo": "BAL-RF/EXP/38/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 115315.2,
+        "shortfallUSD": 25,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 115290.2,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 10906452.92,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-14T00:00:00.000Z",
@@ -6071,7 +7500,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 113615.2,
         "fobValueINR": 10628701.96
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 115315.2,
+    "balancePaymentAmountCurrency": 115290.2,
+    "balanceShortfallUSD": 25,
+    "balanceExchangeRate": 94.6,
+    "balancePaymentDate": "2026-10-22",
+    "balancePaymentINR": 10906452.92,
+    "totalShortfallUSD": 25,
+    "bankPreDeterminedExchangeRate": 94.6,
+    "lastRealizationDate": "2026-10-22",
+    "averageRealizedExchangeRate": 94.6
   },
   {
     "id": "inv-rf-exp-39-26-27",
@@ -6122,11 +7562,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 49415,
     "totalFobValueINR": 4622773.25,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 51265,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-39-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 51215,
+        "exchangeRateRealized": 95.805,
+        "amountINR": 4906653.08,
+        "bankRefNo": "BAL-RF/EXP/39/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 51265,
+        "shortfallUSD": 50,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 51215,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4906653.08,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-16T00:00:00.000Z",
@@ -6160,7 +7615,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 44622.42,
         "fobValueINR": 4174427.82
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 51265,
+    "balancePaymentAmountCurrency": 51215,
+    "balanceShortfallUSD": 50,
+    "balanceExchangeRate": 95.805,
+    "balancePaymentDate": "2026-09-24",
+    "balancePaymentINR": 4906653.08,
+    "totalShortfallUSD": 50,
+    "bankPreDeterminedExchangeRate": 95.805,
+    "lastRealizationDate": "2026-09-24",
+    "averageRealizedExchangeRate": 95.8050001
   },
   {
     "id": "inv-rf-exp-40-26-27",
@@ -6212,11 +7678,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 49485.5,
     "totalFobValueINR": 4629368.53,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 51535.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-40-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 4955,
+        "exchangeRateRealized": 95.7175,
+        "amountINR": 474280.21,
+        "bankRefNo": "ADV-RF/EXP/40/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-40-26-27",
+        "settlementDate": "2026-10-12",
+        "realizedAmountCurrency": 46495.5,
+        "exchangeRateRealized": 95.625,
+        "amountINR": 4446132.19,
+        "bankRefNo": "BAL-RF/EXP/40/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 46535.5,
+        "shortfallUSD": 40,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 51450.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4920412.4,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-16T00:00:00.000Z",
@@ -6376,7 +7871,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 16.32,
         "fobValueINR": 1527.07
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4955,
+    "advanceShortfallUSD": 45,
+    "advanceExchangeRate": 95.7175,
+    "advanceReceivedDate": "2026-09-24",
+    "advanceReceivedINR": 474280.21,
+    "balanceActualPriceUSD": 46535.5,
+    "balancePaymentAmountCurrency": 46495.5,
+    "balanceShortfallUSD": 40,
+    "balanceExchangeRate": 95.625,
+    "balancePaymentDate": "2026-10-12",
+    "balancePaymentINR": 4446132.19,
+    "totalShortfallUSD": 85,
+    "bankPreDeterminedExchangeRate": 95.625,
+    "lastRealizationDate": "2026-10-12",
+    "averageRealizedExchangeRate": 95.6339083
   },
   {
     "id": "inv-rf-exp-41-26-27",
@@ -6428,11 +7939,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 62586.8,
     "totalFobValueINR": 5854995.14,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 64936.8,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-41-26-27",
+        "settlementDate": "2026-10-12",
+        "realizedAmountCurrency": 64891.8,
+        "exchangeRateRealized": 95.625,
+        "amountINR": 6205278.38,
+        "bankRefNo": "BAL-RF/EXP/41/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 64936.8,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 64891.8,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 6205278.38,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-17T00:00:00.000Z",
@@ -6452,7 +7978,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 62586.8,
         "fobValueINR": 5854995.14
       }
-    ]
+    ],
+    "advanceExchangeRate": 93.6,
+    "balanceActualPriceUSD": 64936.8,
+    "balancePaymentAmountCurrency": 64891.8,
+    "balanceShortfallUSD": 45,
+    "balanceExchangeRate": 95.625,
+    "balancePaymentDate": "2026-10-12",
+    "balancePaymentINR": 6205278.38,
+    "totalShortfallUSD": 45,
+    "bankPreDeterminedExchangeRate": 95.625,
+    "lastRealizationDate": "2026-10-12",
+    "averageRealizedExchangeRate": 95.6250001
   },
   {
     "id": "inv-rf-exp-42-26-27",
@@ -6504,11 +8041,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 52536.5,
     "totalFobValueINR": 4996221.15,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 54676.5,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-42-26-27",
+        "settlementDate": "2026-09-28",
+        "realizedAmountCurrency": 4965,
+        "exchangeRateRealized": 95.7125,
+        "amountINR": 475212.56,
+        "bankRefNo": "ADV-RF/EXP/42/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 35,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-42-26-27",
+        "settlementDate": "2026-10-28",
+        "realizedAmountCurrency": 49640.5,
+        "exchangeRateRealized": 95.065,
+        "amountINR": 4719074.13,
+        "bankRefNo": "BAL-RF/EXP/42/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 49676.5,
+        "shortfallUSD": 36,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 54605.5,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5194286.69,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-21T00:00:00.000Z",
@@ -6626,7 +8192,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 2698.1,
         "fobValueINR": 256589
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4965,
+    "advanceShortfallUSD": 35,
+    "advanceExchangeRate": 95.7125,
+    "advanceReceivedDate": "2026-09-28",
+    "advanceReceivedINR": 475212.56,
+    "balanceActualPriceUSD": 49676.5,
+    "balancePaymentAmountCurrency": 49640.5,
+    "balanceShortfallUSD": 36,
+    "balanceExchangeRate": 95.065,
+    "balancePaymentDate": "2026-10-28",
+    "balancePaymentINR": 4719074.13,
+    "totalShortfallUSD": 71,
+    "bankPreDeterminedExchangeRate": 95.065,
+    "lastRealizationDate": "2026-10-28",
+    "averageRealizedExchangeRate": 95.1238738
   },
   {
     "id": "inv-rf-exp-43-26-27",
@@ -6677,11 +8259,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 47562,
     "totalFobValueINR": 4523146.2,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 49562,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-43-26-27",
+        "settlementDate": "2026-10-09",
+        "realizedAmountCurrency": 49487,
+        "exchangeRateRealized": 96.605,
+        "amountINR": 4780691.63,
+        "bankRefNo": "BAL-RF/EXP/43/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 49562,
+        "shortfallUSD": 75,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 49487,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4780691.63,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-21T00:00:00.000Z",
@@ -6743,7 +8340,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11400.6,
         "fobValueINR": 1084197.1
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.78455,
+    "balanceActualPriceUSD": 49562,
+    "balancePaymentAmountCurrency": 49487,
+    "balanceShortfallUSD": 75,
+    "balanceExchangeRate": 96.605,
+    "balancePaymentDate": "2026-10-09",
+    "balancePaymentINR": 4780691.63,
+    "totalShortfallUSD": 75,
+    "bankPreDeterminedExchangeRate": 96.605,
+    "lastRealizationDate": "2026-10-09",
+    "averageRealizedExchangeRate": 96.6049999
   },
   {
     "id": "inv-rf-exp-44-26-27",
@@ -6794,11 +8402,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 53902,
     "totalFobValueINR": 5126080.2,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 55902,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-44-26-27",
+        "settlementDate": "2026-10-15",
+        "realizedAmountCurrency": 55861,
+        "exchangeRateRealized": 94.77,
+        "amountINR": 5293946.97,
+        "bankRefNo": "BAL-RF/EXP/44/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 55902,
+        "shortfallUSD": 41,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 55861,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5293946.97,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-23T00:00:00.000Z",
@@ -6832,7 +8455,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 11218.93,
         "fobValueINR": 1066920.12
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.748755,
+    "balanceActualPriceUSD": 55902,
+    "balancePaymentAmountCurrency": 55861,
+    "balanceShortfallUSD": 41,
+    "balanceExchangeRate": 94.77,
+    "balancePaymentDate": "2026-10-15",
+    "balancePaymentINR": 5293946.97,
+    "totalShortfallUSD": 41,
+    "bankPreDeterminedExchangeRate": 94.77,
+    "lastRealizationDate": "2026-10-15",
+    "averageRealizedExchangeRate": 94.77
   },
   {
     "id": "inv-rf-exp-45-26-27",
@@ -6883,11 +8517,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 51961,
     "totalFobValueINR": 4941491.1,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 53811,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-45-26-27",
+        "settlementDate": "2026-11-06",
+        "realizedAmountCurrency": 53734,
+        "exchangeRateRealized": 93.685,
+        "amountINR": 5034069.79,
+        "bankRefNo": "BAL-RF/EXP/45/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 53811,
+        "shortfallUSD": 77,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 53734,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5034069.79,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-25T00:00:00.000Z",
@@ -6935,7 +8584,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 6198.8,
         "fobValueINR": 589505.9
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.858896,
+    "balanceActualPriceUSD": 53811,
+    "balancePaymentAmountCurrency": 53734,
+    "balanceShortfallUSD": 77,
+    "balanceExchangeRate": 93.685,
+    "balancePaymentDate": "2026-11-06",
+    "balancePaymentINR": 5034069.79,
+    "totalShortfallUSD": 77,
+    "bankPreDeterminedExchangeRate": 93.685,
+    "lastRealizationDate": "2026-11-06",
+    "averageRealizedExchangeRate": 93.685
   },
   {
     "id": "inv-rf-exp-46-26-27",
@@ -6987,11 +8647,38 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 128484.4,
     "totalFobValueINR": 12218866.44,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 130370.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-46-26-27",
+        "settlementDate": "2026-09-24",
+        "realizedAmountCurrency": 10000,
+        "exchangeRateRealized": 95.7125,
+        "amountINR": 957125,
+        "bankRefNo": "ADV-RF/EXP/46/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-46-26-27",
+        "settlementDate": "2026-11-02",
+        "realizedAmountCurrency": 120370.4,
+        "exchangeRateRealized": 94.885,
+        "amountINR": 11421345.4,
+        "bankRefNo": "BAL-RF/EXP/46/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 120370.4,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 130370.4,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 12378470.4,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-26T00:00:00.000Z",
@@ -7039,7 +8726,20 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 60515.7,
         "fobValueINR": 5755043.13
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 10000,
+    "advanceExchangeRate": 95.7125,
+    "advanceReceivedDate": "2026-09-24",
+    "advanceReceivedINR": 957125,
+    "balanceActualPriceUSD": 120370.4,
+    "balancePaymentAmountCurrency": 120370.4,
+    "balanceExchangeRate": 94.885,
+    "balancePaymentDate": "2026-11-02",
+    "balancePaymentINR": 11421345.4,
+    "bankPreDeterminedExchangeRate": 94.885,
+    "lastRealizationDate": "2026-11-02",
+    "averageRealizedExchangeRate": 94.948473
   },
   {
     "id": "inv-rf-exp-47-26-27",
@@ -7090,11 +8790,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 90982.4,
     "totalFobValueINR": 8652426.24,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 93332.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-47-26-27",
+        "settlementDate": "2026-11-09",
+        "realizedAmountCurrency": 93302.4,
+        "exchangeRateRealized": 95.858896,
+        "amountINR": 8943865.06,
+        "bankRefNo": "BAL-RF/EXP/47/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 93302.4,
+        "shortfallUSD": 30,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 93302.4,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 8943865.06,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-30T00:00:00.000Z",
@@ -7128,7 +8843,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 5211.39,
         "fobValueINR": 495603.57
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.858896,
+    "balanceActualPriceUSD": 93302.4,
+    "balancePaymentAmountCurrency": 93302.4,
+    "balanceShortfallUSD": 30,
+    "balanceExchangeRate": 95.858896,
+    "balancePaymentDate": "2026-11-09",
+    "balancePaymentINR": 8943865.06,
+    "totalShortfallUSD": 30,
+    "bankPreDeterminedExchangeRate": 95.858896,
+    "lastRealizationDate": "2026-11-09",
+    "averageRealizedExchangeRate": 95.858896
   },
   {
     "id": "inv-rf-exp-48-26-27",
@@ -7180,11 +8906,40 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 58900,
     "totalFobValueINR": 5601390,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 61150,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-48-26-27",
+        "settlementDate": "2026-10-01",
+        "realizedAmountCurrency": 4955,
+        "exchangeRateRealized": 95.92,
+        "amountINR": 475283.6,
+        "bankRefNo": "ADV-RF/EXP/48/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 5000,
+        "shortfallUSD": 45,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-48-26-27",
+        "settlementDate": "2026-11-06",
+        "realizedAmountCurrency": 55908,
+        "exchangeRateRealized": 93.71,
+        "amountINR": 5239138.68,
+        "bankRefNo": "BAL-RF/EXP/48/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 56150,
+        "shortfallUSD": 242,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 60863,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5714422.28,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-09-30T00:00:00.000Z",
@@ -7302,7 +9057,23 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7801.96,
         "fobValueINR": 741966.63
       }
-    ]
+    ],
+    "advanceTermsUSD": 5000,
+    "advanceReceivedCurrency": 4955,
+    "advanceShortfallUSD": 45,
+    "advanceExchangeRate": 95.92,
+    "advanceReceivedDate": "2026-10-01",
+    "advanceReceivedINR": 475283.6,
+    "balanceActualPriceUSD": 56150,
+    "balancePaymentAmountCurrency": 55908,
+    "balanceShortfallUSD": 242,
+    "balanceExchangeRate": 93.71,
+    "balancePaymentDate": "2026-11-06",
+    "balancePaymentINR": 5239138.68,
+    "totalShortfallUSD": 287,
+    "bankPreDeterminedExchangeRate": 93.71,
+    "lastRealizationDate": "2026-11-06",
+    "averageRealizedExchangeRate": 93.8899213
   },
   {
     "id": "inv-rf-exp-49-26-27",
@@ -7353,11 +9124,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 52503.2,
     "totalFobValueINR": 4760059.32,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 52503.2,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-49-26-27",
+        "settlementDate": "2026-11-04",
+        "realizedAmountCurrency": 52478,
+        "exchangeRateRealized": 94.6175,
+        "amountINR": 4965337.17,
+        "bankRefNo": "BAL-RF/EXP/49/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 52503.2,
+        "shortfallUSD": 25.2,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 52478,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4965337.17,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-01T00:00:00.000Z",
@@ -7391,7 +9177,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 22644,
         "fobValueINR": 2052956.45
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.996928,
+    "balanceActualPriceUSD": 52503.2,
+    "balancePaymentAmountCurrency": 52478,
+    "balanceShortfallUSD": 25.2,
+    "balanceExchangeRate": 94.6175,
+    "balancePaymentDate": "2026-11-04",
+    "balancePaymentINR": 4965337.17,
+    "totalShortfallUSD": 25.2,
+    "bankPreDeterminedExchangeRate": 94.6175,
+    "lastRealizationDate": "2026-11-04",
+    "averageRealizedExchangeRate": 94.6175001
   },
   {
     "id": "inv-rf-exp-50-26-27",
@@ -7442,11 +9239,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 54469,
     "totalFobValueINR": 4954809.75,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 54469,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-50-26-27",
+        "settlementDate": "2026-11-04",
+        "realizedAmountCurrency": 54444,
+        "exchangeRateRealized": 94.635,
+        "amountINR": 5152307.94,
+        "bankRefNo": "BAL-RF/EXP/50/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 54469,
+        "shortfallUSD": 25,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 54444,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5152307.94,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-03T00:00:00.000Z",
@@ -7494,7 +9306,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7524,
         "fobValueINR": 684425.8
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.135359,
+    "balanceActualPriceUSD": 54469,
+    "balancePaymentAmountCurrency": 54444,
+    "balanceShortfallUSD": 25,
+    "balanceExchangeRate": 94.635,
+    "balancePaymentDate": "2026-11-04",
+    "balancePaymentINR": 5152307.94,
+    "totalShortfallUSD": 25,
+    "bankPreDeterminedExchangeRate": 94.635,
+    "lastRealizationDate": "2026-11-04",
+    "averageRealizedExchangeRate": 94.635
   },
   {
     "id": "inv-rf-exp-51-26-27",
@@ -7545,11 +9368,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 50726,
     "totalFobValueINR": 4598289,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 50726,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-51-26-27",
+        "settlementDate": "2026-11-04",
+        "realizedAmountCurrency": 50701,
+        "exchangeRateRealized": 94.6375,
+        "amountINR": 4798215.89,
+        "bankRefNo": "BAL-RF/EXP/51/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 50726,
+        "shortfallUSD": 25,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 50701,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4798215.89,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-05T00:00:00.000Z",
@@ -7653,7 +9491,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 162,
         "fobValueINR": 14685.23
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.255655,
+    "balanceActualPriceUSD": 50726,
+    "balancePaymentAmountCurrency": 50701,
+    "balanceShortfallUSD": 25,
+    "balanceExchangeRate": 94.6375,
+    "balancePaymentDate": "2026-11-04",
+    "balancePaymentINR": 4798215.89,
+    "totalShortfallUSD": 25,
+    "bankPreDeterminedExchangeRate": 94.6375,
+    "lastRealizationDate": "2026-11-04",
+    "averageRealizedExchangeRate": 94.6375
   },
   {
     "id": "inv-rf-exp-52-26-27",
@@ -7704,11 +9553,25 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 51220,
     "totalFobValueINR": 4754880,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 51220,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-52-26-27",
+        "settlementDate": "2026-10-30",
+        "realizedAmountCurrency": 51220,
+        "exchangeRateRealized": 95.065,
+        "amountINR": 4869229.3,
+        "bankRefNo": "BAL-RF/EXP/52/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 51220,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 51220,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4869229.3,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-07T00:00:00.000Z",
@@ -7770,7 +9633,16 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 1230,
         "fobValueINR": 114183.96
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.805421,
+    "balanceActualPriceUSD": 51220,
+    "balancePaymentAmountCurrency": 51220,
+    "balanceExchangeRate": 95.065,
+    "balancePaymentDate": "2026-10-30",
+    "balancePaymentINR": 4869229.3,
+    "bankPreDeterminedExchangeRate": 95.065,
+    "lastRealizationDate": "2026-10-30",
+    "averageRealizedExchangeRate": 95.065
   },
   {
     "id": "inv-rf-exp-53-26-27",
@@ -7821,11 +9693,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 52806.4,
     "totalFobValueINR": 4905984.6,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 52806.4,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-53-26-27",
+        "settlementDate": "2026-10-30",
+        "realizedAmountCurrency": 52781,
+        "exchangeRateRealized": 95.055,
+        "amountINR": 5017097.96,
+        "bankRefNo": "BAL-RF/EXP/53/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 52806.4,
+        "shortfallUSD": 25.4,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 52781,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5017097.96,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-07T00:00:00.000Z",
@@ -7859,7 +9746,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 13014,
         "fobValueINR": 1209067.15
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.814793,
+    "balanceActualPriceUSD": 52806.4,
+    "balancePaymentAmountCurrency": 52781,
+    "balanceShortfallUSD": 25.4,
+    "balanceExchangeRate": 95.055,
+    "balancePaymentDate": "2026-10-30",
+    "balancePaymentINR": 5017097.96,
+    "totalShortfallUSD": 25.4,
+    "bankPreDeterminedExchangeRate": 95.055,
+    "lastRealizationDate": "2026-10-30",
+    "averageRealizedExchangeRate": 95.0550001
   },
   {
     "id": "inv-rf-exp-54-26-27",
@@ -7910,11 +9808,25 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 52807.8,
     "totalFobValueINR": 4796580.45,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 52807.8,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-54-26-27",
+        "settlementDate": "2026-11-06",
+        "realizedAmountCurrency": 52807.8,
+        "exchangeRateRealized": 94.2875,
+        "amountINR": 4979115.44,
+        "bankRefNo": "BAL-RF/EXP/54/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 52807.8,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 52807.8,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 4979115.44,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-08T00:00:00.000Z",
@@ -7962,7 +9874,16 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 13482,
         "fobValueINR": 1224582.31
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.899225,
+    "balanceActualPriceUSD": 52807.8,
+    "balancePaymentAmountCurrency": 52807.8,
+    "balanceExchangeRate": 94.2875,
+    "balancePaymentDate": "2026-11-06",
+    "balancePaymentINR": 4979115.44,
+    "bankPreDeterminedExchangeRate": 94.2875,
+    "lastRealizationDate": "2026-11-06",
+    "averageRealizedExchangeRate": 94.2875
   },
   {
     "id": "inv-rf-exp-55-26-27",
@@ -8013,11 +9934,39 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 143836.2,
     "totalFobValueINR": 13467035.55,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 143836.2,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-adv-inv-rf-exp-55-26-27",
+        "settlementDate": "2026-10-07",
+        "realizedAmountCurrency": 10000,
+        "exchangeRateRealized": 96.5575,
+        "amountINR": 965575,
+        "bankRefNo": "ADV-RF/EXP/55/26-27",
+        "notes": "Advance received",
+        "paymentType": "Advance",
+        "contractTermsAmountUSD": 10000,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      },
+      {
+        "id": "real-bal-inv-rf-exp-55-26-27",
+        "settlementDate": "2026-11-06",
+        "realizedAmountCurrency": 132481.88,
+        "exchangeRateRealized": 93.7,
+        "amountINR": 12413552.16,
+        "bankRefNo": "BAL-RF/EXP/55/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 133836.2,
+        "shortfallUSD": 1354.32,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 142481.88,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 13379127.16,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-09T00:00:00.000Z",
@@ -8093,7 +10042,22 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3830.4,
         "fobValueINR": 358631.09
       }
-    ]
+    ],
+    "advanceTermsUSD": 10000,
+    "advanceReceivedCurrency": 10000,
+    "advanceExchangeRate": 96.5575,
+    "advanceReceivedDate": "2026-10-07",
+    "advanceReceivedINR": 965575,
+    "balanceActualPriceUSD": 133836.2,
+    "balancePaymentAmountCurrency": 132481.88,
+    "balanceShortfallUSD": 1354.32,
+    "balanceExchangeRate": 93.7,
+    "balancePaymentDate": "2026-11-06",
+    "balancePaymentINR": 12413552.16,
+    "totalShortfallUSD": 1354.32,
+    "bankPreDeterminedExchangeRate": 93.7,
+    "lastRealizationDate": "2026-11-06",
+    "averageRealizedExchangeRate": 93.9005518
   },
   {
     "id": "inv-rf-exp-56-26-27",
@@ -8144,11 +10108,26 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
     "totalFobValueCurrency": 54515,
     "totalFobValueINR": 4959191.25,
     "estimatedAmountINR": 0,
-    "realizations": [],
-    "totalRealizedCurrency": 0,
-    "balanceRealizationCurrency": 54515,
-    "totalRealizedINR": 0,
-    "realizationStatus": "Not Realized",
+    "realizations": [
+      {
+        "id": "real-bal-inv-rf-exp-56-26-27",
+        "settlementDate": "2026-11-06",
+        "realizedAmountCurrency": 53858.2,
+        "exchangeRateRealized": 94.31,
+        "amountINR": 5079366.84,
+        "bankRefNo": "BAL-RF/EXP/56/26-27",
+        "notes": "Balance received",
+        "paymentType": "Balance",
+        "contractTermsAmountUSD": 54515,
+        "shortfallUSD": 656.8,
+        "createdAt": "2026-11-09T00:00:00.000Z",
+        "createdBy": "import@system"
+      }
+    ],
+    "totalRealizedCurrency": 53858.2,
+    "balanceRealizationCurrency": 0,
+    "totalRealizedINR": 5079366.84,
+    "realizationStatus": "Fully Realized",
     "isVoided": false,
     "createdBy": "system@relish",
     "createdAt": "2026-10-09T00:00:00.000Z",
@@ -8196,7 +10175,18 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4446,
         "fobValueINR": 404449.49
       }
-    ]
+    ],
+    "advanceExchangeRate": 96.786682,
+    "balanceActualPriceUSD": 54515,
+    "balancePaymentAmountCurrency": 53858.2,
+    "balanceShortfallUSD": 656.8,
+    "balanceExchangeRate": 94.31,
+    "balancePaymentDate": "2026-11-06",
+    "balancePaymentINR": 5079366.84,
+    "totalShortfallUSD": 656.8,
+    "bankPreDeterminedExchangeRate": 94.31,
+    "lastRealizationDate": "2026-11-06",
+    "averageRealizedExchangeRate": 94.31
   },
   {
     "id": "inv-rf-exp-57-26-27",
@@ -8285,7 +10275,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 45353,
         "fobValueINR": 4215834.24
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.593156,
+    "balanceActualPriceUSD": 49826,
+    "balanceExchangeRate": 95.593156,
+    "bankPreDeterminedExchangeRate": 95.593156,
+    "averageRealizedExchangeRate": 95.593156
   },
   {
     "id": "inv-rf-exp-58-26-27",
@@ -8459,7 +10454,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4368,
         "fobValueINR": 400668.07
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.7175,
+    "balanceActualPriceUSD": 62202.5,
+    "balanceExchangeRate": 94.7175,
+    "bankPreDeterminedExchangeRate": 94.7175,
+    "averageRealizedExchangeRate": 94.7175
   },
   {
     "id": "inv-rf-exp-59-26-27",
@@ -8562,7 +10562,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4914,
         "fobValueINR": 456230.11
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.30163,
+    "balanceActualPriceUSD": 50334,
+    "balanceExchangeRate": 95.30163,
+    "bankPreDeterminedExchangeRate": 95.30163,
+    "averageRealizedExchangeRate": 95.30163
   },
   {
     "id": "inv-rf-exp-60-26-27",
@@ -8721,7 +10726,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 12863,
         "fobValueINR": 1186796.96
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.92169,
+    "balanceActualPriceUSD": 51045,
+    "balanceExchangeRate": 94.92169,
+    "bankPreDeterminedExchangeRate": 94.92169,
+    "averageRealizedExchangeRate": 94.92169
   },
   {
     "id": "inv-rf-exp-61-26-27",
@@ -8852,7 +10862,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 3540,
         "fobValueINR": 324836.16
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.00285,
+    "balanceActualPriceUSD": 50222,
+    "balanceExchangeRate": 95.00285,
+    "bankPreDeterminedExchangeRate": 95.00285,
+    "averageRealizedExchangeRate": 95.00285
   },
   {
     "id": "inv-rf-exp-62-26-27",
@@ -8928,7 +10943,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 101520,
         "fobValueINR": 9417174
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.755,
+    "balanceActualPriceUSD": 101520,
+    "balanceExchangeRate": 94.755,
+    "bankPreDeterminedExchangeRate": 94.755,
+    "averageRealizedExchangeRate": 94.755
   },
   {
     "id": "inv-rf-exp-63-26-27",
@@ -9032,7 +11052,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 72600,
         "fobValueINR": 6758832.92
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.5825,
+    "balanceActualPriceUSD": 132360,
+    "balanceExchangeRate": 94.5825,
+    "bankPreDeterminedExchangeRate": 94.5825,
+    "averageRealizedExchangeRate": 94.5825
   },
   {
     "id": "inv-rf-exp-64-26-27",
@@ -9149,7 +11174,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 439.6,
         "fobValueINR": 40328.48
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.553707,
+    "balanceActualPriceUSD": 49761.1,
+    "balanceExchangeRate": 94.553707,
+    "bankPreDeterminedExchangeRate": 94.553707,
+    "averageRealizedExchangeRate": 94.553707
   },
   {
     "id": "inv-rf-exp-65-26-27",
@@ -9323,7 +11353,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4293,
         "fobValueINR": 388966.12
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.025,
+    "balanceActualPriceUSD": 57642.5,
+    "balanceExchangeRate": 95.025,
+    "bankPreDeterminedExchangeRate": 95.025,
+    "averageRealizedExchangeRate": 95.025
   },
   {
     "id": "inv-rf-exp-66-26-27",
@@ -9441,7 +11476,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 432,
         "fobValueINR": 39842.5
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.0275,
+    "balanceActualPriceUSD": 76430,
+    "balanceExchangeRate": 95.0275,
+    "bankPreDeterminedExchangeRate": 95.0275,
+    "averageRealizedExchangeRate": 95.0275
   },
   {
     "id": "inv-rf-exp-67-26-27",
@@ -9545,7 +11585,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 97429.2,
         "fobValueINR": 9033221.74
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.995,
+    "balanceActualPriceUSD": 133279.8,
+    "balanceExchangeRate": 94.995,
+    "bankPreDeterminedExchangeRate": 94.995,
+    "averageRealizedExchangeRate": 94.995
   },
   {
     "id": "inv-rf-exp-68-26-27",
@@ -9648,7 +11693,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 6923.7,
         "fobValueINR": 618367.84
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.183705,
+    "balanceActualPriceUSD": 49140.4,
+    "balanceExchangeRate": 95.183705,
+    "bankPreDeterminedExchangeRate": 95.183705,
+    "averageRealizedExchangeRate": 95.183705
   },
   {
     "id": "inv-rf-exp-69-26-27",
@@ -9751,7 +11801,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7741.8,
         "fobValueINR": 690930.94
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.174645,
+    "balanceActualPriceUSD": 48496,
+    "balanceExchangeRate": 95.174645,
+    "bankPreDeterminedExchangeRate": 95.174645,
+    "averageRealizedExchangeRate": 95.174645
   },
   {
     "id": "inv-rf-exp-70-26-27",
@@ -9854,7 +11909,12 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 7497,
         "fobValueINR": 669120.03
       }
-    ]
+    ],
+    "advanceExchangeRate": 95.156532,
+    "balanceActualPriceUSD": 48544,
+    "balanceExchangeRate": 95.156532,
+    "bankPreDeterminedExchangeRate": 95.156532,
+    "averageRealizedExchangeRate": 95.156532
   },
   {
     "id": "inv-rf-exp-71-26-27",
@@ -9999,8 +12059,11 @@ export const VERIFIED_SALES_INVOICES: SalesInvoice[] = [
         "fobValueCurrency": 4632,
         "fobValueINR": 425196.34
       }
-    ]
+    ],
+    "advanceExchangeRate": 94.91268,
+    "balanceActualPriceUSD": 50927.6,
+    "balanceExchangeRate": 94.91268,
+    "bankPreDeterminedExchangeRate": 94.91268,
+    "averageRealizedExchangeRate": 94.91268
   }
 ];
-
-

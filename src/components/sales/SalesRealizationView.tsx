@@ -1038,7 +1038,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             </div>
                             {inv.advanceTermsUSD && inv.advanceTermsUSD !== advUSD && (
                               <div className="text-[9px] text-ink-500 font-medium mt-0.5">
-                                Terms: ${inv.advanceTermsUSD.toLocaleString()}
+                                Terms: ${(inv.advanceTermsUSD || 0).toLocaleString()}
                               </div>
                             )}
                             {inv.advanceShortfallUSD && inv.advanceShortfallUSD > 0 && (
@@ -1052,7 +1052,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             <span className="text-[11px] text-ink-400 font-medium italic">No advance</span>
                             {inv.advanceTermsUSD && inv.advanceTermsUSD > 0 && (
                               <div className="text-[9px] text-ink-500">
-                                Terms: ${inv.advanceTermsUSD.toLocaleString()}
+                                Terms: ${(inv.advanceTermsUSD || 0).toLocaleString()}
                               </div>
                             )}
                           </div>
@@ -1100,7 +1100,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             </div>
                             {inv.balanceActualPriceUSD && inv.balanceActualPriceUSD !== balUSD && (
                               <div className="text-[9px] text-ink-500 font-medium mt-0.5">
-                                Price: ${inv.balanceActualPriceUSD.toLocaleString()}
+                                Price: ${(inv.balanceActualPriceUSD || 0).toLocaleString()}
                               </div>
                             )}
                             {inv.balanceShortfallUSD && inv.balanceShortfallUSD > 0 && (
@@ -1112,11 +1112,11 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                         ) : (
                           <div>
                             <span className="text-[11px] text-amber-700 font-semibold italic">
-                              Pending {inv.currency} {inv.balanceRealizationCurrency.toLocaleString()}
+                              Pending {inv.currency} {(inv.balanceRealizationCurrency || 0).toLocaleString()}
                             </span>
                             {inv.balanceActualPriceUSD && inv.balanceActualPriceUSD > 0 && (
                               <div className="text-[9px] text-ink-500">
-                                Price: ${inv.balanceActualPriceUSD.toLocaleString()}
+                                Price: ${(inv.balanceActualPriceUSD || 0).toLocaleString()}
                               </div>
                             )}
                           </div>

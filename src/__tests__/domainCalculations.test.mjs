@@ -2026,17 +2026,21 @@ test('FOB Dashboard & Sales Ledger: Authentic FOB Totals & Zero Realization Acco
   assert.equal(Number(overallFobUsd.toFixed(2)), 5628701.27, 'Total FOB USD must equal $5,628,701.27');
   assert.equal(Number(overallFobInr.toFixed(2)), 527264283.04, 'Total FOB INR must equal ₹52,72,64,283.04');
 
-  // Verify Zero Realization Across Entire Dataset & Invoices Show Zero INR
+  // Verify Authentic Realization Totals Across Dataset from Settlement Sheet
   const totalRealizedUSD = invoices.reduce((s, i) => s + (i.totalRealizedCurrency || 0), 0);
   const totalRealizedINR = invoices.reduce((s, i) => s + (i.totalRealizedINR || 0), 0);
-  const totalEstimatedINR = invoices.reduce((s, i) => s + (i.estimatedAmountINR || 0), 0);
+  const totalShortfallUSD = invoices.reduce((s, i) => s + (i.totalShortfallUSD || 0), 0);
+  const totalOutstandingUSD = invoices.reduce((s, i) => s + (i.balanceRealizationCurrency || 0), 0);
 
-  assert.equal(totalRealizedUSD, 0, 'No amount must be realized in USD');
-  assert.equal(totalRealizedINR, 0, 'No amount must be realized in INR');
-  assert.equal(totalEstimatedINR, 0, 'Invoice INR values must be 0 (unrealized)');
+  assert.equal(Number(totalRealizedUSD.toFixed(2)), 4703382.60, 'Total Realized USD must equal authentic $4,703,382.60');
+  assert.equal(Number(totalShortfallUSD.toFixed(2)), 6096.72, 'Total Shortfall USD must equal authentic $6,096.72');
+  assert.equal(Number(totalOutstandingUSD.toFixed(2)), 1011730.90, 'Total Outstanding Unrealized USD must equal authentic $1,011,730.90');
+
+  const fullyRealizedCount = invoices.filter((i) => i.realizationStatus === 'Fully Realized').length;
+  assert.equal(fullyRealizedCount, 56, '56 invoices must be Fully Realized (including invoices 35 and 53)');
 
   const unRealizedCount = invoices.filter((i) => i.realizationStatus === 'Not Realized').length;
-  assert.equal(unRealizedCount, 71, 'All 71 invoices must have realizationStatus = Not Realized');
+  assert.equal(unRealizedCount, 15, '15 invoices must be Not Realized (invoices 57-71)');
 
   // Verify Undiluted FOB Average Rate Per Kg across all 71 FOB shipments
   const fobShipments = invoices.filter((i) => (i.totalFobValueCurrency || 0) > 0);
