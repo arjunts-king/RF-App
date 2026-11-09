@@ -2477,7 +2477,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const balanceRealizationCurrency = Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
     const totalRealizedINR = Number(realizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
-      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : exchangeRate;
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
     if (totalRealizedCurrency > 0) {
@@ -2561,7 +2561,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
-      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : invoice.exchangeRate;
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
     if (totalRealizedCurrency > 0) {
@@ -2629,15 +2629,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!invoice) return { success: false, message: 'Invoice not found.' };
 
     const bankRate = Number(settlementData.bankPreDeterminedExchangeRate) > 0
-      ? Number(Number(settlementData.bankPreDeterminedExchangeRate).toFixed(4))
+      ? Number(Number(settlementData.bankPreDeterminedExchangeRate).toFixed(7))
       : invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 84.50;
 
     const advanceRate = Number(settlementData.advanceExchangeRate) > 0
-      ? Number(Number(settlementData.advanceExchangeRate).toFixed(4))
+      ? Number(Number(settlementData.advanceExchangeRate).toFixed(7))
       : invoice.advanceExchangeRate || bankRate;
 
     const balanceRate = Number(settlementData.balanceExchangeRate) > 0
-      ? Number(Number(settlementData.balanceExchangeRate).toFixed(4))
+      ? Number(Number(settlementData.balanceExchangeRate).toFixed(7))
       : invoice.balanceExchangeRate || bankRate;
 
     const advanceUSD = Number(settlementData.advanceReceivedCurrency) || 0;
@@ -2740,7 +2740,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const lastRealizationDate = balanceDate || advanceDate || invoice.lastRealizationDate;
     const averageRealizedExchangeRate = totalRealizedCurrency > 0
-      ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4))
+      ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7))
       : bankRate;
 
     const updatedInvoice: SalesInvoice = {
@@ -2831,7 +2831,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
-      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(2)) : invoice.exchangeRate;
+      totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
     if (totalRealizedCurrency > 0) {
@@ -5764,13 +5764,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
       const rawBankExRate = parseFloat(getFlexibleValue(headerRow, ['predeterminedexchangerate', 'bankexchangerate', 'predeterminedrate', 'bankrate', 'predeterminedbankrate', 'bankpredeterminedexchangerate']) || '');
-      const bankPreDeterminedExchangeRate = !isNaN(rawBankExRate) && rawBankExRate > 0 ? Number(rawBankExRate.toFixed(4)) : exchangeRate;
+      const bankPreDeterminedExchangeRate = !isNaN(rawBankExRate) && rawBankExRate > 0 ? Number(rawBankExRate.toFixed(7)) : exchangeRate;
 
       const rawAdvRate = parseFloat(getFlexibleValue(headerRow, ['advanceforwardratebank', 'advanceforwardrate', 'advanceexchangerate', 'advancerate', 'forwardrateadvance', 'advrate', 'predeterminedexchangerateadvance']) || '');
-      const advanceExchangeRate = !isNaN(rawAdvRate) && rawAdvRate > 0 ? Number(rawAdvRate.toFixed(4)) : bankPreDeterminedExchangeRate;
+      const advanceExchangeRate = !isNaN(rawAdvRate) && rawAdvRate > 0 ? Number(rawAdvRate.toFixed(7)) : bankPreDeterminedExchangeRate;
 
       const rawBalRate = parseFloat(getFlexibleValue(headerRow, ['balanceforwardratebank', 'balanceforwardrate', 'balanceexchangerate', 'balancerate', 'forwardratebalance', 'balrate', 'predeterminedexchangeratebalance']) || '');
-      const balanceExchangeRate = !isNaN(rawBalRate) && rawBalRate > 0 ? Number(rawBalRate.toFixed(4)) : bankPreDeterminedExchangeRate;
+      const balanceExchangeRate = !isNaN(rawBalRate) && rawBalRate > 0 ? Number(rawBalRate.toFixed(7)) : bankPreDeterminedExchangeRate;
 
       const rawAdvTermsUSD = parseFloat(getFlexibleValue(headerRow, ['advanceaspercontracttermsusd', 'advanceaspercontractterms', 'advancecontracttermsusd', 'advancecontractterms', 'contractadvanceusd', 'contractadvance', 'contractualadvanceusd', 'contractualadvance', 'advanceaspertcontracttermsusd', 'advanceaspertcontractterms']) || '');
       const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['actualadvancereceivedusd', 'actualadvancereceived', 'advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
@@ -5913,7 +5913,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         realizationStatus,
         lastRealizationDate: balancePaymentDate || advanceReceivedDate,
         averageRealizedExchangeRate: totalRealizedCurrency > 0
-          ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4))
+          ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7))
           : bankPreDeterminedExchangeRate,
         isVoided: false,
         createdBy: currentUser.email || 'import@system',
@@ -6027,7 +6027,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       const bankRate =
         !isNaN(rawBankRate) && rawBankRate > 0
-          ? Number(rawBankRate.toFixed(4))
+          ? Number(rawBankRate.toFixed(7))
           : baseInv.bankPreDeterminedExchangeRate || baseInv.exchangeRate || 84.50;
 
       const rawAdvRate = parseFloat(
@@ -6045,7 +6045,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       const advanceRate =
         !isNaN(rawAdvRate) && rawAdvRate > 0
-          ? Number(rawAdvRate.toFixed(4))
+          ? Number(rawAdvRate.toFixed(7))
           : baseInv.advanceExchangeRate || bankRate;
 
       const rawBalRate = parseFloat(
@@ -6063,7 +6063,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       const balanceRate =
         !isNaN(rawBalRate) && rawBalRate > 0
-          ? Number(rawBalRate.toFixed(4))
+          ? Number(rawBalRate.toFixed(7))
           : baseInv.balanceExchangeRate || bankRate;
 
       const rawAdvUSD = parseFloat(
@@ -6291,7 +6291,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         totalRealizedINR,
         realizationStatus,
         lastRealizationDate: balDate || advDate || baseInv.lastRealizationDate,
-        averageRealizedExchangeRate: totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(4)) : bankRate,
+        averageRealizedExchangeRate: totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : bankRate,
         updatedBy: currentUser.email || 'import@system',
         updatedAt: new Date().toISOString()
       };

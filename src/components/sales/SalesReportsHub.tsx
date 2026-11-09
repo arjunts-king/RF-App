@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import {
@@ -2816,8 +2816,8 @@ export const SalesReportsHub: React.FC = () => {
                       <td className="py-2.5 px-3 text-right font-extrabold text-ink-900">
                         ${inv.totalAmountCurrency.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-mono font-bold text-rose-800">
-                        ₹{(inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5).toFixed(2)}
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-rose-800" title={`Bank Rate: ₹${formatForwardRate(inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5)}`}>
+                        ₹{formatForwardRate(inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5)}
                       </td>
                       <td className="py-2.5 px-3 text-right text-blue-700 font-bold">
                         {inv.advanceReceivedCurrency ? (

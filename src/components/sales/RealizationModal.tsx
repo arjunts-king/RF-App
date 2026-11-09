@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { SalesInvoice } from '../../types';
-import { formatINR } from '../../utils/calculations';
+import { formatINR, formatForwardRate } from '../../utils/calculations';
 import { computeOutstandingFromAdvance } from '../../utils/collectionAnalysis';
 import {
   Calendar,
@@ -195,7 +195,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
     setIsSubmitting(true);
     const res = updateInvoiceSettlement(invoice.id, {
-      bankPreDeterminedExchangeRate: Number(weightedAverageRate.toFixed(4)),
+      bankPreDeterminedExchangeRate: Number(weightedAverageRate.toFixed(7)),
       advanceExchangeRate: currentAdvRate,
       balanceExchangeRate: currentBalRate,
       advanceTermsUSD: currentAdvTermsUSD > 0 ? currentAdvTermsUSD : undefined,
@@ -377,18 +377,18 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
                 <input
                   type="number"
-                  step="0.0001"
-                  min="1"
+                  step="any"
+                  min="0.0000001"
                   value={advanceExchangeRate}
                   onChange={(e) => setAdvanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.5000"
+                  placeholder="e.g. 84.5000000"
                   required
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-blue-200 rounded-xl font-bold text-xs outline-none focus:border-blue-600"
                 />
               </div>
               <p className="text-[10px] text-ink-500 mt-1">
-                Forward contract booking rate agreed with bank for upfront advance.
+                Forward contract booking rate agreed with bank for upfront advance (up to 7 decimals).
               </p>
             </div>
 
@@ -400,18 +400,18 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
                 <input
                   type="number"
-                  step="0.0001"
-                  min="1"
+                  step="any"
+                  min="0.0000001"
                   value={balanceExchangeRate}
                   onChange={(e) => setBalanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.7500"
+                  placeholder="e.g. 84.7500000"
                   required
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-600"
                 />
               </div>
               <p className="text-[10px] text-ink-500 mt-1">
-                Forward contract booking rate agreed with bank for remaining balance.
+                Forward contract booking rate agreed with bank for remaining balance (up to 7 decimals).
               </p>
             </div>
 
@@ -551,11 +551,11 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
                 <input
                   type="number"
-                  step="0.0001"
-                  min="1"
+                  step="any"
+                  min="0.0000001"
                   value={advanceExchangeRate}
                   onChange={(e) => setAdvanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.50"
+                  placeholder="e.g. 84.5000000"
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-blue-200 rounded-xl font-bold text-xs outline-none focus:border-blue-500"
                 />
@@ -786,11 +786,11 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
                 <input
                   type="number"
-                  step="0.0001"
-                  min="1"
+                  step="any"
+                  min="0.0000001"
                   value={balanceExchangeRate}
                   onChange={(e) => setBalanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.75"
+                  placeholder="e.g. 84.7500000"
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
                 />
@@ -961,8 +961,8 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                       <td className="py-2 px-3 text-right font-extrabold text-emerald-700">
                         {invoice.currency} {r.realizedAmountCurrency.toLocaleString()}
                       </td>
-                      <td className="py-2 px-3 text-right font-semibold text-ink-700">
-                        ₹{r.exchangeRateRealized.toFixed(2)}
+                      <td className="py-2 px-3 text-right font-semibold text-ink-700 font-mono">
+                        ₹{formatForwardRate(r.exchangeRateRealized)}
                       </td>
                       <td className="py-2 px-3 text-right font-bold text-ink-900">
                         {formatINR(r.amountINR)}

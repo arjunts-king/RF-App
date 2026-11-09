@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { SalesInvoice } from '../../types';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
@@ -779,16 +779,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-rose-50/30">
                         <div className="flex flex-col items-center gap-1">
                           <div className="flex items-center justify-center gap-1 font-mono text-[10px] font-bold">
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title="Advance Forward Rate">
-                              Adv: ₹{advRate.toFixed(2)}
+                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title={`Advance Forward Rate: ₹${formatForwardRate(advRate)}`}>
+                              Adv: ₹{formatForwardRate(advRate)}
                             </span>
-                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200" title="Balance Forward Rate">
-                              Bal: ₹{balRate.toFixed(2)}
+                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200" title={`Balance Forward Rate: ₹${formatForwardRate(balRate)}`}>
+                              Bal: ₹{formatForwardRate(balRate)}
                             </span>
                           </div>
                           {inv.averageRealizedExchangeRate && inv.totalRealizedCurrency > 0 && (
-                            <span className="text-[9px] font-semibold text-rose-700">
-                              Avg: ₹{inv.averageRealizedExchangeRate.toFixed(2)}
+                            <span className="text-[9px] font-semibold text-rose-700" title={`Weighted Average Realized Rate: ₹${formatForwardRate(inv.averageRealizedExchangeRate)}`}>
+                              Avg: ₹{formatForwardRate(inv.averageRealizedExchangeRate)}
                             </span>
                           )}
                         </div>
@@ -1677,10 +1677,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                               )}
                             </td>
                             <td className="py-1.5 px-2.5 text-right font-mono font-bold text-blue-800">
-                              ₹{advRate.toFixed(2)}
+                              ₹{formatForwardRate(advRate)}
                             </td>
                             <td className="py-1.5 px-2.5 text-right font-mono font-bold text-emerald-800">
-                              ₹{balRate.toFixed(2)}
+                              ₹{formatForwardRate(balRate)}
                             </td>
                             <td className="py-1.5 px-2.5 text-right font-medium text-ink-700">
                               {advTerms > 0 ? `$${advTerms.toLocaleString()}` : '—'}

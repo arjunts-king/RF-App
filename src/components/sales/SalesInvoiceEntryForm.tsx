@@ -917,10 +917,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             </label>
             <input
               type="number"
-              step="0.0001"
+              step="any"
               value={exchangeRate}
               onChange={(e) => setExchangeRate(e.target.value)}
-              placeholder="e.g. 84.50"
+              placeholder="e.g. 84.5000000"
               required
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
             />

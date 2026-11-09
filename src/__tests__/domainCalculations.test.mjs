@@ -14,7 +14,8 @@ import {
   derivePaymentStatus,
   getAgeingBucket,
   formatCroreINR,
-  formatDashboardINR
+  formatDashboardINR,
+  formatForwardRate
 } from '../utils/calculations.ts';
 
 import {
@@ -2162,6 +2163,47 @@ test('Bulk Realization Deletion: Reset remittances, logs, and schedules across s
   assert.equal(untouched3.realizationStatus, 'Not Realized');
   assert.equal(untouched3.totalAmountCurrency, 80000);
 });
+
+// ============================================================================
+// SUITE 17: Forward Exchange Rates with 7 Decimal Places
+// ============================================================================
+
+test('Forward Exchange Rates: allow and format values up to 7 decimal places', () => {
+  // 1. formatForwardRate tests
+  assert.equal(formatForwardRate(84.5), '84.50');
+  assert.equal(formatForwardRate(84.75), '84.75');
+  assert.equal(formatForwardRate(84.5123456), '84.5123456');
+  assert.equal(formatForwardRate(85.1234567), '85.1234567');
+  assert.equal(formatForwardRate(84.123456789), '84.1234568'); // rounds to 7 places
+  assert.equal(formatForwardRate(undefined), '0.00');
+  assert.equal(formatForwardRate(null), '0.00');
+
+  // 2. Settlement rate preservation up to 7 decimal places
+  const advRateInput = 84.5123456;
+  const balRateInput = 84.7891234;
+
+  const parsedAdvRate = Number(Number(advRateInput).toFixed(7));
+  const parsedBalRate = Number(Number(balRateInput).toFixed(7));
+
+  assert.equal(parsedAdvRate, 84.5123456);
+  assert.equal(parsedBalRate, 84.7891234);
+
+  // 3. Dual settlement calculation with 7 decimal rates
+  const advanceUSD = 30000;
+  const balanceUSD = 70000;
+  const advanceINR = Number((advanceUSD * parsedAdvRate).toFixed(2));
+  const balanceINR = Number((balanceUSD * parsedBalRate).toFixed(2));
+
+  assert.equal(advanceINR, 2535370.37);
+  assert.equal(balanceINR, 5935238.64);
+
+  const totalRealizedINR = advanceINR + balanceINR;
+  const totalRealizedUSD = advanceUSD + balanceUSD;
+  const weightedAverageRate = Number((totalRealizedINR / totalRealizedUSD).toFixed(7));
+
+  assert.equal(weightedAverageRate, 84.7060901);
+});
+
 
 
 

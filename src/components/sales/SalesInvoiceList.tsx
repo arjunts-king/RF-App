@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesInvoice } from '../../types';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
@@ -700,8 +700,8 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                           </div>
                         )}
                         {inv.bankPreDeterminedExchangeRate && (
-                          <div className="text-[9px] text-rose-700 font-medium mt-0.5">
-                            Bank Rate: ₹{inv.bankPreDeterminedExchangeRate.toFixed(2)}
+                          <div className="text-[9px] text-rose-700 font-medium mt-0.5" title={`Pre-determined Bank Rate: ₹${formatForwardRate(inv.bankPreDeterminedExchangeRate)}`}>
+                            Bank Rate: ₹{formatForwardRate(inv.bankPreDeterminedExchangeRate)}
                           </div>
                         )}
                       </td>
@@ -988,7 +988,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Booking Exchange Rate (INR / USD)</label>
             <input
               type="number"
-              step="0.0001"
+              step="any"
               value={editForm.exchangeRate}
               onChange={(e) => setEditForm({ ...editForm, exchangeRate: parseFloat(e.target.value) || 84.5 })}
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"

@@ -431,6 +431,18 @@ export function formatKg(val: number | undefined | null): string {
 }
 
 /**
+ * Format Bank Forward Exchange Rate (supports up to 7 decimal places)
+ * e.g. 84.5 -> "84.50", 84.5123456 -> "84.5123456"
+ */
+export function formatForwardRate(rate: number | undefined | null): string {
+  if (rate === undefined || rate === null || isNaN(rate)) return '0.00';
+  return rate.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 7
+  });
+}
+
+/**
  * Determine ageing bucket based on due date.
  */
 export type AgeingBucket = 'Not Due' | '0-30 Days' | '31-60 Days' | '61-90 Days' | '91-180 Days' | '180+ Days';
