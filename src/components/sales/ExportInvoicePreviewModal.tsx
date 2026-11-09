@@ -61,7 +61,7 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
 
   const commodityDescription = invoice.commodityDescription && invoice.commodityDescription !== 'FROZEN SEAFOOD' ? invoice.commodityDescription : '';
   const packingDescription = invoice.packingDescription && invoice.packingDescription !== '1X10KG' ? invoice.packingDescription : '';
-  const scientificName = invoice.scientificName && invoice.scientificName !== 'RASTRELLIGER KANAGURTA' ? invoice.scientificName : '';
+  const scientificName = invoice.scientificName || '';
   const shippingMarks = invoice.shippingMarks && invoice.shippingMarks !== 'MERIT D.S' ? invoice.shippingMarks : '';
   const containerNo = invoice.containerNo && invoice.containerNo !== 'ONEU90399086' ? invoice.containerNo : '';
   const sealNo = invoice.sealNo && invoice.sealNo !== 'IN567892' ? invoice.sealNo : '';

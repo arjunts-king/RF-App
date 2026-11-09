@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency, Species, Size } from '../../types';
-import { formatKg } from '../../utils/calculations';
+import { formatKg, deriveCommodityTitle, deriveScientificName } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
@@ -90,8 +90,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
   // --- Section 4: Cargo & Packaging Summary ---
   const [commodityDescription, setCommodityDescription] = useState('');
+  const [isCommodityManual, setIsCommodityManual] = useState(false);
   const [packingDescription, setPackingDescription] = useState('');
   const [scientificName, setScientificName] = useState('');
+  const [isScientificManual, setIsScientificManual] = useState(false);
   const [shippingMarks, setShippingMarks] = useState('');
   const [containerNo, setContainerNo] = useState('');
   const [sealNo, setSealNo] = useState('');
@@ -230,25 +232,22 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     }
   };
 
-  // Handle Species selection for a line - auto-fills HS Code and trade name
+  // Handle Species selection for a line - auto-fills HS Code, trade name, commodity title & scientific name
   const handleSpeciesChange = (lineId: string, sp: Species | null) => {
+    let nextLines: LineItemDraft[] = [];
     if (!sp) {
-      setLines((prev) =>
-        prev.map((l) =>
-          l.id === lineId
-            ? {
-                ...l,
-                speciesId: '',
-                hsCode: ''
-              }
-            : l
-        )
+      nextLines = lines.map((l) =>
+        l.id === lineId
+          ? {
+              ...l,
+              speciesId: '',
+              hsCode: '',
+              productDescription: ''
+            }
+          : l
       );
-      return;
-    }
-
-    setLines((prev) =>
-      prev.map((l) =>
+    } else {
+      nextLines = lines.map((l) =>
         l.id === lineId
           ? {
               ...l,
@@ -257,10 +256,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               productDescription: l.productDescription.trim() ? l.productDescription : sp.name.toUpperCase()
             }
           : l
-      )
-    );
-    if (sp.scientificName && !scientificName) {
-      setScientificName(sp.scientificName.toUpperCase());
+      );
+    }
+
+    setLines(nextLines);
+
+    // Automatically derive commodity title & scientific name
+    if (!isCommodityManual || !commodityDescription.trim()) {
+      setCommodityDescription(deriveCommodityTitle(nextLines, species));
+    }
+    if (!isScientificManual || !scientificName.trim()) {
+      setScientificName(deriveScientificName(nextLines, species));
     }
   };
 
@@ -288,11 +294,25 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       showToast('At least one product line item is required.', 'warning');
       return;
     }
-    setLines((prev) => prev.filter((l) => l.id !== lineId));
+    const nextLines = lines.filter((l) => l.id !== lineId);
+    setLines(nextLines);
+    if (!isCommodityManual || !commodityDescription.trim()) {
+      setCommodityDescription(deriveCommodityTitle(nextLines, species));
+    }
+    if (!isScientificManual || !scientificName.trim()) {
+      setScientificName(deriveScientificName(nextLines, species));
+    }
   };
 
   const updateLine = (lineId: string, field: keyof LineItemDraft, val: any) => {
-    setLines((prev) => prev.map((l) => (l.id === lineId ? { ...l, [field]: val } : l)));
+    const nextLines = lines.map((l) => (l.id === lineId ? { ...l, [field]: val } : l));
+    setLines(nextLines);
+
+    if (field === 'cartonsCount' || field === 'productDescription') {
+      if (!isCommodityManual || !commodityDescription.trim()) {
+        setCommodityDescription(deriveCommodityTitle(nextLines, species));
+      }
+    }
   };
 
   // Live Server-Style Totals Calculation
@@ -464,6 +484,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setExporterRef(`EXP-${currentYear}-${nextSeq}`);
     setOrderNo('');
     setRemarks('');
+    setCommodityDescription('');
+    setIsCommodityManual(false);
+    setScientificName('');
+    setIsScientificManual(false);
     setLines([createBlankLine(0)]);
   };
 
@@ -999,12 +1023,28 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div className="lg:col-span-2">
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">COMMODITY Title (Row 10)</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-ink-700">COMMODITY Title (Row 10)</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCommodityManual(false);
+                  setCommodityDescription(deriveCommodityTitle(lines, species));
+                }}
+                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Auto-fill commodity title from entered items"
+              >
+                <Sparkles className="w-3 h-3" /> Auto-fill from items
+              </button>
+            </div>
             <input
               type="text"
               value={commodityDescription}
-              onChange={(e) => setCommodityDescription(e.target.value)}
-              placeholder="e.g. 2600 CARTONS OF FROZEN INDIAN MACKEREL - A GRADE & B GRADE- DS"
+              onChange={(e) => {
+                setCommodityDescription(e.target.value);
+                setIsCommodityManual(e.target.value.trim().length > 0);
+              }}
+              placeholder="e.g. 481 CARTONS FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE & 1519 CARTONS FROZEN LOLIGO SQUID WHOLE-A GRADE"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
             />
           </div>
@@ -1021,12 +1061,28 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">SCIENTIFIC NAME</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-ink-700">SCIENTIFIC NAME</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsScientificManual(false);
+                  setScientificName(deriveScientificName(lines, species));
+                }}
+                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Fetch scientific names from product master"
+              >
+                <Sparkles className="w-3 h-3" /> Auto-fill from master
+              </button>
+            </div>
             <input
               type="text"
               value={scientificName}
-              onChange={(e) => setScientificName(e.target.value.toUpperCase())}
-              placeholder="e.g. RASTRELLIGER KANAGURTA"
+              onChange={(e) => {
+                setScientificName(e.target.value.toUpperCase());
+                setIsScientificManual(e.target.value.trim().length > 0);
+              }}
+              placeholder="e.g. UROTEUTHIS DUVAUCELII"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold italic text-xs outline-none focus:bg-white focus:border-rose-400"
             />
           </div>

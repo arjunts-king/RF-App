@@ -15,7 +15,9 @@ import {
   getAgeingBucket,
   formatCroreINR,
   formatDashboardINR,
-  formatForwardRate
+  formatForwardRate,
+  deriveCommodityTitle,
+  deriveScientificName
 } from '../utils/calculations.ts';
 
 import {
@@ -2692,6 +2694,136 @@ test('Unified Searchable Comboboxes: Size, Customer, and Port drag down lists', 
 
   const chinaPorts = filterPorts('China', ports);
   assert.ok(chinaPorts.length >= 5, 'Search for "China" returns all Chinese ports (Qingdao, Fuzhou, Xiamen, etc.)');
+});
+
+// ============================================================================
+// SUITE 48: Commodity Title & Scientific Name Auto-Fill from Product Masters
+// Reference: Sample Invoice Structure & User Uploaded Reference Image
+// ============================================================================
+test('Commodity Title and Scientific Name Auto-Fill from Product Masters & Reference Image', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  const spPrefix = 'export const VERIFIED_SPECIES: Species[] = ';
+  const spStart = content.indexOf(spPrefix);
+  const spEnd = content.indexOf('export const VERIFIED_SIZES');
+  const speciesList = JSON.parse(content.slice(spStart + spPrefix.length, spEnd).trim().replace(/;$/, ''));
+
+  // 1. Verify authentic Squid scientific names in product master
+  const prd23 = speciesList.find((s) => s.code === 'PRD-023');
+  const prd24 = speciesList.find((s) => s.code === 'PRD-024');
+  assert.ok(prd23, 'PRD-023 must exist');
+  assert.ok(prd24, 'PRD-024 must exist');
+  assert.equal(prd23.scientificName, 'Uroteuthis Duvaucelii', 'Squid Semi Needle scientific name is Uroteuthis Duvaucelii');
+  assert.equal(prd24.scientificName, 'Uroteuthis Duvaucelii', 'Loligo Squid scientific name is Uroteuthis Duvaucelii');
+
+  // 2. Multi-Item Commodity Title & Scientific Name (exact match to user reference image)
+  // Image: "COMMODITY: 481 CARTONS FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE & 1519 CARTONS FROZEN LOLIGO SQUID WHOLE-A GRADE"
+  // "SCIENTIFIC NAME: UROTEUTHIS DUVAUCELII"
+  const multiItemLines = [
+    {
+      speciesId: prd23.id,
+      cartonsCount: 481,
+      productDescription: 'FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE'
+    },
+    {
+      speciesId: prd24.id,
+      cartonsCount: 1519,
+      productDescription: 'FROZEN LOLIGO SQUID WHOLE-A GRADE'
+    }
+  ];
+
+  const derivedMultiCommodity = deriveCommodityTitle(multiItemLines, speciesList);
+  assert.equal(
+    derivedMultiCommodity,
+    '481 CARTONS FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE & 1519 CARTONS FROZEN LOLIGO SQUID WHOLE-A GRADE',
+    'Commodity title for 2 items must exactly match reference image joined with " & "'
+  );
+
+  const derivedMultiScientific = deriveScientificName(multiItemLines, speciesList);
+  assert.equal(
+    derivedMultiScientific,
+    'UROTEUTHIS DUVAUCELII',
+    'Deduplicates shared scientific name to single uppercase UROTEUTHIS DUVAUCELII matching reference image'
+  );
+
+  // 3. Single Item Commodity Title (matching sample invoice structure)
+  // e.g. "2600 CARTONS FROZEN INDIAN MACKEREL A GRADE" with "RASTRELLIGER KANAGURTA"
+  const prd4 = speciesList.find((s) => s.code === 'PRD-004');
+  assert.ok(prd4, 'PRD-004 must exist');
+  const singleItemLines = [
+    {
+      speciesId: prd4.id,
+      cartonsCount: 2600,
+      productDescription: ''
+    }
+  ];
+
+  const derivedSingleCommodity = deriveCommodityTitle(singleItemLines, speciesList);
+  assert.equal(
+    derivedSingleCommodity,
+    '2600 CARTONS FROZEN INDIAN MACKEREL A GRADE',
+    'Single item commodity title includes carton count and product master name'
+  );
+
+  const derivedSingleScientific = deriveScientificName(singleItemLines, speciesList);
+  assert.equal(
+    derivedSingleScientific,
+    'RASTRELLIGER KANAGURTA',
+    'Single item scientific name uppercase'
+  );
+
+  // 4. Same Product Multi-Line Cartons Aggregation
+  // If an invoice has 2 sizes of the same product, cartons are summed
+  const multiSizeLines = [
+    {
+      speciesId: prd4.id,
+      cartonsCount: 1000,
+      productDescription: ''
+    },
+    {
+      speciesId: prd4.id,
+      cartonsCount: 1600,
+      productDescription: ''
+    }
+  ];
+  assert.equal(
+    deriveCommodityTitle(multiSizeLines, speciesList),
+    '2600 CARTONS FROZEN INDIAN MACKEREL A GRADE',
+    'Aggregates cartons for multi-size lines of the same product'
+  );
+
+  // 5. Distinct Species Scientific Name joining with " & "
+  const prd1 = speciesList.find((s) => s.code === 'PRD-001');
+  const mixedSpeciesLines = [
+    {
+      speciesId: prd1.id,
+      cartonsCount: 500,
+      productDescription: ''
+    },
+    {
+      speciesId: prd4.id,
+      cartonsCount: 800,
+      productDescription: ''
+    }
+  ];
+  assert.equal(
+    deriveScientificName(mixedSpeciesLines, speciesList),
+    'LEPTURACANTHUS SAVALA & RASTRELLIGER KANAGURTA',
+    'Distinct species scientific names are joined with " & "'
+  );
+
+  // 6. Edge cases: Empty lines, 0 cartons, singular 1 carton
+  assert.equal(deriveCommodityTitle([], speciesList), '');
+  assert.equal(deriveScientificName([], speciesList), '');
+
+  const singularLine = [{ speciesId: prd1.id, cartonsCount: 1 }];
+  assert.equal(deriveCommodityTitle(singularLine, speciesList), '1 CARTON FROZEN RIBBONFISH B GRADE');
+
+  const zeroCartonLine = [{ speciesId: prd1.id, cartonsCount: 0 }];
+  assert.equal(deriveCommodityTitle(zeroCartonLine, speciesList), 'FROZEN RIBBONFISH B GRADE');
 });
 
 

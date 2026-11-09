@@ -460,3 +460,101 @@ export function getAgeingBucket(dueDateStr: string, asOfDate: Date = new Date())
   if (diffDays <= 180) return '91-180 Days';
   return '180+ Days';
 }
+
+export interface LineItemForCommodity {
+  speciesId?: string;
+  productDescription?: string;
+  cartonsCount?: number | string;
+  gradeSize?: string;
+}
+
+/**
+ * Derives the COMMODITY description (Row 10) for export invoices.
+ * If 1 product item:
+ *   e.g. "2600 CARTONS FROZEN INDIAN MACKEREL" (or "<cartons> CARTONS <PRODUCT>")
+ * If 2 or more product items:
+ *   e.g. "481 CARTONS FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE & 1519 CARTONS FROZEN LOLIGO SQUID WHOLE-A GRADE"
+ * Based on sample invoice structure and commercial export invoice standards.
+ */
+export function deriveCommodityTitle(
+  lines: LineItemForCommodity[],
+  speciesList: Array<{ id: string; name?: string; scientificName?: string }>
+): string {
+  if (!lines || lines.length === 0) return '';
+  const validLines = lines.filter((l) => (l.speciesId && l.speciesId.trim()) || (l.productDescription && l.productDescription.trim()));
+  if (validLines.length === 0) return '';
+
+  // Group lines by product (speciesId or normalized productDescription)
+  const groupMap = new Map<string, { productName: string; totalCartons: number }>();
+
+  for (const l of validLines) {
+    const sp = speciesList.find((s) => s.id === l.speciesId);
+    let displayName = '';
+    if (sp?.name) {
+      if (l.productDescription && l.productDescription.trim() && l.productDescription.trim().toUpperCase() !== sp.name.toUpperCase()) {
+        displayName = l.productDescription.trim().toUpperCase();
+      } else {
+        displayName = sp.name.toUpperCase();
+      }
+    } else {
+      displayName = (l.productDescription || '').trim().toUpperCase();
+    }
+
+    if (!displayName) continue;
+
+    const key = sp?.id ? `sp-${sp.id}` : `name-${displayName}`;
+    const rawCartons = typeof l.cartonsCount === 'string'
+      ? parseFloat(l.cartonsCount.replace(/,/g, '')) || 0
+      : Number(l.cartonsCount) || 0;
+
+    const existing = groupMap.get(key);
+    if (existing) {
+      existing.totalCartons += rawCartons;
+    } else {
+      groupMap.set(key, { productName: displayName, totalCartons: rawCartons });
+    }
+  }
+
+  const parts: string[] = [];
+  for (const [, group] of groupMap.entries()) {
+    if (group.totalCartons > 0) {
+      const cartonWord = group.totalCartons === 1 ? 'CARTON' : 'CARTONS';
+      parts.push(`${group.totalCartons} ${cartonWord} ${group.productName}`);
+    } else {
+      parts.push(group.productName);
+    }
+  }
+
+  return parts.join(' & ');
+}
+
+/**
+ * Derives the SCIENTIFIC NAME (Row 10) for export invoices.
+ * Fetches from the Product Master (Species).
+ * Deduplicates identical scientific names across items (e.g. UROTEUTHIS DUVAUCELII).
+ * Joins distinct scientific names with ' & ' (e.g. UROTEUTHIS DUVAUCELII & LITOPENAEUS VANNAMEI).
+ */
+export function deriveScientificName(
+  lines: LineItemForCommodity[],
+  speciesList: Array<{ id: string; name?: string; scientificName?: string }>
+): string {
+  if (!lines || lines.length === 0) return '';
+  const validLines = lines.filter((l) => (l.speciesId && l.speciesId.trim()) || (l.productDescription && l.productDescription.trim()));
+  if (validLines.length === 0) return '';
+
+  const names: string[] = [];
+  for (const l of validLines) {
+    const sp = speciesList.find((s) => s.id === l.speciesId);
+    let sci = sp?.scientificName;
+    if (!sci && l.productDescription) {
+      const match = speciesList.find((s) => (s.name || '').toLowerCase() === (l.productDescription || '').trim().toLowerCase());
+      if (match?.scientificName) sci = match.scientificName;
+    }
+    if (sci && sci.trim()) {
+      names.push(sci.trim().toUpperCase());
+    }
+  }
+
+  const unique = Array.from(new Set(names));
+  return unique.join(' & ');
+}

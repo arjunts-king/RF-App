@@ -153,7 +153,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const vesselFlightNo = (inv.vesselFlightNo && inv.vesselFlightNo !== 'MOGRAL 119W') ? inv.vesselFlightNo : '';
   const containerNo = (inv.containerNo && inv.containerNo !== 'ONEU90399086') ? inv.containerNo : '';
   const sealNo = (inv.sealNo && inv.sealNo !== 'IN567892') ? inv.sealNo : '';
-  const scientificName = (inv.scientificName && inv.scientificName !== 'RASTRELLIGER KANAGURTA') ? inv.scientificName : '';
+  const scientificName = inv.scientificName || '';
   const shippingMarks = (inv.shippingMarks && inv.shippingMarks !== 'MERIT D.S') ? inv.shippingMarks : '';
   const commodityDescription = (inv.commodityDescription && inv.commodityDescription !== 'FROZEN SEAFOOD') ? inv.commodityDescription : '';
   const packingDescription = (inv.packingDescription && inv.packingDescription !== '1X10KG') ? inv.packingDescription : '';
