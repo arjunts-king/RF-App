@@ -1,10 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
-import { formatINR, formatKg } from '../../utils/calculations';
+import { SalesInvoice } from '../../types';
+import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { MultiSelectFilter } from '../common/MultiSelectFilter';
+import { StatusBadge } from '../common/StatusBadge';
+import { PaginationControls } from '../common/PaginationControls';
+import { RealizationModal } from './RealizationModal';
 import {
   TrendingUp,
   Anchor,
@@ -14,6 +18,7 @@ import {
   Filter,
   Layers,
   ArrowUpRight,
+  ArrowRight,
   X,
   FileText,
   Fish,
@@ -25,7 +30,9 @@ import {
   Boxes,
   ArrowUpDown,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  Clock,
+  Globe
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -46,6 +53,14 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const [matrixSortBy, setMatrixSortBy] = useState<'value' | 'weight' | 'rate' | 'shipments' | 'name'>('value');
   const [matrixSortDir, setMatrixSortDir] = useState<'asc' | 'desc'>('desc');
   const [matrixViewMode, setMatrixViewMode] = useState<'table' | 'cards'>('table');
+
+  // Pending Outstanding List States & Target Modal
+  const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
+  const [outstandingSearch, setOutstandingSearch] = useState('');
+  const [outstandingStatusFilter, setOutstandingStatusFilter] = useState<'all' | 'not-realized' | 'partially-realized' | 'overdue'>('all');
+  const [outstandingSortBy, setOutstandingSortBy] = useState<'amount-desc' | 'amount-asc' | 'days-desc' | 'days-asc' | 'date-desc' | 'inv-asc'>('amount-desc');
+  const [outstandingPage, setOutstandingPage] = useState(1);
+  const [outstandingPageSize, setOutstandingPageSize] = useState(10);
 
   // Lookups
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
@@ -368,6 +383,139 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       else if (days <= 90) ageingStats['61-90'] += inv.balanceRealizationCurrency;
       else ageingStats['90+'] += inv.balanceRealizationCurrency;
     });
+
+  // Reset pagination when search or filters change
+  useEffect(() => {
+    setOutstandingPage(1);
+  }, [outstandingSearch, outstandingStatusFilter, outstandingSortBy]);
+
+  // Pending Outstanding Invoices Computation (all invoices that have not been fully realized)
+  const pendingOutstandingInvoices = useMemo(() => {
+    const nowMs = new Date().getTime();
+    return filteredInvoices
+      .filter((inv) => !inv.isVoided && (inv.balanceRealizationCurrency > 0 || inv.realizationStatus !== 'Fully Realized'))
+      .map((inv) => {
+        const consignee = customerMap.get(inv.consigneeId);
+        const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
+        const daysPending = Math.max(0, Math.floor((nowMs - new Date(inv.invoiceDate).getTime()) / (1000 * 60 * 60 * 24)));
+        const bankRate = inv.bankPreDeterminedExchangeRate || inv.balanceExchangeRate || inv.exchangeRate || 84.5;
+        const indicativeOutstandingINR = Number((inv.balanceRealizationCurrency * bankRate).toFixed(2));
+
+        let ageingBucket: '0-30 Days' | '31-60 Days' | '61-90 Days' | '90+ Days' = '0-30 Days';
+        if (daysPending > 90) ageingBucket = '90+ Days';
+        else if (daysPending > 60) ageingBucket = '61-90 Days';
+        else if (daysPending > 30) ageingBucket = '31-60 Days';
+
+        return {
+          ...inv,
+          consigneeNameDisplay: consignee?.name || inv.consigneeName || inv.buyerName || 'Overseas Buyer',
+          buyerNameDisplay: buyer?.name || '',
+          countryDisplay: consignee?.country || 'Export',
+          daysPending,
+          ageingBucket,
+          bankRate,
+          indicativeOutstandingINR
+        };
+      });
+  }, [filteredInvoices, customerMap]);
+
+  // Local filtering & sorting for pending outstanding ledger
+  const filteredOutstandingInvoices = useMemo(() => {
+    return pendingOutstandingInvoices
+      .filter((inv) => {
+        if (outstandingStatusFilter === 'not-realized' && inv.realizationStatus !== 'Not Realized') return false;
+        if (outstandingStatusFilter === 'partially-realized' && inv.realizationStatus !== 'Partially Realized') return false;
+        if (outstandingStatusFilter === 'overdue' && inv.daysPending <= 60) return false;
+
+        if (outstandingSearch.trim()) {
+          const q = outstandingSearch.toLowerCase().trim();
+          const matchNo = inv.invoiceNo.toLowerCase().includes(q);
+          const matchCust = inv.consigneeNameDisplay.toLowerCase().includes(q) || inv.buyerNameDisplay.toLowerCase().includes(q);
+          const matchCountry = inv.countryDisplay.toLowerCase().includes(q);
+          const matchSO = inv.salesOrderNo?.toLowerCase().includes(q);
+          const matchPO = inv.orderNo?.toLowerCase().includes(q);
+          if (!matchNo && !matchCust && !matchCountry && !matchSO && !matchPO) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (outstandingSortBy === 'amount-desc') return b.balanceRealizationCurrency - a.balanceRealizationCurrency;
+        if (outstandingSortBy === 'amount-asc') return a.balanceRealizationCurrency - b.balanceRealizationCurrency;
+        if (outstandingSortBy === 'days-desc') return b.daysPending - a.daysPending;
+        if (outstandingSortBy === 'days-asc') return a.daysPending - b.daysPending;
+        if (outstandingSortBy === 'date-desc') return b.invoiceDate.localeCompare(a.invoiceDate);
+        if (outstandingSortBy === 'inv-asc') return a.invoiceNo.localeCompare(b.invoiceNo);
+        return 0;
+      });
+  }, [pendingOutstandingInvoices, outstandingStatusFilter, outstandingSearch, outstandingSortBy]);
+
+  // Paginated records for table view
+  const paginatedOutstandingInvoices = useMemo(() => {
+    const start = (outstandingPage - 1) * outstandingPageSize;
+    return filteredOutstandingInvoices.slice(start, start + outstandingPageSize);
+  }, [filteredOutstandingInvoices, outstandingPage, outstandingPageSize]);
+
+  // Aggregate metrics for pending outstanding ledger
+  const outstandingMetrics = useMemo(() => {
+    const totalCount = pendingOutstandingInvoices.length;
+    const totalUSD = pendingOutstandingInvoices.reduce((s, i) => s + i.balanceRealizationCurrency, 0);
+    const totalINR = pendingOutstandingInvoices.reduce((s, i) => s + i.indicativeOutstandingINR, 0);
+    const notRealizedCount = pendingOutstandingInvoices.filter((i) => i.realizationStatus === 'Not Realized').length;
+    const partiallyRealizedCount = pendingOutstandingInvoices.filter((i) => i.realizationStatus === 'Partially Realized').length;
+    const advanceReceivedUSD = pendingOutstandingInvoices.reduce((s, i) => s + (i.advanceReceivedCurrency || 0), 0);
+    const overdueCount = pendingOutstandingInvoices.filter((i) => i.daysPending > 60).length;
+
+    return {
+      totalCount,
+      totalUSD,
+      totalINR,
+      notRealizedCount,
+      partiallyRealizedCount,
+      advanceReceivedUSD,
+      overdueCount
+    };
+  }, [pendingOutstandingInvoices]);
+
+  // CSV Export for Pending Outstanding Invoices
+  const handleExportOutstandingCSV = () => {
+    const data = filteredOutstandingInvoices.map((inv) => ({
+      InvoiceNo: inv.invoiceNo,
+      InvoiceDate: inv.invoiceDate,
+      SalesOrderNo: inv.salesOrderNo || '',
+      Consignee: inv.consigneeNameDisplay,
+      Country: inv.countryDisplay,
+      Currency: inv.currency,
+      TotalAmountCurrency: inv.totalAmountCurrency,
+      AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
+      AdvanceReceivedINR: inv.advanceReceivedINR || 0,
+      PendingOutstandingUSD: inv.balanceRealizationCurrency,
+      BankForwardRate: inv.bankRate,
+      IndicativeOutstandingINR: inv.indicativeOutstandingINR,
+      DaysPending: inv.daysPending,
+      AgeingBucket: inv.ageingBucket,
+      RealizationStatus: inv.realizationStatus
+    }));
+
+    const csv = convertToCSV(data, [
+      { key: 'InvoiceNo', label: 'Invoice No' },
+      { key: 'InvoiceDate', label: 'Invoice Date' },
+      { key: 'SalesOrderNo', label: 'Sales Order No' },
+      { key: 'Consignee', label: 'Consignee / Customer' },
+      { key: 'Country', label: 'Destination Country' },
+      { key: 'Currency', label: 'Currency' },
+      { key: 'TotalAmountCurrency', label: 'Total Invoiced Value (USD)' },
+      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
+      { key: 'AdvanceReceivedINR', label: 'Advance Received (INR)' },
+      { key: 'PendingOutstandingUSD', label: 'Pending Outstanding (USD)' },
+      { key: 'BankForwardRate', label: 'Forward / Bank Rate (INR)' },
+      { key: 'IndicativeOutstandingINR', label: 'Indicative Outstanding (INR)' },
+      { key: 'DaysPending', label: 'Days Outstanding' },
+      { key: 'AgeingBucket', label: 'Ageing Category' },
+      { key: 'RealizationStatus', label: 'Realization Status' }
+    ]);
+    downloadFile(csv, `pending_outstanding_invoices_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+  };
 
   const clearAllFilters = () => {
     setStartDate('');
@@ -740,10 +888,13 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         <BentoCard
           label="Pending Outstanding"
           value={`$${totalOutstandingUSD.toLocaleString()}`}
-          caption="Unrealized remittance"
+          caption={`${pendingOutstandingInvoices.length} invoices awaiting remittance`}
           variant={totalOutstandingUSD > 0 ? 'warning' : 'default'}
-          linkText="Ageing tracker"
-          onLinkClick={() => onNavigate && onNavigate('reports')}
+          linkText="View unrealized invoices"
+          onLinkClick={() => {
+            const el = document.getElementById('pending-outstanding-invoices');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
         />
         <BentoCard
           label="Active Overseas Buyers"
@@ -848,7 +999,358 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               <span className="font-extrabold text-rose-800 tabular-nums">${ageingStats['90+'].toLocaleString()}</span>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('pending-outstanding-invoices');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <span>View All {pendingOutstandingInvoices.length} Unrealized Invoices</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* PENDING OUTSTANDING & UNREALIZED INVOICES LEDGER */}
+      {/* ==================================================================== */}
+      <div id="pending-outstanding-invoices" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-6">
+        {/* Header & Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-ink-900 flex items-center gap-2">
+                <BadgeDollarSign className="w-5 h-5 text-rose-700" />
+                Pending Outstanding &amp; Unrealized Invoices
+              </h3>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                {pendingOutstandingInvoices.length} Invoices Pending
+              </span>
+            </div>
+            <p className="text-xs text-ink-500 mt-0.5">
+              Itemized audit register of commercial invoices awaiting foreign currency realization and bank remittances.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Box */}
+            <div className="relative min-w-[220px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="text"
+                placeholder="Search invoice #, customer, country..."
+                value={outstandingSearch}
+                onChange={(e) => setOutstandingSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
+              />
+            </div>
+
+            {/* Sort Selector */}
+            <select
+              value={outstandingSortBy}
+              onChange={(e) => setOutstandingSortBy(e.target.value as any)}
+              className="text-xs font-semibold px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="amount-desc">Sort: Highest Outstanding (USD)</option>
+              <option value="amount-asc">Sort: Lowest Outstanding (USD)</option>
+              <option value="days-desc">Sort: Oldest Pending (Days)</option>
+              <option value="days-asc">Sort: Newest Pending (Days)</option>
+              <option value="date-desc">Sort: Invoice Date (Recent first)</option>
+              <option value="inv-asc">Sort: Invoice # (A to Z)</option>
+            </select>
+
+            {/* Export CSV Button */}
+            <button
+              onClick={handleExportOutstandingCSV}
+              className="px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              title="Download pending outstanding invoices spreadsheet"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Outstanding CSV</span>
+            </button>
+
+            {/* Link to Realization module */}
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('realizations')}
+                className="px-3.5 py-1.5 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              >
+                <span>Realization Register</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Executive Outstanding Summary KPI Tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <span className="text-[10px] font-bold text-ink-500 uppercase block">Pending Invoices</span>
+            <span className="text-lg font-black text-ink-900 mt-0.5 block">{outstandingMetrics.totalCount}</span>
+            <span className="text-[10px] text-ink-500 mt-0.5 block">
+              {totalInvoices > 0 ? `${((outstandingMetrics.totalCount / totalInvoices) * 100).toFixed(0)}% of total invoices` : '—'}
+            </span>
+          </div>
+
+          <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
+            <span className="text-[10px] font-bold text-rose-800 uppercase block">Total Outstanding (USD)</span>
+            <span className="text-lg font-black text-rose-950 mt-0.5 block">
+              ${outstandingMetrics.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <span className="text-[10px] text-rose-800 font-semibold mt-0.5 block">Awaiting foreign wire</span>
+          </div>
+
+          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+            <span className="text-[10px] font-bold text-amber-800 uppercase block">Indicative INR Value</span>
+            <span className="text-lg font-black text-amber-950 mt-0.5 block">
+              {formatINR(outstandingMetrics.totalINR)}
+            </span>
+            <span className="text-[10px] text-amber-800 font-semibold mt-0.5 block">At booked forward rates</span>
+          </div>
+
+          <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+            <span className="text-[10px] font-bold text-blue-800 uppercase block">Not Realized (Zero Wire)</span>
+            <span className="text-lg font-black text-blue-950 mt-0.5 block">{outstandingMetrics.notRealizedCount}</span>
+            <span className="text-[10px] text-blue-800 font-semibold mt-0.5 block">No advance received</span>
+          </div>
+
+          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase block">Partially Realized</span>
+            <span className="text-lg font-black text-emerald-950 mt-0.5 block">{outstandingMetrics.partiallyRealizedCount}</span>
+            <span className="text-[10px] text-emerald-800 font-semibold mt-0.5 block">
+              ${outstandingMetrics.advanceReceivedUSD.toLocaleString()} advance in
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Filter Pill Buttons */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button
+            onClick={() => setOutstandingStatusFilter('all')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              outstandingStatusFilter === 'all'
+                ? 'bg-ink-900 text-white shadow-2xs'
+                : 'bg-gray-100 text-ink-600 hover:bg-gray-200'
+            }`}
+          >
+            <span>All Pending</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+              {pendingOutstandingInvoices.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setOutstandingStatusFilter('not-realized')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              outstandingStatusFilter === 'not-realized'
+                ? 'bg-rose-700 text-white shadow-2xs'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
+            }`}
+          >
+            <span>Not Realized</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+              {outstandingMetrics.notRealizedCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setOutstandingStatusFilter('partially-realized')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              outstandingStatusFilter === 'partially-realized'
+                ? 'bg-amber-600 text-white shadow-2xs'
+                : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+            }`}
+          >
+            <span>Partially Realized</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+              {outstandingMetrics.partiallyRealizedCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setOutstandingStatusFilter('overdue')}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              outstandingStatusFilter === 'overdue'
+                ? 'bg-rose-900 text-white shadow-2xs'
+                : 'bg-gray-100 text-ink-700 hover:bg-gray-200'
+            }`}
+          >
+            <span>Overdue (&gt; 60 Days)</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+              {outstandingMetrics.overdueCount}
+            </span>
+          </button>
+
+          {outstandingSearch && (
+            <button
+              onClick={() => setOutstandingSearch('')}
+              className="text-xs text-rose-700 hover:text-rose-900 font-bold ml-auto flex items-center gap-1 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Clear Search</span>
+            </button>
+          )}
+        </div>
+
+        {/* Table View */}
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-left text-xs border-collapse min-w-[980px]">
+            <thead>
+              <tr className="bg-gray-50 text-[10px] font-bold text-ink-500 uppercase border-b border-gray-200 tracking-wider">
+                <th className="py-2.5 px-3 text-center w-12">#</th>
+                <th className="py-2.5 px-3 w-40">Invoice # &amp; Date</th>
+                <th className="py-2.5 px-3 min-w-[180px]">Consignee / Customer</th>
+                <th className="py-2.5 px-3 text-right">Invoiced (USD)</th>
+                <th className="py-2.5 px-3 text-right">Realized (USD)</th>
+                <th className="py-2.5 px-3 text-right bg-rose-50/50">Outstanding (USD)</th>
+                <th className="py-2.5 px-3 text-center">Forward Rate</th>
+                <th className="py-2.5 px-3 text-right">Indicative INR</th>
+                <th className="py-2.5 px-3 text-center">Days Pending</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 font-medium">
+              {filteredOutstandingInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-12 text-center text-ink-500">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="font-bold text-sm text-ink-800">No pending outstanding invoices match your criteria</p>
+                    <p className="text-xs text-ink-500 mt-1">Try clearing filters or search to view more records.</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedOutstandingInvoices.map((inv, idx) => {
+                  const globalIdx = (outstandingPage - 1) * outstandingPageSize + idx + 1;
+                  const realizedUSD = inv.totalRealizedCurrency || 0;
+                  const realizedPct = inv.totalAmountCurrency > 0 ? ((realizedUSD / inv.totalAmountCurrency) * 100).toFixed(0) : '0';
+
+                  let daysBadgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                  if (inv.daysPending > 90) {
+                    daysBadgeColor = 'bg-rose-100 text-rose-800 border-rose-300 font-extrabold';
+                  } else if (inv.daysPending > 60) {
+                    daysBadgeColor = 'bg-amber-50 text-amber-800 border-amber-200 font-bold';
+                  } else if (inv.daysPending > 30) {
+                    daysBadgeColor = 'bg-blue-50 text-blue-800 border-blue-200';
+                  }
+
+                  return (
+                    <tr key={inv.id} className="hover:bg-rose-50/20 transition-colors">
+                      <td className="py-3 px-3 text-center font-mono text-ink-400 font-semibold">{globalIdx}</td>
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
+                        <div className="font-mono font-bold text-rose-700">{inv.invoiceNo}</div>
+                        <div className="text-[11px] text-ink-600 mt-0.5">{inv.invoiceDate}</div>
+                        {inv.salesOrderNo && (
+                          <div className="text-[10px] text-blue-700 font-mono font-semibold">SO: {inv.salesOrderNo}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 align-middle">
+                        <div className="font-extrabold text-ink-900 leading-tight truncate max-w-[220px]" title={inv.consigneeNameDisplay}>
+                          {inv.consigneeNameDisplay}
+                        </div>
+                        <div className="text-[10px] text-ink-500 flex items-center gap-1 mt-0.5">
+                          <Globe className="w-3 h-3 text-ink-400 shrink-0" />
+                          <span>{inv.countryDisplay}</span>
+                          {inv.buyerNameDisplay && inv.buyerNameDisplay !== inv.consigneeNameDisplay && (
+                            <span className="text-ink-400 truncate max-w-[120px]">· Buyer: {inv.buyerNameDisplay}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-right font-extrabold text-ink-900 tabular-nums whitespace-nowrap">
+                        ${inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap">
+                        {realizedUSD > 0 ? (
+                          <div>
+                            <div className="font-bold text-emerald-700">${realizedUSD.toLocaleString()}</div>
+                            <div className="text-[10px] text-emerald-600 font-medium">({realizedPct}%)</div>
+                          </div>
+                        ) : (
+                          <span className="text-ink-400 font-mono text-[11px]">$0.00 (0%)</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-right bg-rose-50/40 whitespace-nowrap">
+                        <div className="font-black text-rose-950 tabular-nums text-xs">
+                          ${inv.balanceRealizationCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-[10px] text-rose-700 font-semibold">
+                          {realizedUSD > 0 ? `${(100 - parseFloat(realizedPct)).toFixed(0)}% pending` : '100% pending'}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-center font-mono font-bold text-blue-800 tabular-nums text-[11px] whitespace-nowrap">
+                        ₹{formatForwardRate(inv.bankRate)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-ink-900 tabular-nums whitespace-nowrap">
+                        {formatINR(inv.indicativeOutstandingINR)}
+                      </td>
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border ${daysBadgeColor}`}>
+                          <Clock className="w-3 h-3" />
+                          <span>{inv.daysPending}d</span>
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
+                        <StatusBadge status={inv.realizationStatus} />
+                      </td>
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setRealizationTarget(inv)}
+                          className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-200 shadow-2xs whitespace-nowrap cursor-pointer mx-auto"
+                          title="Record or view realization settlement for this invoice"
+                        >
+                          <BadgeDollarSign className="w-3.5 h-3.5" />
+                          <span>Settle</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            {filteredOutstandingInvoices.length > 0 && (
+              <tfoot>
+                <tr className="bg-gray-50/95 font-bold text-ink-900 border-t-2 border-gray-200">
+                  <td colSpan={3} className="py-3 px-3 uppercase text-[10px] text-ink-500 text-right">
+                    Total Pending ({filteredOutstandingInvoices.length} Invoices)
+                  </td>
+                  <td className="py-3 px-3 text-right font-extrabold text-ink-900">
+                    ${filteredOutstandingInvoices.reduce((s, i) => s + i.totalAmountCurrency, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold text-emerald-800">
+                    ${filteredOutstandingInvoices.reduce((s, i) => s + (i.totalRealizedCurrency || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black text-rose-950 text-sm bg-rose-50/60">
+                    ${filteredOutstandingInvoices.reduce((s, i) => s + i.balanceRealizationCurrency, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td></td>
+                  <td className="py-3 px-3 text-right font-black text-ink-950">
+                    {formatINR(filteredOutstandingInvoices.reduce((s, i) => s + i.indicativeOutstandingINR, 0))}
+                  </td>
+                  <td colSpan={3}></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        {filteredOutstandingInvoices.length > 0 && (
+          <PaginationControls
+            currentPage={outstandingPage}
+            totalItems={filteredOutstandingInvoices.length}
+            pageSize={outstandingPageSize}
+            onPageChange={setOutstandingPage}
+            onPageSizeChange={(newSize) => {
+              setOutstandingPageSize(newSize);
+              setOutstandingPage(1);
+            }}
+            pageSizeOptions={[10, 25, 50, 100]}
+          />
+        )}
       </div>
 
       {/* Row 2: Customer Split, Product Split & Destination Ports */}
@@ -1264,6 +1766,13 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           </div>
         )}
       </div>
+
+      {/* Realization & Settlement Modal for Quick Actions */}
+      <RealizationModal
+        isOpen={realizationTarget !== null}
+        onClose={() => setRealizationTarget(null)}
+        invoice={realizationTarget}
+      />
     </div>
   );
 };

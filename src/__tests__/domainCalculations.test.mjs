@@ -2204,6 +2204,76 @@ test('Forward Exchange Rates: allow and format values up to 7 decimal places', (
   assert.equal(weightedAverageRate, 84.7060901);
 });
 
+// ============================================================================
+// SUITE 18: Commercial Dashboard Pending Outstanding & Unrealized Invoices
+// ============================================================================
+
+test('Commercial Dashboard: filters and aggregates pending outstanding unrealized invoices', () => {
+  const invoices = [
+    {
+      id: 'inv-unrealized-1',
+      invoiceNo: 'EXP/2026/101',
+      invoiceDate: '2026-08-01',
+      totalAmountCurrency: 50000,
+      totalRealizedCurrency: 0,
+      balanceRealizationCurrency: 50000,
+      bankPreDeterminedExchangeRate: 84.50,
+      realizationStatus: 'Not Realized',
+      isVoided: false
+    },
+    {
+      id: 'inv-partial-2',
+      invoiceNo: 'EXP/2026/102',
+      invoiceDate: '2026-09-15',
+      totalAmountCurrency: 100000,
+      advanceReceivedCurrency: 30000,
+      totalRealizedCurrency: 30000,
+      balanceRealizationCurrency: 70000,
+      bankPreDeterminedExchangeRate: 85.00,
+      realizationStatus: 'Partially Realized',
+      isVoided: false
+    },
+    {
+      id: 'inv-settled-3',
+      invoiceNo: 'EXP/2026/103',
+      invoiceDate: '2026-09-20',
+      totalAmountCurrency: 40000,
+      totalRealizedCurrency: 40000,
+      balanceRealizationCurrency: 0,
+      bankPreDeterminedExchangeRate: 84.75,
+      realizationStatus: 'Fully Realized',
+      isVoided: false
+    },
+    {
+      id: 'inv-voided-4',
+      invoiceNo: 'EXP/2026/104',
+      invoiceDate: '2026-07-01',
+      totalAmountCurrency: 25000,
+      totalRealizedCurrency: 0,
+      balanceRealizationCurrency: 25000,
+      realizationStatus: 'Not Realized',
+      isVoided: true
+    }
+  ];
+
+  // Filter pending outstanding: active & balance > 0
+  const pending = invoices.filter((i) => !i.isVoided && (i.balanceRealizationCurrency > 0 || i.realizationStatus !== 'Fully Realized'));
+
+  assert.equal(pending.length, 2, 'Must include only the 2 active unrealized/partially realized invoices');
+  assert.equal(pending.some((i) => i.id === 'inv-settled-3'), false, 'Fully realized invoice must be excluded');
+  assert.equal(pending.some((i) => i.id === 'inv-voided-4'), false, 'Voided invoice must be excluded');
+
+  // Aggregation
+  const totalOutstandingUSD = pending.reduce((s, i) => s + i.balanceRealizationCurrency, 0);
+  assert.equal(totalOutstandingUSD, 120000, 'Pending outstanding USD should be 50,000 + 70,000 = 120,000');
+
+  // Indicative INR at forward rates
+  const totalIndicativeINR = pending.reduce((s, i) => s + (i.balanceRealizationCurrency * (i.bankPreDeterminedExchangeRate || 84.5)), 0);
+  // (50,000 * 84.50) + (70,000 * 85.00) = 4,225,000 + 5,950,000 = 10,175,000
+  assert.equal(totalIndicativeINR, 10175000, 'Indicative outstanding INR should equal ₹1,01,75,000');
+});
+
+
 
 
 
