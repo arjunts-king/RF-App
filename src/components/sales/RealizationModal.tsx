@@ -25,7 +25,7 @@ interface RealizationModalProps {
 }
 
 export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onClose, invoice }) => {
-  const { bankAccounts, updateInvoiceSettlement, deleteInvoiceRealization } = useData();
+  const { bankAccounts, updateInvoiceSettlement, deleteInvoiceRealization, bulkDeleteInvoiceRealizations } = useData();
   const { permissions } = useAuth();
 
   const today = new Date().toISOString().split('T')[0];
@@ -994,7 +994,35 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
         )}
 
         {/* Modal Footer */}
-        <div className="flex justify-end pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          {permissions.canManageSalesRealization &&
+          ((invoice.realizations && invoice.realizations.length > 0) ||
+            (invoice.totalRealizedCurrency && invoice.totalRealizedCurrency > 0) ||
+            Boolean(invoice.advanceReceivedCurrency) ||
+            Boolean(invoice.balancePaymentAmountCurrency) ||
+            invoice.realizationStatus !== 'Not Realized') ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Are you sure you want to delete and reset all realization and settlement entries for invoice ${invoice.invoiceNo}?`
+                  )
+                ) {
+                  bulkDeleteInvoiceRealizations([invoice.id]);
+                  onClose();
+                }
+              }}
+              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              title="Delete all realization records and reset settlement fields"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Realizations</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
           <button
             type="button"
             onClick={onClose}

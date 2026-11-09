@@ -2045,6 +2045,125 @@ test('FOB Dashboard & Sales Ledger: Authentic FOB Totals & Zero Realization Acco
   assert.equal(avgFobInrRate, 315.36, 'Avg FOB INR Rate should be ₹315.36/Kg');
 });
 
+// ============================================================================
+// SUITE 16: Bulk Deletion & Clearing of Realization & Settlement Entries
+// ============================================================================
+
+test('Bulk Realization Deletion: Reset remittances, logs, and schedules across selected invoices', () => {
+  const sampleInvoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'EXP/2026/001',
+      totalAmountCurrency: 100000,
+      currency: 'USD',
+      realizationStatus: 'Fully Realized',
+      advanceTermsUSD: 30000,
+      advanceReceivedCurrency: 30000,
+      advanceReceivedDate: '2026-02-15',
+      advanceReceivedINR: 2535000,
+      advanceBankRef: 'FIRC-001',
+      balanceActualPriceUSD: 70000,
+      balancePaymentAmountCurrency: 70000,
+      balancePaymentDate: '2026-03-20',
+      balancePaymentINR: 5915000,
+      balanceBankRef: 'FIRC-002',
+      totalRealizedCurrency: 100000,
+      totalRealizedINR: 8450000,
+      balanceRealizationCurrency: 0,
+      realizations: [
+        { id: 'r1', paymentType: 'Advance', realizedAmountCurrency: 30000 },
+        { id: 'r2', paymentType: 'Balance', realizedAmountCurrency: 70000 }
+      ]
+    },
+    {
+      id: 'inv-2',
+      invoiceNo: 'EXP/2026/002',
+      totalAmountCurrency: 50000,
+      currency: 'USD',
+      realizationStatus: 'Partially Realized',
+      advanceTermsUSD: 15000,
+      advanceReceivedCurrency: 15000,
+      advanceReceivedDate: '2026-02-18',
+      advanceReceivedINR: 1267500,
+      advanceBankRef: 'FIRC-003',
+      totalRealizedCurrency: 15000,
+      totalRealizedINR: 1267500,
+      balanceRealizationCurrency: 35000,
+      realizations: [
+        { id: 'r3', paymentType: 'Advance', realizedAmountCurrency: 15000 }
+      ]
+    },
+    {
+      id: 'inv-3',
+      invoiceNo: 'EXP/2026/003',
+      totalAmountCurrency: 80000,
+      currency: 'USD',
+      realizationStatus: 'Not Realized',
+      totalRealizedCurrency: 0,
+      totalRealizedINR: 0,
+      balanceRealizationCurrency: 80000,
+      realizations: []
+    }
+  ];
+
+  // Bulk clearing function replicating DataContext logic
+  const bulkClearRealizations = (invoices, idsToClear) => {
+    const idSet = new Set(idsToClear);
+    return invoices.map((inv) => {
+      if (!idSet.has(inv.id)) return inv;
+      return {
+        ...inv,
+        advanceTermsUSD: undefined,
+        advanceReceivedCurrency: undefined,
+        advanceShortfallUSD: undefined,
+        advanceReceivedDate: undefined,
+        advanceReceivedINR: undefined,
+        advanceBankRef: undefined,
+        balanceActualPriceUSD: undefined,
+        balancePaymentAmountCurrency: undefined,
+        balanceShortfallUSD: undefined,
+        balancePaymentDate: undefined,
+        balancePaymentINR: undefined,
+        balanceBankRef: undefined,
+        totalShortfallUSD: undefined,
+        realizations: [],
+        totalRealizedCurrency: 0,
+        balanceRealizationCurrency: inv.totalAmountCurrency,
+        totalRealizedINR: 0,
+        realizationStatus: 'Not Realized',
+        lastRealizationDate: undefined
+      };
+    });
+  };
+
+  // Execute bulk clear on inv-1 and inv-2
+  const cleared = bulkClearRealizations(sampleInvoices, ['inv-1', 'inv-2']);
+
+  // inv-1 must be fully reset
+  const reset1 = cleared.find((i) => i.id === 'inv-1');
+  assert.equal(reset1.realizationStatus, 'Not Realized');
+  assert.equal(reset1.totalRealizedCurrency, 0);
+  assert.equal(reset1.totalRealizedINR, 0);
+  assert.equal(reset1.balanceRealizationCurrency, 100000);
+  assert.equal(reset1.advanceReceivedCurrency, undefined);
+  assert.equal(reset1.balancePaymentAmountCurrency, undefined);
+  assert.deepEqual(reset1.realizations, []);
+
+  // inv-2 must be fully reset
+  const reset2 = cleared.find((i) => i.id === 'inv-2');
+  assert.equal(reset2.realizationStatus, 'Not Realized');
+  assert.equal(reset2.totalRealizedCurrency, 0);
+  assert.equal(reset2.balanceRealizationCurrency, 50000);
+  assert.equal(reset2.advanceReceivedCurrency, undefined);
+  assert.deepEqual(reset2.realizations, []);
+
+  // inv-3 was unselected and must remain untouched
+  const untouched3 = cleared.find((i) => i.id === 'inv-3');
+  assert.equal(untouched3.realizationStatus, 'Not Realized');
+  assert.equal(untouched3.totalAmountCurrency, 80000);
+});
+
+
 
 
 

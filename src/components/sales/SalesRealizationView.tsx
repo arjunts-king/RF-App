@@ -40,11 +40,20 @@ import {
   Clock,
   Timer,
   BarChart3,
-  Users
+  Users,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
-  const { salesInvoices, customers, ports, businessSettings, bulkImportSalesRealizations } = useData();
+  const {
+    salesInvoices,
+    customers,
+    ports,
+    businessSettings,
+    bulkImportSalesRealizations,
+    bulkDeleteInvoiceRealizations
+  } = useData();
   const { permissions } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +76,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   );
 
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
+
+  // Multi-selection state for bulk realization operations
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+  const [isBulkClearModalOpen, setIsBulkClearModalOpen] = useState(false);
 
   // Bulk Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -146,6 +159,53 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
   const overallProgressPct =
     totalInvoicedUSD > 0 ? Math.min(100, Math.round((totalRealizedUSD / totalInvoicedUSD) * 100)) : 0;
+
+  // Selection Computations for Bulk Realization Deletion
+  const allFilteredSelected = useMemo(() => {
+    return filteredInvoices.length > 0 && filteredInvoices.every((inv) => selectedInvoiceIds.includes(inv.id));
+  }, [filteredInvoices, selectedInvoiceIds]);
+
+  const someFilteredSelected = useMemo(() => {
+    return filteredInvoices.some((inv) => selectedInvoiceIds.includes(inv.id)) && !allFilteredSelected;
+  }, [filteredInvoices, selectedInvoiceIds, allFilteredSelected]);
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      const filteredIds = new Set(filteredInvoices.map((inv) => inv.id));
+      setSelectedInvoiceIds((prev) => prev.filter((id) => !filteredIds.has(id)));
+    } else {
+      const current = new Set(selectedInvoiceIds);
+      filteredInvoices.forEach((inv) => current.add(inv.id));
+      setSelectedInvoiceIds(Array.from(current));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedInvoiceIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectedInvoicesList = useMemo(() => {
+    const set = new Set(selectedInvoiceIds);
+    return salesInvoices.filter((inv) => set.has(inv.id));
+  }, [salesInvoices, selectedInvoiceIds]);
+
+  const selectedRealizedCount = useMemo(() => {
+    return selectedInvoicesList.filter(
+      (inv) =>
+        (inv.totalRealizedCurrency && inv.totalRealizedCurrency > 0) ||
+        Boolean(inv.advanceReceivedCurrency) ||
+        Boolean(inv.balancePaymentAmountCurrency) ||
+        inv.realizationStatus !== 'Not Realized'
+    ).length;
+  }, [selectedInvoicesList]);
+
+  const handleConfirmBulkClearRealizations = () => {
+    bulkDeleteInvoiceRealizations(selectedInvoiceIds);
+    setIsBulkClearModalOpen(false);
+    setSelectedInvoiceIds([]);
+  };
 
   // Export CSV with all settlement parameters including dual forward rates and shortfall tracking
   const handleExportCSV = () => {
@@ -353,6 +413,30 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             : undefined
         }
         secondaryActions={[
+          ...(permissions.canManageSalesRealization
+            ? [
+                {
+                  label: selectedInvoiceIds.length > 0 ? `Delete Realizations (${selectedInvoiceIds.length})` : 'Delete Realizations (Bulk)',
+                  onClick: () => {
+                    if (selectedInvoiceIds.length === 0) {
+                      const settled = filteredInvoices
+                        .filter(
+                          (i) =>
+                            (i.totalRealizedCurrency && i.totalRealizedCurrency > 0) ||
+                            Boolean(i.advanceReceivedCurrency) ||
+                            Boolean(i.balancePaymentAmountCurrency) ||
+                            i.realizationStatus !== 'Not Realized'
+                        )
+                        .map((i) => i.id);
+                      setSelectedInvoiceIds(settled.length > 0 ? settled : filteredInvoices.map((i) => i.id));
+                    }
+                    setIsBulkClearModalOpen(true);
+                  },
+                  icon: Trash2,
+                  title: 'Delete realization and settlement entries in bulk across invoices'
+                }
+              ]
+            : []),
           {
             label: 'Invoices Template',
             onClick: () => downloadActiveInvoicesSettlementTemplate(activeInvoices, customers),
@@ -579,6 +663,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           <table className="w-full text-left text-xs border-collapse min-w-[1440px]">
             <thead>
               <tr className="bg-gray-50/90 text-[11px] font-bold text-ink-500 uppercase tracking-wider border-b border-gray-200">
+                <th className="py-3 px-3 w-10 text-center whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someFilteredSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                    title="Select All / Deselect All Filtered Invoices"
+                  />
+                </th>
                 <th className="py-3 px-3 w-[135px] whitespace-nowrap">Invoice # &amp; Date</th>
                 <th className="py-3 px-3 min-w-[170px] max-w-[210px]">Consignee &amp; Buyer</th>
                 <th className="py-3 px-3 w-[120px] text-right whitespace-nowrap">Invoice Value</th>
@@ -597,7 +693,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="py-12 text-center text-ink-500">
+                  <td colSpan={14} className="py-12 text-center text-ink-500">
                     <BadgeDollarSign className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     <p className="font-semibold text-sm text-ink-700">No export invoices match the selected criteria</p>
                     <p className="text-xs text-ink-500 mt-1">
@@ -625,8 +721,19 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       key={inv.id}
                       className={`hover:bg-rose-50/25 transition-colors ${
                         inv.isVoided ? 'bg-rose-50/40 text-ink-400' : ''
-                      }`}
+                      } ${selectedInvoiceIds.includes(inv.id) ? 'bg-rose-50/60' : ''}`}
                     >
+                      {/* Selection Checkbox */}
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedInvoiceIds.includes(inv.id)}
+                          onChange={() => handleToggleSelect(inv.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                          title={`Select invoice ${inv.invoiceNo}`}
+                        />
+                      </td>
+
                       {/* Invoice No & Date */}
                       <td className="py-3 px-3 align-middle whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
@@ -1662,6 +1769,111 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           </div>
         </Modal>
       )}
+
+      {/* Floating Bulk Actions Bar */}
+      {selectedInvoiceIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 text-xs font-semibold animate-in fade-in slide-in-from-bottom-4">
+          <span className="text-white/80">
+            <strong className="text-white font-bold">{selectedInvoiceIds.length}</strong> invoice{selectedInvoiceIds.length > 1 ? 's' : ''} selected
+            {selectedRealizedCount > 0 && (
+              <span className="text-amber-300 ml-1.5 font-bold">({selectedRealizedCount} with realizations)</span>
+            )}
+          </span>
+
+          <div className="h-4 w-px bg-white/20" />
+
+          {permissions.canManageSalesRealization && (
+            <button
+              onClick={() => setIsBulkClearModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition font-bold shadow-xs cursor-pointer"
+              title="Delete realization and settlement entries for selected invoices"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Realizations ({selectedInvoiceIds.length})</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setSelectedInvoiceIds([])}
+            className="px-2.5 py-1.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
+          >
+            Deselect
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Delete / Clear Realizations Confirmation Modal */}
+      <Modal
+        isOpen={isBulkClearModalOpen}
+        onClose={() => setIsBulkClearModalOpen(false)}
+        title="Delete Realization & Settlement Entries in Bulk"
+        subtitle={`Reset realization data, remittances, and shortfalls across ${selectedInvoiceIds.length} invoice(s)`}
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Are you sure you want to clear these realization entries?</p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                This will reset all advance received, balance payments, bank reference numbers, and realization logs to zero / unremitted for the selected invoices. Commercial invoice records themselves will not be deleted; their realization status will return to <span className="font-bold">"Not Realized"</span>.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-2">
+            <div className="flex justify-between items-center text-ink-700 font-medium">
+              <span>Total Selected Invoices:</span>
+              <span className="font-bold text-ink-900">{selectedInvoiceIds.length}</span>
+            </div>
+            <div className="flex justify-between items-center text-ink-700 font-medium">
+              <span>Invoices with Active Realizations / Remittances:</span>
+              <span className="font-bold text-rose-700">{selectedRealizedCount}</span>
+            </div>
+          </div>
+
+          {selectedInvoicesList.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-ink-700 block">Selected Invoices to be Reset:</span>
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 divide-y divide-gray-100 bg-white shadow-2xs">
+                {selectedInvoicesList.map((inv) => (
+                  <div key={inv.id} className="p-2.5 flex items-center justify-between text-[11px] hover:bg-gray-50">
+                    <div>
+                      <span className="font-mono font-bold text-rose-700 mr-2">{inv.invoiceNo}</span>
+                      <span className="text-ink-600 truncate max-w-[200px] inline-block align-bottom">{inv.consigneeName || 'Export Customer'}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-ink-900">
+                        {inv.currency} {inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-ink-500">
+                        Realized: {inv.currency} {(inv.totalRealizedCurrency || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ({inv.realizationStatus})
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setIsBulkClearModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmBulkClearRealizations}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Confirm Delete Realizations</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

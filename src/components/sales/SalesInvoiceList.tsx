@@ -19,6 +19,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  AlertTriangle,
   Ban,
   BadgeDollarSign,
   FileText,
@@ -38,7 +39,8 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     businessSettings,
     updateSalesInvoice,
     voidSalesInvoice,
-    deleteSalesInvoicePermanently
+    deleteSalesInvoicePermanently,
+    bulkDeleteInvoiceRealizations
   } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
@@ -60,6 +62,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
   const [isBulkVoidModalOpen, setIsBulkVoidModalOpen] = useState(false);
   const [bulkVoidReason, setBulkVoidReason] = useState('');
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkClearRealizationsModalOpen, setIsBulkClearRealizationsModalOpen] = useState(false);
 
   // Modals
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
@@ -904,6 +907,17 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             </button>
           )}
 
+          {permissions.canManageSalesRealization && (
+            <button
+              onClick={() => setIsBulkClearRealizationsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/60 hover:bg-rose-600 text-white transition font-bold"
+              title="Delete realization and settlement entries for selected invoices"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Realizations</span>
+            </button>
+          )}
+
           {permissions.canPermanentlyDelete && (
             <button
               onClick={() => setIsBulkDeleteModalOpen(true)}
@@ -1155,6 +1169,48 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Permanently Purge Selected
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BULK CLEAR REALIZATIONS CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isBulkClearRealizationsModalOpen}
+        onClose={() => setIsBulkClearRealizationsModalOpen(false)}
+        title="Delete Realization & Settlement Entries in Bulk"
+        subtitle={`Reset realization status and remittances across ${selectedIds.length} selected invoice(s)`}
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Are you sure you want to clear realization data?</p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                This will reset advance received, balance payments, bank reference numbers, and realization logs to zero / unremitted for all <strong>{selectedIds.length}</strong> selected invoices. Invoice records will remain intact with status returned to <span className="font-bold">"Not Realized"</span>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setIsBulkClearRealizationsModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                bulkDeleteInvoiceRealizations(selectedIds);
+                setIsBulkClearRealizationsModalOpen(false);
+                setSelectedIds([]);
+              }}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Confirm Delete Realizations</span>
             </button>
           </div>
         </div>

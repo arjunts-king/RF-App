@@ -196,6 +196,7 @@ interface DataContextType {
     }
   ) => { success: boolean; message?: string };
   deleteInvoiceRealization: (invoiceId: string, realizationId: string) => { success: boolean; message?: string };
+  bulkDeleteInvoiceRealizations: (invoiceIds: string[]) => { success: boolean; clearedCount: number; message?: string };
   voidSalesInvoice: (id: string, voidReason: string) => { success: boolean; message?: string };
   deleteSalesInvoicePermanently: (id: string) => { success: boolean; message?: string };
 
@@ -2863,6 +2864,79 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showToast(`Realization record removed for ${invoice.invoiceNo}.`, 'info');
 
     return { success: true };
+  };
+
+  const bulkDeleteInvoiceRealizations = (
+    invoiceIds: string[]
+  ): { success: boolean; clearedCount: number; message?: string } => {
+    if (!permissions.canManageSalesRealization) {
+      return { success: false, clearedCount: 0, message: 'Unauthorized: Only Master Accountant and Owner/Admin can modify realizations.' };
+    }
+
+    if (!invoiceIds || invoiceIds.length === 0) {
+      return { success: false, clearedCount: 0, message: 'No invoices selected.' };
+    }
+
+    const idSet = new Set(invoiceIds);
+    let clearedCount = 0;
+
+    const updatedInvoices = salesInvoices.map((inv) => {
+      if (!idSet.has(inv.id)) return inv;
+
+      const hadSettlement =
+        (inv.realizations && inv.realizations.length > 0) ||
+        (inv.totalRealizedCurrency && inv.totalRealizedCurrency > 0) ||
+        Boolean(inv.advanceReceivedCurrency) ||
+        Boolean(inv.balancePaymentAmountCurrency) ||
+        inv.realizationStatus !== 'Not Realized';
+
+      if (hadSettlement) {
+        clearedCount++;
+      }
+
+      const defaultRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.50;
+
+      return {
+        ...inv,
+        advanceTermsUSD: undefined,
+        advanceReceivedCurrency: undefined,
+        advanceShortfallUSD: undefined,
+        advanceExchangeRate: defaultRate,
+        advanceReceivedDate: undefined,
+        advanceReceivedINR: undefined,
+        advanceBankRef: undefined,
+        balanceActualPriceUSD: undefined,
+        balancePaymentAmountCurrency: undefined,
+        balanceShortfallUSD: undefined,
+        balanceExchangeRate: defaultRate,
+        balancePaymentDate: undefined,
+        balancePaymentINR: undefined,
+        balanceBankRef: undefined,
+        totalShortfallUSD: undefined,
+        realizations: [],
+        totalRealizedCurrency: 0,
+        balanceRealizationCurrency: inv.totalAmountCurrency,
+        totalRealizedINR: 0,
+        realizationStatus: 'Not Realized' as RealizationStatus,
+        lastRealizationDate: undefined,
+        averageRealizedExchangeRate: defaultRate,
+        updatedBy: currentUser.email,
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    setSalesInvoices(updatedInvoices);
+
+    logAudit('DELETE', 'SALES_REALIZATION_BULK', `Bulk cleared realizations & settlements across ${invoiceIds.length} invoices (${clearedCount} active settlements cleared)`);
+
+    showToast(
+      clearedCount > 0
+        ? `Successfully cleared realizations and settlements for ${clearedCount} invoice${clearedCount > 1 ? 's' : ''}.`
+        : `Selected ${invoiceIds.length} invoice(s) reset to Not Realized.`,
+      'info'
+    );
+
+    return { success: true, clearedCount };
   };
 
   const voidSalesInvoice = (id: string, voidReason: string): { success: boolean; message?: string } => {
@@ -6347,6 +6421,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addInvoiceRealization,
     updateInvoiceSettlement,
     deleteInvoiceRealization,
+    bulkDeleteInvoiceRealizations,
     voidSalesInvoice,
     deleteSalesInvoicePermanently,
 
