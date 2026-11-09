@@ -83,7 +83,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [finalDestinationId, setFinalDestinationId] = useState('');
   const [finalDestination, setFinalDestination] = useState('');
   const [currency, setCurrency] = useState<SalesCurrency>('USD');
-  const [exchangeRate, setExchangeRate] = useState('84.50');
+  const [exchangeRate, setExchangeRate] = useState('');
   const [advanceReceived, setAdvanceReceived] = useState('');
   const [advanceReceivedDate, setAdvanceReceivedDate] = useState('');
   const [remarks, setRemarks] = useState('');
@@ -332,8 +332,9 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const totalWeightKg = Number(lines.reduce((s, l) => s + (parseFloat(String(l.weightKg)) || 0), 0).toFixed(2));
   const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.computedAmount, 0).toFixed(2));
   const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.computedFOB, 0).toFixed(2));
-  const currentRate = parseFloat(exchangeRate) || 84.5;
-  const estimatedAmountINR = Number((totalAmountCurrency * currentRate).toFixed(2));
+  const parsedRate = exchangeRate.trim() !== '' ? parseFloat(exchangeRate) : undefined;
+  const currentRate = parsedRate !== undefined && !isNaN(parsedRate) && parsedRate > 0 ? parsedRate : undefined;
+  const estimatedAmountINR = currentRate ? Number((totalAmountCurrency * currentRate).toFixed(2)) : 0;
 
   // Compute live Amount in Words
   const computedAmountInWords = amountInWordsCustom
@@ -371,7 +372,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       finalDestinationId: finalDestinationId || portOfDischargeId || 'dest-temp',
       finalDestination: finalDestination.trim(),
       currency,
-      exchangeRate: currentRate,
+      exchangeRate: currentRate || 0,
       bankPreDeterminedExchangeRate: currentRate,
       advanceReceivedCurrency: parseFloat(advanceReceived) > 0 ? parseFloat(advanceReceived) : undefined,
       advanceReceivedDate: parseFloat(advanceReceived) > 0 ? (advanceReceivedDate || invoiceDate) : undefined,
@@ -484,6 +485,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setExporterRef(`EXP-${currentYear}-${nextSeq}`);
     setOrderNo('');
     setRemarks('');
+    setExchangeRate('');
     setCommodityDescription('');
     setIsCommodityManual(false);
     setScientificName('');
@@ -946,18 +948,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">
-              Pre-determined Bank Exchange Rate (INR / {currency}) <span className="text-rose-600">*</span>
+              Pre-determined Bank Exchange Rate (INR / {currency}) <span className="text-ink-400 font-normal text-[10px]">(Optional)</span>
             </label>
             <input
               type="number"
               step="any"
               value={exchangeRate}
               onChange={(e) => setExchangeRate(e.target.value)}
-              placeholder="e.g. 84.5000000"
-              required
+              placeholder="e.g. 84.50 (Optional)"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
             />
-            <span className="text-[10px] text-ink-500 mt-1 block">Agreed rate booked with bank for this invoice</span>
+            <span className="text-[10px] text-ink-500 mt-1 block">Optional agreed rate booked with bank for this invoice</span>
           </div>
 
           <div>
@@ -1498,8 +1499,8 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
           },
           {
             label: 'Forward Booking',
-            value: `₹${exchangeRate} / ${currency}`,
-            highlight: true
+            value: exchangeRate ? `₹${exchangeRate} / ${currency}` : 'Optional / Not Booked',
+            highlight: Boolean(exchangeRate)
           }
         ]}
       />

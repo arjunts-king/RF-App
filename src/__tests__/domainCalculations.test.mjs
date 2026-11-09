@@ -2826,6 +2826,49 @@ test('Commodity Title and Scientific Name Auto-Fill from Product Masters & Refer
   assert.equal(deriveCommodityTitle(zeroCartonLine, speciesList), 'FROZEN RIBBONFISH B GRADE');
 });
 
+// ============================================================================
+// SUITE 49: Optional Pre-Determined Bank Exchange Rate in Invoice Entry
+// ============================================================================
+test('Optional Pre-Determined Bank Exchange Rate in Invoice Entry', async () => {
+  // Helper simulating the invoice draft resolution in SalesInvoiceEntryForm
+  const resolveInvoiceRates = (exchangeRateInput, totalAmountCurrency = 10000) => {
+    const parsedRate = exchangeRateInput && exchangeRateInput.trim() !== '' ? parseFloat(exchangeRateInput) : undefined;
+    const currentRate = parsedRate !== undefined && !isNaN(parsedRate) && parsedRate > 0 ? parsedRate : undefined;
+    const estimatedAmountINR = currentRate ? Number((totalAmountCurrency * currentRate).toFixed(2)) : 0;
+    return {
+      exchangeRate: currentRate || 0,
+      bankPreDeterminedExchangeRate: currentRate,
+      estimatedAmountINR
+    };
+  };
+
+  // 1. Blank / omitted exchange rate (Optional field)
+  const blankRateDraft = resolveInvoiceRates('');
+  assert.equal(blankRateDraft.exchangeRate, 0, 'Exchange rate defaults to 0 when omitted');
+  assert.equal(blankRateDraft.bankPreDeterminedExchangeRate, undefined, 'bankPreDeterminedExchangeRate is undefined when omitted');
+  assert.equal(blankRateDraft.estimatedAmountINR, 0, 'Estimated INR is 0 when bank rate is not yet booked');
+
+  // 2. Whitespace-only input
+  const whitespaceRateDraft = resolveInvoiceRates('   ');
+  assert.equal(whitespaceRateDraft.exchangeRate, 0);
+  assert.equal(whitespaceRateDraft.bankPreDeterminedExchangeRate, undefined);
+  assert.equal(whitespaceRateDraft.estimatedAmountINR, 0);
+
+  // 3. Explicit forward rate entered
+  const bookedRateDraft = resolveInvoiceRates('84.7500000', 50000);
+  assert.equal(bookedRateDraft.exchangeRate, 84.75);
+  assert.equal(bookedRateDraft.bankPreDeterminedExchangeRate, 84.75);
+  assert.equal(bookedRateDraft.estimatedAmountINR, 4237500);
+
+  // 4. Verify in form template that required attribute is removed and marked optional
+  const fs = await import('fs');
+  const path = await import('path');
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(formCode.includes('Pre-determined Bank Exchange Rate (INR / {currency}) <span className="text-ink-400 font-normal text-[10px]">(Optional)</span>'));
+  assert.ok(!formCode.includes('placeholder="e.g. 84.5000000"\n              required'));
+  assert.ok(!formCode.includes('placeholder="e.g. 84.5000000"\r\n              required'));
+});
+
 
 
 
