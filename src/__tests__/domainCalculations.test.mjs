@@ -3111,6 +3111,116 @@ test('Total Shortfall Aggregation: exact $6,096.72 and isolation of unpaid recei
   assert.equal(unpaidShortfall, 0, 'Unpaid invoices must contribute exactly $0.00 to shortfall');
 });
 
+// SUITE 28: Admin Exclusive Access for Editing Previous Invoices with Mandatory Reason
+test('Admin Access Control & Mandatory Reason for Editing Previous Invoices', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify AuthContext defines canEditPreviousInvoices exclusive to admin
+  const authContextPath = path.resolve('src/context/AuthContext.tsx');
+  const authContent = fs.readFileSync(authContextPath, 'utf8');
+  assert.ok(authContent.includes('canEditPreviousInvoices: boolean'), 'AuthContext permissions must include canEditPreviousInvoices');
+  assert.ok(authContent.includes("canEditPreviousInvoices: currentUser.role === 'admin'"), 'canEditPreviousInvoices must be strictly restricted to admin role');
+
+  // 2. Verify DataContext updateSalesInvoice checks admin role and mandatory editReason
+  const dataContextPath = path.resolve('src/context/DataContext.tsx');
+  const dataContent = fs.readFileSync(dataContextPath, 'utf8');
+  assert.ok(dataContent.includes("if (currentUser.role !== 'admin')"), 'updateSalesInvoice must check currentUser.role !== admin');
+  assert.ok(dataContent.includes("if (!editReason || !editReason.trim())"), 'updateSalesInvoice must check !editReason || !editReason.trim()');
+  assert.ok(dataContent.includes("changeReason: editReason.trim()"), 'updateSalesInvoice must record editReason in audit log');
+
+  // 3. Verify SalesInvoiceList uses canEditPreviousInvoices and requires audit reason
+  const listPath = path.resolve('src/components/sales/SalesInvoiceList.tsx');
+  const listContent = fs.readFileSync(listPath, 'utf8');
+  assert.ok(listContent.includes('permissions.canEditPreviousInvoices'), 'SalesInvoiceList must gate edit action on permissions.canEditPreviousInvoices');
+  assert.ok(listContent.includes('editForm.editReason.trim()'), 'SalesInvoiceList edit modal must validate editReason');
+
+  // 4. Verify SalesInvoiceEntryForm supports admin editing with mandatory editReason
+  const entryPath = path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx');
+  const entryContent = fs.readFileSync(entryPath, 'utf8');
+  assert.ok(entryContent.includes('editingInvoiceId'), 'SalesInvoiceEntryForm must support editingInvoiceId');
+  assert.ok(entryContent.includes('editReason'), 'SalesInvoiceEntryForm must maintain editReason state');
+  assert.ok(entryContent.includes("currentUser.role !== 'admin'"), 'SalesInvoiceEntryForm must guard edit mode with admin check');
+  assert.ok(entryContent.includes('updateSalesInvoice'), 'SalesInvoiceEntryForm must call updateSalesInvoice when editing');
+
+  // 5. Simulate updateSalesInvoice business logic
+  const mockInvoice = {
+    id: 'inv-101',
+    invoiceNo: 'RF/EXP/01/26-27',
+    invoiceDate: '2026-04-28',
+    exchangeRate: 84.5,
+    totalFobValueCurrency: 45000,
+    totalFobValueINR: 3802500,
+    remarks: 'Original shipment',
+    lineItems: [
+      { id: 'l-1', speciesId: 'sp-1', sizeId: 'sz-1', cartonsCount: 100, weightKg: 1000, ratePerKg: 5, amountCurrency: 5000, fobValueCurrency: 5000 }
+    ],
+    totalCartons: 100,
+    totalWeightKg: 1000,
+    totalAmountCurrency: 5000,
+    realizations: [],
+    totalRealizedCurrency: 0,
+    totalRealizedINR: 0,
+    balanceRealizationCurrency: 5000,
+    realizationStatus: 'Not Realized'
+  };
+
+  const simulateUpdateInvoice = (role, reason, updates) => {
+    if (role !== 'admin') {
+      return { success: false, message: 'Unauthorized: Only Admin has authority to edit previous invoices.' };
+    }
+    if (!reason || !reason.trim()) {
+      return { success: false, message: 'A mandatory reason for editing is required to update a previous invoice.' };
+    }
+    return {
+      success: true,
+      updatedInvoice: { ...mockInvoice, ...updates },
+      auditLog: {
+        action: 'EDIT',
+        entity: 'SALES_INVOICE',
+        entityId: mockInvoice.invoiceNo,
+        changeReason: reason.trim()
+      }
+    };
+  };
+
+  // Test 1: Junior Accountant denied
+  const resJunior = simulateUpdateInvoice('junior_accountant', 'Corrected rate', { remarks: 'Test' });
+  assert.equal(resJunior.success, false);
+  assert.ok(resJunior.message.includes('Only Admin'));
+
+  // Test 2: Master Accountant denied
+  const resMaster = simulateUpdateInvoice('master_accountant', 'Corrected rate', { remarks: 'Test' });
+  assert.equal(resMaster.success, false);
+  assert.ok(resMaster.message.includes('Only Admin'));
+
+  // Test 3: Viewer denied
+  const resViewer = simulateUpdateInvoice('viewer', 'Corrected rate', { remarks: 'Test' });
+  assert.equal(resViewer.success, false);
+  assert.ok(resViewer.message.includes('Only Admin'));
+
+  // Test 4: Admin denied without reason
+  const resAdminNoReason = simulateUpdateInvoice('admin', '', { remarks: 'Test' });
+  assert.equal(resAdminNoReason.success, false);
+  assert.ok(resAdminNoReason.message.includes('mandatory reason'));
+
+  const resAdminWhitespace = simulateUpdateInvoice('admin', '   ', { remarks: 'Test' });
+  assert.equal(resAdminWhitespace.success, false);
+  assert.ok(resAdminWhitespace.message.includes('mandatory reason'));
+
+  // Test 5: Admin succeeds with valid reason
+  const resAdminSuccess = simulateUpdateInvoice('admin', 'Corrected buyer order reference number and revised FOB valuation', {
+    orderNo: 'PO-2026-REV',
+    totalFobValueCurrency: 48000,
+    totalFobValueINR: 4056000
+  });
+  assert.equal(resAdminSuccess.success, true);
+  assert.equal(resAdminSuccess.updatedInvoice.orderNo, 'PO-2026-REV');
+  assert.equal(resAdminSuccess.updatedInvoice.totalFobValueCurrency, 48000);
+  assert.equal(resAdminSuccess.auditLog.changeReason, 'Corrected buyer order reference number and revised FOB valuation');
+});
+
+
 
 
 

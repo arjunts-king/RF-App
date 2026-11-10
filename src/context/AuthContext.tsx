@@ -24,6 +24,7 @@ interface AuthContextType {
     canDeleteUsers: boolean;
     canManageStaff: boolean;
     canCreateEditSales: boolean;
+    canEditPreviousInvoices: boolean;
     canManageSalesRealization: boolean;
     canManageSalesMasterData: boolean;
     canManageInventoryAdjustments: boolean;
@@ -237,6 +238,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     canDeleteUsers: currentUser.role === 'admin',
     canManageStaff: currentUser.role === 'admin',
     canCreateEditSales: currentUser.role !== 'viewer',
+    canEditPreviousInvoices: currentUser.role === 'admin',
     canManageSalesRealization: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
     canManageSalesMasterData: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
     canManageInventoryAdjustments: currentUser.role === 'admin' || currentUser.role === 'master_accountant',

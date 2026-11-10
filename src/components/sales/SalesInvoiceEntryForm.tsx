@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency, Species, Size } from '../../types';
 import { formatKg, deriveCommodityTitle, deriveScientificName, deriveHsnCode } from '../../utils/calculations';
@@ -26,6 +27,7 @@ import {
   Ship,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
   Eye
 } from 'lucide-react';
 
@@ -42,12 +44,29 @@ interface LineItemDraft {
   ratePerKg: number | '';
 }
 
-export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { customers, ports, species, salesSizes, salesInvoices, businessSettings, addSalesInvoice } = useData();
+export interface SalesInvoiceEntryFormProps {
+  onSuccess?: () => void;
+  editingInvoiceId?: string | null;
+  onCancelEdit?: () => void;
+}
+
+export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
+  onSuccess,
+  editingInvoiceId,
+  onCancelEdit
+}) => {
+  const { customers, ports, species, salesSizes, salesInvoices, businessSettings, addSalesInvoice, updateSalesInvoice } = useData();
+  const { currentUser } = useAuth();
   const { showToast } = useToast();
+
+  const invoiceToEdit = editingInvoiceId ? salesInvoices.find((i) => i.id === editingInvoiceId) : null;
+  const isEditing = Boolean(invoiceToEdit);
 
   const today = new Date().toISOString().split('T')[0];
   const currentYear = new Date().getFullYear();
+
+  // Audit reason state for editing previous invoice
+  const [editReason, setEditReason] = useState('');
 
   // --- Section 1: Exporter & Document Identification ---
   const [exporterName, setExporterName] = useState(businessSettings.businessName || '');
@@ -154,8 +173,9 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [isExportingWord, setIsExportingWord] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Auto-generate invoice sequential number & pre-select defaults
+  // Auto-generate invoice sequential number & pre-select defaults for new invoice
   useEffect(() => {
+    if (editingInvoiceId) return;
     const nextSeq = String(salesInvoices.length + 1).padStart(4, '0');
     const autoInvNo = `EXP-${currentYear}-${nextSeq}`;
     setInvoiceNo(autoInvNo);
@@ -170,7 +190,99 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       setExporterAddress(businessSettings.address);
       setFactoryNameAndAddress(businessSettings.businessName && businessSettings.address ? `${businessSettings.businessName}, ${businessSettings.address}` : '');
     }
-  }, [salesInvoices.length, currentYear, businessSettings]);
+  }, [salesInvoices.length, currentYear, businessSettings, editingInvoiceId]);
+
+  // Load invoice data when editing a previous invoice
+  useEffect(() => {
+    if (!invoiceToEdit) return;
+    setInvoiceNo(invoiceToEdit.invoiceNo);
+    setInvoiceDate(invoiceToEdit.invoiceDate || today);
+    setExporterName(invoiceToEdit.exporterName || businessSettings.businessName || '');
+    setExporterAddress(invoiceToEdit.exporterAddress || businessSettings.address || '');
+    setExporterRef(invoiceToEdit.exporterRef || invoiceToEdit.invoiceNo);
+    setOrderNo(invoiceToEdit.orderNo || '');
+    setOrderDate(invoiceToEdit.orderDate || invoiceToEdit.invoiceDate || today);
+    setOtherReferences(invoiceToEdit.otherReferences || '');
+
+    setConsigneeId(invoiceToEdit.consigneeId || '');
+    setConsigneeName(invoiceToEdit.consigneeName || '');
+    setConsigneeAddress(invoiceToEdit.consigneeAddress || '');
+    setBuyerId(invoiceToEdit.buyerId || '');
+    setBuyerName(invoiceToEdit.buyerName || '');
+    setBuyerAddress(invoiceToEdit.buyerAddress || '');
+
+    setCountryOfOrigin(invoiceToEdit.countryOfOrigin || 'INDIA');
+    setCountryOfDestination(invoiceToEdit.countryOfDestination || '');
+    setPreCarriageBy(invoiceToEdit.preCarriageBy || '');
+    setPlaceOfReceipt(invoiceToEdit.placeOfReceipt || '');
+    setTermsOfPayment(invoiceToEdit.termsOfPayment || '');
+    setPriceTerms(invoiceToEdit.priceTerms || '');
+    setVesselFlightNo(invoiceToEdit.vesselFlightNo || '');
+    setPortOfLoadingId(invoiceToEdit.portOfLoadingId || '');
+    setPortOfLoading(invoiceToEdit.portOfLoading || '');
+    setPortOfDischargeId(invoiceToEdit.portOfDischargeId || '');
+    setPortOfDischarge(invoiceToEdit.portOfDischarge || '');
+    setFinalDestinationId(invoiceToEdit.finalDestinationId || '');
+    setFinalDestination(invoiceToEdit.finalDestination || '');
+    setCurrency(invoiceToEdit.currency || 'USD');
+    setExchangeRate(
+      invoiceToEdit.bankPreDeterminedExchangeRate !== undefined && invoiceToEdit.bankPreDeterminedExchangeRate !== null
+        ? String(invoiceToEdit.bankPreDeterminedExchangeRate)
+        : (invoiceToEdit.exchangeRate ? String(invoiceToEdit.exchangeRate) : '')
+    );
+    setAdvanceReceived(invoiceToEdit.advanceReceivedCurrency ? String(invoiceToEdit.advanceReceivedCurrency) : '');
+    setAdvanceReceivedDate(invoiceToEdit.advanceReceivedDate || '');
+    setRemarks(invoiceToEdit.remarks || '');
+
+    setCommodityDescription(invoiceToEdit.commodityDescription || '');
+    setIsCommodityManual(Boolean(invoiceToEdit.commodityDescription));
+    setPackingDescription(invoiceToEdit.packingDescription || '');
+    setScientificName(invoiceToEdit.scientificName || '');
+    setIsScientificManual(Boolean(invoiceToEdit.scientificName));
+    setHsnCode(invoiceToEdit.hsnCode || '');
+    setIsHsnManual(Boolean(invoiceToEdit.hsnCode));
+    setShippingMarks(invoiceToEdit.shippingMarks || '');
+    setContainerNo(invoiceToEdit.containerNo || '');
+    setSealNo(invoiceToEdit.sealNo || '');
+    setGrossWeightKg(invoiceToEdit.grossWeightKg !== undefined ? invoiceToEdit.grossWeightKg : '');
+
+    if (invoiceToEdit.lineItems && invoiceToEdit.lineItems.length > 0) {
+      setLines(
+        invoiceToEdit.lineItems.map((li, idx) => ({
+          id: li.id || `line-${Date.now()}-${idx}`,
+          speciesId: li.speciesId || '',
+          hsCode: li.hsCode || '',
+          sizeId: li.sizeId || '',
+          countId: li.countId || '',
+          productDescription: li.productDescription || '',
+          gradeSize: li.gradeSize || '',
+          cartonsCount: li.cartonsCount !== undefined ? li.cartonsCount : '',
+          weightKg: li.weightKg !== undefined ? li.weightKg : '',
+          ratePerKg: li.ratePerKg !== undefined ? li.ratePerKg : ''
+        }))
+      );
+    }
+
+    setTotalFobValueINR(invoiceToEdit.totalFobValueINR !== undefined ? invoiceToEdit.totalFobValueINR : '');
+    setTotalFobValueCurrencyInput(invoiceToEdit.totalFobValueCurrency !== undefined ? invoiceToEdit.totalFobValueCurrency : '');
+
+    setFactoryNameAndAddress(
+      invoiceToEdit.factoryNameAndAddress ||
+        (businessSettings.businessName && businessSettings.address ? `${businessSettings.businessName}, ${businessSettings.address}` : '')
+    );
+    setFactoryApprovalNumber(invoiceToEdit.factoryApprovalNumber || '');
+    setBillOfLadingNo(invoiceToEdit.billOfLadingNo || '');
+    setDeclarationText(
+      invoiceToEdit.declarationText ||
+        'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct'
+    );
+    setSignatoryCompany(
+      invoiceToEdit.signatoryCompany || (businessSettings.businessName ? `For ${businessSettings.businessName}` : '')
+    );
+    setSignatoryDesignation(invoiceToEdit.signatoryDesignation || '');
+    setSignatureDate(invoiceToEdit.signatureDate || today);
+    setEditReason('');
+  }, [invoiceToEdit, today, businessSettings]);
 
   // Handle Consignee selection
   const handleConsigneeChange = (cId: string) => {
@@ -461,11 +573,23 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
   // Check if invoice number is duplicate
   const isDuplicateInvoiceNo =
+    !isEditing &&
     invoiceNo.trim() !== '' &&
     salesInvoices.some((inv) => !inv.isVoided && inv.invoiceNo.toLowerCase() === invoiceNo.trim().toLowerCase());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isEditing && invoiceToEdit) {
+      if (currentUser.role !== 'admin') {
+        showToast('Unauthorized: Only Admin accounts can edit previous invoices.', 'error');
+        return;
+      }
+      if (!editReason.trim()) {
+        showToast('Mandatory: Please provide a reason for editing this invoice.', 'error');
+        return;
+      }
+    }
 
     if (!consigneeId && !consigneeName) {
       showToast('Validation Error: Please select or enter a Consignee / Customer.', 'error');
@@ -494,6 +618,17 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setIsSubmitting(true);
     const invoicePayload = getCurrentInvoiceDraft();
 
+    if (isEditing && invoiceToEdit) {
+      const res = updateSalesInvoice(invoiceToEdit.id, invoicePayload as any, editReason.trim());
+      setIsSubmitting(false);
+      if (res.success) {
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+      return;
+    }
+
     const res = addSalesInvoice(invoicePayload as any);
     setIsSubmitting(false);
 
@@ -505,6 +640,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   };
 
   const handleReset = () => {
+    if (isEditing) {
+      if (onCancelEdit) onCancelEdit();
+      return;
+    }
     const nextSeq = String(salesInvoices.length + 1).padStart(4, '0');
     setInvoiceNo(`EXP-${currentYear}-${nextSeq}`);
     setInvoiceDate(today);
@@ -523,13 +662,41 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setLines([createBlankLine(0)]);
   };
 
+  // Guard: If editing a previous invoice, non-admins are blocked
+  if (isEditing && currentUser.role !== 'admin') {
+    return (
+      <div className="p-8 max-w-xl mx-auto text-center space-y-4 bg-white rounded-3xl border border-gray-100 shadow-sm my-8">
+        <div className="w-16 h-16 bg-rose-100 text-rose-700 rounded-full flex items-center justify-center mx-auto shadow-xs">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-black text-ink-900">Admin Authority Required</h3>
+        <p className="text-xs text-ink-600 leading-relaxed">
+          Only System Administrator accounts have authority to edit previously issued commercial invoices. Your current role is <strong>{currentUser.role.replace('_', ' ').toUpperCase()}</strong>.
+        </p>
+        {onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="px-5 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl text-xs transition shadow-sm"
+          >
+            Return to Invoices List
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-7xl mx-auto pb-28 animate-fade-in">
       {/* Header Block with prominent Export Word Button */}
       <PageHeader
-        title="Commercial Export Invoice Entry"
-        subtitle="Complete export particulars matching the official commercial invoice format. Edit and export directly to Word (.docx) with 100% exact alignment."
-        breadcrumbs={['Sales', 'New Commercial Invoice']}
+        title={isEditing ? `Edit Commercial Invoice — ${invoiceToEdit?.invoiceNo}` : 'Commercial Export Invoice Entry'}
+        subtitle={
+          isEditing
+            ? `Admin Authority Mode • Modify existing commercial invoice with mandatory surveillance audit reason`
+            : 'Complete export particulars matching the official commercial invoice format. Edit and export directly to Word (.docx) with 100% exact alignment.'
+        }
+        breadcrumbs={isEditing ? ['Sales', 'Invoices', `Edit ${invoiceToEdit?.invoiceNo}`] : ['Sales', 'New Commercial Invoice']}
         secondaryActions={[
           {
             label: 'Preview Document',
@@ -541,13 +708,75 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
             onClick: handleExportWord,
             icon: Download
           },
-          {
-            label: 'Reset Form',
-            onClick: handleReset,
-            icon: RotateCcw
-          }
+          ...(isEditing && onCancelEdit
+            ? [
+                {
+                  label: 'Cancel Edit',
+                  onClick: onCancelEdit,
+                  icon: RotateCcw
+                }
+              ]
+            : [
+                {
+                  label: 'Reset Form',
+                  onClick: handleReset,
+                  icon: RotateCcw
+                }
+              ])
         ]}
       />
+
+      {/* Admin Edit Mode Banner & Mandatory Audit Reason */}
+      {isEditing && invoiceToEdit && (
+        <div className="space-y-4">
+          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black shrink-0 shadow-xs">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200 px-2 py-0.5 rounded-md">
+                    Admin Authority Mode
+                  </span>
+                  <span className="text-sm font-bold text-ink-900">
+                    Modifying Previous Invoice: <span className="font-mono text-rose-700 font-extrabold">{invoiceToEdit.invoiceNo}</span>
+                  </span>
+                </div>
+                <p className="text-xs text-ink-600 mt-0.5">
+                  Logged in as <strong>{currentUser.name}</strong> ({currentUser.email} • {currentUser.role.toUpperCase()}). All modifications are recorded in the surveillance audit log.
+                </p>
+              </div>
+            </div>
+            {onCancelEdit && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-ink-700 text-xs font-bold rounded-xl border border-gray-300 transition shrink-0"
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
+
+          <div className="p-4 bg-rose-50/70 border-2 border-rose-300 rounded-2xl shadow-xs">
+            <label className="block text-xs font-black text-rose-950 mb-1">
+              Audit Reason for Editing Previous Invoice <span className="text-rose-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={editReason}
+              onChange={(e) => setEditReason(e.target.value)}
+              placeholder="e.g. Corrected consignee delivery address and adjusted cartons per final shipping advice"
+              required
+              className="w-full px-3.5 py-2.5 bg-white border border-rose-300 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600 transition"
+            />
+            <p className="text-[11px] text-rose-700 mt-1.5 flex items-center gap-1.5 font-medium">
+              <span>* Mandatory field: As an administrator, you must provide a reason to modify previous commercial invoices.</span>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Duplicate Invoice Warning (non-blocking) */}
       {isDuplicateInvoiceNo && (
@@ -1659,10 +1888,16 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
       {/* Floating Sticky Save Bar with live calculated metrics */}
       <StickySaveBar
-        primaryLabel={isSubmitting ? 'Saving Invoice...' : 'Save Commercial Invoice'}
-        secondaryLabel="Reset Form"
-        onSecondary={handleReset}
+        primaryLabel={
+          isSubmitting
+            ? isEditing ? 'Saving Changes...' : 'Saving Invoice...'
+            : isEditing ? 'Save Changes (Admin)' : 'Save Commercial Invoice'
+        }
+        secondaryLabel={isEditing ? 'Cancel Edit' : 'Reset Form'}
+        onSecondaryClick={isEditing ? onCancelEdit : handleReset}
+        onSecondary={isEditing ? onCancelEdit : handleReset}
         isSubmitting={isSubmitting}
+        statusMessage={isEditing ? `Admin Mode: ${currentUser.name} • Mandatory reason required` : undefined}
         metrics={[
           {
             label: 'Total Cartons',

@@ -2748,8 +2748,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updates: Partial<SalesInvoice>,
     editReason?: string
   ): { success: boolean; message?: string } => {
-    if (!permissions.canCreateEditSales) {
-      return { success: false, message: 'Unauthorized: Viewer role cannot edit sales invoices.' };
+    if (currentUser.role !== 'admin') {
+      showToast('Unauthorized: Only Admin has authority to edit previous invoices.', 'error');
+      return { success: false, message: 'Unauthorized: Only Admin has authority to edit previous invoices.' };
+    }
+
+    if (!editReason || !editReason.trim()) {
+      showToast('Mandatory: Please provide an audit reason for editing this invoice.', 'error');
+      return { success: false, message: 'A mandatory reason for editing is required to update a previous invoice.' };
     }
 
     const existing = salesInvoices.find((inv) => inv.id === id);
@@ -2787,7 +2793,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalCartons = computedLines.reduce((s, l) => s + l.cartonsCount, 0);
     const totalWeightKg = Number(computedLines.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
     const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
-    const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+    const totalFobValueCurrency = updates.totalFobValueCurrency !== undefined && Number(updates.totalFobValueCurrency) > 0
+      ? Number(updates.totalFobValueCurrency)
+      : (existing.totalFobValueCurrency !== undefined && Number(existing.totalFobValueCurrency) > 0
+          ? Number(existing.totalFobValueCurrency)
+          : Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2)));
+    const totalFobValueINR = updates.totalFobValueINR !== undefined
+      ? Number(updates.totalFobValueINR)
+      : existing.totalFobValueINR;
+    const bankPreDeterminedExchangeRate = updates.bankPreDeterminedExchangeRate !== undefined
+      ? updates.bankPreDeterminedExchangeRate
+      : (updates.exchangeRate !== undefined ? Number(updates.exchangeRate) : existing.bankPreDeterminedExchangeRate);
     const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
     const realizations = updates.realizations !== undefined ? updates.realizations : existing.realizations;
@@ -2823,11 +2839,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...existing,
       ...updates,
       exchangeRate,
+      bankPreDeterminedExchangeRate,
       lineItems: computedLines,
       totalCartons,
       totalWeightKg,
       totalAmountCurrency,
       totalFobValueCurrency,
+      totalFobValueINR,
       estimatedAmountINR,
       realizations,
       totalRealizedCurrency,
@@ -2843,9 +2861,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logAudit('EDIT', 'SALES_INVOICE', existing.invoiceNo, {
       oldValues: existing,
       newValues: updated,
-      changeReason: editReason || 'Updated sales invoice record'
+      changeReason: editReason.trim()
     });
-    showToast(`Invoice ${existing.invoiceNo} updated.`, 'success');
+    showToast(`Commercial Invoice ${existing.invoiceNo} successfully updated by Admin.`, 'success');
     return { success: true };
   };
 

@@ -78,6 +78,7 @@ const MainLayout: React.FC = () => {
   const [paymentPurchaseId, setPaymentPurchaseId] = useState<string | undefined>();
   const [productionTab, setProductionTab] = useState<ProductionNavTab>('prod-dashboard');
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
+  const [editingSalesInvoiceId, setEditingSalesInvoiceId] = useState<string | null>(null);
   const [inventoryTab, setInventoryTab] = useState<InventoryNavTab>('inv-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -403,10 +404,29 @@ const MainLayout: React.FC = () => {
                 <FobDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'invoice-entry' && (
-                <SalesInvoiceEntryForm onSuccess={() => setSalesTab('invoices')} />
+                <SalesInvoiceEntryForm
+                  editingInvoiceId={editingSalesInvoiceId}
+                  onCancelEdit={() => {
+                    setEditingSalesInvoiceId(null);
+                    setSalesTab('invoices');
+                  }}
+                  onSuccess={() => {
+                    setEditingSalesInvoiceId(null);
+                    setSalesTab('invoices');
+                  }}
+                />
               )}
               {salesTab === 'invoices' && (
-                <SalesInvoiceList onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <SalesInvoiceList
+                  onNavigate={(tab) => {
+                    if (tab !== 'invoice-entry') setEditingSalesInvoiceId(null);
+                    setSalesTab(tab as SalesNavTab);
+                  }}
+                  onEditInvoice={(inv) => {
+                    setEditingSalesInvoiceId(inv.id);
+                    setSalesTab('invoice-entry');
+                  }}
+                />
               )}
               {salesTab === 'realizations' && (
                 <SalesRealizationView onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />

@@ -28,10 +28,16 @@ import {
   FileSpreadsheet,
   FileDown,
   ChevronDown,
-  Layers
+  Layers,
+  ExternalLink
 } from 'lucide-react';
 
-export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
+export interface SalesInvoiceListProps {
+  onNavigate?: (tab: string) => void;
+  onEditInvoice?: (inv: SalesInvoice) => void;
+}
+
+export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, onEditInvoice }) => {
   const {
     salesInvoices,
     customers,
@@ -78,12 +84,16 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
     orderNo: string;
     remarks: string;
     exchangeRate: number;
+    totalFobValueCurrency: number | '';
+    totalFobValueINR: number | '';
     editReason: string;
   }>({
     invoiceDate: '',
     orderNo: '',
     remarks: '',
     exchangeRate: 84.5,
+    totalFobValueCurrency: '',
+    totalFobValueINR: '',
     editReason: ''
   });
 
@@ -142,7 +152,9 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       invoiceDate: inv.invoiceDate,
       orderNo: inv.orderNo || '',
       remarks: inv.remarks || '',
-      exchangeRate: inv.exchangeRate,
+      exchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
+      totalFobValueCurrency: inv.totalFobValueCurrency !== undefined ? inv.totalFobValueCurrency : '',
+      totalFobValueINR: inv.totalFobValueINR !== undefined ? inv.totalFobValueINR : '',
       editReason: ''
     });
   };
@@ -150,17 +162,26 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingInvoice) return;
-    updateSalesInvoice(
+    if (!editForm.editReason.trim()) {
+      showToast('Mandatory: Please provide an audit reason for editing this invoice.', 'error');
+      return;
+    }
+    const res = updateSalesInvoice(
       editingInvoice.id,
       {
         invoiceDate: editForm.invoiceDate,
         orderNo: editForm.orderNo,
         remarks: editForm.remarks,
-        exchangeRate: Number(editForm.exchangeRate)
+        exchangeRate: Number(editForm.exchangeRate),
+        bankPreDeterminedExchangeRate: Number(editForm.exchangeRate),
+        totalFobValueCurrency: editForm.totalFobValueCurrency !== '' ? Number(editForm.totalFobValueCurrency) : undefined,
+        totalFobValueINR: editForm.totalFobValueINR !== '' ? Number(editForm.totalFobValueINR) : undefined
       },
-      editForm.editReason || 'Administrative update'
+      editForm.editReason.trim()
     );
-    setEditingInvoice(null);
+    if (res.success) {
+      setEditingInvoice(null);
+    }
   };
 
   const handleConfirmVoid = () => {
@@ -745,10 +766,16 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                             </button>
                           )}
 
-                          {!inv.isVoided && permissions.canCreateEditSales && (
+                          {!inv.isVoided && permissions.canEditPreviousInvoices && (
                             <button
-                              onClick={() => handleStartEdit(inv)}
-                              title="Edit Invoice"
+                              onClick={() => {
+                                if (onEditInvoice) {
+                                  onEditInvoice(inv);
+                                } else {
+                                  handleStartEdit(inv);
+                                }
+                              }}
+                              title="Edit Invoice (Admin Authority — Reason Required)"
                               className="p-1.5 text-ink-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -973,41 +1000,88 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       <Modal
         isOpen={editingInvoice !== null}
         onClose={() => setEditingInvoice(null)}
-        title={`Edit Invoice — ${editingInvoice?.invoiceNo}`}
-        subtitle="Modify administrative header details, exchange rates, or order references"
+        title={`Edit Invoice (Admin) — ${editingInvoice?.invoiceNo}`}
+        subtitle="Authorized administrative modification of historical commercial invoice. Audit reason is mandatory."
+        maxWidth="max-w-2xl"
       >
         <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-          <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Invoice Date</label>
-            <input
-              type="date"
-              value={editForm.invoiceDate}
-              onChange={(e) => setEditForm({ ...editForm, invoiceDate: e.target.value })}
-              required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Order / PO Reference</label>
+          {/* Mandatory Surveillance Reason */}
+          <div className="p-3.5 bg-rose-50/80 border-2 border-rose-300 rounded-xl space-y-1">
+            <label className="block text-[11px] font-black text-rose-950">
+              Audit Reason for Modification <span className="text-rose-600">*</span>
+            </label>
             <input
               type="text"
-              value={editForm.orderNo}
-              onChange={(e) => setEditForm({ ...editForm, orderNo: e.target.value })}
-              placeholder="e.g. PO-88231"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400"
+              value={editForm.editReason}
+              onChange={(e) => setEditForm({ ...editForm, editReason: e.target.value })}
+              placeholder="e.g. Corrected buyer order reference number and FOB valuation"
+              required
+              className="w-full px-3 py-2 bg-white border border-rose-300 rounded-lg font-medium outline-none focus:border-rose-600"
             />
+            <p className="text-[10px] text-rose-700">
+              This reason will be permanently archived in the surveillance audit log alongside your administrator credentials.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Booking Exchange Rate (INR / USD)</label>
-            <input
-              type="number"
-              step="any"
-              value={editForm.exchangeRate}
-              onChange={(e) => setEditForm({ ...editForm, exchangeRate: parseFloat(e.target.value) || 84.5 })}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Invoice Date</label>
+              <input
+                type="date"
+                value={editForm.invoiceDate}
+                onChange={(e) => setEditForm({ ...editForm, invoiceDate: e.target.value })}
+                required
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Order / PO Reference</label>
+              <input
+                type="text"
+                value={editForm.orderNo}
+                onChange={(e) => setEditForm({ ...editForm, orderNo: e.target.value })}
+                placeholder="e.g. PO-88231"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Booking Exchange Rate (₹ / $)</label>
+              <input
+                type="number"
+                step="any"
+                value={editForm.exchangeRate}
+                onChange={(e) => setEditForm({ ...editForm, exchangeRate: parseFloat(e.target.value) || 84.5 })}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-400"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Total FOB Value (USD)</label>
+              <input
+                type="number"
+                step="any"
+                value={editForm.totalFobValueCurrency}
+                onChange={(e) => setEditForm({ ...editForm, totalFobValueCurrency: e.target.value ? parseFloat(e.target.value) : '' })}
+                placeholder="e.g. 52400.00"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold font-mono outline-none focus:border-rose-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-ink-700 mb-1">Total FOB Value (INR)</label>
+              <input
+                type="number"
+                step="any"
+                value={editForm.totalFobValueINR}
+                onChange={(e) => setEditForm({ ...editForm, totalFobValueINR: e.target.value ? parseFloat(e.target.value) : '' })}
+                placeholder="e.g. 4454000.00"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold font-mono outline-none focus:border-rose-400"
+              />
+            </div>
           </div>
 
           <div>
@@ -1020,34 +1094,37 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">
-              Audit Reason for Modification <span className="text-rose-600">*</span>
-            </label>
-            <input
-              type="text"
-              value={editForm.editReason}
-              onChange={(e) => setEditForm({ ...editForm, editReason: e.target.value })}
-              placeholder="e.g. Corrected buyer order reference number"
-              required
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-400"
-            />
-          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-gray-100">
+            {onEditInvoice && editingInvoice ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = editingInvoice;
+                  setEditingInvoice(null);
+                  onEditInvoice(target);
+                }}
+                className="w-full sm:w-auto px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition border border-indigo-200"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open Full 7-Section Invoice Editor</span>
+              </button>
+            ) : <div />}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => setEditingInvoice(null)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
-            >
-              Save Changes
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setEditingInvoice(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition shadow-xs"
+              >
+                Save Changes (Admin)
+              </button>
+            </div>
           </div>
         </form>
       </Modal>

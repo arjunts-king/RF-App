@@ -637,6 +637,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Permanent Deletion Authority: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive to Admin)' : 'Denied'}</strong>
               </li>
               <li className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                Edit Previous Invoices Authority: <strong>{currentUser.role === 'admin' ? 'Granted (Exclusive to Admin, reason required)' : 'Denied (Admin Only)'}</strong>
+              </li>
+              <li className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${currentUser.role === 'admin' || currentUser.role === 'master_accountant' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                 Transaction Voiding / Master Data Management: <strong>{currentUser.role === 'admin' || currentUser.role === 'master_accountant' ? 'Granted' : 'Denied'}</strong>
               </li>
