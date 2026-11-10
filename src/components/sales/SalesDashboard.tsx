@@ -641,7 +641,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       </div>
 
       {/* Combinable Multi-Filter Bar with Removable Filter Chips (Liquid Glass Surface) */}
-      <div className="glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+      <div className="relative z-30 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-ink-900 flex items-center gap-1.5 uppercase tracking-wider">
             <Filter className="w-3.5 h-3.5 text-rose-700" />
@@ -733,6 +733,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             icon={DollarSign}
             badgeColor="amber"
             placeholder="Search currency..."
+            align="right"
           />
 
           {/* Multi-select Realization Status */}
@@ -744,6 +745,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             icon={CheckCircle2}
             badgeColor="purple"
             placeholder="Search status..."
+            align="right"
           />
         </div>
 
@@ -854,7 +856,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       </div>
 
       {/* 8 Primary Bento KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 relative z-10">
         <BentoCard
           label="Total Invoices"
           value={totalInvoices}

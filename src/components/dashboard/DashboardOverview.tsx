@@ -186,7 +186,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       />
 
       {/* 2. CLEAN STICKY FILTER BAR WITH MULTI-SELECT FILTERS & REMOVABLE FILTER CHIPS (Liquid Glass Surface) */}
-      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+      <div className="sticky top-16 z-30 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-ink-900 font-bold">
             <Filter className="w-4 h-4 text-rose-600" />
@@ -230,6 +230,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               icon={Anchor}
               badgeColor="emerald"
               placeholder="Search harbours..."
+              align="right"
             />
 
             {hasActiveFilters && (
@@ -318,7 +319,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       </div>
 
       {/* 3. BENTO-STYLE GRID OF ROUNDED KPI CARDS WITH CAPTIONS & REPORT LINKS (Liquid Glass Polish, 100-Crore Aligned) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
         {/* KPI 1: Total Volume */}
         <div className="glass-surface-regular card-liquid-hover p-4 sm:p-5 rounded-2xl border border-white/80 shadow-xs flex flex-col justify-between h-full min-w-0 overflow-hidden">
           <div className="min-w-0">

@@ -171,7 +171,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
       )}
 
       {/* STICKY INVENTORY MULTI-FILTER BAR (Liquid Glass Surface) */}
-      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+      <div className="sticky top-16 z-30 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 font-bold text-ink-900">
             <Filter className="w-4 h-4 text-rose-600" />
@@ -207,6 +207,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
               icon={PackageCheck}
               badgeColor="emerald"
               placeholder="Search status..."
+              align="right"
             />
 
             {hasActiveFilters && (
@@ -278,7 +279,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNaviga
       </div>
 
       {/* KPI Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
         {/* 1. Total Closing Value */}
         <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-ink-500">

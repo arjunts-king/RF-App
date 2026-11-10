@@ -3326,6 +3326,83 @@ test('Connected Page Dashboard Navigation Integrity & Route Validation', async (
   assert.ok(salesDashboardCode.includes("onNavigate('species')"), 'Product cards link directly to Commercial Product / Species Master');
 });
 
+test('Dashboard Filter Dropdowns Z-Index & Elevation Stacking Integrity', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // Load dashboard and filter source files
+  const multiSelectFilterCode = fs.readFileSync(path.resolve('src/components/common/MultiSelectFilter.tsx'), 'utf-8');
+  const salesDashboardCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf-8');
+  const fobDashboardCode = fs.readFileSync(path.resolve('src/components/sales/FobDashboard.tsx'), 'utf-8');
+  const prodDashboardCode = fs.readFileSync(path.resolve('src/components/production/ProductionDashboard.tsx'), 'utf-8');
+  const purchaseDashboardCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf-8');
+  const inventoryDashboardCode = fs.readFileSync(path.resolve('src/components/inventory/InventoryDashboard.tsx'), 'utf-8');
+
+  // 1. Verify MultiSelectFilter applies z-50 elevation when open
+  assert.ok(
+    multiSelectFilterCode.includes("isOpen ? 'z-50' : 'z-auto'"),
+    'MultiSelectFilter elevates its root wrapper to z-50 when open to clear sibling elements'
+  );
+  assert.ok(
+    multiSelectFilterCode.includes("shadow-2xl border border-gray-200/90 z-50"),
+    'MultiSelectFilter dropdown popup menu has z-50 and shadow-2xl elevation'
+  );
+  assert.ok(
+    multiSelectFilterCode.includes("align === 'right' ? 'right-0' : 'left-0'"),
+    'MultiSelectFilter supports right-alignment to avoid clipping off-screen'
+  );
+
+  // 2. Verify SalesDashboard filter container has z-30 and KPI cards have lower z-10
+  assert.ok(
+    salesDashboardCode.includes('relative z-30 glass-surface-thin'),
+    'SalesDashboard filter matrix container has relative z-30 elevation'
+  );
+  assert.ok(
+    salesDashboardCode.includes('grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 relative z-10'),
+    'SalesDashboard Bento KPI cards container has relative z-10 below filter dropdowns'
+  );
+
+  // 3. Verify FobDashboard filter container has z-30 and KPI cards have lower z-10
+  assert.ok(
+    fobDashboardCode.includes('relative z-30 bg-white'),
+    'FobDashboard filter matrix container has relative z-30 elevation'
+  );
+  assert.ok(
+    fobDashboardCode.includes('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10'),
+    'FobDashboard 6 KPI cards container has relative z-10 below filter dropdowns'
+  );
+
+  // 4. Verify ProductionDashboard filter bar has z-30 and Bento cards have lower z-10
+  assert.ok(
+    prodDashboardCode.includes('sticky top-16 z-30 glass-surface-thin'),
+    'ProductionDashboard sticky filter bar has z-30 elevation'
+  );
+  assert.ok(
+    prodDashboardCode.includes('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10'),
+    'ProductionDashboard Bento KPI cards container has relative z-10 below filter dropdowns'
+  );
+
+  // 5. Verify DashboardOverview (Purchase) filter bar has z-30 and Bento cards have lower z-10
+  assert.ok(
+    purchaseDashboardCode.includes('sticky top-16 z-30 glass-surface-thin'),
+    'DashboardOverview sticky filter bar has z-30 elevation'
+  );
+  assert.ok(
+    purchaseDashboardCode.includes('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10'),
+    'DashboardOverview Bento KPI cards container has relative z-10 below filter dropdowns'
+  );
+
+  // 6. Verify InventoryDashboard filter bar has z-30 and KPI cards have lower z-10
+  assert.ok(
+    inventoryDashboardCode.includes('sticky top-16 z-30 glass-surface-thin'),
+    'InventoryDashboard sticky filter bar has z-30 elevation'
+  );
+  assert.ok(
+    inventoryDashboardCode.includes('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10'),
+    'InventoryDashboard KPI cards grid has relative z-10 below filter dropdowns'
+  );
+});
+
 
 
 

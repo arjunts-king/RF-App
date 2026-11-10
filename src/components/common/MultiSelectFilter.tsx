@@ -18,6 +18,7 @@ export interface MultiSelectFilterProps {
   className?: string;
   maxBadgeDisplay?: number;
   badgeColor?: 'rose' | 'blue' | 'emerald' | 'amber' | 'indigo' | 'purple';
+  align?: 'left' | 'right';
 }
 
 export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
@@ -28,7 +29,8 @@ export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
   icon: Icon,
   placeholder = 'Search...',
   className = '',
-  badgeColor = 'rose'
+  badgeColor = 'rose',
+  align = 'left'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,10 +141,12 @@ export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
   }, [selectedIds, options, label]);
 
   return (
-    <div className={`relative inline-block text-left ${className}`} ref={containerRef}>
+    <div className={`relative inline-block text-left ${isOpen ? 'z-50' : 'z-auto'} ${className}`} ref={containerRef}>
       {/* Trigger Button */}
       <div
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer select-none ${
+          className?.includes('w-full') ? 'w-full justify-between' : ''
+        } ${
           isFiltered
             ? `${activeColor.activeBtn} shadow-2xs`
             : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-ink-700'
@@ -150,41 +154,45 @@ export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         title={selectedIds.length > 0 ? `${selectedIds.length} ${label} selected` : `Filter by ${label}`}
       >
-        {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${isFiltered ? 'text-rose-600' : 'text-ink-400'}`} />}
-        <span className="truncate max-w-[150px]">{buttonSummary}</span>
+        <div className="inline-flex items-center gap-1.5 min-w-0">
+          {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${isFiltered ? 'text-rose-600' : 'text-ink-400'}`} />}
+          <span className="truncate max-w-[150px]">{buttonSummary}</span>
 
-        {selectedIds.length > 1 && (
-          <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-black border ${activeColor.badge}`}
-          >
-            {selectedIds.length}
-          </span>
-        )}
+          {selectedIds.length > 1 && (
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black border ${activeColor.badge}`}
+            >
+              {selectedIds.length}
+            </span>
+          )}
+        </div>
 
-        <ChevronDown
-          className={`w-3.5 h-3.5 text-ink-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <div className="inline-flex items-center gap-0.5 shrink-0 ml-1">
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-ink-400 shrink-0 transition-transform duration-200 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          />
 
-        {isFiltered && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              clearSelection();
-            }}
-            className="p-0.5 hover:bg-black/10 rounded-full transition ml-0.5"
-            title={`Clear all ${label}`}
-          >
-            <X className="w-3 h-3 text-ink-500 hover:text-ink-900" />
-          </button>
-        )}
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                clearSelection();
+              }}
+              className="p-0.5 hover:bg-black/10 rounded-full transition ml-0.5"
+              title={`Clear all ${label}`}
+            >
+              <X className="w-3 h-3 text-ink-500 hover:text-ink-900" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-64 sm:w-72 bg-white rounded-2xl shadow-xl border border-gray-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} mt-1.5 w-64 sm:w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200/90 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100`}>
           {/* Header & Search */}
           <div className="p-2.5 bg-gray-50/80 border-b border-gray-100 space-y-2">
             <div className="flex items-center justify-between text-[11px] font-bold text-ink-700 px-1">

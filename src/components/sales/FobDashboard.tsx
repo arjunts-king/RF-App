@@ -641,7 +641,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
       </div>
 
       {/* Quick Date Presets & Combinable Filter Matrix */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
+      <div className="relative z-30 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-rose-600" />
@@ -767,6 +767,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               badgeColor="emerald"
               placeholder="Search ports..."
               className="w-full"
+              align="right"
             />
           </div>
 
@@ -782,6 +783,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               badgeColor="purple"
               placeholder="Search status..."
               className="w-full"
+              align="right"
             />
           </div>
         </div>
@@ -882,7 +884,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
       </div>
 
       {/* 6 High-Impact Dual-Currency Financial KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
         {/* 1. Total FOB Export Value */}
         <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-100/80 shadow-xs hover:shadow-md transition-all border-l-4 border-l-rose-500 flex flex-col justify-between">
           <div>

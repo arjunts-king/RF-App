@@ -191,7 +191,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
       />
 
       {/* STICKY MULTI-FILTER & MONTH SELECTOR BAR (Liquid Glass Surface) */}
-      <div className="sticky top-16 z-20 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
+      <div className="sticky top-16 z-30 glass-surface-thin p-4 rounded-2xl border border-white/80 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 font-bold text-ink-900">
             <Filter className="w-4 h-4 text-rose-600" />
@@ -238,6 +238,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
               icon={Layers}
               badgeColor="emerald"
               placeholder="Search grades..."
+              align="right"
             />
 
             {hasActiveFilters && (
@@ -317,7 +318,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
       </div>
 
       {/* BENTO-STYLE KPI CARDS WITH CAPTIONS & LINKS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10">
         <BentoCard
           label="Total Production"
           value={formatKg(totalProcessedKg)}
