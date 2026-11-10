@@ -12,7 +12,8 @@ import {
   Users,
   Layers,
   Filter,
-  X
+  X,
+  ArrowUpRight
 } from 'lucide-react';
 
 export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -383,7 +384,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           </div>
           {onNavigate && (
             <button
-              onClick={() => onNavigate('reports')}
+              onClick={() => onNavigate('prod-reports')}
               className="text-xs font-bold text-amber-800 underline hover:text-amber-950 shrink-0"
             >
               View in Exception Report →
@@ -471,7 +472,20 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900">Product / Species Share</h3>
-            <span className="text-[11px] text-ink-500">{topSpecies.length} varieties</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-ink-500">{topSpecies.length} varieties</span>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('prod-reports')}
+                  className="text-[11px] font-bold text-rose-700 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  title="View detailed product breakdown in Production Reports"
+                >
+                  <span>Reports</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           {topSpecies.length === 0 ? (
@@ -497,7 +511,20 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900">Quality Grade Distribution</h3>
-            <span className="text-[11px] text-ink-500">{topGrades.length} grades</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-ink-500">{topGrades.length} grades</span>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('prod-reports')}
+                  className="text-[11px] font-bold text-rose-700 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  title="View detailed grade breakdown in Production Reports"
+                >
+                  <span>Reports</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           {topGrades.length === 0 ? (

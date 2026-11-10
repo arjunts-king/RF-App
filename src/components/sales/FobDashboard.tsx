@@ -516,6 +516,20 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
             : undefined
         }
         secondaryActions={[
+          ...(onNavigate
+            ? [
+                {
+                  label: 'Commercial Dashboard',
+                  onClick: () => onNavigate('sales-dashboard'),
+                  icon: TrendingUp
+                },
+                {
+                  label: 'Invoices Register',
+                  onClick: () => onNavigate('invoices'),
+                  icon: FileText
+                }
+              ]
+            : []),
           {
             label: 'Export FOB Ledger (CSV)',
             onClick: handleExportCSV,
@@ -1307,7 +1321,18 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                         />
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="font-bold text-ink-900 font-mono">{inv.invoiceNo}</div>
+                        {onNavigate ? (
+                          <button
+                            type="button"
+                            onClick={() => onNavigate('invoices')}
+                            className="font-bold text-rose-700 hover:text-rose-900 hover:underline font-mono text-left cursor-pointer transition block"
+                            title="Open Invoices Register"
+                          >
+                            {inv.invoiceNo}
+                          </button>
+                        ) : (
+                          <div className="font-bold text-ink-900 font-mono">{inv.invoiceNo}</div>
+                        )}
                         <div className="text-[11px] text-ink-500 flex items-center gap-1.5">
                           <span>{inv.invoiceDate}</span>
                           {inv.salesOrderNo && (

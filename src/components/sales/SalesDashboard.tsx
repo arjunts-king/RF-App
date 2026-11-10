@@ -32,7 +32,8 @@ import {
   Table,
   LayoutGrid,
   Clock,
-  Globe
+  Globe,
+  BarChart3
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -580,7 +581,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 },
                 {
                   label: 'Invoices register',
-                  onClick: () => onNavigate('invoice-list'),
+                  onClick: () => onNavigate('invoices'),
                   icon: FileText
                 },
                 {
@@ -859,14 +860,14 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           value={totalInvoices}
           caption="Commercial export bills"
           linkText="Browse invoices"
-          onLinkClick={() => onNavigate && onNavigate('invoice-list')}
+          onLinkClick={() => onNavigate && onNavigate('invoices')}
         />
         <BentoCard
           label="Total Export Weight"
           value={formatKg(totalWeightKg)}
           caption="Net seafood cargo"
           linkText="Weight analysis"
-          onLinkClick={() => onNavigate && onNavigate('reports')}
+          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
         />
         <BentoCard
           label="Gross Invoiced (USD)"
@@ -874,7 +875,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           caption="Overseas gross value"
           variant="highlight"
           linkText="Turnover ledger"
-          onLinkClick={() => onNavigate && onNavigate('reports')}
+          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
         />
         <BentoCard
           label="Total FOB Value"
@@ -882,7 +883,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           caption="Port departure valuation"
           variant="highlight"
           linkText="FOB breakdown"
-          onLinkClick={() => onNavigate && onNavigate('reports')}
+          onLinkClick={() => onNavigate && onNavigate('fob-dashboard')}
         />
         <BentoCard
           label="Average USD / Kg"
@@ -890,7 +891,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           caption="Realization rate per kg"
           variant="success"
           linkText="Yield analysis"
-          onLinkClick={() => onNavigate && onNavigate('reports')}
+          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
         />
         <BentoCard
           label="Realized (INR)"
@@ -898,7 +899,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           caption="Bank settlements settled"
           variant="success"
           linkText="Realization log"
-          onLinkClick={() => onNavigate && onNavigate('invoice-list')}
+          onLinkClick={() => onNavigate && onNavigate('realizations')}
         />
         <BentoCard
           label="Pending Outstanding"
@@ -1274,7 +1275,19 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                     <tr key={inv.id} className="hover:bg-rose-50/20 transition-colors">
                       <td className="py-3 px-3 text-center font-mono text-ink-400 font-semibold">{globalIdx}</td>
                       <td className="py-3 px-3 align-middle whitespace-nowrap">
-                        <div className="font-mono font-bold text-rose-700">{inv.invoiceNo}</div>
+                        {onNavigate ? (
+                          <button
+                            type="button"
+                            onClick={() => onNavigate('invoices')}
+                            className="font-mono font-bold text-rose-700 hover:text-rose-900 hover:underline text-left cursor-pointer transition flex items-center gap-1 group/inv"
+                            title="Open Invoices Register"
+                          >
+                            <span>{inv.invoiceNo}</span>
+                            <ArrowUpRight className="w-3 h-3 opacity-60 group-hover/inv:opacity-100" />
+                          </button>
+                        ) : (
+                          <div className="font-mono font-bold text-rose-700">{inv.invoiceNo}</div>
+                        )}
                         <div className="text-[11px] text-ink-600 mt-0.5">{inv.invoiceDate}</div>
                         {inv.salesOrderNo && (
                           <div className="text-[10px] text-blue-700 font-mono font-semibold">SO: {inv.salesOrderNo}</div>
@@ -1432,9 +1445,22 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               <Layers className="w-4 h-4 text-rose-700" />
               Product Export Share
             </h3>
-            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-              {fullProductShareMatrix.length} Commodities
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                {fullProductShareMatrix.length} Commodities
+              </span>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('species')}
+                  className="text-[11px] text-rose-700 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                  title="Open Commercial Product & Species Master"
+                >
+                  <span>Products</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-3 pt-1">
@@ -1597,11 +1623,35 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             {/* CSV Export */}
             <button
               onClick={handleExportMatrixCSV}
-              className="px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+              className="px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Matrix CSV</span>
             </button>
+
+            {/* Quick Navigation to Connected Pages */}
+            {onNavigate && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('species')}
+                  className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                  title="Open Commercial Product & Species Master"
+                >
+                  <Boxes className="w-3.5 h-3.5" />
+                  <span>Product Master</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('sales-reports')}
+                  className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                  title="Open Sales Reports Hub"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Sales Reports</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

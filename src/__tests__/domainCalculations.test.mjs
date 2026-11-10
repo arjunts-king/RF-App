@@ -3220,6 +3220,112 @@ test('Admin Access Control & Mandatory Reason for Editing Previous Invoices', as
   assert.equal(resAdminSuccess.auditLog.changeReason, 'Corrected buyer order reference number and revised FOB valuation');
 });
 
+test('Connected Page Dashboard Navigation Integrity & Route Validation', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // Load dashboard source code files
+  const salesDashboardCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf-8');
+  const fobDashboardCode = fs.readFileSync(path.resolve('src/components/sales/FobDashboard.tsx'), 'utf-8');
+  const prodDashboardCode = fs.readFileSync(path.resolve('src/components/production/ProductionDashboard.tsx'), 'utf-8');
+  const salesSidebarCode = fs.readFileSync(path.resolve('src/components/sales/SalesSidebar.tsx'), 'utf-8');
+  const prodSidebarCode = fs.readFileSync(path.resolve('src/components/production/ProductionSidebar.tsx'), 'utf-8');
+
+  // Extract allowed Sales Nav Tabs from SalesSidebar.tsx
+  const validSalesTabs = [
+    'sales-dashboard',
+    'fob-dashboard',
+    'invoice-entry',
+    'invoices',
+    'realizations',
+    'customers',
+    'ports',
+    'species',
+    'sales-sizes',
+    'sales-reports',
+    'audit-log',
+    'sales-excel-import'
+  ];
+
+  // Extract allowed Production Nav Tabs from ProductionSidebar.tsx
+  const validProdTabs = [
+    'prod-dashboard',
+    'daily-entry',
+    'processing-log',
+    'slab-types',
+    'prod-reports',
+    'audit-log',
+    'prod-excel-import'
+  ];
+
+  // Helper to extract all onNavigate arguments
+  const extractNavigateArgs = (sourceCode) => {
+    const matches = [];
+    const regex = /onNavigate\(\s*['"]([^'"]+)['"]\s*\)/g;
+    let match;
+    while ((match = regex.exec(sourceCode)) !== null) {
+      matches.push(match[1]);
+    }
+    return matches;
+  };
+
+  const salesNavArgs = extractNavigateArgs(salesDashboardCode);
+  const fobNavArgs = extractNavigateArgs(fobDashboardCode);
+  const prodNavArgs = extractNavigateArgs(prodDashboardCode);
+
+  // 1. Verify all onNavigate calls in SalesDashboard strictly belong to valid SalesNavTab
+  assert.ok(salesNavArgs.length >= 10, 'SalesDashboard has multiple onNavigate links');
+  salesNavArgs.forEach((tab) => {
+    assert.ok(
+      validSalesTabs.includes(tab),
+      `SalesDashboard calls onNavigate('${tab}') which must be a valid SalesNavTab`
+    );
+  });
+
+  // 2. Verify all onNavigate calls in FobDashboard strictly belong to valid SalesNavTab
+  assert.ok(fobNavArgs.length >= 4, 'FobDashboard has multiple onNavigate links');
+  fobNavArgs.forEach((tab) => {
+    assert.ok(
+      validSalesTabs.includes(tab),
+      `FobDashboard calls onNavigate('${tab}') which must be a valid SalesNavTab`
+    );
+  });
+
+  // 3. Verify all onNavigate calls in ProductionDashboard strictly belong to valid ProductionNavTab
+  assert.ok(prodNavArgs.length >= 8, 'ProductionDashboard has multiple onNavigate links');
+  prodNavArgs.forEach((tab) => {
+    assert.ok(
+      validProdTabs.includes(tab),
+      `ProductionDashboard calls onNavigate('${tab}') which must be a valid ProductionNavTab`
+    );
+  });
+
+  // 4. Assert no legacy / dead string targets exist in any dashboard
+  assert.ok(!salesDashboardCode.includes("'invoice-list'"), "SalesDashboard does NOT contain legacy 'invoice-list'");
+  assert.ok(!salesDashboardCode.includes("onNavigate('reports')"), "SalesDashboard does NOT call unqualified onNavigate('reports')");
+  assert.ok(!prodDashboardCode.includes("onNavigate('reports')"), "ProductionDashboard does NOT call unqualified onNavigate('reports')");
+  assert.ok(!fobDashboardCode.includes("'invoice-list'"), "FobDashboard does NOT contain legacy 'invoice-list'");
+
+  // 5. Verify connected navigation paths for key dashboard components:
+  // BentoCard Total Invoices -> 'invoices'
+  assert.ok(salesDashboardCode.includes("label=\"Total Invoices\""), 'Total Invoices card present');
+  assert.ok(salesDashboardCode.includes("onNavigate('invoices')"), 'Links directly to invoices register');
+
+  // BentoCard Total Export Weight -> 'sales-reports'
+  assert.ok(salesDashboardCode.includes("label=\"Total Export Weight\""), 'Total Export Weight card present');
+
+  // BentoCard Total FOB Value -> 'fob-dashboard'
+  assert.ok(salesDashboardCode.includes("label=\"Total FOB Value\""), 'Total FOB Value card present');
+  assert.ok(salesDashboardCode.includes("onNavigate('fob-dashboard')"), 'Links directly to FOB performance dashboard');
+
+  // BentoCard Realized INR -> 'realizations'
+  assert.ok(salesDashboardCode.includes("label=\"Realized (INR)\""), 'Realized INR card present');
+  assert.ok(salesDashboardCode.includes("onNavigate('realizations')"), 'Links directly to realization ledger');
+
+  // Product Share matrix and card -> 'species'
+  assert.ok(salesDashboardCode.includes("onNavigate('species')"), 'Product cards link directly to Commercial Product / Species Master');
+});
+
 
 
 
