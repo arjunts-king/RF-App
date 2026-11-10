@@ -462,6 +462,7 @@ export interface SalesInvoice {
   commodityDescription?: string;
   packingDescription?: string;
   scientificName?: string;
+  hsnCode?: string; // Customs Harmonized System Tariff Code (e.g. 03061790, 03074310)
   shippingMarks?: string;
   containerNo?: string;
   sealNo?: string;

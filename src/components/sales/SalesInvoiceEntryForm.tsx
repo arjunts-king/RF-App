@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency, Species, Size } from '../../types';
-import { formatKg, deriveCommodityTitle, deriveScientificName } from '../../utils/calculations';
+import { formatKg, deriveCommodityTitle, deriveScientificName, deriveHsnCode } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
@@ -40,7 +40,6 @@ interface LineItemDraft {
   cartonsCount: number | '';
   weightKg: number | '';
   ratePerKg: number | '';
-  fobValueCurrency: number | '';
 }
 
 export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
@@ -94,6 +93,8 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
   const [packingDescription, setPackingDescription] = useState('');
   const [scientificName, setScientificName] = useState('');
   const [isScientificManual, setIsScientificManual] = useState(false);
+  const [hsnCode, setHsnCode] = useState('');
+  const [isHsnManual, setIsHsnManual] = useState(false);
   const [shippingMarks, setShippingMarks] = useState('');
   const [containerNo, setContainerNo] = useState('');
   const [sealNo, setSealNo] = useState('');
@@ -111,8 +112,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     gradeSize: '',
     cartonsCount: '',
     weightKg: '',
-    ratePerKg: '',
-    fobValueCurrency: ''
+    ratePerKg: ''
   });
 
   const [lines, setLines] = useState<LineItemDraft[]>([
@@ -126,10 +126,13 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       gradeSize: '',
       cartonsCount: '',
       weightKg: '',
-      ratePerKg: '',
-      fobValueCurrency: ''
+      ratePerKg: ''
     }
   ]);
+
+  // --- Section 5B: Commercial FOB Valuation (Invoice-Level Single Item) ---
+  const [totalFobValueINR, setTotalFobValueINR] = useState<number | ''>('');
+  const [totalFobValueCurrencyInput, setTotalFobValueCurrencyInput] = useState<number | ''>('');
 
   // --- Section 6: Factory, Statutory Declaration & Signatory ---
   const [amountInWordsCustom, setAmountInWordsCustom] = useState('');
@@ -261,12 +264,15 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
     setLines(nextLines);
 
-    // Automatically derive commodity title & scientific name
+    // Automatically derive commodity title, scientific name & HSN code
     if (!isCommodityManual || !commodityDescription.trim()) {
       setCommodityDescription(deriveCommodityTitle(nextLines, species));
     }
     if (!isScientificManual || !scientificName.trim()) {
       setScientificName(deriveScientificName(nextLines, species));
+    }
+    if (!isHsnManual || !hsnCode.trim()) {
+      setHsnCode(deriveHsnCode(nextLines, species));
     }
   };
 
@@ -302,6 +308,9 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     if (!isScientificManual || !scientificName.trim()) {
       setScientificName(deriveScientificName(nextLines, species));
     }
+    if (!isHsnManual || !hsnCode.trim()) {
+      setHsnCode(deriveHsnCode(nextLines, species));
+    }
   };
 
   const updateLine = (lineId: string, field: keyof LineItemDraft, val: any) => {
@@ -313,6 +322,11 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         setCommodityDescription(deriveCommodityTitle(nextLines, species));
       }
     }
+    if (field === 'hsCode') {
+      if (!isHsnManual || !hsnCode.trim()) {
+        setHsnCode(deriveHsnCode(nextLines, species));
+      }
+    }
   };
 
   // Live Server-Style Totals Calculation
@@ -320,21 +334,27 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     const w = parseFloat(String(l.weightKg)) || 0;
     const r = parseFloat(String(l.ratePerKg)) || 0;
     const amt = Number((w * r).toFixed(2));
-    const fob = l.fobValueCurrency !== '' ? parseFloat(String(l.fobValueCurrency)) || amt : amt;
     return {
       ...l,
-      computedAmount: amt,
-      computedFOB: fob
+      computedAmount: amt
     };
   });
 
   const totalCartons = lines.reduce((s, l) => s + (parseInt(String(l.cartonsCount)) || 0), 0);
   const totalWeightKg = Number(lines.reduce((s, l) => s + (parseFloat(String(l.weightKg)) || 0), 0).toFixed(2));
   const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.computedAmount, 0).toFixed(2));
-  const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.computedFOB, 0).toFixed(2));
   const parsedRate = exchangeRate.trim() !== '' ? parseFloat(exchangeRate) : undefined;
   const currentRate = parsedRate !== undefined && !isNaN(parsedRate) && parsedRate > 0 ? parsedRate : undefined;
   const estimatedAmountINR = currentRate ? Number((totalAmountCurrency * currentRate).toFixed(2)) : 0;
+
+  // Invoice-Level Commercial FOB Valuation (Single Item)
+  const finalFobUSD = totalFobValueCurrencyInput !== ''
+    ? (parseFloat(String(totalFobValueCurrencyInput)) || 0)
+    : totalAmountCurrency;
+
+  const finalFobINR = totalFobValueINR !== ''
+    ? (parseFloat(String(totalFobValueINR)) || 0)
+    : (currentRate ? Number((finalFobUSD * currentRate).toFixed(2)) : 0);
 
   // Compute live Amount in Words
   const computedAmountInWords = amountInWordsCustom
@@ -380,6 +400,7 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       commodityDescription: commodityDescription.trim(),
       packingDescription: packingDescription.trim(),
       scientificName: scientificName.trim(),
+      hsnCode: hsnCode.trim() || undefined,
       shippingMarks: shippingMarks.trim(),
       containerNo: containerNo.trim(),
       sealNo: sealNo.trim(),
@@ -396,25 +417,30 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
       totalCartons,
       totalWeightKg,
       totalAmountCurrency,
-      totalFobValueCurrency,
+      totalFobValueCurrency: finalFobUSD,
+      totalFobValueINR: finalFobINR,
       estimatedAmountINR,
-      lineItems: lines.map((l) => ({
-        id: l.id,
-        speciesId: l.speciesId,
-        hsCode: l.hsCode,
-        sizeId: l.sizeId,
-        countId: l.countId || undefined,
-        productDescription: l.productDescription,
-        gradeSize: l.gradeSize,
-        cartonsCount: parseInt(String(l.cartonsCount)) || 0,
-        weightKg: parseFloat(String(l.weightKg)) || 0,
-        ratePerKg: parseFloat(String(l.ratePerKg)) || 0,
-        amountCurrency: (parseFloat(String(l.weightKg)) || 0) * (parseFloat(String(l.ratePerKg)) || 0),
-        fobValueCurrency:
-          l.fobValueCurrency !== ''
-            ? parseFloat(String(l.fobValueCurrency)) || 0
-            : (parseFloat(String(l.weightKg)) || 0) * (parseFloat(String(l.ratePerKg)) || 0)
-      }))
+      lineItems: lines.map((l) => {
+        const w = parseFloat(String(l.weightKg)) || 0;
+        const r = parseFloat(String(l.ratePerKg)) || 0;
+        const lineAmt = Number((w * r).toFixed(2));
+        const ratio = totalAmountCurrency > 0 ? (lineAmt / totalAmountCurrency) : (lines.length > 0 ? 1 / lines.length : 1);
+        return {
+          id: l.id,
+          speciesId: l.speciesId,
+          hsCode: l.hsCode,
+          sizeId: l.sizeId,
+          countId: l.countId || undefined,
+          productDescription: l.productDescription,
+          gradeSize: l.gradeSize,
+          cartonsCount: parseInt(String(l.cartonsCount)) || 0,
+          weightKg: w,
+          ratePerKg: r,
+          amountCurrency: lineAmt,
+          fobValueCurrency: Number((finalFobUSD * ratio).toFixed(2)),
+          fobValueINR: Number((finalFobINR * ratio).toFixed(2))
+        };
+      })
     };
   };
 
@@ -490,6 +516,10 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
     setIsCommodityManual(false);
     setScientificName('');
     setIsScientificManual(false);
+    setHsnCode('');
+    setIsHsnManual(false);
+    setTotalFobValueINR('');
+    setTotalFobValueCurrencyInput('');
     setLines([createBlankLine(0)]);
   };
 
@@ -1091,6 +1121,33 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-ink-700">HSN / ITC (HS) CODE (Row 10)</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHsnManual(false);
+                  setHsnCode(deriveHsnCode(lines, species));
+                }}
+                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Fetch HSN / ITC codes from line items & product master"
+              >
+                <Sparkles className="w-3 h-3" /> Auto-fill from master
+              </button>
+            </div>
+            <input
+              type="text"
+              value={hsnCode}
+              onChange={(e) => {
+                setHsnCode(e.target.value.toUpperCase());
+                setIsHsnManual(e.target.value.trim().length > 0);
+              }}
+              placeholder="e.g. 03074310"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold text-xs outline-none focus:bg-white focus:border-rose-400"
+            />
+          </div>
+
+          <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">SHIPPING MARK</label>
             <input
               type="text"
@@ -1120,6 +1177,19 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
               onChange={(e) => setSealNo(e.target.value.toUpperCase())}
               placeholder="e.g. IN567892"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold font-mono text-xs outline-none focus:bg-white focus:border-rose-400"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Net Weight (Kg) (Auto-computed)</label>
+            <input
+              type="text"
+              value={totalWeightKg > 0 ? `${totalWeightKg.toFixed(3)} Kgs` : ''}
+              readOnly
+              placeholder="0.000 Kgs"
+              className="w-full px-3 py-2 bg-gray-100/70 border border-gray-200 rounded-xl font-bold text-xs text-ink-700 outline-none"
             />
           </div>
 
@@ -1173,7 +1243,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Quantity (Kgs)</th>
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Rate ({currency}/Kg)</th>
                 <th className="py-2.5 px-3 text-right min-w-[120px]">Amount ({currency})</th>
-                <th className="py-2.5 px-3 text-right min-w-[100px]">FOB Val</th>
                 <th className="py-2.5 px-3 text-center">Action</th>
               </tr>
             </thead>
@@ -1280,18 +1349,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                     {l.computedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
 
-                  {/* FOB Value */}
-                  <td className="py-2 px-3 text-right">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={l.fobValueCurrency !== '' ? l.fobValueCurrency : ''}
-                      onChange={(e) => updateLine(l.id, 'fobValueCurrency', e.target.value)}
-                      placeholder={String(l.computedAmount)}
-                      className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right text-xs outline-none focus:border-rose-400 font-semibold"
-                    />
-                  </td>
-
                   {/* Delete Button */}
                   <td className="py-2 px-3 text-center">
                     <button
@@ -1318,7 +1375,6 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
                 <td className="py-2.5 px-3 text-right text-rose-950 font-black text-sm">
                   {currency} {totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
-                <td className="py-2.5 px-3 text-right">{totalFobValueCurrency.toFixed(2)}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -1326,13 +1382,140 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
         </div>
       </div>
 
-      {/* SECTION 6: AMOUNT IN WORDS, FACTORY & SIGNATORY */}
+      {/* SECTION 5B: COMMERCIAL FOB VALUATION (INVOICE-LEVEL SINGLE ITEM) */}
+      <div className="bg-gradient-to-br from-white to-rose-50/20 rounded-2xl border border-rose-100 p-6 shadow-xs space-y-5">
+        <div className="border-b border-rose-100/60 pb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-rose-700" />
+              6. Commercial FOB Valuation (Invoice Total)
+            </h3>
+            <p className="text-[11px] text-ink-500 mt-0.5">
+              Single invoice-level Free On Board (FOB) valuation required for shipping bills, export customs declaration, and bank realization.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 bg-rose-50 text-rose-700 text-[11px] font-bold rounded-lg border border-rose-200">
+              Commercial Export Valuation
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Total FOB Value in INR (₹) */}
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-bold text-ink-800">
+                TOTAL FOB VALUE IN INR (₹) <span className="text-rose-600">*</span>
+              </label>
+              {currentRate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const usd = totalFobValueCurrencyInput !== '' ? parseFloat(String(totalFobValueCurrencyInput)) || 0 : totalAmountCurrency;
+                    const calculatedInr = Number((usd * currentRate).toFixed(2));
+                    setTotalFobValueINR(calculatedInr);
+                  }}
+                  className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Auto-calculate INR FOB at current exchange rate"
+                >
+                  <Sparkles className="w-3 h-3" /> Convert at ₹{currentRate.toFixed(2)}
+                </button>
+              )}
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">
+                ₹
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={totalFobValueINR}
+                onChange={(e) => {
+                  setTotalFobValueINR(e.target.value === '' ? '' : parseFloat(e.target.value) || 0);
+                }}
+                placeholder={
+                  currentRate
+                    ? (finalFobUSD * currentRate).toFixed(2)
+                    : 'Enter Total FOB Value in INR'
+                }
+                className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-100">
+              <span className="text-ink-500 font-medium">INR Formatted Valuation:</span>
+              <span className="font-extrabold text-ink-900 font-mono">
+                ₹ {finalFobINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <p className="text-[10px] text-ink-400 leading-tight">
+              Used for DGFT, customs duty drawback/RoDTEP, shipping bill declaration, and RBI EDPMS settlement tracking.
+            </p>
+          </div>
+
+          {/* Total FOB Value in USD ($) */}
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <label className="block text-[11px] font-bold text-ink-800">
+                  TOTAL FOB VALUE IN USD ($) <span className="text-rose-600">*</span>
+                </label>
+                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-extrabold uppercase">
+                  Shown in Invoice
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setTotalFobValueCurrencyInput(totalAmountCurrency);
+                }}
+                className="text-[10px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Match FOB Value to Invoice Amount"
+              >
+                <RotateCcw className="w-3 h-3" /> Match Invoice Total
+              </button>
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">
+                $
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={totalFobValueCurrencyInput}
+                onChange={(e) => {
+                  setTotalFobValueCurrencyInput(e.target.value === '' ? '' : parseFloat(e.target.value) || 0);
+                }}
+                placeholder={totalAmountCurrency.toFixed(2)}
+                className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-100">
+              <span className="text-ink-500 font-medium">Export Invoice Total FOB:</span>
+              <span className="font-extrabold text-emerald-700 font-mono">
+                USD ${finalFobUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <p className="text-[10px] text-ink-400 leading-tight">
+              Displayed prominently on the generated commercial invoice Word (.docx) document and invoice preview.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 7: AMOUNT IN WORDS, FACTORY & SIGNATORY */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
         <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-rose-700" />
-              6. Words, Factory Details &amp; Signatory Block (Rows 16 - 18)
+              7. Words, Factory Details &amp; Signatory Block (Rows 16 - 18)
             </h3>
             <p className="text-[11px] text-ink-500 mt-0.5">Amount chargeable in words, factory approval number, B/L number, statutory declaration and official stamp</p>
           </div>
@@ -1491,7 +1674,11 @@ export const SalesInvoiceEntryForm: React.FC<{ onSuccess?: () => void }> = ({ on
           },
           {
             label: `Total FOB (${currency})`,
-            value: `${currency} ${totalFobValueCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            value: `${currency} ${finalFobUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          },
+          {
+            label: 'Total FOB (INR)',
+            value: `₹ ${finalFobINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           },
           {
             label: `Total (${currency})`,

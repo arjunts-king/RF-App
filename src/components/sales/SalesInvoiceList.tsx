@@ -216,6 +216,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         Country: consignee?.country || '',
         POL: pol?.name || '',
         POD: pod?.name || '',
+        HSNCode: inv.hsnCode || '',
         Currency: inv.currency,
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
@@ -242,6 +243,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'Country', label: 'Country' },
       { key: 'POL', label: 'Port of Loading' },
       { key: 'POD', label: 'Port of Discharge' },
+      { key: 'HSNCode', label: 'HSN / ITC Code' },
       { key: 'Currency', label: 'Currency' },
       { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
       { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
@@ -302,6 +304,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
         Country: consignee?.country || '',
         POL: pol?.name || '',
         POD: pod?.name || '',
+        HSNCode: inv.hsnCode || '',
         Currency: inv.currency,
         TotalWeightKg: inv.totalWeightKg,
         TotalAmount: inv.totalAmountCurrency,
@@ -328,6 +331,7 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
       { key: 'Country', label: 'Country' },
       { key: 'POL', label: 'Port of Loading' },
       { key: 'POD', label: 'Port of Discharge' },
+      { key: 'HSNCode', label: 'HSN / ITC Code' },
       { key: 'Currency', label: 'Currency' },
       { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
       { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
@@ -787,8 +791,8 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                               </span>
                             </div>
 
-                            {/* Origin, POL, POD, Final Destination particulars from Excel */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200 text-[11px]">
+                            {/* Origin, POL, POD, Final Destination, HSN Code, FOB particulars */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200 text-[11px]">
                               <div>
                                 <span className="text-[10px] font-bold text-ink-500 uppercase block">Country of Origin</span>
                                 <span className="font-bold text-ink-900">{inv.countryOfOrigin || 'India'}</span>
@@ -804,6 +808,17 @@ export const SalesInvoiceList: React.FC<{ onNavigate?: (tab: string) => void }> 
                               <div>
                                 <span className="text-[10px] font-bold text-ink-500 uppercase block">Final Destination</span>
                                 <span className="font-bold text-ink-900">{inv.finalDestination || consignee?.country || 'Export'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">HSN / ITC Code</span>
+                                <span className="font-mono font-bold text-ink-900">{inv.hsnCode || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold text-ink-500 uppercase block">Total FOB Valuation</span>
+                                <span className="font-bold text-emerald-700">
+                                  ${(inv.totalFobValueCurrency || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  {inv.totalFobValueINR ? ` (₹${(inv.totalFobValueINR).toLocaleString('en-IN')})` : ''}
+                                </span>
                               </div>
                             </div>
                             <div className="overflow-x-auto">

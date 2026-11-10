@@ -17,7 +17,8 @@ import {
   formatDashboardINR,
   formatForwardRate,
   deriveCommodityTitle,
-  deriveScientificName
+  deriveScientificName,
+  deriveHsnCode
 } from '../utils/calculations.ts';
 
 import {
@@ -2938,6 +2939,111 @@ test('Distinct Commercial Size Master for Sales Module', async () => {
   assert.ok(entryContent.includes('salesSizes'), 'SalesInvoiceEntryForm must use salesSizes');
   assert.ok(entryContent.includes('sizeList={salesSizes}'), 'SizeCombobox must receive salesSizes');
 });
+
+// ============================================================================
+// SUITE 51: Single Commercial FOB Valuation (INR & USD) & HSN Code Integration
+// ============================================================================
+test('Single Commercial FOB Valuation (INR & USD) & HSN Code Integration', async () => {
+  const speciesList = [
+    { id: 'sp-squid-needle', name: 'FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE', scientificName: 'UROTEUTHIS DUVAUCELII', hsCode: '03074310' },
+    { id: 'sp-squid-loligo', name: 'FROZEN LOLIGO SQUID WHOLE-A GRADE', scientificName: 'UROTEUTHIS DUVAUCELII', hsCode: '03074310' },
+    { id: 'sp-shrimp-van', name: 'FROZEN VANNAMEI SHRIMPS', scientificName: 'LITOPENAEUS VANNAMEI', hsCode: '03061790' },
+    { id: 'sp-cuttlefish', name: 'FROZEN CUTTLEFISH WHOLE', scientificName: 'SEPIA PHARAONIS', hsCode: '03074320' }
+  ];
+
+  // 1. deriveHsnCode - single line item
+  const singleLine = [{ speciesId: 'sp-squid-needle', hsCode: '03074310', productDescription: 'FROZEN SQUID SEMI NEEDLE' }];
+  assert.equal(deriveHsnCode(singleLine, speciesList), '03074310', 'Single line returns its HSN code');
+
+  // 2. deriveHsnCode - multiple line items with identical HSN code (deduplication)
+  const duplicateHsnLines = [
+    { speciesId: 'sp-squid-needle', hsCode: '03074310', productDescription: 'FROZEN SQUID SEMI NEEDLE' },
+    { speciesId: 'sp-squid-loligo', hsCode: '03074310', productDescription: 'FROZEN LOLIGO SQUID' }
+  ];
+  assert.equal(deriveHsnCode(duplicateHsnLines, speciesList), '03074310', 'Identical HSN codes across items are deduplicated');
+
+  // 3. deriveHsnCode - multiple line items with distinct HSN codes (joined with ' & ')
+  const multiHsnLines = [
+    { speciesId: 'sp-squid-needle', hsCode: '03074310', productDescription: 'FROZEN SQUID SEMI NEEDLE' },
+    { speciesId: 'sp-shrimp-van', hsCode: '03061790', productDescription: 'FROZEN VANNAMEI SHRIMPS' }
+  ];
+  assert.equal(deriveHsnCode(multiHsnLines, speciesList), '03074310 & 03061790', 'Distinct HSN codes are joined with &');
+
+  // 4. deriveHsnCode - auto-fetches from species master when hsCode is missing on line item
+  const missingHsnLines = [
+    { speciesId: 'sp-cuttlefish', hsCode: '', productDescription: 'FROZEN CUTTLEFISH WHOLE' }
+  ];
+  assert.equal(deriveHsnCode(missingHsnLines, speciesList), '03074320', 'Fetches HSN code from species master');
+
+  // 5. deriveHsnCode - empty lines returns ''
+  assert.equal(deriveHsnCode([], speciesList), '', 'Empty lines return empty string');
+
+  // 6. Invoice-Level Single FOB Valuation & Proportional Apportionment
+  const lines = [
+    { id: 'l1', weightKg: 1000, ratePerKg: 10 }, // amount = 10,000 (20%)
+    { id: 'l2', weightKg: 4000, ratePerKg: 10 }  // amount = 40,000 (80%)
+  ];
+  const totalAmountUSD = 50000;
+  const customFobUSD = 48000; // Total FOB in USD entered as single item
+  const customFobINR = 4080000; // Total FOB in INR entered as single item
+
+  const apportionedLines = lines.map((l) => {
+    const amt = l.weightKg * l.ratePerKg;
+    const ratio = amt / totalAmountUSD;
+    return {
+      ...l,
+      amountCurrency: amt,
+      fobValueCurrency: Number((customFobUSD * ratio).toFixed(2)),
+      fobValueINR: Number((customFobINR * ratio).toFixed(2))
+    };
+  });
+
+  assert.equal(apportionedLines[0].fobValueCurrency, 9600, 'Line 1 receives 20% of FOB USD');
+  assert.equal(apportionedLines[1].fobValueCurrency, 38400, 'Line 2 receives 80% of FOB USD');
+  assert.equal(apportionedLines[0].fobValueCurrency + apportionedLines[1].fobValueCurrency, customFobUSD, 'Sum of line FOB equals total FOB USD');
+
+  assert.equal(apportionedLines[0].fobValueINR, 816000, 'Line 1 receives 20% of FOB INR');
+  assert.equal(apportionedLines[1].fobValueINR, 3264000, 'Line 2 receives 80% of FOB INR');
+  assert.equal(apportionedLines[0].fobValueINR + apportionedLines[1].fobValueINR, customFobINR, 'Sum of line FOB equals total FOB INR');
+
+  // 7. Verify Word Document (.docx) Export Table XML includes HSN CODE in Row 10 and TOTAL FOB in Row 14B
+  const { buildInvoiceTableXml } = await import('../utils/exportWordInvoice.ts');
+  const mockInvoice = {
+    invoiceNo: 'EXP-2026-0099',
+    invoiceDate: '2026-11-10',
+    commodityDescription: 'FROZEN SQUID SEMI NEEDLE',
+    packingDescription: '1X10KG',
+    scientificName: 'UROTEUTHIS DUVAUCELII',
+    hsnCode: '03074310',
+    shippingMarks: 'MERIT D.S',
+    currency: 'USD',
+    totalCartons: 1000,
+    totalWeightKg: 10000,
+    totalAmountCurrency: 50000,
+    totalFobValueCurrency: 48000,
+    totalFobValueINR: 4080000,
+    lineItems: [
+      {
+        id: 'li-1',
+        productDescription: 'FROZEN SQUID SEMI NEEDLE WHOLE-A GRADE',
+        hsCode: '03074310',
+        gradeSize: '6/8',
+        cartonsCount: 1000,
+        weightKg: 10000,
+        ratePerKg: 5,
+        amountCurrency: 50000
+      }
+    ]
+  };
+
+  const xml = buildInvoiceTableXml(mockInvoice);
+  assert.ok(xml.includes('HSN CODE: 03074310'), 'Row 10 must contain HSN CODE');
+  assert.ok(xml.includes('(HSN: 03074310)'), 'Line item description must contain (HSN: 03074310)');
+  assert.ok(xml.includes('TOTAL FOB VALUE (USD):'), 'Row 14B must contain TOTAL FOB VALUE (USD)');
+  assert.ok(xml.includes('48000.00'), 'Row 14B must display FOB USD value');
+  assert.ok(xml.includes('₹ 40,80,000.00'), 'Row 14B must display formatted FOB INR value');
+});
+
 
 
 

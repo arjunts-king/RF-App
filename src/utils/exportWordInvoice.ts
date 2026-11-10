@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import { SalesInvoice, BusinessSettings } from '../types';
-import { SAMPLE_DOCX_TEMPLATE_BASE64 } from './sampleDocxTemplateBase64';
+import type { SalesInvoice, BusinessSettings } from '../types/index.ts';
+import { SAMPLE_DOCX_TEMPLATE_BASE64 } from './sampleDocxTemplateBase64.ts';
 
 function escapeXml(str: unknown): string {
   if (str === undefined || str === null) return '';
@@ -63,7 +63,8 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const lineItems = inv.lineItems || [];
 
   const lineRowsXml = lineItems.map(item => {
-    const desc = escapeXml(item.productDescription || '');
+    const hsSuffix = item.hsCode ? ` (HSN: ${escapeXml(item.hsCode)})` : '';
+    const desc = `${escapeXml(item.productDescription || '')}${hsSuffix}`;
     const size = escapeXml(item.gradeSize || '');
     const cartons = item.cartonsCount !== undefined && item.cartonsCount !== null ? String(item.cartonsCount) : '';
     const weight = typeof item.weightKg === 'number' ? item.weightKg.toFixed(3) : String(item.weightKg || '');
@@ -161,6 +162,8 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
   const totalCartons = inv.totalCartons !== undefined ? inv.totalCartons : lineItems.reduce((acc, l) => acc + (l.cartonsCount || 0), 0);
   const totalWeight = inv.totalWeightKg !== undefined ? inv.totalWeightKg : lineItems.reduce((acc, l) => acc + (l.weightKg || 0), 0);
   const totalAmount = inv.totalAmountCurrency !== undefined ? inv.totalAmountCurrency : lineItems.reduce((acc, l) => acc + (l.amountCurrency || 0), 0);
+  const totalFobValueCurrency = inv.totalFobValueCurrency !== undefined ? Number(inv.totalFobValueCurrency) : totalAmount;
+  const totalFobValueINR = inv.totalFobValueINR;
   const netWeight = inv.netWeightKg !== undefined ? inv.netWeightKg : totalWeight;
   const grossWeight = inv.grossWeightKg !== undefined ? inv.grossWeightKg : '';
 
@@ -475,6 +478,11 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SCIENTIFIC NAME: ${escapeXml(scientificName)}</w:t></w:r>
       </w:p>
+      ${inv.hsnCode ? `
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>HSN CODE: ${escapeXml(inv.hsnCode)}</w:t></w:r>
+      </w:p>` : ''}
       <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>SHIPPING MARK: ${escapeXml(shippingMarks)}</w:t></w:r>
@@ -589,6 +597,40 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
       </w:p>
     </w:tc>
   </w:tr>
+
+  <!-- Row 14B: Total FOB Value Row -->
+  ${(totalFobValueCurrency > 0 || (totalFobValueINR !== undefined && totalFobValueINR > 0)) ? `
+  <w:tr w:rsidR="00687369" w:rsidRPr="00197130" w14:paraId="${randId()}" w14:textId="77777777" w:rsidTr="005F79C3">
+    <w:trPr><w:trHeight w:val="450"/></w:trPr>
+    <w:tc>
+      <w:tcPr><w:tcW w:w="5505" w:type="dxa"/><w:gridSpan w:val="5"/></w:tcPr>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:ind w:left="526"/><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>TOTAL FOB VALUE (${escapeXml(inv.currency || 'USD')}):</w:t></w:r>
+        ${totalFobValueINR ? `<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t xml:space="preserve">  (₹ ${totalFobValueINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</w:t></w:r>` : ''}
+      </w:p>
+    </w:tc>
+    <w:tc>
+      <w:tcPr><w:tcW w:w="990" w:type="dxa"/><w:gridSpan w:val="2"/></w:tcPr>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+      </w:p>
+    </w:tc>
+    <w:tc>
+      <w:tcPr><w:tcW w:w="1060" w:type="dxa"/><w:gridSpan w:val="2"/></w:tcPr>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:jc w:val="center"/><w:rPr><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:pPr>
+        <w:r><w:rPr><w:b/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>FOB</w:t></w:r>
+      </w:p>
+    </w:tc>
+    <w:tc>
+      <w:tcPr><w:tcW w:w="1337" w:type="dxa"/></w:tcPr>
+      <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369" w:rsidRDefault="00687369" w:rsidP="005F79C3">
+        <w:pPr><w:jc w:val="right"/><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
+        <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${totalFobValueCurrency.toFixed(2)}</w:t></w:r>
+      </w:p>
+    </w:tc>
+  </w:tr>` : ''}
 
   <!-- Row 15: Container / Seal / Net Weight / Gross Weight -->
   <w:tr w:rsidR="00687369" w:rsidRPr="00197130" w14:paraId="${randId()}" w14:textId="77777777" w:rsidTr="005F79C3">

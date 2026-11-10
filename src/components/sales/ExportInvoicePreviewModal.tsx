@@ -62,6 +62,7 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const commodityDescription = invoice.commodityDescription && invoice.commodityDescription !== 'FROZEN SEAFOOD' ? invoice.commodityDescription : '';
   const packingDescription = invoice.packingDescription && invoice.packingDescription !== '1X10KG' ? invoice.packingDescription : '';
   const scientificName = invoice.scientificName || '';
+  const hsnCode = invoice.hsnCode || '';
   const shippingMarks = invoice.shippingMarks && invoice.shippingMarks !== 'MERIT D.S' ? invoice.shippingMarks : '';
   const containerNo = invoice.containerNo && invoice.containerNo !== 'ONEU90399086' ? invoice.containerNo : '';
   const sealNo = invoice.sealNo && invoice.sealNo !== 'IN567892' ? invoice.sealNo : '';
@@ -76,6 +77,11 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const totalAmountCurrency = invoice.totalAmountCurrency !== undefined
     ? invoice.totalAmountCurrency
     : lineItems.reduce((acc, l) => acc + (l.amountCurrency || (l.weightKg || 0) * (l.ratePerKg || 0)), 0);
+
+  const totalFobValueCurrency = invoice.totalFobValueCurrency !== undefined
+    ? invoice.totalFobValueCurrency
+    : totalAmountCurrency;
+  const totalFobValueINR = invoice.totalFobValueINR;
 
   const netWeightKg = invoice.netWeightKg !== undefined ? invoice.netWeightKg : totalWeightKg;
   const grossWeightKg = invoice.grossWeightKg !== undefined ? invoice.grossWeightKg : '';
@@ -299,7 +305,8 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                   <td className="border-r border-black p-1.5 align-top font-bold text-[11px] space-y-0.5" colSpan={2}>
                     <div>COMMODITY: {commodityDescription}</div>
                     <div>PACKING: {packingDescription}</div>
-                    <div>SCIENTIFIC NAME: {scientificName}</div>
+                    {scientificName && <div>SCIENTIFIC NAME: {scientificName}</div>}
+                    {hsnCode && <div>HSN CODE: {hsnCode}</div>}
                     <div>SHIPPING MARK: {shippingMarks}</div>
                   </td>
                   <td className="border-r border-black p-1.5 align-top text-center font-bold">
@@ -333,7 +340,12 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                   <tr key={item.id || idx} className="border-b border-black/40 font-bold">
                     <td className="border-r border-black p-1.5">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] uppercase">{item.productDescription}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] uppercase">{item.productDescription}</span>
+                          {item.hsCode && (
+                            <span className="text-[9px] font-mono font-semibold text-gray-600">[{item.hsCode}]</span>
+                          )}
+                        </div>
                         <span className="text-center min-w-[50px]">{item.gradeSize}</span>
                       </div>
                     </td>
@@ -370,6 +382,26 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                     {totalAmountCurrency.toFixed(2)}
                   </td>
                 </tr>
+
+                {/* ROW 14B: TOTAL FOB VALUE Row (USD & INR) */}
+                {(totalFobValueCurrency > 0 || (totalFobValueINR !== undefined && totalFobValueINR > 0)) && (
+                  <tr className="border-b border-black font-bold text-[11px] bg-gray-50/70">
+                    <td colSpan={3} className="border-r border-black p-1.5 text-left tracking-wide">
+                      <span>TOTAL FOB VALUE ({currency}):</span>
+                      {totalFobValueINR && totalFobValueINR > 0 ? (
+                        <span className="ml-2 font-normal text-[10px] text-gray-700">
+                          (₹ {totalFobValueINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="border-r border-black p-1.5 text-center text-[10px] text-gray-600 font-semibold">
+                      FOB
+                    </td>
+                    <td className="p-1.5 text-right tabular-nums font-black text-xs">
+                      {totalFobValueCurrency.toFixed(2)}
+                    </td>
+                  </tr>
+                )}
 
                 {/* ROW 15: Container / Seal & Weights */}
                 <tr className="border-b border-black font-bold text-[11px]">

@@ -558,3 +558,35 @@ export function deriveScientificName(
   const unique = Array.from(new Set(names));
   return unique.join(' & ');
 }
+
+/**
+ * Derives the HSN / ITC (HS) Code for export invoices.
+ * Fetches from individual line items or Product Master (Species).
+ * Deduplicates identical HSN codes across items (e.g. 03074310).
+ * Joins distinct HSN codes with ' & ' (e.g. 03074310 & 03061790).
+ */
+export function deriveHsnCode(
+  lines: Array<{ hsCode?: string; speciesId?: string; productDescription?: string }>,
+  speciesList: Array<{ id: string; name?: string; hsCode?: string }>
+): string {
+  if (!lines || lines.length === 0) return '';
+  const codes: string[] = [];
+  for (const l of lines) {
+    let code = l.hsCode ? l.hsCode.trim() : '';
+    if (!code && l.speciesId) {
+      const sp = speciesList.find((s) => s.id === l.speciesId);
+      if (sp?.hsCode) code = sp.hsCode.trim();
+    }
+    if (!code && l.productDescription) {
+      const match = speciesList.find((s) => (s.name || '').toLowerCase() === (l.productDescription || '').trim().toLowerCase());
+      if (match?.hsCode) code = match.hsCode.trim();
+    }
+    if (code) {
+      codes.push(code.toUpperCase());
+    }
+  }
+
+  const unique = Array.from(new Set(codes));
+  return unique.join(' & ');
+}
+
