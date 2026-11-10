@@ -171,27 +171,36 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   }, 0);
 
   const totalAdvanceShortfallUSD = activeInvoices.reduce((s, inv) => {
+    if (inv.advanceShortfallUSD !== undefined && inv.advanceShortfallUSD !== null) {
+      return s + (inv.advanceShortfallUSD || 0);
+    }
     const adv = inv.advanceReceivedCurrency || 0;
     const terms = inv.advanceTermsUSD || 0;
-    const sf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    const sf = adv > 0 && terms > adv ? terms - adv : 0;
     return s + (sf || 0);
   }, 0);
 
   const totalBalanceShortfallUSD = activeInvoices.reduce((s, inv) => {
+    if (inv.balanceShortfallUSD !== undefined && inv.balanceShortfallUSD !== null) {
+      return s + (inv.balanceShortfallUSD || 0);
+    }
     const bal = inv.balancePaymentAmountCurrency || 0;
     const price = inv.balanceActualPriceUSD || 0;
-    const sf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
+    const sf = (bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0;
     return s + (sf || 0);
   }, 0);
 
   const totalShortfallUSD = activeInvoices.reduce((s, inv) => {
+    if (inv.totalShortfallUSD !== undefined && inv.totalShortfallUSD !== null) {
+      return s + (inv.totalShortfallUSD || 0);
+    }
     const adv = inv.advanceReceivedCurrency || 0;
     const terms = inv.advanceTermsUSD || 0;
-    const advSf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
     const bal = inv.balancePaymentAmountCurrency || 0;
     const price = inv.balanceActualPriceUSD || 0;
-    const balSf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
-    const total = inv.totalShortfallUSD ?? (advSf + balSf);
+    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
+    const total = (advSf || 0) + (balSf || 0);
     return s + (total || 0);
   }, 0);
 
@@ -201,10 +210,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     const balRate = inv.balanceExchangeRate || rate;
     const adv = inv.advanceReceivedCurrency || 0;
     const terms = inv.advanceTermsUSD || 0;
-    const advSf = inv.advanceShortfallUSD ?? (terms > adv ? terms - adv : 0);
+    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
     const bal = inv.balancePaymentAmountCurrency || 0;
     const price = inv.balanceActualPriceUSD || 0;
-    const balSf = inv.balanceShortfallUSD ?? (price > bal ? price - bal : 0);
+    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
     return s + ((advSf || 0) * advRate) + ((balSf || 0) * balRate);
   }, 0);
 

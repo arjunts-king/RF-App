@@ -3044,6 +3044,74 @@ test('Single Commercial FOB Valuation (INR & USD) & HSN Code Integration', async
   assert.ok(xml.includes('₹ 40,80,000.00'), 'Row 14B must display formatted FOB INR value');
 });
 
+// SUITE 27: Shortfall Aggregation & Unpaid Receivables Isolation
+test('Total Shortfall Aggregation: exact $6,096.72 and isolation of unpaid receivables', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+
+  const prefix = 'export const VERIFIED_SALES_INVOICES: SalesInvoice[] = ';
+  const idx = content.indexOf(prefix);
+  assert.ok(idx > 0, 'VERIFIED_SALES_INVOICES must be present in exportSalesData.ts');
+
+  const invoices = JSON.parse(content.slice(idx + prefix.length).trim().replace(/;$/, ''));
+  assert.equal(invoices.length, 71, 'Must maintain 71 invoices');
+
+  // Compute Advance Shortfall across dataset
+  const totalAdvanceShortfallUSD = invoices.reduce((s, inv) => {
+    if (inv.advanceShortfallUSD !== undefined && inv.advanceShortfallUSD !== null) {
+      return s + (inv.advanceShortfallUSD || 0);
+    }
+    const adv = inv.advanceReceivedCurrency || 0;
+    const terms = inv.advanceTermsUSD || 0;
+    const sf = adv > 0 && terms > adv ? terms - adv : 0;
+    return s + (sf || 0);
+  }, 0);
+
+  // Compute Balance Shortfall across dataset (unrealized invoices must NOT be counted as shortfall)
+  const totalBalanceShortfallUSD = invoices.reduce((s, inv) => {
+    if (inv.balanceShortfallUSD !== undefined && inv.balanceShortfallUSD !== null) {
+      return s + (inv.balanceShortfallUSD || 0);
+    }
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const sf = (bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0;
+    return s + (sf || 0);
+  }, 0);
+
+  // Compute Total Shortfall across dataset
+  const totalShortfallUSD = invoices.reduce((s, inv) => {
+    if (inv.totalShortfallUSD !== undefined && inv.totalShortfallUSD !== null) {
+      return s + (inv.totalShortfallUSD || 0);
+    }
+    const adv = inv.advanceReceivedCurrency || 0;
+    const terms = inv.advanceTermsUSD || 0;
+    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
+    return s + ((advSf || 0) + (balSf || 0));
+  }, 0);
+
+  // Assertions matching user requirement
+  assert.equal(Number(totalAdvanceShortfallUSD.toFixed(2)), 892.50, 'Advance shortfall across dataset must be exactly $892.50');
+  assert.equal(Number(totalBalanceShortfallUSD.toFixed(2)), 5204.22, 'Balance shortfall across dataset must be exactly $5,204.22');
+  assert.equal(Number(totalShortfallUSD.toFixed(2)), 6096.72, 'Total Shortfall USD must be exactly $6,096.72 (NOT $1,017,827.62)');
+
+  // Verify that the 15 unpaid invoices (invoices 57 to 71) contribute $0.00 to shortfall
+  const unpaidInvoices = invoices.slice(56);
+  assert.equal(unpaidInvoices.length, 15, 'There must be 15 unpaid invoices');
+  const unpaidShortfall = unpaidInvoices.reduce((s, inv) => {
+    const bal = inv.balancePaymentAmountCurrency || 0;
+    const price = inv.balanceActualPriceUSD || 0;
+    const sf = (bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0;
+    return s + (sf || 0);
+  }, 0);
+  assert.equal(unpaidShortfall, 0, 'Unpaid invoices must contribute exactly $0.00 to shortfall');
+});
+
+
 
 
 
