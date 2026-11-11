@@ -2565,9 +2565,56 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false };
     }
 
-    if (!invoiceData.consigneeId) {
+    let finalConsigneeId = invoiceData.consigneeId;
+    const consigneeNameStr = (invoiceData.consigneeName || '').trim();
+
+    if (consigneeNameStr) {
+      const matchedCust = customers.find(
+        (c) =>
+          (finalConsigneeId && c.id === finalConsigneeId) ||
+          c.name.toLowerCase() === consigneeNameStr.toLowerCase()
+      );
+      if (matchedCust) {
+        finalConsigneeId = matchedCust.id;
+      } else {
+        const autoCustId = `cust-${Date.now()}`;
+        const newCust: Customer = {
+          id: autoCustId,
+          code: `CUST-${String(customers.length + 1).padStart(3, '0')}`,
+          name: consigneeNameStr,
+          customerType: 'Overseas',
+          gstTreatment: 'Overseas (GST Exempt Export Supply)',
+          isGstExempt: true,
+          address: invoiceData.consigneeAddress || '',
+          country: invoiceData.countryOfDestination || 'Overseas',
+          contactPerson: '',
+          phone: '',
+          email: '',
+          taxId: '',
+          bankDetails: '',
+          active: true,
+          createdAt: new Date().toISOString()
+        };
+        setCustomers((prev) => [...prev, newCust]);
+        finalConsigneeId = autoCustId;
+      }
+    } else if (!finalConsigneeId || finalConsigneeId === 'consignee-temp') {
+      finalConsigneeId = customers[0]?.id || `cust-temp-${Date.now()}`;
+    }
+
+    if (!finalConsigneeId && !consigneeNameStr) {
       showToast('Validation Error: Consignee / Customer is required.', 'error');
       return { success: false };
+    }
+
+    let finalBuyerId = invoiceData.buyerId;
+    if (!finalBuyerId && invoiceData.buyerName && invoiceData.buyerName !== 'N.A.') {
+      const matchedBuyer = customers.find(
+        (c) => c.name.toLowerCase() === invoiceData.buyerName!.trim().toLowerCase()
+      );
+      if (matchedBuyer) {
+        finalBuyerId = matchedBuyer.id;
+      }
     }
 
     if (!invoiceData.lineItems || invoiceData.lineItems.length === 0) {
@@ -2577,8 +2624,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     for (let i = 0; i < invoiceData.lineItems.length; i++) {
       const line = invoiceData.lineItems[i];
-      if (!line.speciesId) {
-        showToast(`Validation Error: Line ${i + 1} is missing a Product / Goods selection.`, 'error');
+      if (!line.speciesId && !line.productDescription) {
+        showToast(`Validation Error: Line ${i + 1} is missing a Product / Goods selection or description.`, 'error');
         return { success: false };
       }
       if (!line.weightKg || line.weightKg <= 0) {
@@ -2615,10 +2662,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rate = Number(l.ratePerKg);
       const amount = Number((weight * rate).toFixed(2));
       const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
+
+      let resolvedSpeciesId = l.speciesId;
+      if (!resolvedSpeciesId) {
+        const matched = species.find(
+          (s) => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase()
+        );
+        resolvedSpeciesId = matched?.id || (species[0]?.id || `sp-general-${idx}`);
+      }
+      const matchedSpecies = species.find((s) => s.id === resolvedSpeciesId);
+
       return {
         id: l.id || `line-${Date.now()}-${idx}`,
-        speciesId: l.speciesId,
-        hsCode: l.hsCode || species.find((s) => s.id === l.speciesId)?.hsCode || '03061790',
+        speciesId: resolvedSpeciesId,
+        hsCode: l.hsCode || matchedSpecies?.hsCode || invoiceData.hsnCode || '03061790',
         sizeId: l.sizeId || (sizes[0]?.id || ''),
         countId: l.countId,
         cartonsCount: Number(l.cartonsCount || 0),
@@ -2626,8 +2683,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ratePerKg: rate,
         amountCurrency: amount,
         fobValueCurrency: fobVal,
-        productDescription: l.productDescription,
-        gradeSize: l.gradeSize
+        productDescription: l.productDescription || matchedSpecies?.name || 'Seafood Goods',
+        gradeSize: l.gradeSize || 'Standard'
       };
     });
 
@@ -2642,8 +2699,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       invoiceNo,
       invoiceDate: invoiceData.invoiceDate || new Date().toISOString().split('T')[0],
       financialYear: businessSettings.financialYear,
-      consigneeId: invoiceData.consigneeId,
-      buyerId: invoiceData.buyerId || undefined,
+      consigneeId: finalConsigneeId,
+      buyerId: finalBuyerId || undefined,
       orderNo: invoiceData.orderNo || '',
       orderDate: invoiceData.orderDate || '',
       portOfLoadingId: invoiceData.portOfLoadingId || (ports[0]?.id || ''),
@@ -2737,7 +2794,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setSalesInvoices((prev) => [newInvoice, ...prev]);
     logAudit('CREATE', 'SALES_INVOICE', newInvoice.invoiceNo, { newValues: newInvoice });
-    showToast(`Commercial Invoice ${newInvoice.invoiceNo} saved (${currency} ${totalAmountCurrency.toLocaleString()}).`, 'success');
+    showToast(`Commercial Invoice ${newInvoice.invoiceNo} saved successfully (${currency} ${totalAmountCurrency.toLocaleString()}).`, 'success');
 
     return { success: true, invoiceNo: newInvoice.invoiceNo, warnings };
   };
@@ -2773,10 +2830,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rate = Number(l.ratePerKg);
       const amount = Number((weight * rate).toFixed(2));
       const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
+
+      let resolvedSpeciesId = l.speciesId;
+      if (!resolvedSpeciesId) {
+        const matched = species.find(
+          (s) => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase()
+        );
+        resolvedSpeciesId = matched?.id || (species[0]?.id || `sp-general-${idx}`);
+      }
+      const matchedSpecies = species.find((s) => s.id === resolvedSpeciesId);
+
       return {
         id: l.id || `line-${Date.now()}-${idx}`,
-        speciesId: l.speciesId,
-        hsCode: l.hsCode || species.find((s) => s.id === l.speciesId)?.hsCode || '03061790',
+        speciesId: resolvedSpeciesId,
+        hsCode: l.hsCode || matchedSpecies?.hsCode || updates.hsnCode || existing.hsnCode || '03061790',
         sizeId: l.sizeId || (sizes[0]?.id || ''),
         countId: l.countId,
         cartonsCount: Number(l.cartonsCount || 0),
@@ -2784,8 +2851,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ratePerKg: rate,
         amountCurrency: amount,
         fobValueCurrency: fobVal,
-        productDescription: l.productDescription,
-        gradeSize: l.gradeSize
+        productDescription: l.productDescription || matchedSpecies?.name || 'Seafood Goods',
+        gradeSize: l.gradeSize || 'Standard'
       };
     });
 

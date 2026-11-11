@@ -12,6 +12,7 @@ interface StickySaveBarProps {
   metrics?: StickyMetric[];
   primaryLabel?: string;
   primaryIcon?: LucideIcon;
+  primaryType?: 'button' | 'submit';
   onPrimaryClick?: () => void;
   isSubmitting?: boolean;
   isPrimaryDisabled?: boolean;
@@ -27,6 +28,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
   metrics = [],
   primaryLabel = 'Save transaction',
   primaryIcon: PrimaryIcon = Save,
+  primaryType,
   onPrimaryClick,
   isSubmitting = false,
   isPrimaryDisabled = false,
@@ -38,6 +40,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
   formId
 }) => {
   const effectiveSecondaryClick = onSecondaryClick || onSecondary;
+  const buttonType = primaryType || (onPrimaryClick && !formId ? 'button' : 'submit');
   return (
     <div className="sticky bottom-4 z-30 glass-surface-thick p-4 sm:p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 mt-8 animate-liquid-up">
       {/* Live Calculated Metrics */}
@@ -82,7 +85,7 @@ export const StickySaveBar: React.FC<StickySaveBarProps> = ({
         )}
 
         <button
-          type={formId ? 'submit' : 'button'}
+          type={buttonType}
           form={formId}
           onClick={onPrimaryClick}
           disabled={isPrimaryDisabled || isSubmitting}

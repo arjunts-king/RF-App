@@ -3561,6 +3561,81 @@ test('Full Realization Statement: Consolidated Master Word OpenXML and A4 PDF ge
   assert.ok(fullXml.includes('Declaration &amp; Audit Confirmation'), 'Includes declaration');
 });
 
+// ============================================================================
+// SUITE 58: Commercial Invoice Saving & StickySaveBar Submission Integrity
+// ============================================================================
+test('Commercial Invoice Saving & StickySaveBar Submission Integrity', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify StickySaveBar correctly evaluates button type to 'submit' when formId or no onPrimaryClick
+  const stickyBarCode = fs.readFileSync(path.resolve('src/components/common/StickySaveBar.tsx'), 'utf8');
+  assert.ok(
+    stickyBarCode.includes("buttonType = primaryType || (onPrimaryClick && !formId ? 'button' : 'submit')"),
+    'StickySaveBar must resolve buttonType to submit when inside form without onPrimaryClick'
+  );
+  assert.ok(
+    stickyBarCode.includes('type={buttonType}'),
+    'StickySaveBar button must use resolved buttonType'
+  );
+
+  // 2. Verify SalesInvoiceEntryForm assigns formId and includes top and sticky save triggers
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(
+    formCode.includes('id="sales-invoice-form"'),
+    'SalesInvoiceEntryForm must specify id="sales-invoice-form"'
+  );
+  assert.ok(
+    formCode.includes('formId="sales-invoice-form"'),
+    'SalesInvoiceEntryForm StickySaveBar must receive formId="sales-invoice-form"'
+  );
+  assert.ok(
+    formCode.includes('primaryType="submit"'),
+    'SalesInvoiceEntryForm StickySaveBar must declare primaryType="submit"'
+  );
+  assert.ok(
+    formCode.includes('primaryAction='),
+    'SalesInvoiceEntryForm PageHeader must offer prominent top Save primaryAction'
+  );
+  assert.ok(
+    formCode.includes('form.requestSubmit()'),
+    'PageHeader primaryAction must trigger form submission via requestSubmit()'
+  );
+
+  // 3. Verify SalesInvoiceEntryForm auto-resolves speciesId and sizeId in draft
+  assert.ok(
+    formCode.includes('resolvedSpeciesId'),
+    'SalesInvoiceEntryForm draft must resolve speciesId if blank'
+  );
+  assert.ok(
+    formCode.includes('resolvedSizeId'),
+    'SalesInvoiceEntryForm draft must resolve sizeId if blank'
+  );
+
+  // 4. Verify DataContext addSalesInvoice allows ad-hoc consignee names and resolves products
+  const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(
+    dataContextCode.includes('finalConsigneeId'),
+    'DataContext addSalesInvoice must compute finalConsigneeId'
+  );
+  assert.ok(
+    dataContextCode.includes('consigneeNameStr'),
+    'DataContext addSalesInvoice must inspect trimmed consignee name'
+  );
+  assert.ok(
+    dataContextCode.includes('autoCustId'),
+    'DataContext addSalesInvoice must auto-create Customer record for new consignees'
+  );
+  assert.ok(
+    dataContextCode.includes('!line.speciesId && !line.productDescription'),
+    'DataContext addSalesInvoice must only reject if both speciesId and productDescription are empty'
+  );
+  assert.ok(
+    dataContextCode.includes('saved successfully'),
+    'DataContext addSalesInvoice must display clear success feedback'
+  );
+});
+
 
 
 

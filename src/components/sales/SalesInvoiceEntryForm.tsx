@@ -28,7 +28,8 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  Eye
+  Eye,
+  Save
 } from 'lucide-react';
 
 interface LineItemDraft {
@@ -532,19 +533,33 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       totalFobValueCurrency: finalFobUSD,
       totalFobValueINR: finalFobINR,
       estimatedAmountINR,
-      lineItems: lines.map((l) => {
+      lineItems: lines.map((l, idx) => {
         const w = parseFloat(String(l.weightKg)) || 0;
         const r = parseFloat(String(l.ratePerKg)) || 0;
         const lineAmt = Number((w * r).toFixed(2));
         const ratio = totalAmountCurrency > 0 ? (lineAmt / totalAmountCurrency) : (lines.length > 0 ? 1 / lines.length : 1);
+
+        let resolvedSpeciesId = l.speciesId;
+        if (!resolvedSpeciesId) {
+          const matchedSp = species.find(s => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase());
+          resolvedSpeciesId = matchedSp?.id || (species[0]?.id || `sp-general-${idx}`);
+        }
+        const matchedSpecies = species.find(s => s.id === resolvedSpeciesId);
+
+        let resolvedSizeId = l.sizeId;
+        if (!resolvedSizeId) {
+          const matchedSz = salesSizes.find(sz => sz.name.toLowerCase() === (l.gradeSize || '').trim().toLowerCase());
+          resolvedSizeId = matchedSz?.id || (salesSizes[0]?.id || `sz-general-${idx}`);
+        }
+
         return {
           id: l.id,
-          speciesId: l.speciesId,
-          hsCode: l.hsCode,
-          sizeId: l.sizeId,
+          speciesId: resolvedSpeciesId,
+          hsCode: l.hsCode || matchedSpecies?.hsCode || hsnCode || '03061790',
+          sizeId: resolvedSizeId,
           countId: l.countId || undefined,
-          productDescription: l.productDescription,
-          gradeSize: l.gradeSize,
+          productDescription: l.productDescription.trim() || matchedSpecies?.name || 'Commercial Seafood Goods',
+          gradeSize: l.gradeSize.trim() || 'Standard',
           cartonsCount: parseInt(String(l.cartonsCount)) || 0,
           weightKg: w,
           ratePerKg: r,
@@ -591,7 +606,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       }
     }
 
-    if (!consigneeId && !consigneeName) {
+    if (!consigneeId && !consigneeName.trim()) {
       showToast('Validation Error: Please select or enter a Consignee / Customer.', 'error');
       return;
     }
@@ -616,26 +631,35 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     }
 
     setIsSubmitting(true);
-    const invoicePayload = getCurrentInvoiceDraft();
+    try {
+      const invoicePayload = getCurrentInvoiceDraft();
 
-    if (isEditing && invoiceToEdit) {
-      const res = updateSalesInvoice(invoiceToEdit.id, invoicePayload as any, editReason.trim());
+      if (isEditing && invoiceToEdit) {
+        const res = updateSalesInvoice(invoiceToEdit.id, invoicePayload as any, editReason.trim());
+        setIsSubmitting(false);
+        if (res.success) {
+          if (onSuccess) {
+            onSuccess();
+          }
+        } else {
+          showToast(res.message || 'Failed to update commercial invoice.', 'error');
+        }
+        return;
+      }
+
+      const res = addSalesInvoice(invoicePayload as any);
       setIsSubmitting(false);
+
       if (res.success) {
         if (onSuccess) {
           onSuccess();
         }
+      } else {
+        showToast(res.warnings?.join(' ') || 'Failed to save commercial invoice. Please verify required fields.', 'error');
       }
-      return;
-    }
-
-    const res = addSalesInvoice(invoicePayload as any);
-    setIsSubmitting(false);
-
-    if (res.success) {
-      if (onSuccess) {
-        onSuccess();
-      }
+    } catch (err: any) {
+      setIsSubmitting(false);
+      showToast(`Error saving commercial invoice: ${err?.message || 'Unknown error'}`, 'error');
     }
   };
 
@@ -687,7 +711,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-7xl mx-auto pb-28 animate-fade-in">
+    <form id="sales-invoice-form" onSubmit={handleSubmit} noValidate className="space-y-6 max-w-7xl mx-auto pb-28 animate-fade-in">
       {/* Header Block with prominent Export Word Button */}
       <PageHeader
         title={isEditing ? `Edit Commercial Invoice — ${invoiceToEdit?.invoiceNo}` : 'Commercial Export Invoice Entry'}
@@ -697,6 +721,19 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             : 'Complete export particulars matching the official commercial invoice format. Edit and export directly to Word (.docx) with 100% exact alignment.'
         }
         breadcrumbs={isEditing ? ['Sales', 'Invoices', `Edit ${invoiceToEdit?.invoiceNo}`] : ['Sales', 'New Commercial Invoice']}
+        primaryAction={{
+          label: isSubmitting
+            ? (isEditing ? 'Saving Changes...' : 'Saving Invoice...')
+            : (isEditing ? 'Save Changes (Admin)' : 'Save Commercial Invoice'),
+          icon: Save,
+          onClick: () => {
+            const form = document.getElementById('sales-invoice-form') as HTMLFormElement | null;
+            if (form) {
+              form.requestSubmit();
+            }
+          },
+          disabled: isSubmitting
+        }}
         secondaryActions={[
           {
             label: 'Preview Document',
@@ -1893,6 +1930,8 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
 
       {/* Floating Sticky Save Bar with live calculated metrics */}
       <StickySaveBar
+        formId="sales-invoice-form"
+        primaryType="submit"
         primaryLabel={
           isSubmitting
             ? isEditing ? 'Saving Changes...' : 'Saving Invoice...'
