@@ -37,6 +37,10 @@ import {
   calculateReceivablesCollectionAnalysis
 } from '../utils/collectionAnalysis.ts';
 
+import {
+  buildRealizationStatementTableXml
+} from '../utils/exportRealizationStatement.ts';
+
 // ============================================================================
 // SUITE 1: Pure Utility Formatters (excelFormatters.ts)
 // ============================================================================
@@ -3403,6 +3407,79 @@ test('Dashboard Filter Dropdowns Z-Index & Elevation Stacking Integrity', async 
     'InventoryDashboard KPI cards grid has relative z-10 below filter dropdowns'
   );
 });
+
+test('Realization & Settlement Statement: Word OpenXML and A4 PDF Statement generation integrity', () => {
+  const sampleInvoice = {
+    id: 'inv-test-1',
+    invoiceNo: 'RF/EXP/01/26-27',
+    invoiceDate: '2026-04-15',
+    currency: 'USD',
+    exchangeRate: 84.50,
+    bankPreDeterminedExchangeRate: 84.50,
+    advanceExchangeRate: 84.60,
+    balanceExchangeRate: 84.45,
+    averageRealizedExchangeRate: 84.52,
+    totalAmountCurrency: 50000,
+    estimatedAmountINR: 4225000,
+    totalWeightKg: 10000,
+    totalCartons: 1000,
+    consigneeName: 'PACIFIC SEAFOOD LLC',
+    consigneeAddress: 'Los Angeles, USA',
+    countryOfDestination: 'United States',
+    portOfLoading: 'Cochin Port',
+    portOfDischarge: 'Port of Los Angeles',
+    advanceTermsUSD: 15000,
+    advanceReceivedCurrency: 15000,
+    advanceReceivedDate: '2026-04-20',
+    advanceReceivedINR: 1269000,
+    advanceBankRef: 'FIRC-ADV-001',
+    balanceActualPriceUSD: 35000,
+    balancePaymentAmountCurrency: 35000,
+    balancePaymentDate: '2026-05-10',
+    balancePaymentINR: 2955750,
+    balanceBankRef: 'FIRC-BAL-002',
+    totalRealizedCurrency: 50000,
+    totalRealizedINR: 4224750,
+    totalShortfallUSD: 0,
+    realizationStatus: 'Fully Realized'
+  };
+
+  const sampleSettings = {
+    businessName: 'ROYAL FISHERIES PVT LTD',
+    address: 'Wellingdon Island, Cochin, Kerala'
+  };
+
+  const sampleBank = {
+    id: 'bank-1',
+    code: 'SBI-EEFC-01',
+    name: 'State Bank of India Forex',
+    bank: 'State Bank of India',
+    accountType: 'Current',
+    openingBalance: 0,
+    active: true
+  };
+
+  const xml = buildRealizationStatementTableXml(sampleInvoice, sampleSettings, sampleBank);
+
+  // Check OpenXML structure
+  assert.ok(xml.includes('<w:tbl>'), 'Includes Word table element');
+  assert.ok(xml.includes('EXPORT SALES REALIZATION &amp; SETTLEMENT STATEMENT'), 'Includes Statement title header');
+  assert.ok(xml.includes('TOTAL INVOICED'), 'Includes Total Invoiced KPI');
+  assert.ok(xml.includes('$50,000.00'), 'Includes USD amount formatted');
+  assert.ok(xml.includes('ADVANCE REALIZED'), 'Includes Advance Realized KPI');
+  assert.ok(xml.includes('BALANCE REALIZED'), 'Includes Balance Realized KPI');
+  assert.ok(xml.includes('1. COMMERCIAL SHIPMENT &amp; BUYER PARTICULARS'), 'Includes Section 1');
+  assert.ok(xml.includes('2. AGREED BANK FORWARD EXCHANGE RATES'), 'Includes Section 2');
+  assert.ok(xml.includes('3. DUAL-LEG SETTLEMENT BREAKDOWN'), 'Includes Section 3');
+  assert.ok(xml.includes('4. STATUTORY RECONCILIATION &amp; BENEFICIARY BANK ROUTING'), 'Includes Section 4');
+  assert.ok(xml.includes('Declaration &amp; Audit Confirmation'), 'Includes Declaration & Audit section');
+  assert.ok(xml.includes('PACIFIC SEAFOOD LLC'), 'Includes Consignee name');
+  assert.ok(xml.includes('ROYAL FISHERIES PVT LTD'), 'Includes Company name');
+  assert.ok(xml.includes('FIRC-ADV-001'), 'Includes Advance FIRC ref');
+  assert.ok(xml.includes('FIRC-BAL-002'), 'Includes Balance FIRC ref');
+  assert.ok(xml.includes('FULLY REALIZED'), 'Includes Fully Realized badge');
+});
+
 
 
 

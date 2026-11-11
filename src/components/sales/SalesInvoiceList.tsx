@@ -9,6 +9,7 @@ import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
+import { RealizationStatementModal } from './RealizationStatementModal';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
 import { PaginationControls } from '../common/PaginationControls';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
@@ -27,6 +28,7 @@ import {
   Plus,
   FileSpreadsheet,
   FileDown,
+  FileCheck,
   ChevronDown,
   Layers,
   ExternalLink
@@ -42,6 +44,7 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
     salesInvoices,
     customers,
     ports,
+    bankAccounts,
     businessSettings,
     updateSalesInvoice,
     voidSalesInvoice,
@@ -73,6 +76,7 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
   // Modals
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
+  const [statementTarget, setStatementTarget] = useState<SalesInvoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<SalesInvoice | null>(null);
   const [voidTarget, setVoidTarget] = useState<SalesInvoice | null>(null);
   const [voidReason, setVoidReason] = useState('');
@@ -756,6 +760,14 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
                             <FileDown className="w-3.5 h-3.5 text-rose-600" />
                           </button>
 
+                          <button
+                            onClick={() => setStatementTarget(inv)}
+                            title="Realization & Settlement Statement (Word & A4 PDF)"
+                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
+                          >
+                            <FileCheck className="w-3.5 h-3.5" />
+                          </button>
+
                           {!inv.isVoided && (
                             <button
                               onClick={() => setRealizationTarget(inv)}
@@ -985,6 +997,17 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
         onClose={() => setRealizationTarget(null)}
         invoice={realizationTarget}
       />
+
+      {/* Realization & Settlement Statement Modal */}
+      {statementTarget && (
+        <RealizationStatementModal
+          isOpen={statementTarget !== null}
+          onClose={() => setStatementTarget(null)}
+          invoice={statementTarget}
+          settings={businessSettings}
+          bankAccounts={bankAccounts}
+        />
+      )}
 
       {/* View Commercial Invoice Word Replica Preview Modal */}
       <ExportInvoicePreviewModal

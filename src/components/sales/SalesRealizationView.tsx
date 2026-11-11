@@ -8,8 +8,10 @@ import { BentoCard } from '../common/BentoCard';
 import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
+import { RealizationStatementModal } from './RealizationStatementModal';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
+import { exportRealizationToWord } from '../../utils/exportRealizationStatement';
 import {
   downloadExcelTemplate,
   downloadActiveInvoicesSettlementTemplate,
@@ -52,6 +54,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
     salesInvoices,
     customers,
     ports,
+    bankAccounts,
     businessSettings,
     bulkImportSalesRealizations,
     bulkDeleteInvoiceRealizations
@@ -86,6 +89,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   );
 
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
+  const [statementTarget, setStatementTarget] = useState<SalesInvoice | null>(null);
 
   // Multi-selection state for bulk realization operations
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -1221,12 +1225,35 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                             <button
                               onClick={() => setRealizationTarget(inv)}
                               title="Update Settlement: Advance, Balance, Dates & Bank Rate"
-                              className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition"
+                              className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
                             >
                               <BadgeDollarSign className="w-3.5 h-3.5" />
                               <span>Settle</span>
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setStatementTarget(inv)}
+                            title="View & Download Realization & Settlement Statement (A4 PDF & Word)"
+                            className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                          >
+                            <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Statement</span>
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              try {
+                                await exportRealizationToWord(inv, businessSettings, bankAccounts?.[0]);
+                              } catch (err: any) {
+                                alert(`Export failed: ${err.message || 'Unknown error'}`);
+                              }
+                            }}
+                            title="Direct Download Realization Statement in Word (.docx)"
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                          >
+                            <FileDown className="w-3.5 h-3.5" />
+                          </button>
 
                           <button
                             onClick={async () => {
@@ -1236,10 +1263,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                                 alert(`Export failed: ${err.message || 'Unknown error'}`);
                               }
                             }}
-                            title="Export to Word Document (.docx)"
-                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                            title="Export Commercial Invoice to Word Document (.docx)"
+                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                           >
-                            <FileDown className="w-3.5 h-3.5 text-rose-600" />
+                            <Download className="w-3.5 h-3.5 text-slate-500" />
                           </button>
                         </div>
                       </td>
@@ -2020,14 +2047,24 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
                           {/* Actions */}
                           <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
-                            <button
-                              onClick={() => setRealizationTarget(inv)}
-                              title="Inspect or Edit Settlement Details"
-                              className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs"
-                            >
-                              <BadgeDollarSign className="w-3.5 h-3.5 text-amber-600" />
-                              <span>View</span>
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => setRealizationTarget(inv)}
+                                title="Inspect or Edit Settlement Details"
+                                className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                              >
+                                <BadgeDollarSign className="w-3.5 h-3.5 text-amber-600" />
+                                <span>View</span>
+                              </button>
+                              <button
+                                onClick={() => setStatementTarget(inv)}
+                                title="View & Download Realization & Settlement Statement (A4 PDF & Word)"
+                                className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                              >
+                                <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>Statement</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2135,6 +2172,17 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           isOpen={!!realizationTarget}
           onClose={() => setRealizationTarget(null)}
           invoice={realizationTarget}
+        />
+      )}
+
+      {/* Realization & Settlement Statement Modal */}
+      {statementTarget && (
+        <RealizationStatementModal
+          isOpen={Boolean(statementTarget)}
+          onClose={() => setStatementTarget(null)}
+          invoice={statementTarget}
+          settings={businessSettings}
+          bankAccounts={bankAccounts}
         />
       )}
 

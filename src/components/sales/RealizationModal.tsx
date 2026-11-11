@@ -5,6 +5,8 @@ import { Modal } from '../common/Modal';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatForwardRate } from '../../utils/calculations';
 import { computeOutstandingFromAdvance } from '../../utils/collectionAnalysis';
+import { exportRealizationToWord } from '../../utils/exportRealizationStatement';
+import { RealizationStatementModal } from './RealizationStatementModal';
 import {
   Calendar,
   Building,
@@ -15,7 +17,9 @@ import {
   Receipt,
   Sparkles,
   Save,
-  Trash2
+  Trash2,
+  FileDown,
+  Printer
 } from 'lucide-react';
 
 interface RealizationModalProps {
@@ -25,9 +29,10 @@ interface RealizationModalProps {
 }
 
 export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onClose, invoice }) => {
-  const { bankAccounts, updateInvoiceSettlement, deleteInvoiceRealization, bulkDeleteInvoiceRealizations } = useData();
+  const { bankAccounts, businessSettings, updateInvoiceSettlement, deleteInvoiceRealization, bulkDeleteInvoiceRealizations } = useData();
   const { permissions } = useAuth();
 
+  const [isStatementOpen, setIsStatementOpen] = useState<boolean>(false);
   const today = new Date().toISOString().split('T')[0];
 
   // Pre-determined forward exchange rates with bank (independent forward rates for Advance and Balance)
@@ -1036,15 +1041,55 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
             <div />
           )}
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 rounded-xl text-xs font-bold transition"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const targetBank = bankAccounts.find((b) => b.id === bankAccountId) || bankAccounts[0];
+                  await exportRealizationToWord(invoice, businessSettings, targetBank);
+                } catch (err: any) {
+                  alert(`Word export error: ${err.message || 'Unknown error'}`);
+                }
+              }}
+              className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              title="Download Realization & Settlement Statement in Word (.docx)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-blue-600" />
+              <span>Download Word (.docx)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsStatementOpen(true)}
+              className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              title="View & Download Realization & Settlement Statement in PDF (A4)"
+            >
+              <Printer className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Statement &amp; PDF (A4)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-800 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </form>
+
+      {/* Realization & Settlement Statement Modal */}
+      {isStatementOpen && (
+        <RealizationStatementModal
+          isOpen={isStatementOpen}
+          onClose={() => setIsStatementOpen(false)}
+          invoice={invoice}
+          settings={businessSettings}
+          bankAccounts={bankAccounts}
+        />
+      )}
     </Modal>
   );
 };
