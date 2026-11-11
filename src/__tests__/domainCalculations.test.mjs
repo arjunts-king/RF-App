@@ -3006,7 +3006,7 @@ test('Single Commercial FOB Valuation (INR & USD) & HSN Code Integration', async
   assert.equal(apportionedLines[1].fobValueINR, 3264000, 'Line 2 receives 80% of FOB INR');
   assert.equal(apportionedLines[0].fobValueINR + apportionedLines[1].fobValueINR, customFobINR, 'Sum of line FOB equals total FOB INR');
 
-  // 7. Verify Word Document (.docx) Export Table XML includes HSN CODE in Row 10 and TOTAL FOB in Row 14B
+  // 7. Verify Word Document (.docx) Export Table XML includes Shipping Mark, HSN CODE & INR FOB under Terms of Delivery & Payment, and excludes USD FOB
   const { buildInvoiceTableXml } = await import('../utils/exportWordInvoice.ts');
   const mockInvoice = {
     invoiceNo: 'EXP-2026-0099',
@@ -3037,11 +3037,12 @@ test('Single Commercial FOB Valuation (INR & USD) & HSN Code Integration', async
   };
 
   const xml = buildInvoiceTableXml(mockInvoice);
-  assert.ok(xml.includes('HSN CODE: 03074310'), 'Row 10 must contain HSN CODE');
+  assert.ok(xml.includes('SHIPPING MARK: MERIT D.S'), 'XML must preserve and display shipping marks entered on invoice');
+  assert.ok(xml.includes('HSN CODE: 03074310'), 'Terms of delivery and payment must contain HSN CODE');
   assert.ok(xml.includes('(HSN: 03074310)'), 'Line item description must contain (HSN: 03074310)');
-  assert.ok(xml.includes('TOTAL FOB VALUE (USD):'), 'Row 14B must contain TOTAL FOB VALUE (USD)');
-  assert.ok(xml.includes('48000.00'), 'Row 14B must display FOB USD value');
-  assert.ok(xml.includes('₹ 40,80,000.00'), 'Row 14B must display formatted FOB INR value');
+  assert.ok(xml.includes('FOB VALUE (INR): ₹ 40,80,000.00'), 'Terms of delivery and payment must display formatted INR FOB Value');
+  assert.ok(!xml.includes('TOTAL FOB VALUE (USD):'), 'Invoice must NOT contain TOTAL FOB VALUE (USD) (shown in FOB Dashboard only)');
+  assert.ok(!xml.includes('48000.00'), 'Invoice must NOT include USD FOB value');
 });
 
 // SUITE 27: Shortfall Aggregation & Unpaid Receivables Isolation

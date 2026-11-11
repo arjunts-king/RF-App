@@ -1351,7 +1351,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-[11px] font-bold text-ink-700">HSN / ITC (HS) CODE (Row 10)</label>
+              <label className="block text-[11px] font-bold text-ink-700">HSN / ITC (HS) CODE (Terms of Delivery & Payment)</label>
               <button
                 type="button"
                 onClick={() => {
@@ -1634,9 +1634,14 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
           {/* Total FOB Value in INR (₹) */}
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
-              <label className="block text-[11px] font-bold text-ink-800">
-                TOTAL FOB VALUE IN INR (₹) <span className="text-rose-600">*</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="block text-[11px] font-bold text-ink-800">
+                  TOTAL FOB VALUE IN INR (₹) <span className="text-rose-600">*</span>
+                </label>
+                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-extrabold uppercase">
+                  Shown in Invoice (Terms of Delivery & Payment)
+                </span>
+              </div>
               {currentRate && (
                 <button
                   type="button"
@@ -1681,7 +1686,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-ink-400 leading-tight">
-              Used for DGFT, customs duty drawback/RoDTEP, shipping bill declaration, and RBI EDPMS settlement tracking.
+              Displayed under 'Terms of delivery and payment' in invoice preview and Word document for Indian Customs & DGFT declarations.
             </p>
           </div>
 
@@ -1692,8 +1697,8 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                 <label className="block text-[11px] font-bold text-ink-800">
                   TOTAL FOB VALUE IN USD ($) <span className="text-rose-600">*</span>
                 </label>
-                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-extrabold uppercase">
-                  Shown in Invoice
+                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9px] font-extrabold uppercase">
+                  FOB Dashboard Only
                 </span>
               </div>
               <button
@@ -1726,13 +1731,13 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             </div>
 
             <div className="flex items-center justify-between text-[11px] pt-1 border-t border-gray-100">
-              <span className="text-ink-500 font-medium">Export Invoice Total FOB:</span>
+              <span className="text-ink-500 font-medium">FOB Dashboard USD Total:</span>
               <span className="font-extrabold text-emerald-700 font-mono">
                 USD ${finalFobUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <p className="text-[10px] text-ink-400 leading-tight">
-              Displayed prominently on the generated commercial invoice Word (.docx) document and invoice preview.
+              Tracked in FOB Dashboard for vessel profitability, currency metrics, and realization analysis. Excluded from commercial export invoice.
             </p>
           </div>
         </div>

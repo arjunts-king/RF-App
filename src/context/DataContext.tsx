@@ -643,7 +643,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (clean.sealNo === 'IN567892') clean.sealNo = undefined;
         if (clean.vesselFlightNo === 'MOGRAL 119W') clean.vesselFlightNo = undefined;
         if (clean.scientificName === 'RASTRELLIGER KANAGURTA') clean.scientificName = undefined;
-        if (clean.shippingMarks === 'MERIT D.S') clean.shippingMarks = undefined;
         if (clean.consigneeName === 'John Trading Co.,') clean.consigneeName = v?.consigneeName;
         if (clean.buyerName === 'ABC Pvt. Ltd.') clean.buyerName = v?.buyerName;
         if (clean.commodityDescription === 'FROZEN SEAFOOD') clean.commodityDescription = undefined;

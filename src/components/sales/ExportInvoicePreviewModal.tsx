@@ -63,7 +63,7 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const packingDescription = invoice.packingDescription && invoice.packingDescription !== '1X10KG' ? invoice.packingDescription : '';
   const scientificName = invoice.scientificName || '';
   const hsnCode = invoice.hsnCode || '';
-  const shippingMarks = invoice.shippingMarks && invoice.shippingMarks !== 'MERIT D.S' ? invoice.shippingMarks : '';
+  const shippingMarks = invoice.shippingMarks || '';
   const containerNo = invoice.containerNo && invoice.containerNo !== 'ONEU90399086' ? invoice.containerNo : '';
   const sealNo = invoice.sealNo && invoice.sealNo !== 'IN567892' ? invoice.sealNo : '';
 
@@ -78,9 +78,6 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
     ? invoice.totalAmountCurrency
     : lineItems.reduce((acc, l) => acc + (l.amountCurrency || (l.weightKg || 0) * (l.ratePerKg || 0)), 0);
 
-  const totalFobValueCurrency = invoice.totalFobValueCurrency !== undefined
-    ? invoice.totalFobValueCurrency
-    : totalAmountCurrency;
   const totalFobValueINR = invoice.totalFobValueINR;
 
   const netWeightKg = invoice.netWeightKg !== undefined ? invoice.netWeightKg : totalWeightKg;
@@ -251,6 +248,17 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                   <td rowSpan={3} className="border border-black p-2 align-top w-[48%]">
                     <div className="font-bold text-[10px]">Terms of delivery and payment</div>
                     <div className="font-bold mt-1 text-[11px] leading-snug">{termsOfPayment}</div>
+                    {priceTerms && priceTerms !== termsOfPayment && (
+                      <div className="font-bold mt-0.5 text-[11px] leading-snug">{priceTerms}</div>
+                    )}
+                    {hsnCode && (
+                      <div className="font-bold mt-1.5 text-[11px]">HSN CODE: {hsnCode}</div>
+                    )}
+                    {totalFobValueINR !== undefined && totalFobValueINR !== null && Number(totalFobValueINR) > 0 && (
+                      <div className="font-bold mt-1 text-[11px]">
+                        FOB VALUE (INR): ₹ {Number(totalFobValueINR).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    )}
                   </td>
                 </tr>
 
@@ -306,7 +314,6 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                     <div>COMMODITY: {commodityDescription}</div>
                     <div>PACKING: {packingDescription}</div>
                     {scientificName && <div>SCIENTIFIC NAME: {scientificName}</div>}
-                    {hsnCode && <div>HSN CODE: {hsnCode}</div>}
                     <div>SHIPPING MARK: {shippingMarks}</div>
                   </td>
                   <td className="border-r border-black p-1.5 align-top text-center font-bold">
@@ -382,26 +389,6 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                     {totalAmountCurrency.toFixed(2)}
                   </td>
                 </tr>
-
-                {/* ROW 14B: TOTAL FOB VALUE Row (USD & INR) */}
-                {(totalFobValueCurrency > 0 || (totalFobValueINR !== undefined && totalFobValueINR > 0)) && (
-                  <tr className="border-b border-black font-bold text-[11px] bg-gray-50/70">
-                    <td colSpan={3} className="border-r border-black p-1.5 text-left tracking-wide">
-                      <span>TOTAL FOB VALUE ({currency}):</span>
-                      {totalFobValueINR && totalFobValueINR > 0 ? (
-                        <span className="ml-2 font-normal text-[10px] text-gray-700">
-                          (₹ {totalFobValueINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="border-r border-black p-1.5 text-center text-[10px] text-gray-600 font-semibold">
-                      FOB
-                    </td>
-                    <td className="p-1.5 text-right tabular-nums font-black text-xs">
-                      {totalFobValueCurrency.toFixed(2)}
-                    </td>
-                  </tr>
-                )}
 
                 {/* ROW 15: Container / Seal & Weights */}
                 <tr className="border-b border-black font-bold text-[11px]">
