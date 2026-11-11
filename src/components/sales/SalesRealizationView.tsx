@@ -9,9 +9,10 @@ import { StatusBadge } from '../common/StatusBadge';
 import { Modal } from '../common/Modal';
 import { RealizationModal } from './RealizationModal';
 import { RealizationStatementModal } from './RealizationStatementModal';
+import { FullRealizationStatementModal } from './FullRealizationStatementModal';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
-import { exportRealizationToWord } from '../../utils/exportRealizationStatement';
+import { exportRealizationToWord, exportFullRealizationToWord } from '../../utils/exportRealizationStatement';
 import {
   downloadExcelTemplate,
   downloadActiveInvoicesSettlementTemplate,
@@ -46,7 +47,9 @@ import {
   Trash2,
   AlertTriangle,
   Receipt,
-  ShieldCheck
+  ShieldCheck,
+  Printer,
+  FileText
 } from 'lucide-react';
 
 export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
@@ -90,6 +93,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
   const [realizationTarget, setRealizationTarget] = useState<SalesInvoice | null>(null);
   const [statementTarget, setStatementTarget] = useState<SalesInvoice | null>(null);
+  const [isFullStatementOpen, setIsFullStatementOpen] = useState(false);
 
   // Multi-selection state for bulk realization operations
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -155,6 +159,14 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
   // Aggregates
   const activeInvoices = salesInvoices.filter((inv) => !inv.isVoided);
+
+  const handleDownloadFullWordStatement = async () => {
+    try {
+      await exportFullRealizationToWord(activeInvoices, businessSettings, bankAccounts?.[0]);
+    } catch (err: any) {
+      alert(`Full statement export failed: ${err.message || 'Unknown error'}`);
+    }
+  };
   const totalInvoicedUSD = activeInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
   const totalAdvanceUSD = activeInvoices.reduce((s, inv) => s + (inv.advanceReceivedCurrency || 0), 0);
   const totalAdvanceINR = activeInvoices.reduce((s, inv) => {
@@ -621,6 +633,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             : undefined
         }
         secondaryActions={[
+          {
+            label: 'Full Statement (PDF)',
+            onClick: () => setIsFullStatementOpen(true),
+            icon: Printer,
+            title: 'Download or print comprehensive full realization statement in A4 PDF'
+          },
+          {
+            label: 'Full Statement (Word)',
+            onClick: handleDownloadFullWordStatement,
+            icon: FileDown,
+            title: 'Download comprehensive full realization statement in Microsoft Word (.docx)'
+          },
           ...(permissions.canManageSalesRealization
             ? [
                 {
@@ -758,10 +782,70 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
             <span>Export Shortfall Breakup CSV</span>
           </button>
         )}
+
+        {activeTab === 'register' && (
+          <div className="flex items-center gap-2 mr-1">
+            <button
+              onClick={() => setIsFullStatementOpen(true)}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+              title="Download or Print Full Realization Statement in A4 PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-indigo-100" />
+              <span>Full Statement (PDF A4)</span>
+            </button>
+            <button
+              onClick={handleDownloadFullWordStatement}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+              title="Download Full Realization Statement in Microsoft Word Document (.docx)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-blue-100" />
+              <span>Full Statement (Word .docx)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTab === 'register' && (
         <div className="space-y-6">
+          {/* Executive Top Action Banner on top of Realization Statement */}
+          <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl shadow-sm border border-indigo-900/40 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-indigo-300" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-black flex items-center gap-2.5 text-white">
+                  <span>Full Realization &amp; Settlement Statement (Master Register)</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-indigo-500/30 text-indigo-200 border border-indigo-400/20 font-mono">
+                    {activeInvoices.length} Invoices · ${totalInvoicedUSD.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Consolidated master realization statement containing all advance and balance remittances, bank forward rates, and statutory EDPMS tie-outs in one document.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setIsFullStatementOpen(true)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer"
+                title="Download or Print Comprehensive Full Realization Statement in A4 PDF"
+              >
+                <Printer className="w-4 h-4 text-indigo-100" />
+                <span>Download Full Statement (PDF A4)</span>
+              </button>
+              <button
+                onClick={handleDownloadFullWordStatement}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer"
+                title="Download Comprehensive Full Realization Statement in Microsoft Word Document (.docx)"
+              >
+                <FileDown className="w-4 h-4 text-blue-100" />
+                <span>Download Full Statement (Word .docx)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Bento Settlement KPI Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3.5">
             <BentoCard
@@ -2181,6 +2265,18 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           isOpen={Boolean(statementTarget)}
           onClose={() => setStatementTarget(null)}
           invoice={statementTarget}
+          settings={businessSettings}
+          bankAccounts={bankAccounts}
+          onOpenFull={() => setIsFullStatementOpen(true)}
+        />
+      )}
+
+      {/* Full Realization & Settlement Statement Modal */}
+      {isFullStatementOpen && (
+        <FullRealizationStatementModal
+          isOpen={isFullStatementOpen}
+          onClose={() => setIsFullStatementOpen(false)}
+          invoices={salesInvoices}
           settings={businessSettings}
           bankAccounts={bankAccounts}
         />

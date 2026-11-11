@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   Receipt,
   ShieldCheck,
-  CreditCard
+  CreditCard,
+  Layers
 } from 'lucide-react';
 
 function formatRate(rate?: number): string {
@@ -28,6 +29,7 @@ export interface RealizationStatementModalProps {
   invoice: SalesInvoice | null;
   settings?: BusinessSettings;
   bankAccounts?: BankAccount[];
+  onOpenFull?: () => void;
 }
 
 export const RealizationStatementModal: React.FC<RealizationStatementModalProps> = ({
@@ -35,7 +37,8 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
   onClose,
   invoice,
   settings,
-  bankAccounts = []
+  bankAccounts = [],
+  onOpenFull
 }) => {
   if (!isOpen || !invoice) return null;
 
@@ -165,6 +168,19 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenFull && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenFull();
+                }}
+                className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                title="Download or View Full Realization Statement across all invoices"
+              >
+                <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="hidden sm:inline">Full Statement</span>
+              </button>
+            )}
             <button
               onClick={handleDownloadWord}
               className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"

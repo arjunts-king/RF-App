@@ -38,7 +38,8 @@ import {
 } from '../utils/collectionAnalysis.ts';
 
 import {
-  buildRealizationStatementTableXml
+  buildRealizationStatementTableXml,
+  buildFullRealizationStatementTableXml
 } from '../utils/exportRealizationStatement.ts';
 
 // ============================================================================
@@ -3478,6 +3479,86 @@ test('Realization & Settlement Statement: Word OpenXML and A4 PDF Statement gene
   assert.ok(xml.includes('FIRC-ADV-001'), 'Includes Advance FIRC ref');
   assert.ok(xml.includes('FIRC-BAL-002'), 'Includes Balance FIRC ref');
   assert.ok(xml.includes('FULLY REALIZED'), 'Includes Fully Realized badge');
+});
+
+test('Full Realization Statement: Consolidated Master Word OpenXML and A4 PDF generation integrity', () => {
+  const sampleInvoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'RF/EXP/01/26-27',
+      invoiceDate: '2026-04-15',
+      currency: 'USD',
+      totalAmountCurrency: 50000,
+      estimatedAmountINR: 4225000,
+      consigneeName: 'PACIFIC SEAFOOD LLC',
+      countryOfDestination: 'United States',
+      advanceReceivedCurrency: 15000,
+      advanceExchangeRate: 84.60,
+      advanceBankRef: 'FIRC-001',
+      balancePaymentAmountCurrency: 35000,
+      balanceExchangeRate: 84.45,
+      balanceBankRef: 'FIRC-002',
+      totalRealizedCurrency: 50000,
+      totalRealizedINR: 4224750,
+      totalShortfallUSD: 0,
+      realizationStatus: 'Fully Realized',
+      isVoided: false
+    },
+    {
+      id: 'inv-2',
+      invoiceNo: 'RF/EXP/02/26-27',
+      invoiceDate: '2026-04-20',
+      currency: 'USD',
+      totalAmountCurrency: 40000,
+      estimatedAmountINR: 3380000,
+      consigneeName: 'TOKYO SEAFOOD CO',
+      countryOfDestination: 'Japan',
+      advanceReceivedCurrency: 12000,
+      advanceExchangeRate: 84.50,
+      advanceBankRef: 'FIRC-003',
+      balancePaymentAmountCurrency: 27950,
+      balanceExchangeRate: 84.50,
+      balanceBankRef: 'FIRC-004',
+      totalRealizedCurrency: 39950,
+      totalRealizedINR: 3375775,
+      totalShortfallUSD: 50,
+      realizationStatus: 'Fully Realized',
+      isVoided: false
+    }
+  ];
+
+  const sampleSettings = {
+    businessName: 'ROYAL FISHERIES PVT LTD',
+    address: 'Wellingdon Island, Cochin, Kerala',
+    financialYear: '2026-2027'
+  };
+
+  const sampleBank = {
+    id: 'bank-1',
+    code: 'SBI-EEFC-01',
+    name: 'State Bank of India Forex',
+    bank: 'State Bank of India',
+    accountType: 'Current',
+    openingBalance: 0,
+    active: true
+  };
+
+  const fullXml = buildFullRealizationStatementTableXml(sampleInvoices, sampleSettings, sampleBank);
+
+  assert.ok(fullXml.includes('<w:tbl>'), 'Includes Word table element');
+  assert.ok(fullXml.includes('COMPREHENSIVE EXPORT SALES REALIZATION &amp; SETTLEMENT STATEMENT'), 'Includes Master Title');
+  assert.ok(fullXml.includes('TOTAL INVOICED'), 'Includes Total Invoiced KPI');
+  assert.ok(fullXml.includes('$90,000.00'), 'Includes consolidated $90,000.00 total');
+  assert.ok(fullXml.includes('TOTAL ADVANCE REALIZED'), 'Includes Advance KPI');
+  assert.ok(fullXml.includes('TOTAL BALANCE REALIZED'), 'Includes Balance KPI');
+  assert.ok(fullXml.includes('1. CONSOLIDATED INWARD REMITTANCES &amp; EDPMS SETTLEMENT REGISTER'), 'Includes Section 1');
+  assert.ok(fullXml.includes('RF/EXP/01/26-27'), 'Includes first invoice number');
+  assert.ok(fullXml.includes('RF/EXP/02/26-27'), 'Includes second invoice number');
+  assert.ok(fullXml.includes('PACIFIC SEAFOOD LLC'), 'Includes consignee 1');
+  assert.ok(fullXml.includes('TOKYO SEAFOOD CO'), 'Includes consignee 2');
+  assert.ok(fullXml.includes('CONSOLIDATED PORTFOLIO TOTALS (2 INVOICES)'), 'Includes totals row');
+  assert.ok(fullXml.includes('2. STATUTORY SETTLEMENT RECONCILIATION &amp; BENEFICIARY BANK ROUTING'), 'Includes Section 2');
+  assert.ok(fullXml.includes('Declaration &amp; Audit Confirmation'), 'Includes declaration');
 });
 
 
