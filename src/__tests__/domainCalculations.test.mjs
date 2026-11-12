@@ -47,6 +47,12 @@ import {
   buildFullRealizationStatementTableXml
 } from '../utils/exportRealizationStatement.ts';
 
+import {
+  buildSupplierLedgerStatement,
+  buildSupplierLedgerExcelSheetData,
+  buildSupplierLedgerWordTableXml
+} from '../utils/exportSupplierStatement.ts';
+
 // ============================================================================
 // SUITE 1: Pure Utility Formatters (excelFormatters.ts)
 // ============================================================================
@@ -3724,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v21'), 'Service worker must bump cache version to v21');
-  assert.ok(mainCode.includes('sw.js?v=21'), 'main.tsx must register sw.js?v=21');
+  assert.ok(swCode.includes('seafood-pwa-v22'), 'Service worker must bump cache version to v22');
+  assert.ok(mainCode.includes('sw.js?v=22'), 'main.tsx must register sw.js?v=22');
 });
 
 // ============================================================================
@@ -3958,6 +3964,207 @@ test('Advance-only realization keeps remaining balance as unrealized and preserv
     modalCode.includes('computeSettlementReconciliation('),
     'RealizationModal must use shared computeSettlementReconciliation helper'
   );
+});
+
+// ============================================================================
+// SUITE 63: Supplier Ledger Statement Downloadable Details & Word/Excel Exports
+// ============================================================================
+test('Supplier Ledger Statement includes purchase metrics, blank expense rate when no expense, debit purchases, credit payments (genuine exportSupplierStatement.ts)', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  const supplier = {
+    id: 'sup-1',
+    code: 'SUP-001',
+    name: 'Malabar Marine Suppliers',
+    contactPerson: 'Suresh',
+    phone: '9876543210',
+    address: 'Kochi Harbour',
+    district: 'Ernakulam',
+    state: 'Kerala',
+    bankName: 'Federal Bank',
+    bankAccount: '1234567890',
+    bankIfsc: 'FDRL0001234',
+    creditDays: 15,
+    openingBalance: 10000,
+    isActive: true
+  };
+
+  const species = [{ id: 'sp-1', name: 'White Shrimps', code: 'WS', isActive: true }];
+  const bankAccounts = [{ id: 'bank-1', name: 'HDFC Current A/c', code: 'HDFC' }];
+
+  const purchases = [
+    // Purchase 1: Has expenses (₹12,500 on 1,000 Kg -> ₹12.50/Kg expense rate)
+    {
+      id: 'p-1',
+      purchaseId: 'PUR-0001',
+      purchaseDate: '2026-11-05',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      locationId: 'loc-1',
+      invoiceNo: 'BILL-101',
+      speciesId: 'sp-1',
+      gradeId: 'g-1',
+      sizeId: 's-1',
+      countId: 'c-1',
+      boxesCount: 50,
+      weightKg: 1000,
+      ratePerKg: 350,
+      purchaseValue: 350000,
+      damageWeightKg: 0,
+      damageRatePerKg: 0,
+      damageAmount: 0,
+      grossPurchaseValue: 350000,
+      expenseBreakdown: { ice: 12500 },
+      totalExpenses: 12500,
+      totalCost: 362500,
+      effectiveRatePerKg: 362.5,
+      amountPaid: 0,
+      balancePayable: 362500,
+      dueDate: '2026-11-20',
+      paymentStatus: 'Unpaid',
+      rejectionWeightKg: 0,
+      remarks: '',
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-05T10:00:00Z',
+      updatedAt: '2026-11-05T10:00:00Z'
+    },
+    // Purchase 2: Zero expenses -> Expense rate/kg and Expense value MUST stay strictly blank
+    {
+      id: 'p-2',
+      purchaseId: 'PUR-0002',
+      purchaseDate: '2026-11-10',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      locationId: 'loc-1',
+      invoiceNo: 'BILL-102',
+      speciesId: 'sp-1',
+      gradeId: 'g-1',
+      sizeId: 's-1',
+      countId: 'c-1',
+      boxesCount: 25,
+      weightKg: 500,
+      ratePerKg: 400,
+      purchaseValue: 200000,
+      damageWeightKg: 0,
+      damageRatePerKg: 0,
+      damageAmount: 0,
+      grossPurchaseValue: 200000,
+      expenseBreakdown: {},
+      totalExpenses: 0,
+      totalCost: 200000,
+      effectiveRatePerKg: 400,
+      amountPaid: 0,
+      balancePayable: 200000,
+      dueDate: '2026-11-25',
+      paymentStatus: 'Unpaid',
+      rejectionWeightKg: 0,
+      remarks: '',
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-10T10:00:00Z',
+      updatedAt: '2026-11-10T10:00:00Z'
+    }
+  ];
+
+  const payments = [
+    {
+      id: 'pay-1',
+      paymentNo: 'PAY-0001',
+      paymentDate: '2026-11-08',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      amount: 150000,
+      paymentMode: 'NEFT',
+      paidFromAccountId: 'bank-1',
+      referenceNo: 'UTR998877',
+      notes: 'Part payment',
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-08T12:00:00Z'
+    }
+  ];
+
+  const statement = buildSupplierLedgerStatement({
+    supplier,
+    purchases,
+    payments,
+    species,
+    bankAccounts
+  });
+
+  assert.equal(statement.rows.length, 3);
+  const [r1, rPay, r2] = statement.rows;
+
+  // Row 1: Purchase with expenses
+  assert.equal(r1.purchaseId, 'PUR-0001');
+  assert.equal(r1.formattedDate, '05.11.2026');
+  assert.equal(r1.weightKg, 1000);
+  assert.equal(r1.purchaseRatePerKg, 350);
+  assert.equal(r1.expenseRatePerKg, 12.5);
+  assert.equal(r1.purchaseValue, 350000);
+  assert.equal(r1.expenseValue, 12500);
+  assert.equal(r1.debitAmount, 362500);
+  assert.equal(r1.creditAmount, 0);
+  assert.equal(r1.runningBalance, 372500); // 10,000 opening + 362,500
+
+  // Row 2: Payment shown as Credit
+  assert.equal(rPay.purchaseId, 'PAY-0001');
+  assert.equal(rPay.formattedDate, '08.11.2026');
+  assert.equal(rPay.weightKg, null);
+  assert.equal(rPay.purchaseRatePerKg, null);
+  assert.equal(rPay.expenseRatePerKg, null);
+  assert.equal(rPay.purchaseValue, null);
+  assert.equal(rPay.expenseValue, null);
+  assert.equal(rPay.debitAmount, 0);
+  assert.equal(rPay.creditAmount, 150000);
+  assert.equal(rPay.runningBalance, 222500); // 372,500 - 150,000
+
+  // Row 3: Purchase WITHOUT expenses -> expenseRatePerKg & expenseValue must stay strictly null (blank)
+  assert.equal(r2.purchaseId, 'PUR-0002');
+  assert.equal(r2.weightKg, 500);
+  assert.equal(r2.purchaseRatePerKg, 400);
+  assert.equal(r2.expenseRatePerKg, null, 'Expense rate/kg must be blank (null) when no expense exists');
+  assert.equal(r2.purchaseValue, 200000);
+  assert.equal(r2.expenseValue, null, 'Expense value must be blank (null) when no expense exists');
+  assert.equal(r2.debitAmount, 200000);
+  assert.equal(r2.creditAmount, 0);
+  assert.equal(r2.runningBalance, 422500);
+
+  assert.equal(statement.totalWeightKg, 1500);
+  assert.equal(statement.totalPurchaseValue, 550000);
+  assert.equal(statement.totalExpenseValue, 12500);
+  assert.equal(statement.totalDebits, 562500);
+  assert.equal(statement.totalCredits, 150000);
+  assert.equal(statement.closingBalance, 422500);
+
+  // Verify Excel sheet rows keep Expense Rate/Kg & Expense Value strictly blank ('') for PUR-0002 & PAY-0001
+  const excelRows = buildSupplierLedgerExcelSheetData(statement, supplier);
+  const pur1Row = excelRows.find((r) => r[0] === 'PUR-0001');
+  const pur2Row = excelRows.find((r) => r[0] === 'PUR-0002');
+  const payRow = excelRows.find((r) => r[0] === 'PAY-0001');
+  assert.ok(pur1Row && pur2Row && payRow);
+  assert.equal(pur1Row[5], 12.5);
+  assert.equal(pur1Row[7], 12500);
+  assert.equal(pur1Row[8], 362500); // Debit
+  assert.equal(pur2Row[5], '', 'Excel Expense Rate/Kg must be blank when no expense');
+  assert.equal(pur2Row[7], '', 'Excel Expense Value must be blank when no expense');
+  assert.equal(pur2Row[8], 200000); // Debit
+  assert.equal(payRow[8], '');
+  assert.equal(payRow[9], 150000); // Credit
+
+  // Verify Word XML includes column headers & blank expense fields when none exist
+  const wordXml = buildSupplierLedgerWordTableXml(statement, supplier);
+  assert.ok(wordXml.includes('Purchase ID'));
+  assert.ok(wordXml.includes('Exp. Rate/Kg'));
+  assert.ok(wordXml.includes('Debit (₹)'));
+  assert.ok(wordXml.includes('Credit (₹)'));
+  assert.ok(wordXml.includes('PUR-0001') && wordXml.includes('PUR-0002') && wordXml.includes('PAY-0001'));
+
+  // Verify SupplierLedgerView exposes Excel, Word, and A4 Print downloads
+  const viewCode = fs.readFileSync(path.resolve('src/components/payments/SupplierLedgerView.tsx'), 'utf8');
+  assert.ok(viewCode.includes('Download Excel') && viewCode.includes('Download Word') && viewCode.includes('Print / PDF (A4)'));
 });
 
 

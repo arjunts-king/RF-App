@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatINR } from '../../utils/calculations';
 import { triggerPrint } from '../../utils/exportUtils';
+import {
+  buildSupplierLedgerStatement,
+  exportSupplierLedgerToWord,
+  exportSupplierLedgerToExcel
+} from '../../utils/exportSupplierStatement';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { PaymentModal } from './PaymentModal';
-import { Printer, PlusCircle } from 'lucide-react';
+import { Printer, PlusCircle, FileText, FileSpreadsheet } from 'lucide-react';
 
 export const SupplierLedgerView: React.FC = () => {
   const { suppliers, purchases, payments, purchaseReturns, species, bankAccounts, businessSettings } = useData();
@@ -18,142 +23,48 @@ export const SupplierLedgerView: React.FC = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId);
-  const bankMap = new Map(bankAccounts.map((b) => [b.id, b]));
 
-  // Build combined chronological ledger events:
-  // Purchases (Debit: increases payable)
-  // Standalone Payments & Direct Payments (Credit: decreases payable)
-  interface LedgerEntry {
-    id: string;
-    date: string;
-    type: 'PURCHASE' | 'PAYMENT' | 'RETURN';
-    refNo: string;
-    description: string;
-    debitAmount: number; // Increases payable (Purchase cost)
-    creditAmount: number; // Reduces payable (Payment amount or Return credit)
-    runningBalance: number;
-  }
-
-  const supplierPurchases = purchases.filter(
-    (p) => p.supplierId === selectedSupplierId && !p.isVoided
+  const statement = useMemo(
+    () =>
+      buildSupplierLedgerStatement({
+        supplier: selectedSupplier,
+        purchases,
+        payments,
+        purchaseReturns,
+        species,
+        bankAccounts,
+        startDate,
+        endDate
+      }),
+    [selectedSupplier, purchases, payments, purchaseReturns, species, bankAccounts, startDate, endDate]
   );
 
-  const supplierPayments = payments.filter(
-    (pay) => pay.supplierId === selectedSupplierId && !pay.isVoided
-  );
+  const {
+    rows: ledgerEntries,
+    openingBalance,
+    totalWeightKg,
+    totalPurchaseValue,
+    totalExpenseValue,
+    totalDebits,
+    totalCredits,
+    closingBalance
+  } = statement;
 
-  const supplierReturns = (purchaseReturns || []).filter(
-    (ret) => ret.supplierId === selectedSupplierId && !ret.isVoided && ret.adjustSupplierPayable !== false
-  );
-
-  const speciesMap = new Map((species || []).map((s) => [s.id, s]));
-
-  // Direct payments recorded on purchase rows
-  const directPurchasePayments = purchases
-    .filter((p) => p.supplierId === selectedSupplierId && !p.isVoided && p.amountPaid > 0)
-    .map((p) => ({
-      id: `dir-pay-${p.id}`,
-      paymentNo: `PAY-DIR-${p.purchaseId}`,
-      paymentDate: p.paymentDate || p.purchaseDate,
-      supplierId: p.supplierId,
-      amount: p.amountPaid,
-      paidFromAccountId: p.paidFromAccountId || '',
-      paymentMode: 'Direct Purchase Payment',
-      notes: `Settled on invoice ${p.invoiceNo || p.purchaseId}`
-    }));
-
-  // Combine and sort chronologically
-  const rawEvents: {
-    date: string;
-    type: 'PURCHASE' | 'PAYMENT' | 'RETURN';
-    refNo: string;
-    description: string;
-    debit: number;
-    credit: number;
-  }[] = [];
-
-  supplierPurchases.forEach((p) => {
-    rawEvents.push({
-      date: p.purchaseDate,
-      type: 'PURCHASE',
-      refNo: p.purchaseId,
-      description: `Purchase: ${p.weightKg}Kg seafood (Inv: ${p.invoiceNo || 'N/A'})`,
-      debit: p.totalCost,
-      credit: 0
+  const handleDownloadWord = () => {
+    exportSupplierLedgerToWord(statement, selectedSupplier, businessSettings, startDate, endDate).catch((err) => {
+      console.error('Failed to export supplier ledger to Word:', err);
+      alert('Failed to generate Word document. Please try again.');
     });
-  });
+  };
 
-  supplierPayments.forEach((pay) => {
-    const bank = bankMap.get(pay.paidFromAccountId)?.name || 'Bank';
-    rawEvents.push({
-      date: pay.paymentDate,
-      type: 'PAYMENT',
-      refNo: pay.paymentNo,
-      description: `Payment: ${pay.paymentMode} via ${bank} (Ref: ${pay.referenceNo || 'None'})`,
-      debit: 0,
-      credit: pay.amount
-    });
-  });
-
-  // Include direct purchase payments in ledger credits
-  directPurchasePayments.forEach((dirPay) => {
-    const bank = bankMap.get(dirPay.paidFromAccountId)?.name || 'Harbour Float';
-    rawEvents.push({
-      date: dirPay.paymentDate,
-      type: 'PAYMENT',
-      refNo: dirPay.paymentNo,
-      description: `Direct Payment on ${dirPay.notes} via ${bank}`,
-      debit: 0,
-      credit: dirPay.amount
-    });
-  });
-
-  // Include purchase returns as credit notes / debit notes reducing supplier payable balance
-  supplierReturns.forEach((ret) => {
-    const spec = ret.speciesId ? speciesMap.get(ret.speciesId) : undefined;
-    const specName = spec?.name || 'Seafood';
-    const linkedInfo = ret.purchaseRefNo ? ` (Ref: ${ret.purchaseRefNo})` : '';
-    rawEvents.push({
-      date: ret.returnDate,
-      type: 'RETURN',
-      refNo: ret.returnNo,
-      description: `Purchase Return [Debit Note] (${ret.reason}): ${ret.returnedWeightKg}Kg ${specName} @ ₹${ret.ratePerKg}/Kg${linkedInfo}`,
-      debit: 0,
-      credit: ret.returnedValue
-    });
-  });
-
-  // Sort events by date ascending
-  rawEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  // Filter by date range if specified
-  const filteredEvents = rawEvents.filter((e) => {
-    if (startDate && e.date < startDate) return false;
-    if (endDate && e.date > endDate) return false;
-    return true;
-  });
-
-  // Calculate Running Balance
-  const openingBalance = selectedSupplier?.openingBalance || 0;
-  let running = openingBalance;
-
-  const ledgerEntries: LedgerEntry[] = filteredEvents.map((e, idx) => {
-    running = running + e.debit - e.credit;
-    return {
-      id: `led-${idx}`,
-      date: e.date,
-      type: e.type,
-      refNo: e.refNo,
-      description: e.description,
-      debitAmount: e.debit,
-      creditAmount: e.credit,
-      runningBalance: Number(running.toFixed(2))
-    };
-  });
-
-  const totalDebits = filteredEvents.reduce((s, e) => s + e.debit, 0);
-  const totalCredits = filteredEvents.reduce((s, e) => s + e.credit, 0);
-  const closingBalance = openingBalance + totalDebits - totalCredits;
+  const handleDownloadExcel = () => {
+    try {
+      exportSupplierLedgerToExcel(statement, selectedSupplier, businessSettings, startDate, endDate);
+    } catch (err) {
+      console.error('Failed to export supplier ledger to Excel:', err);
+      alert('Failed to generate Excel workbook. Please try again.');
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
@@ -174,7 +85,17 @@ export const SupplierLedgerView: React.FC = () => {
           }
           secondaryActions={[
             {
-              label: 'Print A4 Statement',
+              label: 'Download Excel',
+              onClick: handleDownloadExcel,
+              icon: FileSpreadsheet
+            },
+            {
+              label: 'Download Word',
+              onClick: handleDownloadWord,
+              icon: FileText
+            },
+            {
+              label: 'Print / PDF (A4)',
               onClick: triggerPrint,
               icon: Printer
             }
@@ -308,51 +229,89 @@ export const SupplierLedgerView: React.FC = () => {
 
         {/* Ledger Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs print:text-[9px]">
             <thead>
-              <tr className="bg-gray-100/80 border-b border-gray-200 text-[11px] font-bold text-ink-500 uppercase tracking-wider">
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Voucher Ref</th>
-                <th className="py-2.5 px-3">Narration / Details</th>
-                <th className="py-2.5 px-3 text-right">Debit (+) Purchases</th>
-                <th className="py-2.5 px-3 text-right">Credit (-) Payments</th>
-                <th className="py-2.5 px-3 text-right">Running Balance</th>
+              <tr className="bg-gray-100/80 border-b border-gray-200 text-[10.5px] print:text-[8.5px] font-bold text-ink-600 uppercase tracking-wider">
+                <th className="py-2.5 px-2 print:px-1">Purchase ID / Ref</th>
+                <th className="py-2.5 px-2 print:px-1">Date</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Weight (Kg)</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Pur. Rate/Kg</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Exp. Rate/Kg</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Purchase Value</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Expense Value</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Debit (Purchases)</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Credit (Payments)</th>
+                <th className="py-2.5 px-2 print:px-1 text-right">Balance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-ink-900">
               {/* Opening Balance Row */}
               <tr className="bg-rose-50/20 font-semibold">
-                <td className="py-2.5 px-3 italic">{startDate || 'Opening'}</td>
-                <td className="py-2.5 px-3 italic">—</td>
-                <td className="py-2.5 px-3 italic font-bold">Opening Balance Brought Forward</td>
-                <td className="py-2.5 px-3 text-right">—</td>
-                <td className="py-2.5 px-3 text-right">—</td>
-                <td className="py-2.5 px-3 text-right font-bold text-rose-900 tabular-nums">
+                <td className="py-2.5 px-2 print:px-1 italic">
+                  <div>Opening</div>
+                  <div className="text-[10px] font-normal text-ink-500">Opening Balance Brought Forward</div>
+                </td>
+                <td className="py-2.5 px-2 print:px-1 italic whitespace-nowrap">{startDate || 'Opening'}</td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right"></td>
+                <td className="py-2.5 px-2 print:px-1 text-right font-bold text-rose-900 tabular-nums whitespace-nowrap">
                   {formatINR(openingBalance)}
                 </td>
               </tr>
 
               {ledgerEntries.map((row) => (
                 <tr key={row.id} className={`hover:bg-gray-50/50 ${row.type === 'RETURN' ? 'bg-amber-50/30' : ''}`}>
-                  <td className="py-2.5 px-3 whitespace-nowrap font-medium">{row.date}</td>
-                  <td className="py-2.5 px-3 font-bold whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className={row.type === 'RETURN' ? 'text-amber-700' : 'text-rose-700'}>{row.refNo}</span>
+                  <td className="py-2.5 px-2 print:px-1 font-bold">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span
+                        className={
+                          row.type === 'RETURN'
+                            ? 'text-amber-700'
+                            : row.type === 'PAYMENT'
+                            ? 'text-emerald-700'
+                            : 'text-rose-700'
+                        }
+                      >
+                        {row.purchaseId}
+                      </span>
                       {row.type === 'RETURN' && (
                         <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-200 uppercase">
                           Debit Note
                         </span>
                       )}
                     </div>
+                    <div className="text-[10.5px] print:text-[8px] font-normal text-ink-500 mt-0.5 leading-snug">
+                      {row.briefDetails}
+                    </div>
                   </td>
-                  <td className="py-2.5 px-3">{row.description}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-rose-900 tabular-nums">
-                    {row.debitAmount > 0 ? formatINR(row.debitAmount) : '—'}
+                  <td className="py-2.5 px-2 print:px-1 whitespace-nowrap font-medium">{row.formattedDate}</td>
+                  <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
+                    {row.weightKg !== null ? `${row.weightKg.toLocaleString('en-IN')} Kg` : ''}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-semibold whitespace-nowrap text-emerald-700 tabular-nums">
-                    {row.creditAmount > 0 ? formatINR(row.creditAmount) : '—'}
+                  <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
+                    {row.purchaseRatePerKg !== null ? formatINR(row.purchaseRatePerKg) : ''}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap text-ink-900 tabular-nums">
+                  <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
+                    {row.expenseRatePerKg !== null ? formatINR(row.expenseRatePerKg) : ''}
+                  </td>
+                  <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
+                    {row.purchaseValue !== null ? formatINR(row.purchaseValue) : ''}
+                  </td>
+                  <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
+                    {row.expenseValue !== null ? formatINR(row.expenseValue) : ''}
+                  </td>
+                  <td className="py-2.5 px-2 print:px-1 text-right font-semibold whitespace-nowrap text-rose-900 tabular-nums">
+                    {row.debitAmount > 0 ? formatINR(row.debitAmount) : ''}
+                  </td>
+                  <td className="py-2.5 px-2 print:px-1 text-right font-semibold whitespace-nowrap text-emerald-700 tabular-nums">
+                    {row.creditAmount > 0 ? formatINR(row.creditAmount) : ''}
+                  </td>
+                  <td className="py-2.5 px-2 print:px-1 text-right font-bold whitespace-nowrap text-ink-900 tabular-nums">
                     {formatINR(row.runningBalance)}
                   </td>
                 </tr>
@@ -360,12 +319,27 @@ export const SupplierLedgerView: React.FC = () => {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-gray-300 font-bold bg-gray-50">
-                <td colSpan={3} className="py-3 px-3 uppercase text-ink-700">
-                  Totals &amp; Net Closing Outstanding Balance
+                <td colSpan={2} className="py-3 px-2 print:px-1 uppercase text-ink-700">
+                  Totals &amp; Net Closing Balance
                 </td>
-                <td className="py-3 px-3 text-right text-rose-900 tabular-nums">{formatINR(totalDebits)}</td>
-                <td className="py-3 px-3 text-right text-emerald-700 tabular-nums">{formatINR(totalCredits)}</td>
-                <td className="py-3 px-3 text-right text-base text-rose-700 font-extrabold tabular-nums">
+                <td className="py-3 px-2 print:px-1 text-right text-ink-900 tabular-nums whitespace-nowrap">
+                  {totalWeightKg > 0 ? `${totalWeightKg.toLocaleString('en-IN')} Kg` : ''}
+                </td>
+                <td className="py-3 px-2 print:px-1"></td>
+                <td className="py-3 px-2 print:px-1"></td>
+                <td className="py-3 px-2 print:px-1 text-right text-ink-900 tabular-nums whitespace-nowrap">
+                  {totalPurchaseValue > 0 ? formatINR(totalPurchaseValue) : ''}
+                </td>
+                <td className="py-3 px-2 print:px-1 text-right text-ink-900 tabular-nums whitespace-nowrap">
+                  {totalExpenseValue > 0 ? formatINR(totalExpenseValue) : ''}
+                </td>
+                <td className="py-3 px-2 print:px-1 text-right text-rose-900 tabular-nums whitespace-nowrap">
+                  {formatINR(totalDebits)}
+                </td>
+                <td className="py-3 px-2 print:px-1 text-right text-emerald-700 tabular-nums whitespace-nowrap">
+                  {formatINR(totalCredits)}
+                </td>
+                <td className="py-3 px-2 print:px-1 text-right text-sm sm:text-base text-rose-700 font-extrabold tabular-nums whitespace-nowrap">
                   {formatINR(closingBalance)}
                 </td>
               </tr>
@@ -378,7 +352,7 @@ export const SupplierLedgerView: React.FC = () => {
           <div>
             <p>Prepared By: Accounts Dept</p>
             <p className="mt-8 font-semibold text-ink-900">Authorized Signatory</p>
-            <p className="text-[10px]">Coastal Marine Traders</p>
+            <p className="text-[10px]">{businessSettings.businessName || 'Coastal Marine Traders'}</p>
           </div>
           <div className="text-right">
             <p>Supplier Acknowledgement</p>

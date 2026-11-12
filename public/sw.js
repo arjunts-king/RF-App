@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V21 - Advance-only realization shows unrealized balance instead of shortfall)
-const CACHE_VERSION = 'seafood-pwa-v21';
+// Seafood Purchase App - Offline PWA Service Worker (V22 - Detailed Supplier Ledger Statement with Word/Excel/A4 exports)
+const CACHE_VERSION = 'seafood-pwa-v22';
 const STATIC_ASSETS = [
   './',
   './index.html',
