@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V18 - Quota recovery & reliable commercial invoice persistence)
-const CACHE_VERSION = 'seafood-pwa-v18';
+// Seafood Purchase App - Offline PWA Service Worker (V19 - Numeric invoice ordering & latest invoice placement)
+const CACHE_VERSION = 'seafood-pwa-v19';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -590,3 +590,85 @@ export function deriveHsnCode(
   return unique.join(' & ');
 }
 
+/**
+ * Extracts the primary numeric sequence value from a commercial invoice number.
+ * Examples:
+ * - "RF/EXP/01/26-27" -> 1
+ * - "RF/EXP/72/26-27" -> 72
+ * - "EXP-2026-0072"   -> 72
+ * - "INV-105"         -> 105
+ * - "72"              -> 72
+ * Returns Number.MAX_SAFE_INTEGER if no numeric tokens exist so unnumbered
+ * entries sort at the end.
+ */
+export function extractInvoiceNumericValue(invoiceNo?: string): number {
+  const raw = (invoiceNo || '').trim().toUpperCase();
+  if (!raw) return Number.MAX_SAFE_INTEGER;
+
+  // Strip trailing financial-year suffix such as "/26-27", "-26-27", "/2026-27", or "/2026-2027"
+  const withoutTrailingFy = raw.replace(/[\/-](?:\d{2,4}-\d{2,4})$/, '');
+  const tokens = withoutTrailingFy.match(/\d+/g);
+  if (!tokens || tokens.length === 0) {
+    const rawTokens = raw.match(/\d+/g);
+    if (!rawTokens || rawTokens.length === 0) return Number.MAX_SAFE_INTEGER;
+    return parseInt(rawTokens[rawTokens.length - 1], 10);
+  }
+
+  // If the final token is a trailing 4-digit year (e.g. "RF/EXP/72/2026")
+  // while a non-year sequence token precedes it, prefer the preceding sequence number.
+  const lastToken = tokens[tokens.length - 1];
+  const lastVal = parseInt(lastToken, 10);
+  if (tokens.length > 1 && /^(?:19|20)\d{2}$/.test(lastToken)) {
+    for (let i = tokens.length - 2; i >= 0; i--) {
+      if (!/^(?:19|20)\d{2}$/.test(tokens[i])) {
+        return parseInt(tokens[i], 10);
+      }
+    }
+  }
+
+  return lastVal;
+}
+
+/**
+ * Arranges commercial sales invoices in ascending numerical order based on each
+ * invoice number's primary numeric value (e.g. 72 directly after 71),
+ * sending unnumbered invoices to the end.
+ */
+export function sortSalesInvoicesByNumber<
+  T extends { invoiceNo?: string; createdAt?: string }
+>(invoices: T[]): T[] {
+  return [...invoices].sort((a, b) => {
+    const numA = extractInvoiceNumericValue(a.invoiceNo);
+    const numB = extractInvoiceNumericValue(b.invoiceNo);
+    if (numA !== numB) {
+      return numA - numB;
+    }
+
+    const createdCompare = (a.createdAt || '').localeCompare(b.createdAt || '');
+    if (createdCompare !== 0) {
+      return createdCompare;
+    }
+
+    return (a.invoiceNo || '').localeCompare(b.invoiceNo || '', undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
+  });
+}
+
+/**
+ * Computes the next sequential commercial invoice number integer across existing invoices.
+ */
+export function getNextInvoiceSequenceNumber(
+  invoices: Array<{ invoiceNo?: string }>
+): number {
+  let maxNum = 0;
+  for (const inv of invoices) {
+    const val = extractInvoiceNumericValue(inv.invoiceNo);
+    if (val < Number.MAX_SAFE_INTEGER && val > maxNum) {
+      maxNum = val;
+    }
+  }
+  return Math.max(maxNum + 1, invoices.length + 1);
+}
+

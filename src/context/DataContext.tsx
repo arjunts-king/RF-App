@@ -67,7 +67,14 @@ import {
 } from '../data/exportSalesData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { computePurchaseFields, allocateBatchExpenses, allocateBatchYield, getIndianFinancialYear } from '../utils/calculations';
+import {
+  computePurchaseFields,
+  allocateBatchExpenses,
+  allocateBatchYield,
+  getIndianFinancialYear,
+  sortSalesInvoicesByNumber,
+  getNextInvoiceSequenceNumber
+} from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
@@ -602,9 +609,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Force-sync to pure 71 uploaded export invoices from the uploaded Excel
     if (currentVersion !== SALES_DATASET_VERSION) {
+      const sortedVerified = sortSalesInvoicesByNumber(VERIFIED_SALES_INVOICES);
       safeSet(`${DB_PREFIX}sales_dataset_version`, SALES_DATASET_VERSION);
-      safeSet(`${DB_PREFIX}sales_invoices`, VERIFIED_SALES_INVOICES);
-      return VERIFIED_SALES_INVOICES;
+      safeSet(`${DB_PREFIX}sales_invoices`, sortedVerified);
+      return sortedVerified;
     }
 
     const saved = localStorage.getItem(`${DB_PREFIX}sales_invoices`);
@@ -813,7 +821,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
       list = VERIFIED_SALES_INVOICES;
     }
-    return list;
+    return sortSalesInvoicesByNumber(list);
   });
 
   const [slabTolerancePct, setSlabTolerancePct] = useState<number>(() => {
@@ -913,7 +921,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ]);
         if (cancelled) return;
         if (!mutatedKeysRef.current.has('sales_invoices') && Array.isArray(idbInvoices) && idbInvoices.length > 0) {
-          setSalesInvoices(idbInvoices);
+          setSalesInvoices(sortSalesInvoicesByNumber(idbInvoices));
         }
         if (!mutatedKeysRef.current.has('customers') && Array.isArray(idbCustomers) && idbCustomers.length > 0) {
           setCustomers(idbCustomers);
@@ -2757,7 +2765,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const warnings: string[] = [];
     const invoiceNo =
       invoiceData.invoiceNo?.trim() ||
-      `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + 1).padStart(4, '0')}`;
+      `EXP-${new Date().getFullYear()}-${String(getNextInvoiceSequenceNumber(salesInvoices)).padStart(4, '0')}`;
 
     // Warn on duplicate invoice number (don't block)
     const duplicate = salesInvoices.find(
@@ -2889,8 +2897,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     mutatedKeysRef.current.add('sales_invoices');
-    const nextInvoices = [newInvoice, ...salesInvoices];
-    setSalesInvoices((prev) => [newInvoice, ...prev]);
+    const nextInvoices = sortSalesInvoicesByNumber([...salesInvoices, newInvoice]);
+    setSalesInvoices((prev) => sortSalesInvoicesByNumber([...prev, newInvoice]));
     safeSet(`${DB_PREFIX}sales_invoices`, nextInvoices);
     logAudit('CREATE', 'SALES_INVOICE', newInvoice.invoiceNo, { newValues: newInvoice });
     showToast(`Commercial Invoice ${newInvoice.invoiceNo} saved successfully (${currency} ${totalAmountCurrency.toLocaleString()}).`, 'success');
@@ -3000,8 +3008,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     mutatedKeysRef.current.add('sales_invoices');
-    const nextInvoices = salesInvoices.map((inv) => (inv.id === id ? updated : inv));
-    setSalesInvoices((prev) => prev.map((inv) => (inv.id === id ? updated : inv)));
+    const nextInvoices = sortSalesInvoicesByNumber(salesInvoices.map((inv) => (inv.id === id ? updated : inv)));
+    setSalesInvoices((prev) => sortSalesInvoicesByNumber(prev.map((inv) => (inv.id === id ? updated : inv))));
     safeSet(`${DB_PREFIX}sales_invoices`, nextInvoices);
     logAudit('EDIT', 'SALES_INVOICE', existing.invoiceNo, {
       oldValues: existing,
@@ -6503,7 +6511,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           return inv;
         });
-        return [...Array.from(incomingMap.values()), ...updatedPrev];
+        return sortSalesInvoicesByNumber([...updatedPrev, ...Array.from(incomingMap.values())]);
       });
       if (createdCustomers > 0) setCustomers([...mutableCustomers]);
       if (createdPorts > 0) setPorts([...mutablePorts]);

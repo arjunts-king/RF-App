@@ -3,7 +3,13 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { SalesCurrency, Species, Size } from '../../types';
-import { formatKg, deriveCommodityTitle, deriveScientificName, deriveHsnCode } from '../../utils/calculations';
+import {
+  formatKg,
+  deriveCommodityTitle,
+  deriveScientificName,
+  deriveHsnCode,
+  getNextInvoiceSequenceNumber
+} from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { StickySaveBar } from '../common/StickySaveBar';
 import { exportInvoiceToWord, numberToWordsInternational } from '../../utils/exportWordInvoice';
@@ -181,7 +187,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   // Auto-generate invoice sequential number & pre-select defaults for new invoice
   useEffect(() => {
     if (editingInvoiceId) return;
-    const nextSeq = String(salesInvoices.length + 1).padStart(4, '0');
+    const nextSeq = String(getNextInvoiceSequenceNumber(salesInvoices)).padStart(4, '0');
     const autoInvNo = `EXP-${currentYear}-${nextSeq}`;
     setInvoiceNo(autoInvNo);
     setExporterRef(autoInvNo);
@@ -698,7 +704,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       if (onCancelEdit) onCancelEdit();
       return;
     }
-    const nextSeq = String(salesInvoices.length + 1).padStart(4, '0');
+    const nextSeq = String(getNextInvoiceSequenceNumber(salesInvoices)).padStart(4, '0');
     setInvoiceNo(`EXP-${currentYear}-${nextSeq}`);
     setInvoiceDate(today);
     setExporterRef(`EXP-${currentYear}-${nextSeq}`);

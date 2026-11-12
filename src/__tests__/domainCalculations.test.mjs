@@ -18,7 +18,10 @@ import {
   formatForwardRate,
   deriveCommodityTitle,
   deriveScientificName,
-  deriveHsnCode
+  deriveHsnCode,
+  extractInvoiceNumericValue,
+  sortSalesInvoicesByNumber,
+  getNextInvoiceSequenceNumber
 } from '../utils/calculations.ts';
 
 import {
@@ -3637,9 +3640,9 @@ test('Commercial Invoice Saving & StickySaveBar Submission Integrity', async () 
 });
 
 // ============================================================================
-// SUITE 59: Quota Recovery, IndexedDB Hydration, Invoice Field Preservation & PWA v18
+// SUITE 59: Quota Recovery, IndexedDB Hydration, Invoice Field Preservation & PWA Cache
 // ============================================================================
-test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA v18 Cache Busting', async () => {
+test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache Busting', async () => {
   const fs = await import('fs');
   const path = await import('path');
   const { sanitizeAuditValue, safeSet } = await import('../utils/storage.ts');
@@ -3710,7 +3713,7 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA v18 C
   assert.ok(dataContextCode.includes('totalFobValueINR'), 'addSalesInvoice must persist totalFobValueINR');
   assert.ok(dataContextCode.includes('resolveOrCreateConsignee'), 'DataContext must share consignee resolution between create & edit');
 
-  // 4. Verify inline validation alert, App tab reset, list country fallback, and PWA v18 bump
+  // 4. Verify inline validation alert, App tab reset, list country fallback, and PWA v19 bump
   const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
   assert.ok(formCode.includes('role="alert"'), 'Form must render visible inline validation banner');
   const appCode = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
@@ -3719,8 +3722,69 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA v18 C
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v18'), 'Service worker must bump cache version to v18');
-  assert.ok(mainCode.includes('sw.js?v=18'), 'main.tsx must register sw.js?v=18');
+  assert.ok(swCode.includes('seafood-pwa-v19'), 'Service worker must bump cache version to v19');
+  assert.ok(mainCode.includes('sw.js?v=19'), 'main.tsx must register sw.js?v=19');
+});
+
+// ============================================================================
+// SUITE 60: Commercial Invoice Numeric Value Extraction & Sequential Ordering
+// ============================================================================
+test('Commercial Invoice Numeric Value Extraction & Sequential Ordering (genuine calculations.ts)', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Numeric extraction across standard, auto-generated, year-suffixed, and bare formats
+  assert.equal(extractInvoiceNumericValue('RF/EXP/01/26-27'), 1);
+  assert.equal(extractInvoiceNumericValue('RF/EXP/71/26-27'), 71);
+  assert.equal(extractInvoiceNumericValue('RF/EXP/72/26-27'), 72);
+  assert.equal(extractInvoiceNumericValue('EXP-2026-0072'), 72);
+  assert.equal(extractInvoiceNumericValue('RF/EXP/72/2026'), 72);
+  assert.equal(extractInvoiceNumericValue('72'), 72);
+  assert.equal(extractInvoiceNumericValue('RF/EXP/100/26-27'), 100);
+  assert.equal(extractInvoiceNumericValue('DRAFT-TEMP'), Number.MAX_SAFE_INTEGER);
+
+  // 2. Sorting arranges 72 below 71 and sends unnumbered invoices to the end
+  const unsorted = [
+    { invoiceNo: 'EXP-2026-0073', createdAt: '2026-11-12T03:00:00Z' },
+    { invoiceNo: 'RF/EXP/72/26-27', createdAt: '2026-11-12T01:00:00Z' },
+    { invoiceNo: 'UNNUMBERED', createdAt: '2026-11-10T00:00:00Z' },
+    { invoiceNo: 'RF/EXP/09/26-27', createdAt: '2026-05-01T00:00:00Z' },
+    { invoiceNo: 'RF/EXP/71/26-27', createdAt: '2026-10-01T00:00:00Z' },
+    { invoiceNo: 'RF/EXP/01/26-27', createdAt: '2026-04-01T00:00:00Z' },
+    { invoiceNo: 'RF/EXP/100/26-27', createdAt: '2026-11-12T04:00:00Z' }
+  ];
+
+  const sorted = sortSalesInvoicesByNumber(unsorted);
+  assert.deepEqual(
+    sorted.map((i) => i.invoiceNo),
+    [
+      'RF/EXP/01/26-27',
+      'RF/EXP/09/26-27',
+      'RF/EXP/71/26-27',
+      'RF/EXP/72/26-27',
+      'EXP-2026-0073',
+      'RF/EXP/100/26-27',
+      'UNNUMBERED'
+    ]
+  );
+
+  // 3. Same numeric value preserves creation order (newer comes after earlier)
+  const tied = sortSalesInvoicesByNumber([
+    { invoiceNo: 'EXP-2026-0072', createdAt: '2026-11-12T02:00:00Z' },
+    { invoiceNo: 'RF/EXP/72/26-27', createdAt: '2026-11-12T01:00:00Z' }
+  ]);
+  assert.deepEqual(tied.map((i) => i.invoiceNo), ['RF/EXP/72/26-27', 'EXP-2026-0072']);
+
+  // 4. Next sequence computation avoids duplicates when earlier items were deleted
+  assert.equal(
+    getNextInvoiceSequenceNumber([{ invoiceNo: 'RF/EXP/01/26-27' }, { invoiceNo: 'RF/EXP/71/26-27' }]),
+    72
+  );
+
+  // 5. DataContext uses sortSalesInvoicesByNumber on initial load, hydration, create, update & bulk import
+  const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  const sortCalls = (dataContextCode.match(/sortSalesInvoicesByNumber\(/g) || []).length;
+  assert.ok(sortCalls >= 7, `Expected DataContext to sort sales invoices on all mutation & hydration paths, found ${sortCalls}`);
 });
 
 
