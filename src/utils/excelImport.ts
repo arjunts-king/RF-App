@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ExpenseType } from '../types';
+import { getSettledInvoiceShortfallBreakdown } from './collectionAnalysis';
 
 export type ImportEntityType =
   | 'multi-sheet'
@@ -1044,14 +1045,15 @@ export function downloadActiveInvoicesSettlementTemplate(
   const wb = XLSX.utils.book_new();
 
   const data = invoices.map((inv) => {
+    const breakdown = getSettledInvoiceShortfallBreakdown(inv);
     const advTerms = inv.advanceTermsUSD ?? (inv.advanceReceivedCurrency || '');
     const actualAdv = inv.advanceReceivedCurrency ?? '';
-    const advShortfall = inv.advanceShortfallUSD ?? (advTerms && actualAdv ? Math.max(0, Number((Number(advTerms) - Number(actualAdv)).toFixed(2))) : '');
+    const advShortfall = breakdown.isSettled && breakdown.advShortfallUSD > 0 ? breakdown.advShortfallUSD : '';
 
     const balPrice = inv.balanceActualPriceUSD ?? (inv.totalAmountCurrency ? Math.max(0, Number((inv.totalAmountCurrency - (Number(advTerms) || Number(actualAdv) || 0)).toFixed(2))) : '');
     const actualBal = inv.balancePaymentAmountCurrency ?? '';
-    const balShortfall = inv.balanceShortfallUSD ?? (balPrice && actualBal ? Math.max(0, Number((Number(balPrice) - Number(actualBal)).toFixed(2))) : '');
-    const totalShortfall = inv.totalShortfallUSD ?? ((Number(advShortfall) || 0) + (Number(balShortfall) || 0) || '');
+    const balShortfall = breakdown.isSettled && breakdown.balShortfallUSD > 0 ? breakdown.balShortfallUSD : '';
+    const totalShortfall = breakdown.isSettled && breakdown.totalShortfallUSD > 0 ? breakdown.totalShortfallUSD : '';
 
     return {
       'Invoice No': inv.invoiceNo,

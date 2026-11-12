@@ -22,7 +22,8 @@ import {
 } from '../../utils/excelImport';
 import {
   computeOutstandingFromAdvance,
-  calculateReceivablesCollectionAnalysis
+  calculateReceivablesCollectionAnalysis,
+  getSettledInvoiceShortfallBreakdown
 } from '../../utils/collectionAnalysis';
 import {
   Search,
@@ -181,71 +182,48 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
   }, 0);
   const totalRealizedUSD = activeInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
   const totalRealizedINR = activeInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
-  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05) return s;
-    return s + inv.balanceRealizationCurrency;
-  }, 0);
+  const totalUnrealizedUSD = activeInvoices.reduce(
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).unrealizedBalanceUSD,
+    0
+  );
 
-  const totalAdvanceShortfallUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.advanceShortfallUSD !== undefined && inv.advanceShortfallUSD !== null) {
-      return s + (inv.advanceShortfallUSD || 0);
-    }
-    const adv = inv.advanceReceivedCurrency || 0;
-    const terms = inv.advanceTermsUSD || 0;
-    const sf = adv > 0 && terms > adv ? terms - adv : 0;
-    return s + (sf || 0);
-  }, 0);
+  const totalAdvanceShortfallUSD = activeInvoices.reduce(
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).advShortfallUSD,
+    0
+  );
 
-  const totalBalanceShortfallUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.balanceShortfallUSD !== undefined && inv.balanceShortfallUSD !== null) {
-      return s + (inv.balanceShortfallUSD || 0);
-    }
-    const bal = inv.balancePaymentAmountCurrency || 0;
-    const price = inv.balanceActualPriceUSD || 0;
-    const sf = (bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0;
-    return s + (sf || 0);
-  }, 0);
+  const totalBalanceShortfallUSD = activeInvoices.reduce(
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).balShortfallUSD,
+    0
+  );
 
-  const totalShortfallUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.totalShortfallUSD !== undefined && inv.totalShortfallUSD !== null) {
-      return s + (inv.totalShortfallUSD || 0);
-    }
-    const adv = inv.advanceReceivedCurrency || 0;
-    const terms = inv.advanceTermsUSD || 0;
-    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
-    const bal = inv.balancePaymentAmountCurrency || 0;
-    const price = inv.balanceActualPriceUSD || 0;
-    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
-    const total = (advSf || 0) + (balSf || 0);
-    return s + (total || 0);
-  }, 0);
+  const totalShortfallUSD = activeInvoices.reduce(
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).totalShortfallUSD,
+    0
+  );
 
   const totalShortfallINR = activeInvoices.reduce((s, inv) => {
     const rate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
     const advRate = inv.advanceExchangeRate || rate;
     const balRate = inv.balanceExchangeRate || rate;
-    const adv = inv.advanceReceivedCurrency || 0;
-    const terms = inv.advanceTermsUSD || 0;
-    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
-    const bal = inv.balancePaymentAmountCurrency || 0;
-    const price = inv.balanceActualPriceUSD || 0;
-    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
-    return s + ((advSf || 0) * advRate) + ((balSf || 0) * balRate);
+    const { advShortfallUSD: advSf, balShortfallUSD: balSf } = getSettledInvoiceShortfallBreakdown(inv);
+    return s + (advSf * advRate) + (balSf * balRate);
   }, 0);
 
-  // Shortfall enriched invoices list
+  // Shortfall enriched invoices list (settled invoices only)
   const shortfallInvoicesList = useMemo(() => {
     return activeInvoices
       .map((inv) => {
         const advUSD = inv.advanceReceivedCurrency || 0;
         const termsUSD = inv.advanceTermsUSD ?? (advUSD > 0 ? advUSD : undefined);
-        const advShortfall = inv.advanceShortfallUSD ?? (termsUSD && advUSD && termsUSD > advUSD ? Number((termsUSD - advUSD).toFixed(2)) : 0);
-
         const balUSD = inv.balancePaymentAmountCurrency || 0;
         const priceUSD = inv.balanceActualPriceUSD ?? (balUSD > 0 ? Number((inv.totalAmountCurrency - (termsUSD || advUSD || 0)).toFixed(2)) : undefined);
-        const balShortfall = inv.balanceShortfallUSD ?? (priceUSD && balUSD && priceUSD > balUSD ? Number((priceUSD - balUSD).toFixed(2)) : 0);
-
-        const totalShortfall = inv.totalShortfallUSD ?? Number((advShortfall + balShortfall).toFixed(2));
+        const {
+          isSettled,
+          advShortfallUSD: advShortfall,
+          balShortfallUSD: balShortfall,
+          totalShortfallUSD: totalShortfall
+        } = getSettledInvoiceShortfallBreakdown(inv);
 
         const bankRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
         const advRate = inv.advanceExchangeRate || bankRate;
@@ -259,6 +237,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
         return {
           ...inv,
+          isSettled,
           termsUSD,
           advUSD,
           advShortfall,
@@ -276,7 +255,7 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
           countryDisplay: consignee?.country || 'Export'
         };
       })
-      .filter((inv) => inv.totalShortfall > 0);
+      .filter((inv) => inv.isSettled && inv.totalShortfall > 0);
   }, [activeInvoices, customerMap]);
 
   const filteredShortfallInvoices = useMemo(() => {
@@ -1044,6 +1023,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
                   const advPct = inv.totalAmountCurrency > 0 ? ((advUSD / inv.totalAmountCurrency) * 100).toFixed(0) : '0';
                   const outstandingAfterAdv = computeOutstandingFromAdvance(inv.totalAmountCurrency, advUSD, balRate);
+                  const shortfallBreakdown = getSettledInvoiceShortfallBreakdown(inv);
+                  const isRowSettled = shortfallBreakdown.isSettled || inv.balanceRealizationCurrency <= 0.05;
+                  const rowShortfallTotal = shortfallBreakdown.totalShortfallUSD;
+                  const rowUnrealizedUSD = isRowSettled ? 0 : shortfallBreakdown.unrealizedBalanceUSD;
 
                   return (
                     <tr
@@ -1144,9 +1127,9 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                                 Terms: ${(inv.advanceTermsUSD || 0).toLocaleString()}
                               </div>
                             )}
-                            {inv.advanceShortfallUSD && inv.advanceShortfallUSD > 0 && (
+                            {shortfallBreakdown.advShortfallUSD > 0 && (
                               <div className="text-[9px] text-amber-700 font-bold">
-                                -${inv.advanceShortfallUSD.toFixed(2)} wire fee
+                                -${shortfallBreakdown.advShortfallUSD.toFixed(2)} wire fee
                               </div>
                             )}
                           </div>
@@ -1206,16 +1189,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                                 Price: ${(inv.balanceActualPriceUSD || 0).toLocaleString()}
                               </div>
                             )}
-                            {inv.balanceShortfallUSD && inv.balanceShortfallUSD > 0 && (
+                            {shortfallBreakdown.balShortfallUSD > 0 && (
                               <div className="text-[9px] text-amber-700 font-bold">
-                                -${inv.balanceShortfallUSD.toFixed(2)} wire fee
+                                -${shortfallBreakdown.balShortfallUSD.toFixed(2)} wire fee
                               </div>
                             )}
                           </div>
                         ) : (
                           <div>
                             <span className="text-[11px] text-amber-700 font-semibold italic">
-                              Pending {inv.currency} {(inv.balanceRealizationCurrency || 0).toLocaleString()}
+                              Pending {inv.currency} {rowUnrealizedUSD.toLocaleString()}
                             </span>
                             {inv.balanceActualPriceUSD && inv.balanceActualPriceUSD > 0 && (
                               <div className="text-[9px] text-ink-500">
@@ -1247,10 +1230,10 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
                       {/* Realization Shortfall in USD */}
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap bg-amber-50/30">
-                        {inv.totalShortfallUSD && inv.totalShortfallUSD > 0 ? (
+                        {rowShortfallTotal > 0 ? (
                           <div>
                             <div className="font-black text-amber-800 tabular-nums">
-                              -${inv.totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              -${rowShortfallTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </div>
                             <div className="text-[9px] text-amber-700 font-semibold">
                               USD Deductions
@@ -1265,19 +1248,16 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div
                           className={`font-black tabular-nums ${
-                            inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
+                            isRowSettled
                               ? 'text-emerald-700'
                               : 'text-rose-700'
                           }`}
                         >
                           {inv.currency}{' '}
-                          {(inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
-                            ? 0
-                            : inv.balanceRealizationCurrency
-                          ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {rowUnrealizedUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-ink-500">
-                          {inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05
+                          {isRowSettled
                             ? 'Fully Cleared'
                             : 'Unsettled'}
                         </div>
@@ -1287,22 +1267,22 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
                         <StatusBadge
                           status={
-                            inv.realizationStatus === 'Fully Realized'
+                            isRowSettled
                               ? 'Realized'
-                              : inv.realizationStatus === 'Partially Realized'
+                              : (inv.totalRealizedCurrency || 0) > 0
                               ? 'Partially realized'
                               : 'Not realized'
                           }
                         />
-                        {inv.totalShortfallUSD && inv.totalShortfallUSD > 0 ? (
+                        {rowShortfallTotal > 0 ? (
                           <div className="mt-1">
                             <button
                               onClick={() => setActiveTab('shortfall-breakup')}
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[9px] font-bold cursor-pointer hover:bg-amber-100 transition"
-                              title={`Shortfall Deductions: -$${inv.totalShortfallUSD.toFixed(2)}. Fully cleared from receivables.`}
+                              title={`Shortfall Deductions: -$${rowShortfallTotal.toFixed(2)}. Fully cleared from receivables.`}
                             >
                               <Receipt className="w-2.5 h-2.5 text-amber-600" />
-                              <span>-${inv.totalShortfallUSD.toFixed(2)} shortfall</span>
+                              <span>-${rowShortfallTotal.toFixed(2)} shortfall</span>
                             </button>
                           </div>
                         ) : null}

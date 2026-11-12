@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V20 - Optional advance forward rate in realization form)
-const CACHE_VERSION = 'seafood-pwa-v20';
+// Seafood Purchase App - Offline PWA Service Worker (V21 - Advance-only realization shows unrealized balance instead of shortfall)
+const CACHE_VERSION = 'seafood-pwa-v21';
 const STATIC_ASSETS = [
   './',
   './index.html',

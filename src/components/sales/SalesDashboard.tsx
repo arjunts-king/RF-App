@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
+import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
@@ -156,21 +157,13 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const totalRealizedINR = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const totalRealizedUSD = filteredInvoices.reduce((s, inv) => s + inv.totalRealizedCurrency, 0);
   const totalOutstandingUSD = filteredInvoices.reduce(
-    (s, inv) => (inv.realizationStatus === 'Fully Realized' || inv.balanceRealizationCurrency <= 0.05 ? s : s + inv.balanceRealizationCurrency),
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).unrealizedBalanceUSD,
     0
   );
-  const totalShortfallUSD = filteredInvoices.reduce((s, inv) => {
-    if (inv.totalShortfallUSD !== undefined && inv.totalShortfallUSD !== null) {
-      return s + (inv.totalShortfallUSD || 0);
-    }
-    const adv = inv.advanceReceivedCurrency || 0;
-    const terms = inv.advanceTermsUSD || 0;
-    const advSf = inv.advanceShortfallUSD ?? (adv > 0 && terms > adv ? terms - adv : 0);
-    const bal = inv.balancePaymentAmountCurrency || 0;
-    const price = inv.balanceActualPriceUSD || 0;
-    const balSf = inv.balanceShortfallUSD ?? ((bal > 0 || inv.realizationStatus === 'Fully Realized') && price > bal ? price - bal : 0);
-    return s + ((advSf || 0) + (balSf || 0));
-  }, 0);
+  const totalShortfallUSD = filteredInvoices.reduce(
+    (s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).totalShortfallUSD,
+    0
+  );
   const uniqueCustomerCount = new Set(filteredInvoices.map((inv) => inv.consigneeId)).size;
 
   // Monthly Sales Value Trend Data (Last 6 Months)

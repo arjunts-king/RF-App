@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatForwardRate } from '../../utils/calculations';
-import { computeOutstandingFromAdvance } from '../../utils/collectionAnalysis';
+import { computeOutstandingFromAdvance, computeSettlementReconciliation } from '../../utils/collectionAnalysis';
 import { exportRealizationToWord } from '../../utils/exportRealizationStatement';
 import { RealizationStatementModal } from './RealizationStatementModal';
 import {
@@ -77,8 +77,6 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
         ? String(invoice.advanceTermsUSD)
         : invoice.advanceReceivedCurrency
         ? String(invoice.advanceReceivedCurrency)
-        : invoice.totalAmountCurrency
-        ? String(Number((invoice.totalAmountCurrency * 0.3).toFixed(2)))
         : '';
       setAdvanceTermsUSD(defaultAdvTerms);
 
@@ -117,24 +115,29 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
   const currentAdvTermsUSD = parseFloat(advanceTermsUSD) || 0;
   const currentAdvUSD = parseFloat(advanceReceived) || 0;
-  const advShortfallUSD = currentAdvTermsUSD > currentAdvUSD ? Number((currentAdvTermsUSD - currentAdvUSD).toFixed(2)) : 0;
-
   const currentBalPriceUSD = parseFloat(balanceActualPriceUSD) || 0;
   const currentBalUSD = parseFloat(balancePaymentAmount) || 0;
-  let balShortfallUSD = currentBalPriceUSD > currentBalUSD ? Number((currentBalPriceUSD - currentBalUSD).toFixed(2)) : 0;
 
-  if (invoice.invoiceNo.includes('35/26-27')) {
-    balShortfallUSD = 50.00;
-  } else if (invoice.invoiceNo.includes('53/26-27')) {
-    balShortfallUSD = 25.40;
-  } else if (currentBalUSD > 0) {
-    const diff = Math.max(0, Number((invoice.totalAmountCurrency - currentAdvUSD - currentBalUSD - advShortfallUSD).toFixed(2)));
-    if (diff > 0) {
-      balShortfallUSD = Math.max(balShortfallUSD, diff);
-    }
-  }
+  // Compute reconciliation: when only advance realization is done (balance not settled yet),
+  // remaining amount stays strictly Unrealized Balance — never Shortfall.
+  const reconciliation = computeSettlementReconciliation({
+    invoiceNo: invoice.invoiceNo,
+    totalAmountCurrency: invoice.totalAmountCurrency,
+    advanceTermsUSD: currentAdvTermsUSD,
+    advanceReceivedCurrency: currentAdvUSD,
+    balanceActualPriceUSD: currentBalPriceUSD,
+    balancePaymentAmountCurrency: currentBalUSD
+  });
 
-  const totalShortfallUSD = Number((advShortfallUSD + balShortfallUSD).toFixed(2));
+  const {
+    isSettled,
+    advShortfallUSD,
+    balShortfallUSD,
+    totalShortfallUSD,
+    totalRealizedCurrency: totalSettledUSD,
+    unrealizedBalanceCurrency: remainingUSD,
+    realizationStatus: previewStatus
+  } = reconciliation;
 
   const currentAdvINR = currentAdvUSD * currentAdvRate;
   const currentBalINR = currentBalUSD * currentBalRate;
@@ -145,11 +148,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
     currentBalRate
   );
 
-  const totalSettledUSD = currentAdvUSD + currentBalUSD;
   const totalSettledINR = currentAdvINR + currentBalINR;
-  const remainingUSD = (currentBalUSD > 0 || totalSettledUSD + totalShortfallUSD >= invoice.totalAmountCurrency - 0.05)
-    ? 0
-    : Math.max(0, Number((invoice.totalAmountCurrency - totalSettledUSD - totalShortfallUSD).toFixed(2)));
   const remainingINR = remainingUSD * currentBalRate;
 
   const weightedAverageRate =
@@ -158,13 +157,6 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       : hasAdvForwardRate
       ? (currentAdvRate + currentBalRate) / 2
       : currentBalRate;
-
-  const previewStatus =
-    totalSettledUSD <= 0
-      ? 'Not Realized'
-      : (currentBalUSD > 0 || totalSettledUSD + totalShortfallUSD >= invoice.totalAmountCurrency - 0.05 || remainingUSD <= 0.05)
-      ? 'Fully Realized'
-      : 'Partially Realized';
 
   const previewProgressPct = Math.min(100, Math.round(((totalSettledUSD + totalShortfallUSD) / (invoice.totalAmountCurrency || 1)) * 100));
 
@@ -235,15 +227,15 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       balanceExchangeRate: currentBalRate,
       advanceTermsUSD: currentAdvTermsUSD > 0 ? currentAdvTermsUSD : undefined,
       advanceReceivedCurrency: currentAdvUSD > 0 ? currentAdvUSD : undefined,
-      advanceShortfallUSD: advShortfallUSD > 0 ? advShortfallUSD : undefined,
+      advanceShortfallUSD: isSettled && advShortfallUSD > 0 ? advShortfallUSD : undefined,
       advanceReceivedDate: currentAdvUSD > 0 ? advanceReceivedDate : undefined,
       advanceBankRef: currentAdvUSD > 0 ? advanceBankRef.trim() : undefined,
-      balanceActualPriceUSD: currentBalPriceUSD > 0 ? currentBalPriceUSD : undefined,
+      balanceActualPriceUSD: isSettled && currentBalPriceUSD > 0 ? currentBalPriceUSD : undefined,
       balancePaymentAmountCurrency: currentBalUSD > 0 ? currentBalUSD : undefined,
-      balanceShortfallUSD: balShortfallUSD > 0 ? balShortfallUSD : undefined,
+      balanceShortfallUSD: isSettled && balShortfallUSD > 0 ? balShortfallUSD : undefined,
       balancePaymentDate: currentBalUSD > 0 ? balancePaymentDate : undefined,
       balanceBankRef: currentBalUSD > 0 ? balanceBankRef.trim() : undefined,
-      totalShortfallUSD: totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
+      totalShortfallUSD: isSettled && totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
       bankAccountId: bankAccountId || undefined,
       notes: notes.trim() || undefined
     });

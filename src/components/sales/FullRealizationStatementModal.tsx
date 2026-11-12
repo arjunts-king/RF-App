@@ -3,6 +3,7 @@ import { SalesInvoice, BusinessSettings, BankAccount } from '../../types';
 import { formatINR } from '../../utils/calculations';
 import { formatDDMMYYYY } from '../../utils/exportWordInvoice';
 import { exportFullRealizationToWord } from '../../utils/exportRealizationStatement';
+import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
 import {
   FileText,
   Printer,
@@ -103,20 +104,19 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
     0
   );
 
-  const totalShortfallUSD = activeInvoices.reduce((s, inv) => s + (inv.totalShortfallUSD || 0), 0);
-  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.realizationStatus === 'Fully Realized' || (inv.balanceRealizationCurrency || 0) <= 0.05) return s;
-    return s + (inv.balanceRealizationCurrency || 0);
-  }, 0);
+  const totalShortfallUSD = activeInvoices.reduce((s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).totalShortfallUSD, 0);
+  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).unrealizedBalanceUSD, 0);
 
   const fullyRealizedCount = activeInvoices.filter(
-    (i) => i.realizationStatus === 'Fully Realized' || (i.balanceRealizationCurrency || 0) <= 0.05
+    (i) => getSettledInvoiceShortfallBreakdown(i).isSettled
   ).length;
-  const partiallyRealizedCount = activeInvoices.filter((i) => i.realizationStatus === 'Partially Realized').length;
+  const partiallyRealizedCount = activeInvoices.filter(
+    (i) => !getSettledInvoiceShortfallBreakdown(i).isSettled && (i.totalRealizedCurrency || 0) > 0
+  ).length;
   const notRealizedCount = activeInvoices.filter(
-    (i) => i.realizationStatus === 'Not Realized' || !i.realizationStatus
+    (i) => !getSettledInvoiceShortfallBreakdown(i).isSettled && (i.totalRealizedCurrency || 0) <= 0
   ).length;
-  const shortfallCount = activeInvoices.filter((i) => (i.totalShortfallUSD || 0) > 0).length;
+  const shortfallCount = activeInvoices.filter((i) => getSettledInvoiceShortfallBreakdown(i).totalShortfallUSD > 0).length;
 
   const overallProgressPct =
     totalInvoicedUSD > 0
@@ -144,7 +144,7 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
         const isNot = inv.realizationStatus === 'Not Realized' || !inv.realizationStatus;
         if (!isNot) return false;
       } else if (statusFilter === 'shortfall') {
-        if (!inv.totalShortfallUSD || inv.totalShortfallUSD <= 0) return false;
+        if (getSettledInvoiceShortfallBreakdown(inv).totalShortfallUSD <= 0) return false;
       }
 
       if (searchTerm) {
@@ -458,8 +458,8 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
                 <tbody className="divide-y divide-slate-100">
                   {displayInvoices.map((inv, idx) => {
                     const invDate = formatDDMMYYYY(inv.invoiceDate);
-                    const isFullyRealized =
-                      inv.realizationStatus === 'Fully Realized' || (inv.balanceRealizationCurrency || 0) <= 0.05;
+                    const breakdown = getSettledInvoiceShortfallBreakdown(inv);
+                    const isFullyRealized = breakdown.isSettled;
                     const statusText = isFullyRealized
                       ? 'Fully Realized'
                       : (inv.totalRealizedCurrency || 0) > 0
@@ -475,7 +475,7 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
                     const advRate = inv.advanceExchangeRate || inv.bankPreDeterminedExchangeRate || 84.5;
                     const balAmt = inv.balancePaymentAmountCurrency || 0;
                     const balRate = inv.balanceExchangeRate || inv.bankPreDeterminedExchangeRate || 84.5;
-                    const shortfallAmt = inv.totalShortfallUSD || 0;
+                    const shortfallAmt = breakdown.totalShortfallUSD;
                     const realizedUSD =
                       inv.totalRealizedCurrency !== undefined ? inv.totalRealizedCurrency : advAmt + balAmt;
                     const realizedINR =

@@ -36,6 +36,8 @@ import {
 
 import {
   computeOutstandingFromAdvance,
+  computeSettlementReconciliation,
+  getSettledInvoiceShortfallBreakdown,
   calculateDaysBetween,
   calculateReceivablesCollectionAnalysis
 } from '../utils/collectionAnalysis.ts';
@@ -3722,8 +3724,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v20'), 'Service worker must bump cache version to v20');
-  assert.ok(mainCode.includes('sw.js?v=20'), 'main.tsx must register sw.js?v=20');
+  assert.ok(swCode.includes('seafood-pwa-v21'), 'Service worker must bump cache version to v21');
+  assert.ok(mainCode.includes('sw.js?v=21'), 'main.tsx must register sw.js?v=21');
 });
 
 // ============================================================================
@@ -3830,6 +3832,131 @@ test('Optional Advance Forward Rate in Realization Entry Form & Settlement Persi
   assert.ok(
     viewCode.includes('Adv: —'),
     'SalesRealizationView must show clean dash when invoice has no advance forward rate or advance'
+  );
+});
+
+// ============================================================================
+// SUITE 62: Advance-Only Realization Shows Unrealized Balance (Not Shortfall)
+// ============================================================================
+test('Advance-only realization keeps remaining balance as unrealized and preserves settled shortfalls (genuine collectionAnalysis.ts)', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Advance-only payment (balance = 0): even if advanceTermsUSD > advanceReceived or balanceActualPriceUSD > 0,
+  //    shortfalls MUST remain $0 and status MUST be Partially Realized with remaining balance intact.
+  const advOnly = computeSettlementReconciliation({
+    totalAmountCurrency: 50000,
+    advanceTermsUSD: 15000,
+    advanceReceivedCurrency: 14800,
+    balanceActualPriceUSD: 35000,
+    balancePaymentAmountCurrency: 0,
+  });
+  assert.equal(advOnly.isSettled, false, 'Advance-only invoice must NOT be treated as settled');
+  assert.equal(advOnly.advShortfallUSD, 0, 'Advance-only invoice must not record advance shortfall before settlement');
+  assert.equal(advOnly.balShortfallUSD, 0, 'Advance-only invoice must not record balance shortfall when balance is 0');
+  assert.equal(advOnly.totalShortfallUSD, 0, 'Advance-only invoice must have $0 total shortfall');
+  assert.equal(advOnly.totalRealizedCurrency, 14800);
+  assert.equal(advOnly.unrealizedBalanceCurrency, 35200, 'Remaining balance must be shown as unrealized balance');
+  assert.equal(advOnly.realizationStatus, 'Partially Realized');
+
+  // Same check when NO advanceTermsUSD was provided at all (advance = $15,000 of $50,000)
+  const advOnlyNoTerms = computeSettlementReconciliation({
+    totalAmountCurrency: 50000,
+    advanceTermsUSD: 0,
+    advanceReceivedCurrency: 15000,
+    balanceActualPriceUSD: 0,
+    balancePaymentAmountCurrency: 0,
+  });
+  assert.equal(advOnlyNoTerms.isSettled, false);
+  assert.equal(advOnlyNoTerms.totalShortfallUSD, 0);
+  assert.equal(advOnlyNoTerms.unrealizedBalanceCurrency, 35000);
+  assert.equal(advOnlyNoTerms.realizationStatus, 'Partially Realized');
+
+  // 2. Zero realization -> Not Realized with full unrealized balance and $0 shortfall
+  const unrealized = computeSettlementReconciliation({
+    totalAmountCurrency: 50000,
+    advanceTermsUSD: 15000,
+    advanceReceivedCurrency: 0,
+    balanceActualPriceUSD: 35000,
+    balancePaymentAmountCurrency: 0,
+  });
+  assert.equal(unrealized.isSettled, false);
+  assert.equal(unrealized.totalShortfallUSD, 0);
+  assert.equal(unrealized.unrealizedBalanceCurrency, 50000);
+  assert.equal(unrealized.realizationStatus, 'Not Realized');
+
+  // 3. After settling the balance leg, ONLY the remaining difference becomes shortfall & unrealized becomes $0
+  const settledWithWireDeduction = computeSettlementReconciliation({
+    totalAmountCurrency: 50000,
+    advanceTermsUSD: 15000,
+    advanceReceivedCurrency: 15000,
+    balanceActualPriceUSD: 35000,
+    balancePaymentAmountCurrency: 34950,
+  });
+  assert.equal(settledWithWireDeduction.isSettled, true);
+  assert.equal(settledWithWireDeduction.advShortfallUSD, 0);
+  assert.equal(settledWithWireDeduction.balShortfallUSD, 50);
+  assert.equal(settledWithWireDeduction.totalShortfallUSD, 50);
+  assert.equal(settledWithWireDeduction.unrealizedBalanceCurrency, 0);
+  assert.equal(settledWithWireDeduction.realizationStatus, 'Fully Realized');
+
+  // 4. Stale persisted shortfall fields on an advance-only invoice must be ignored by getSettledInvoiceShortfallBreakdown
+  const staleAdvOnlyBreakdown = getSettledInvoiceShortfallBreakdown({
+    invoiceNo: 'RF/EXP/57/26-27',
+    totalAmountCurrency: 64169.5,
+    advanceTermsUSD: 19250.85,
+    advanceReceivedCurrency: 15000,
+    advanceShortfallUSD: 4250.85,
+    balanceActualPriceUSD: 44918.65,
+    balancePaymentAmountCurrency: 0,
+    balanceShortfallUSD: 44918.65,
+    totalShortfallUSD: 49169.5,
+    totalRealizedCurrency: 15000,
+    balanceRealizationCurrency: 0,
+    realizationStatus: 'Fully Realized',
+  });
+  assert.equal(staleAdvOnlyBreakdown.isSettled, false, 'Invoice with balance=0 must not be reported as settled');
+  assert.equal(staleAdvOnlyBreakdown.advShortfallUSD, 0);
+  assert.equal(staleAdvOnlyBreakdown.balShortfallUSD, 0);
+  assert.equal(staleAdvOnlyBreakdown.totalShortfallUSD, 0);
+  assert.equal(staleAdvOnlyBreakdown.unrealizedBalanceUSD, 49169.5);
+
+  // 5. All existing settled invoices (RF/EXP/01..56) retain 100% identical shortfalls
+  const filePath = path.resolve('src/data/exportSalesData.ts');
+  const content = fs.readFileSync(filePath, 'utf8');
+  const prefix = 'export const VERIFIED_SALES_INVOICES: SalesInvoice[] = ';
+  const idx = content.indexOf(prefix);
+  assert.ok(idx > 0);
+  const invoices = JSON.parse(content.slice(idx + prefix.length).trim().replace(/;$/, ''));
+
+  const settled = invoices.filter((inv) => inv.realizationStatus === 'Fully Realized');
+  assert.equal(settled.length, 56, 'Expected 56 already-settled baseline invoices');
+  for (const inv of settled) {
+    const bd = getSettledInvoiceShortfallBreakdown(inv);
+    assert.equal(bd.isSettled, true, `${inv.invoiceNo} must stay settled`);
+    assert.equal(bd.unrealizedBalanceUSD, 0, `${inv.invoiceNo} must have $0 unrealized balance`);
+    assert.ok(
+      Math.abs(bd.totalShortfallUSD - (inv.totalShortfallUSD || 0)) < 0.01,
+      `${inv.invoiceNo} shortfall must remain ${inv.totalShortfallUSD}, got ${bd.totalShortfallUSD}`
+    );
+  }
+
+  // Specific check on RF/EXP/35/26-27 ($50 shortfall) and RF/EXP/53/26-27 ($25.40 shortfall)
+  const inv35 = invoices.find((i) => i.invoiceNo.includes('35/26-27'));
+  const inv53 = invoices.find((i) => i.invoiceNo.includes('53/26-27'));
+  assert.ok(inv35 && inv53);
+  assert.equal(getSettledInvoiceShortfallBreakdown(inv35).totalShortfallUSD, 50);
+  assert.equal(getSettledInvoiceShortfallBreakdown(inv53).totalShortfallUSD, 25.4);
+
+  // 6. RealizationModal must not auto-fill 30% advanceTermsUSD when unset
+  const modalCode = fs.readFileSync(path.resolve('src/components/sales/RealizationModal.tsx'), 'utf8');
+  assert.ok(
+    !modalCode.includes('const defaultAdvTerms = invoice.advanceTermsUSD || invoice.advanceReceivedCurrency || Math.round(invoice.totalAmountCurrency * 0.30'),
+    'RealizationModal must not guess 30% advanceTermsUSD by default'
+  );
+  assert.ok(
+    modalCode.includes('computeSettlementReconciliation('),
+    'RealizationModal must use shared computeSettlementReconciliation helper'
   );
 });
 

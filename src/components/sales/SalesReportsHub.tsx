@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
+import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import {
@@ -104,19 +105,20 @@ export const SalesReportsHub: React.FC = () => {
 
   const activeInvoices = useMemo(() => salesInvoices.filter((inv) => !inv.isVoided), [salesInvoices]);
 
-  // Shortfall Breakup Items
+  // Shortfall Breakup Items (settled invoices only)
   const shortfallReportRows = useMemo(() => {
     return activeInvoices
       .map((inv) => {
         const advUSD = inv.advanceReceivedCurrency || 0;
         const termsUSD = inv.advanceTermsUSD ?? (advUSD > 0 ? advUSD : undefined);
-        const advShortfall = inv.advanceShortfallUSD ?? (termsUSD && advUSD && termsUSD > advUSD ? Number((termsUSD - advUSD).toFixed(2)) : 0);
-
         const balUSD = inv.balancePaymentAmountCurrency || 0;
         const priceUSD = inv.balanceActualPriceUSD ?? (balUSD > 0 ? Number((inv.totalAmountCurrency - (termsUSD || advUSD || 0)).toFixed(2)) : undefined);
-        const balShortfall = inv.balanceShortfallUSD ?? (priceUSD && balUSD && priceUSD > balUSD ? Number((priceUSD - balUSD).toFixed(2)) : 0);
-
-        const totalShortfall = inv.totalShortfallUSD ?? Number((advShortfall + balShortfall).toFixed(2));
+        const {
+          isSettled,
+          advShortfallUSD: advShortfall,
+          balShortfallUSD: balShortfall,
+          totalShortfallUSD: totalShortfall
+        } = getSettledInvoiceShortfallBreakdown(inv);
 
         const bankRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
         const advRate = inv.advanceExchangeRate || bankRate;
@@ -130,6 +132,7 @@ export const SalesReportsHub: React.FC = () => {
 
         return {
           ...inv,
+          isSettled,
           termsUSD,
           advUSD,
           advShortfall,
@@ -147,7 +150,7 @@ export const SalesReportsHub: React.FC = () => {
           country: consignee?.country || 'Export'
         };
       })
-      .filter((inv) => inv.totalShortfall > 0);
+      .filter((inv) => inv.isSettled && inv.totalShortfall > 0);
   }, [activeInvoices, customerMap]);
 
   const filteredShortfallRows = useMemo(() => {

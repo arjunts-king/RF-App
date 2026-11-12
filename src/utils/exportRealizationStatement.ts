@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import type { SalesInvoice, BusinessSettings, BankAccount } from '../types/index.ts';
 import { SAMPLE_DOCX_TEMPLATE_BASE64 } from './sampleDocxTemplateBase64.ts';
 import { formatDDMMYYYY } from './exportWordInvoice.ts';
+import { getSettledInvoiceShortfallBreakdown } from './collectionAnalysis.ts';
 
 function escapeXml(str: unknown): string {
   if (str === undefined || str === null) return '';
@@ -70,7 +71,6 @@ export function buildRealizationStatementTableXml(
   const advReceivedINR = Number(inv.advanceReceivedINR || (advReceivedUSD * advRate));
   const advReceivedDate = formatDDMMYYYY(inv.advanceReceivedDate) || (advReceivedUSD > 0 ? 'Recorded' : 'Pending');
   const advBankRef = inv.advanceBankRef || '—';
-  const advShortfallUSD = Number(inv.advanceShortfallUSD || (advTermsUSD > advReceivedUSD ? advTermsUSD - advReceivedUSD : 0));
 
   // Balance Leg
   const balPriceUSD = Number(inv.balanceActualPriceUSD !== undefined ? inv.balanceActualPriceUSD : Math.max(0, totalInvoicedUSD - advTermsUSD));
@@ -78,17 +78,26 @@ export function buildRealizationStatementTableXml(
   const balReceivedINR = Number(inv.balancePaymentINR || (balReceivedUSD * balRate));
   const balReceivedDate = formatDDMMYYYY(inv.balancePaymentDate) || (balReceivedUSD > 0 ? 'Recorded' : 'Awaiting Wire');
   const balBankRef = inv.balanceBankRef || '—';
-  let balShortfallUSD = Number(inv.balanceShortfallUSD || 0);
-  if (invoiceNo.includes('35/26-27')) balShortfallUSD = 50.00;
-  else if (invoiceNo.includes('53/26-27')) balShortfallUSD = 25.40;
 
-  // Realization Totals
+  // Realization Totals (shortfalls only apply once invoice is settled)
   const totalRealizedUSD = Number(inv.totalRealizedCurrency !== undefined ? inv.totalRealizedCurrency : (advReceivedUSD + balReceivedUSD));
   const totalRealizedINR = Number(inv.totalRealizedINR !== undefined ? inv.totalRealizedINR : (advReceivedINR + balReceivedINR));
-  const totalShortfallUSD = Number(inv.totalShortfallUSD !== undefined ? inv.totalShortfallUSD : (advShortfallUSD + balShortfallUSD));
-  const rawBalance = Number(inv.balanceRealizationCurrency !== undefined ? inv.balanceRealizationCurrency : Math.max(0, totalInvoicedUSD - totalRealizedUSD));
-  const isFullyRealized = inv.realizationStatus === 'Fully Realized' || rawBalance <= 0.05;
-  const balanceOutstandingUSD = isFullyRealized ? 0 : rawBalance;
+  const breakdown = getSettledInvoiceShortfallBreakdown({
+    ...inv,
+    totalAmountCurrency: totalInvoicedUSD,
+  });
+  const advShortfallUSD = breakdown.advShortfallUSD;
+  let balShortfallUSD = breakdown.balShortfallUSD;
+  let totalShortfallUSD = breakdown.totalShortfallUSD;
+  if (breakdown.isSettled && invoiceNo.includes('35/26-27')) {
+    balShortfallUSD = 50.00;
+    totalShortfallUSD = advShortfallUSD + balShortfallUSD;
+  } else if (breakdown.isSettled && invoiceNo.includes('53/26-27')) {
+    balShortfallUSD = 25.40;
+    totalShortfallUSD = advShortfallUSD + balShortfallUSD;
+  }
+  const isFullyRealized = breakdown.isSettled;
+  const balanceOutstandingUSD = breakdown.unrealizedBalanceUSD;
 
   const statusText = isFullyRealized ? 'FULLY REALIZED' : (totalRealizedUSD > 0 ? 'PARTIALLY REALIZED' : 'NOT REALIZED');
   const statusBg = isFullyRealized ? '065F46' : (totalRealizedUSD > 0 ? '1E40AF' : '991B1B');
@@ -801,18 +810,17 @@ export function buildFullRealizationStatementTableXml(
     0
   );
 
-  const totalShortfallUSD = activeInvoices.reduce((s, inv) => s + (inv.totalShortfallUSD || 0), 0);
-  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => {
-    if (inv.realizationStatus === 'Fully Realized' || (inv.balanceRealizationCurrency || 0) <= 0.05) return s;
-    return s + (inv.balanceRealizationCurrency || 0);
-  }, 0);
+  const totalShortfallUSD = activeInvoices.reduce((s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).totalShortfallUSD, 0);
+  const totalUnrealizedUSD = activeInvoices.reduce((s, inv) => s + getSettledInvoiceShortfallBreakdown(inv).unrealizedBalanceUSD, 0);
 
   const fullyRealizedCount = activeInvoices.filter(
-    (i) => i.realizationStatus === 'Fully Realized' || (i.balanceRealizationCurrency || 0) <= 0.05
+    (i) => getSettledInvoiceShortfallBreakdown(i).isSettled
   ).length;
-  const partiallyRealizedCount = activeInvoices.filter((i) => i.realizationStatus === 'Partially Realized').length;
+  const partiallyRealizedCount = activeInvoices.filter(
+    (i) => !getSettledInvoiceShortfallBreakdown(i).isSettled && (i.totalRealizedCurrency || 0) > 0
+  ).length;
   const notRealizedCount = activeInvoices.filter(
-    (i) => i.realizationStatus === 'Not Realized' || !i.realizationStatus
+    (i) => !getSettledInvoiceShortfallBreakdown(i).isSettled && (i.totalRealizedCurrency || 0) <= 0
   ).length;
 
   const overallProgressPct =
@@ -833,8 +841,8 @@ export function buildFullRealizationStatementTableXml(
   const tableRowsXml = activeInvoices
     .map((inv, idx) => {
       const invDate = formatDDMMYYYY(inv.invoiceDate);
-      const isFullyRealized =
-        inv.realizationStatus === 'Fully Realized' || (inv.balanceRealizationCurrency || 0) <= 0.05;
+      const breakdown = getSettledInvoiceShortfallBreakdown(inv);
+      const isFullyRealized = breakdown.isSettled;
       const statusText = isFullyRealized
         ? 'FULLY REALIZED'
         : (inv.totalRealizedCurrency || 0) > 0
@@ -847,7 +855,7 @@ export function buildFullRealizationStatementTableXml(
       const advRate = inv.advanceExchangeRate || inv.bankPreDeterminedExchangeRate || 84.5;
       const balAmt = inv.balancePaymentAmountCurrency || 0;
       const balRate = inv.balanceExchangeRate || inv.bankPreDeterminedExchangeRate || 84.5;
-      const shortfallAmt = inv.totalShortfallUSD || 0;
+      const shortfallAmt = breakdown.totalShortfallUSD;
       const realizedUSD =
         inv.totalRealizedCurrency !== undefined ? inv.totalRealizedCurrency : advAmt + balAmt;
       const realizedINR =

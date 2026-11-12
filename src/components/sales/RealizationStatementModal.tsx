@@ -1,6 +1,7 @@
 import React from 'react';
 import { SalesInvoice, BusinessSettings, BankAccount } from '../../types';
 import { formatINR } from '../../utils/calculations';
+import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
 import { formatDDMMYYYY } from '../../utils/exportWordInvoice';
 import { exportRealizationToWord } from '../../utils/exportRealizationStatement';
 import {
@@ -68,9 +69,6 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
   const advReceivedINR = Number(invoice.advanceReceivedINR || advReceivedUSD * advRate);
   const advReceivedDate = formatDDMMYYYY(invoice.advanceReceivedDate) || (advReceivedUSD > 0 ? 'Recorded' : 'Pending');
   const advBankRef = invoice.advanceBankRef || '—';
-  const advShortfallUSD = Number(
-    invoice.advanceShortfallUSD || (advTermsUSD > advReceivedUSD ? advTermsUSD - advReceivedUSD : 0)
-  );
 
   // Balance Leg
   const balPriceUSD = Number(
@@ -82,27 +80,20 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
   const balReceivedINR = Number(invoice.balancePaymentINR || balReceivedUSD * balRate);
   const balReceivedDate = formatDDMMYYYY(invoice.balancePaymentDate) || (balReceivedUSD > 0 ? 'Recorded' : 'Awaiting Wire');
   const balBankRef = invoice.balanceBankRef || '—';
-  let balShortfallUSD = Number(invoice.balanceShortfallUSD || 0);
-  if (invoice.invoiceNo.includes('35/26-27')) balShortfallUSD = 50.0;
-  else if (invoice.invoiceNo.includes('53/26-27')) balShortfallUSD = 25.4;
 
-  // Totals
+  // Totals & Settled-Only Shortfall (unsettled / advance-only keeps remaining as unrealized balance)
   const totalRealizedUSD = Number(
     invoice.totalRealizedCurrency !== undefined ? invoice.totalRealizedCurrency : advReceivedUSD + balReceivedUSD
   );
   const totalRealizedINR = Number(
     invoice.totalRealizedINR !== undefined ? invoice.totalRealizedINR : advReceivedINR + balReceivedINR
   );
-  const totalShortfallUSD = Number(
-    invoice.totalShortfallUSD !== undefined ? invoice.totalShortfallUSD : advShortfallUSD + balShortfallUSD
-  );
-  const rawBalance = Number(
-    invoice.balanceRealizationCurrency !== undefined
-      ? invoice.balanceRealizationCurrency
-      : Math.max(0, totalInvoicedUSD - totalRealizedUSD)
-  );
-  const isFullyRealized = invoice.realizationStatus === 'Fully Realized' || rawBalance <= 0.05;
-  const balanceOutstandingUSD = isFullyRealized ? 0 : rawBalance;
+  const shortfallBreakdown = getSettledInvoiceShortfallBreakdown(invoice);
+  const isFullyRealized = shortfallBreakdown.isSettled;
+  const advShortfallUSD = shortfallBreakdown.advShortfallUSD;
+  const balShortfallUSD = shortfallBreakdown.balShortfallUSD;
+  const totalShortfallUSD = shortfallBreakdown.totalShortfallUSD;
+  const balanceOutstandingUSD = shortfallBreakdown.unrealizedBalanceUSD;
 
   // Commercial particulars
   const buyerName = invoice.buyerName && invoice.buyerName !== invoice.consigneeName ? invoice.buyerName : 'Same as Consignee';

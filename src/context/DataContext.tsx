@@ -76,6 +76,7 @@ import {
   getNextInvoiceSequenceNumber
 } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
+import { computeSettlementReconciliation } from '../utils/collectionAnalysis';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
 
@@ -748,9 +749,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        // Global reconciliation: Shortfall of ANY invoice must NOT be shown as outstanding or unrealized.
-        // If an invoice received balance payment or has shortfall, remaining difference is shortfall, NOT unrealized.
-        if (clean.balancePaymentAmountCurrency && clean.balancePaymentAmountCurrency > 0) {
+        // Global reconciliation: Shortfall of ANY settled invoice must NOT be shown as outstanding or unrealized.
+        // If only advance realization (or none) has occurred, keep the remaining balance strictly as Unrealized Balance.
+        const hasSettledBalance =
+          Boolean(clean.balancePaymentAmountCurrency && clean.balancePaymentAmountCurrency > 0) ||
+          Boolean(clean.realizations?.some((r) => r.paymentType === 'Balance' && r.realizedAmountCurrency > 0));
+        if (hasSettledBalance) {
           const remainingDiff = Math.max(
             0,
             Number((clean.totalAmountCurrency - (clean.totalRealizedCurrency || 0) - (clean.advanceShortfallUSD || 0)).toFixed(2))
@@ -761,12 +765,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           clean.balanceRealizationCurrency = 0;
           clean.realizationStatus = 'Fully Realized';
+        } else if (
+          clean.totalAmountCurrency > 0 &&
+          (clean.totalRealizedCurrency || 0) >= clean.totalAmountCurrency - 0.05
+        ) {
+          clean.balanceRealizationCurrency = 0;
+          clean.realizationStatus = 'Fully Realized';
         } else {
-          const totalShortfall = clean.totalShortfallUSD || ((clean.advanceShortfallUSD || 0) + (clean.balanceShortfallUSD || 0)) || 0;
-          if (totalShortfall > 0 && (clean.totalRealizedCurrency || 0) + totalShortfall >= clean.totalAmountCurrency - 0.05) {
-            clean.balanceRealizationCurrency = 0;
-            clean.realizationStatus = 'Fully Realized';
+          clean.advanceShortfallUSD = undefined;
+          clean.balanceShortfallUSD = undefined;
+          clean.totalShortfallUSD = undefined;
+          if (clean.realizations && clean.realizations.length > 0) {
+            clean.realizations = clean.realizations.map((r) =>
+              r.paymentType === 'Advance' ? { ...r, shortfallUSD: undefined } : r
+            );
           }
+          const realized = clean.totalRealizedCurrency || 0;
+          clean.balanceRealizationCurrency = Math.max(
+            0,
+            Number((clean.totalAmountCurrency - realized).toFixed(2))
+          );
+          clean.realizationStatus = realized > 0 ? 'Partially Realized' : 'Not Realized';
         }
 
         // Auto-enrich invoices with verified line items if missing or generic
@@ -2864,7 +2883,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       bankPreDeterminedExchangeRate: invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
       advanceTermsUSD: invoiceData.advanceTermsUSD || invoiceData.advanceReceivedCurrency,
       advanceReceivedCurrency: invoiceData.advanceReceivedCurrency,
-      advanceShortfallUSD: invoiceData.advanceShortfallUSD || (invoiceData.advanceTermsUSD && invoiceData.advanceReceivedCurrency ? Math.max(0, Number((invoiceData.advanceTermsUSD - invoiceData.advanceReceivedCurrency).toFixed(2))) : undefined),
+      advanceShortfallUSD:
+        Boolean(invoiceData.balancePaymentAmountCurrency) ||
+        (invoiceData.advanceReceivedCurrency || 0) >= totalAmountCurrency - 0.05
+          ? (invoiceData.advanceShortfallUSD || (invoiceData.advanceTermsUSD && invoiceData.advanceReceivedCurrency ? Math.max(0, Number((invoiceData.advanceTermsUSD - invoiceData.advanceReceivedCurrency).toFixed(2))) : undefined))
+          : undefined,
       advanceReceivedDate: invoiceData.advanceReceivedDate,
       advanceReceivedINR: invoiceData.advanceReceivedCurrency
         ? Number((invoiceData.advanceReceivedCurrency * (invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
@@ -2872,13 +2895,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       advanceBankRef: invoiceData.advanceBankRef,
       balanceActualPriceUSD: invoiceData.balanceActualPriceUSD || (totalAmountCurrency ? Math.max(0, Number((totalAmountCurrency - (invoiceData.advanceTermsUSD || invoiceData.advanceReceivedCurrency || 0)).toFixed(2))) : undefined),
       balancePaymentAmountCurrency: invoiceData.balancePaymentAmountCurrency,
-      balanceShortfallUSD: invoiceData.balanceShortfallUSD || (invoiceData.balanceActualPriceUSD && invoiceData.balancePaymentAmountCurrency ? Math.max(0, Number((invoiceData.balanceActualPriceUSD - invoiceData.balancePaymentAmountCurrency).toFixed(2))) : undefined),
+      balanceShortfallUSD:
+        Boolean(invoiceData.balancePaymentAmountCurrency)
+          ? (invoiceData.balanceShortfallUSD || (invoiceData.balanceActualPriceUSD && invoiceData.balancePaymentAmountCurrency ? Math.max(0, Number((invoiceData.balanceActualPriceUSD - invoiceData.balancePaymentAmountCurrency).toFixed(2))) : undefined))
+          : undefined,
       balancePaymentDate: invoiceData.balancePaymentDate,
       balancePaymentINR: invoiceData.balancePaymentAmountCurrency
         ? Number((invoiceData.balancePaymentAmountCurrency * (invoiceData.balanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate)).toFixed(2))
         : undefined,
       balanceBankRef: invoiceData.balanceBankRef,
-      totalShortfallUSD: invoiceData.totalShortfallUSD || ((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0) > 0 ? Number(((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0)).toFixed(2)) : undefined),
+      totalShortfallUSD:
+        Boolean(invoiceData.balancePaymentAmountCurrency) ||
+        (invoiceData.advanceReceivedCurrency || 0) >= totalAmountCurrency - 0.05
+          ? (invoiceData.totalShortfallUSD || ((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0) > 0 ? Number(((invoiceData.advanceShortfallUSD || 0) + (invoiceData.balanceShortfallUSD || 0)).toFixed(2)) : undefined))
+          : undefined,
 
       realizations: invoiceData.realizations || [],
       totalRealizedCurrency: invoiceData.totalRealizedCurrency || (invoiceData.advanceReceivedCurrency ? Number(invoiceData.advanceReceivedCurrency) : 0),
@@ -2960,30 +2990,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const realizations = updates.realizations !== undefined ? updates.realizations : existing.realizations;
     const totalRealizedCurrency = Number(realizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2));
     const hasBalancePayment = Boolean(
-      (updates.balancePaymentAmountCurrency !== undefined ? updates.balancePaymentAmountCurrency : existing.balancePaymentAmountCurrency)
+      ((updates.balancePaymentAmountCurrency !== undefined ? updates.balancePaymentAmountCurrency : existing.balancePaymentAmountCurrency) || 0) > 0 ||
+      realizations.some((r) => r.paymentType === 'Balance' && r.realizedAmountCurrency > 0)
     );
-    const accountedShortfall = (updates.totalShortfallUSD !== undefined ? updates.totalShortfallUSD : existing.totalShortfallUSD) || 0;
-    const isSettledWithShortfall =
-      hasBalancePayment ||
-      (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= totalAmountCurrency - 0.05);
-    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= totalAmountCurrency - 0.05)
+    const isSettled = hasBalancePayment || (totalAmountCurrency > 0 && totalRealizedCurrency >= totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = isSettled
       ? 0
-      : Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
+      : Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
     const totalRealizedINR = Number(realizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-      if (
-        balanceRealizationCurrency <= 0.05 ||
-        totalRealizedCurrency >= totalAmountCurrency - 0.05 ||
-        isSettledWithShortfall
-      ) {
-        realizationStatus = 'Fully Realized';
-      } else {
-        realizationStatus = 'Partially Realized';
-      }
+    if (isSettled) {
+      realizationStatus = 'Fully Realized';
+    } else if (totalRealizedCurrency > 0) {
+      realizationStatus = 'Partially Realized';
     }
 
     const updated: SalesInvoice = {
@@ -3059,29 +3081,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalRealizedCurrency = Number(
       updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
     );
-    const hasBalancePayment = Boolean(invoice.balancePaymentAmountCurrency && invoice.balancePaymentAmountCurrency > 0);
-    const accountedShortfall = invoice.totalShortfallUSD || ((invoice.advanceShortfallUSD || 0) + (invoice.balanceShortfallUSD || 0)) || 0;
-    const isSettledWithShortfall =
-      hasBalancePayment ||
-      (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
-    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
+    const hasBalancePayment =
+      Boolean(invoice.balancePaymentAmountCurrency && invoice.balancePaymentAmountCurrency > 0) ||
+      updatedRealizations.some((r) => r.paymentType === 'Balance' && r.realizedAmountCurrency > 0);
+    const isSettled = hasBalancePayment || (invoice.totalAmountCurrency > 0 && totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = isSettled
       ? 0
-      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
+      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-      if (
-        balanceRealizationCurrency <= 0.05 ||
-        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
-        isSettledWithShortfall
-      ) {
-        realizationStatus = 'Fully Realized';
-      } else {
-        realizationStatus = 'Partially Realized';
-      }
+    if (isSettled) {
+      realizationStatus = 'Fully Realized';
+    } else if (totalRealizedCurrency > 0) {
+      realizationStatus = 'Partially Realized';
     }
 
     const updatedInvoice: SalesInvoice = {
@@ -3161,10 +3176,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? Number(Number(settlementData.advanceTermsUSD).toFixed(2))
       : (advanceUSD > 0 ? (invoice.advanceTermsUSD || advanceUSD) : undefined);
 
-    const advanceShortfallUSD = advanceTermsUSD && advanceTermsUSD > advanceUSD
-      ? Number((advanceTermsUSD - advanceUSD).toFixed(2))
-      : undefined;
-
     const advanceDate = advanceUSD > 0
       ? (settlementData.advanceReceivedDate || invoice.advanceReceivedDate || new Date().toISOString().split('T')[0])
       : undefined;
@@ -3173,36 +3184,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       : undefined;
 
     const balanceUSD = Number(settlementData.balancePaymentAmountCurrency) || 0;
-    let balanceActualPriceUSD = Number(settlementData.balanceActualPriceUSD) > 0
-      ? Number(Number(settlementData.balanceActualPriceUSD).toFixed(2))
-      : (balanceUSD > 0
-          ? (invoice.balanceActualPriceUSD || Math.max(0, Number((invoice.totalAmountCurrency - (advanceTermsUSD || advanceUSD)).toFixed(2))))
-          : undefined);
-
-    let balanceShortfallUSD = balanceActualPriceUSD && balanceActualPriceUSD > balanceUSD
-      ? Number((balanceActualPriceUSD - balanceUSD).toFixed(2))
+    let balanceActualPriceUSD = balanceUSD > 0
+      ? (Number(settlementData.balanceActualPriceUSD) > 0
+          ? Number(Number(settlementData.balanceActualPriceUSD).toFixed(2))
+          : (invoice.balanceActualPriceUSD || Math.max(0, Number((invoice.totalAmountCurrency - (advanceTermsUSD || advanceUSD)).toFixed(2)))))
       : undefined;
 
-    // Invoices 35 and 53 specific exact figures
-    if (invoice.invoiceNo.includes('35/26-27')) {
+    if (balanceUSD > 0 && invoice.invoiceNo.includes('35/26-27')) {
       balanceActualPriceUSD = 149419.08;
-      balanceShortfallUSD = 50.00;
-    } else if (invoice.invoiceNo.includes('53/26-27')) {
+    } else if (balanceUSD > 0 && invoice.invoiceNo.includes('53/26-27')) {
       balanceActualPriceUSD = 52806.40;
-      balanceShortfallUSD = 25.40;
-    } else if (balanceUSD > 0) {
-      // General rule: when balance payment is received, any difference is shortfall deductions
-      const remainingDiff = Math.max(
-        0,
-        Number((invoice.totalAmountCurrency - advanceUSD - balanceUSD - (advanceShortfallUSD || 0)).toFixed(2))
-      );
-      if (remainingDiff > 0) {
-        balanceShortfallUSD = Math.max(balanceShortfallUSD || 0, remainingDiff);
-      }
     }
 
-    const totalShortfallUSD = (advanceShortfallUSD || 0) + (balanceShortfallUSD || 0) > 0
-      ? Number(((advanceShortfallUSD || 0) + (balanceShortfallUSD || 0)).toFixed(2))
+    const reconciliation = computeSettlementReconciliation({
+      invoiceNo: invoice.invoiceNo,
+      totalAmountCurrency: invoice.totalAmountCurrency,
+      advanceTermsUSD,
+      advanceReceivedCurrency: advanceUSD,
+      balanceActualPriceUSD,
+      balancePaymentAmountCurrency: balanceUSD
+    });
+
+    const advanceShortfallUSD = reconciliation.isSettled && reconciliation.advShortfallUSD > 0
+      ? reconciliation.advShortfallUSD
+      : undefined;
+    const balanceShortfallUSD = reconciliation.isSettled && reconciliation.balShortfallUSD > 0
+      ? reconciliation.balShortfallUSD
+      : undefined;
+    const totalShortfallUSD = reconciliation.isSettled && reconciliation.totalShortfallUSD > 0
+      ? reconciliation.totalShortfallUSD
       : undefined;
 
     const balanceDate = balanceUSD > 0
@@ -3216,28 +3226,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const advanceINR = advanceUSD > 0 ? Number((advanceUSD * effectiveAdvRate).toFixed(2)) : 0;
     const balanceINR = Number((balanceUSD * balanceRate).toFixed(2));
 
-    const totalRealizedCurrency = Number((advanceUSD + balanceUSD).toFixed(2));
+    const totalRealizedCurrency = reconciliation.totalRealizedCurrency;
     const totalRealizedINR = Number((advanceINR + balanceINR).toFixed(2));
-    const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
-    const isSettledWithShortfall = balanceUSD > 0 || (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
-
-    // Shortfall accounts for deductions; it should NOT be shown as outstanding
-    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
-      ? 0
-      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
-
-    let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-      if (
-        balanceRealizationCurrency <= 0.05 ||
-        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
-        isSettledWithShortfall
-      ) {
-        realizationStatus = 'Fully Realized';
-      } else {
-        realizationStatus = 'Partially Realized';
-      }
-    }
+    const balanceRealizationCurrency = reconciliation.unrealizedBalanceCurrency;
+    const realizationStatus: RealizationStatus = reconciliation.realizationStatus;
 
     // Build synchronized realization records with independent forward rates and shortfalls
     const updatedRealizations: RealizationRecord[] = [];
@@ -3368,33 +3360,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalRealizedCurrency = Number(
       updatedRealizations.reduce((s, r) => s + r.realizedAmountCurrency, 0).toFixed(2)
     );
-    const hasBalancePayment = updatedRealizations.some((r) => r.paymentType === 'Balance');
-    const accountedShortfall = invoice.totalShortfallUSD || ((invoice.advanceShortfallUSD || 0) + (invoice.balanceShortfallUSD || 0)) || 0;
-    const isSettledWithShortfall = hasBalancePayment || (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= invoice.totalAmountCurrency - 0.05);
-    const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05)
+    const hasBalancePayment = updatedRealizations.some((r) => r.paymentType === 'Balance' && r.realizedAmountCurrency > 0);
+    const isSettled = hasBalancePayment || (invoice.totalAmountCurrency > 0 && totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05);
+    const balanceRealizationCurrency = isSettled
       ? 0
-      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
+      : Math.max(0, Number((invoice.totalAmountCurrency - totalRealizedCurrency).toFixed(2)));
     const totalRealizedINR = Number(updatedRealizations.reduce((s, r) => s + r.amountINR, 0).toFixed(2));
     const averageRealizedExchangeRate =
       totalRealizedCurrency > 0 ? Number((totalRealizedINR / totalRealizedCurrency).toFixed(7)) : invoice.exchangeRate;
 
     let realizationStatus: RealizationStatus = 'Not Realized';
-    if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-      if (
-        balanceRealizationCurrency <= 0.05 ||
-        totalRealizedCurrency >= invoice.totalAmountCurrency - 0.05 ||
-        isSettledWithShortfall
-      ) {
-        realizationStatus = 'Fully Realized';
-      } else {
-        realizationStatus = 'Partially Realized';
-      }
+    if (isSettled) {
+      realizationStatus = 'Fully Realized';
+    } else if (totalRealizedCurrency > 0) {
+      realizationStatus = 'Partially Realized';
     }
 
     const lastRealization = updatedRealizations[updatedRealizations.length - 1];
 
     const updatedInvoice: SalesInvoice = {
       ...invoice,
+      balancePaymentAmountCurrency: hasBalancePayment ? invoice.balancePaymentAmountCurrency : undefined,
+      balancePaymentDate: hasBalancePayment ? invoice.balancePaymentDate : undefined,
+      balancePaymentINR: hasBalancePayment ? invoice.balancePaymentINR : undefined,
+      balanceBankRef: hasBalancePayment ? invoice.balanceBankRef : undefined,
+      advanceShortfallUSD: isSettled ? invoice.advanceShortfallUSD : undefined,
+      balanceShortfallUSD: isSettled ? invoice.balanceShortfallUSD : undefined,
+      totalShortfallUSD: isSettled ? invoice.totalShortfallUSD : undefined,
       realizations: updatedRealizations,
       totalRealizedCurrency,
       balanceRealizationCurrency,
@@ -6346,7 +6338,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rawAdvUSD = parseFloat(getFlexibleValue(headerRow, ['actualadvancereceivedusd', 'actualadvancereceived', 'advancereceived', 'advancereceivedcurrency', 'advancereceivedusd', 'advanceamount', 'advanceusd', 'advance']) || '0');
       const advanceReceivedCurrency = !isNaN(rawAdvUSD) && rawAdvUSD > 0 ? Number(rawAdvUSD.toFixed(2)) : undefined;
       const advanceTermsUSD = !isNaN(rawAdvTermsUSD) && rawAdvTermsUSD > 0 ? Number(rawAdvTermsUSD.toFixed(2)) : advanceReceivedCurrency;
-      const advanceShortfallUSD = advanceTermsUSD && advanceReceivedCurrency && advanceTermsUSD > advanceReceivedCurrency ? Number((advanceTermsUSD - advanceReceivedCurrency).toFixed(2)) : undefined;
 
       const rawAdvDate = getFlexibleValue(headerRow, ['dateofreceivingtheadvance', 'dateofreceivingadvance', 'advancedate', 'dateadvance', 'advdate', 'advancereceiveddate']);
       const advanceReceivedDate = rawAdvDate ? formatExcelDate(rawAdvDate) : (advanceReceivedCurrency ? invoiceDate : undefined);
@@ -6358,46 +6349,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const balanceActualPriceUSD = !isNaN(rawBalPriceUSD) && rawBalPriceUSD > 0
         ? Number(rawBalPriceUSD.toFixed(2))
         : (balancePaymentAmountCurrency ? Math.max(0, Number((totalAmountCurrency - (advanceTermsUSD || advanceReceivedCurrency || 0)).toFixed(2))) : undefined);
-      let balanceShortfallUSD = balanceActualPriceUSD && balancePaymentAmountCurrency && balanceActualPriceUSD > balancePaymentAmountCurrency ? Number((balanceActualPriceUSD - balancePaymentAmountCurrency).toFixed(2)) : undefined;
 
-      if (invNoKey.includes('35/26-27')) {
-        balanceShortfallUSD = 50.00;
-      } else if (invNoKey.includes('53/26-27')) {
-        balanceShortfallUSD = 25.40;
-      } else if (balancePaymentAmountCurrency && balancePaymentAmountCurrency > 0) {
-        const remainingDiff = Math.max(0, Number((totalAmountCurrency - (advanceReceivedCurrency || 0) - balancePaymentAmountCurrency - (advanceShortfallUSD || 0)).toFixed(2)));
-        if (remainingDiff > 0) {
-          balanceShortfallUSD = Math.max(balanceShortfallUSD || 0, remainingDiff);
-        }
-      }
+      const reconciliation = computeSettlementReconciliation({
+        invoiceNo: invNoKey,
+        totalAmountCurrency,
+        advanceTermsUSD,
+        advanceReceivedCurrency,
+        balanceActualPriceUSD,
+        balancePaymentAmountCurrency
+      });
 
-      const totalShortfallUSD = (advanceShortfallUSD || 0) + (balanceShortfallUSD || 0) > 0 ? Number(((advanceShortfallUSD || 0) + (balanceShortfallUSD || 0)).toFixed(2)) : undefined;
+      const advanceShortfallUSD = reconciliation.isSettled && reconciliation.advShortfallUSD > 0 ? reconciliation.advShortfallUSD : undefined;
+      const balanceShortfallUSD = reconciliation.isSettled && reconciliation.balShortfallUSD > 0 ? reconciliation.balShortfallUSD : undefined;
+      const totalShortfallUSD = reconciliation.isSettled && reconciliation.totalShortfallUSD > 0 ? reconciliation.totalShortfallUSD : undefined;
 
       const rawBalDate = getFlexibleValue(headerRow, ['dateofreceivingbalanacepayment', 'dateofreceivingbalancepayment', 'balancedate', 'datebalance', 'baldate', 'balancepaymentdate']);
       const balancePaymentDate = rawBalDate ? formatExcelDate(rawBalDate) : undefined;
       const balancePaymentINR = balancePaymentAmountCurrency ? Number((balancePaymentAmountCurrency * balanceExchangeRate).toFixed(2)) : undefined;
 
-      const totalRealizedCurrency = Number(((advanceReceivedCurrency || 0) + (balancePaymentAmountCurrency || 0)).toFixed(2));
+      const totalRealizedCurrency = reconciliation.totalRealizedCurrency;
       const totalRealizedINR = Number(((advanceReceivedINR || 0) + (balancePaymentINR || 0)).toFixed(2));
-      const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
-      const isSettledWithShortfall = Boolean(balancePaymentAmountCurrency) ||
-        (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= totalAmountCurrency - 0.05);
-      const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= totalAmountCurrency - 0.05)
-        ? 0
-        : Math.max(0, Number((totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
-
-      let realizationStatus: RealizationStatus = 'Not Realized';
-      if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-        if (
-          balanceRealizationCurrency <= 0.05 ||
-          totalRealizedCurrency >= totalAmountCurrency - 0.05 ||
-          isSettledWithShortfall
-        ) {
-          realizationStatus = 'Fully Realized';
-        } else {
-          realizationStatus = 'Partially Realized';
-        }
-      }
+      const balanceRealizationCurrency = reconciliation.unrealizedBalanceCurrency;
+      const realizationStatus: RealizationStatus = reconciliation.realizationStatus;
 
       const initialRealizations: RealizationRecord[] = [];
       if (advanceReceivedCurrency && advanceReceivedDate) {
@@ -6683,11 +6656,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? Number(rawAdvTermsUSD.toFixed(2))
           : (advUSD > 0 ? (baseInv.advanceTermsUSD || advUSD) : undefined);
 
-      const advShortfallUSD =
-        advanceTermsUSD && advUSD > 0 && advanceTermsUSD > advUSD
-          ? Number((advanceTermsUSD - advUSD).toFixed(2))
-          : undefined;
-
       const rawAdvDate = getFlexibleValue(row, [
         'dateofreceivingtheadvance',
         'dateofreceivingadvance',
@@ -6735,34 +6703,32 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'balanceaspershippingprice'
         ]) || ''
       );
-      let balanceActualPriceUSD =
-        !isNaN(rawBalPriceUSD) && rawBalPriceUSD > 0
-          ? Number(rawBalPriceUSD.toFixed(2))
-          : (balUSD > 0
-              ? (baseInv.balanceActualPriceUSD || Math.max(0, Number((baseInv.totalAmountCurrency - (advanceTermsUSD || advUSD)).toFixed(2))))
-              : undefined);
+      let balanceActualPriceUSD = balUSD > 0
+        ? (!isNaN(rawBalPriceUSD) && rawBalPriceUSD > 0
+            ? Number(rawBalPriceUSD.toFixed(2))
+            : (baseInv.balanceActualPriceUSD || Math.max(0, Number((baseInv.totalAmountCurrency - (advanceTermsUSD || advUSD)).toFixed(2)))))
+        : undefined;
 
-      let balShortfallUSD =
-        balUSD > 0 && balanceActualPriceUSD && balanceActualPriceUSD > balUSD
-          ? Number((balanceActualPriceUSD - balUSD).toFixed(2))
-          : undefined;
-
-      // Invoices 35 and 53 specific exact figures
-      if (baseInv.invoiceNo.includes('35/26-27')) {
+      if (balUSD > 0 && baseInv.invoiceNo.includes('35/26-27')) {
         balUSD = 149369.08;
         balanceActualPriceUSD = 149419.08;
-        balShortfallUSD = 50.00;
-      } else if (baseInv.invoiceNo.includes('53/26-27')) {
+      } else if (balUSD > 0 && baseInv.invoiceNo.includes('53/26-27')) {
         balUSD = 52781.00;
         balanceActualPriceUSD = 52806.40;
-        balShortfallUSD = 25.40;
-      } else if (balUSD > 0) {
-        // Any difference between total invoice amount and total realized is shortfall deductions, NOT unrealized
-        const remainingDiff = Math.max(0, Number((baseInv.totalAmountCurrency - advUSD - balUSD - (advShortfallUSD || 0)).toFixed(2)));
-        if (remainingDiff > 0) {
-          balShortfallUSD = Math.max(balShortfallUSD || 0, remainingDiff);
-        }
       }
+
+      const reconciliation = computeSettlementReconciliation({
+        invoiceNo: baseInv.invoiceNo,
+        totalAmountCurrency: baseInv.totalAmountCurrency,
+        advanceTermsUSD,
+        advanceReceivedCurrency: advUSD,
+        balanceActualPriceUSD,
+        balancePaymentAmountCurrency: balUSD
+      });
+
+      const advShortfallUSD = reconciliation.isSettled && reconciliation.advShortfallUSD > 0 ? reconciliation.advShortfallUSD : undefined;
+      const balShortfallUSD = reconciliation.isSettled && reconciliation.balShortfallUSD > 0 ? reconciliation.balShortfallUSD : undefined;
+      const totalShortfallUSD = reconciliation.isSettled && reconciliation.totalShortfallUSD > 0 ? reconciliation.totalShortfallUSD : undefined;
 
       const rawStatus = String(
         getFlexibleValue(row, [
@@ -6772,11 +6738,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'status'
         ]) || ''
       ).trim();
-
-      const totalShortfallUSD =
-        (advShortfallUSD || 0) + (balShortfallUSD || 0) > 0
-          ? Number(((advShortfallUSD || 0) + (balShortfallUSD || 0)).toFixed(2))
-          : undefined;
 
       const rawBalDate = getFlexibleValue(row, [
         'dateofreceivingbalanacepayment',
@@ -6816,26 +6777,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const advINR = Number((advUSD * advanceRate).toFixed(2));
       const balINR = Number((balUSD * balanceRate).toFixed(2));
-      const totalRealizedCurrency = Number((advUSD + balUSD).toFixed(2));
+      const totalRealizedCurrency = reconciliation.totalRealizedCurrency;
       const totalRealizedINR = Number((advINR + balINR).toFixed(2));
-      const accountedShortfall = (totalShortfallUSD && totalShortfallUSD > 0) ? totalShortfallUSD : 0;
-      const isSettledWithShortfall = balUSD > 0 || (accountedShortfall > 0 && totalRealizedCurrency + accountedShortfall >= baseInv.totalAmountCurrency - 0.05);
-      const balanceRealizationCurrency = (isSettledWithShortfall || totalRealizedCurrency >= baseInv.totalAmountCurrency - 0.05)
-        ? 0
-        : Math.max(0, Number((baseInv.totalAmountCurrency - totalRealizedCurrency - accountedShortfall).toFixed(2)));
-
-      let realizationStatus: RealizationStatus = 'Not Realized';
-      if (totalRealizedCurrency > 0 || accountedShortfall > 0) {
-        if (
-          balanceRealizationCurrency <= 0.05 ||
-          totalRealizedCurrency >= baseInv.totalAmountCurrency - 0.05 ||
-          isSettledWithShortfall
-        ) {
-          realizationStatus = 'Fully Realized';
-        } else {
-          realizationStatus = 'Partially Realized';
-        }
-      } else if (rawStatus === 'Not Realized') {
+      const balanceRealizationCurrency = reconciliation.unrealizedBalanceCurrency;
+      let realizationStatus: RealizationStatus = reconciliation.realizationStatus;
+      if (!reconciliation.isSettled && totalRealizedCurrency <= 0 && rawStatus === 'Not Realized') {
         realizationStatus = 'Not Realized';
       }
 
