@@ -3722,8 +3722,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v19'), 'Service worker must bump cache version to v19');
-  assert.ok(mainCode.includes('sw.js?v=19'), 'main.tsx must register sw.js?v=19');
+  assert.ok(swCode.includes('seafood-pwa-v20'), 'Service worker must bump cache version to v20');
+  assert.ok(mainCode.includes('sw.js?v=20'), 'main.tsx must register sw.js?v=20');
 });
 
 // ============================================================================
@@ -3785,6 +3785,52 @@ test('Commercial Invoice Numeric Value Extraction & Sequential Ordering (genuine
   const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
   const sortCalls = (dataContextCode.match(/sortSalesInvoicesByNumber\(/g) || []).length;
   assert.ok(sortCalls >= 7, `Expected DataContext to sort sales invoices on all mutation & hydration paths, found ${sortCalls}`);
+});
+
+// ============================================================================
+// SUITE 61: Optional Advance Forward Rate in Realization Entry Form
+// ============================================================================
+test('Optional Advance Forward Rate in Realization Entry Form & Settlement Persistence', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  const modalCode = fs.readFileSync(path.resolve('src/components/sales/RealizationModal.tsx'), 'utf8');
+
+  // 1. Both Advance Forward Rate inputs must NOT carry HTML required or mandatory asterisk
+  assert.ok(
+    !modalCode.includes('Advance Forward Rate (INR/{invoice.currency}) <span className="text-rose-600">*</span>'),
+    'Advance Forward Rate label must not be marked required with *'
+  );
+  assert.ok(
+    modalCode.includes('(Optional)'),
+    'RealizationModal must indicate Advance Forward Rate is optional'
+  );
+  assert.ok(
+    modalCode.includes('hasAdvForwardRate'),
+    'RealizationModal must compute weightedAverageRate and validation with optional hasAdvForwardRate'
+  );
+  assert.ok(
+    modalCode.includes('advanceExchangeRate: hasAdvForwardRate ? parsedAdvRate : undefined'),
+    'RealizationModal must pass undefined when Advance Forward Rate is omitted'
+  );
+
+  // 2. DataContext updateInvoiceSettlement & addSalesInvoice preserve optional advanceExchangeRate
+  const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(
+    dataContextCode.includes('hasExplicitAdvanceRate'),
+    'DataContext updateInvoiceSettlement must preserve undefined advanceExchangeRate when no advance applies'
+  );
+  assert.ok(
+    dataContextCode.includes("advRateSummary = advanceRate ? `@ ₹${advanceRate}` : '(No Advance)'"),
+    'DataContext must handle missing advanceRate cleanly in logs and notifications'
+  );
+
+  // 3. SalesRealizationView renders muted indicator instead of bogus fallback when no advance applies
+  const viewCode = fs.readFileSync(path.resolve('src/components/sales/SalesRealizationView.tsx'), 'utf8');
+  assert.ok(
+    viewCode.includes('Adv: —'),
+    'SalesRealizationView must show clean dash when invoice has no advance forward rate or advance'
+  );
 });
 
 

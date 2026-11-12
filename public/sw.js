@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V19 - Numeric invoice ordering & latest invoice placement)
-const CACHE_VERSION = 'seafood-pwa-v19';
+// Seafood Purchase App - Offline PWA Service Worker (V20 - Optional advance forward rate in realization form)
+const CACHE_VERSION = 'seafood-pwa-v20';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -35,9 +35,9 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   const [isStatementOpen, setIsStatementOpen] = useState<boolean>(false);
   const today = new Date().toISOString().split('T')[0];
 
-  // Pre-determined forward exchange rates with bank (independent forward rates for Advance and Balance)
+  // Pre-determined forward exchange rates with bank (advance forward rate is optional when invoice has no advance)
   const [bankPreDeterminedExchangeRate, setBankPreDeterminedExchangeRate] = useState<string>('84.50');
-  const [advanceExchangeRate, setAdvanceExchangeRate] = useState<string>('84.50');
+  const [advanceExchangeRate, setAdvanceExchangeRate] = useState<string>('');
   const [balanceExchangeRate, setBalanceExchangeRate] = useState<string>('84.50');
 
   // Advance Payment (Terms of Contract vs Actual Received)
@@ -61,9 +61,17 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   useEffect(() => {
     if (invoice) {
       const initialBankRate = invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 84.50;
+      const initialBalRate = invoice.balanceExchangeRate || initialBankRate;
+      const hasSavedAdvance = Boolean(invoice.advanceReceivedCurrency && invoice.advanceReceivedCurrency > 0);
+      const hasExplicitAdvRate = Boolean(
+        invoice.advanceExchangeRate &&
+        invoice.advanceExchangeRate > 0 &&
+        (hasSavedAdvance || invoice.advanceExchangeRate !== initialBalRate)
+      );
+
       setBankPreDeterminedExchangeRate(String(initialBankRate));
-      setAdvanceExchangeRate(String(invoice.advanceExchangeRate || initialBankRate));
-      setBalanceExchangeRate(String(invoice.balanceExchangeRate || initialBankRate));
+      setAdvanceExchangeRate(hasExplicitAdvRate ? String(invoice.advanceExchangeRate) : '');
+      setBalanceExchangeRate(String(initialBalRate));
 
       const defaultAdvTerms = invoice.advanceTermsUSD !== undefined
         ? String(invoice.advanceTermsUSD)
@@ -102,8 +110,10 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   if (!invoice) return null;
 
   const currentBankRate = parseFloat(bankPreDeterminedExchangeRate) || 84.50;
-  const currentAdvRate = parseFloat(advanceExchangeRate) || currentBankRate;
+  const parsedAdvRate = parseFloat(advanceExchangeRate);
+  const hasAdvForwardRate = advanceExchangeRate.trim() !== '' && !isNaN(parsedAdvRate) && parsedAdvRate > 0;
   const currentBalRate = parseFloat(balanceExchangeRate) || currentBankRate;
+  const currentAdvRate = hasAdvForwardRate ? parsedAdvRate : currentBalRate;
 
   const currentAdvTermsUSD = parseFloat(advanceTermsUSD) || 0;
   const currentAdvUSD = parseFloat(advanceReceived) || 0;
@@ -145,7 +155,9 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   const weightedAverageRate =
     totalSettledUSD > 0
       ? totalSettledINR / totalSettledUSD
-      : (currentAdvRate + currentBalRate) / 2;
+      : hasAdvForwardRate
+      ? (currentAdvRate + currentBalRate) / 2
+      : currentBalRate;
 
   const previewStatus =
     totalSettledUSD <= 0
@@ -189,8 +201,13 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (currentAdvRate <= 0 || currentBalRate <= 0) {
-      alert('Please enter valid pre-determined bank forward exchange rates.');
+    if (advanceExchangeRate.trim() !== '' && (isNaN(parsedAdvRate) || parsedAdvRate <= 0)) {
+      alert('Please enter a valid Advance Forward Rate or leave it blank if this invoice has no advance.');
+      return;
+    }
+
+    if (currentBalRate <= 0) {
+      alert('Please enter a valid Balance Forward Rate.');
       return;
     }
 
@@ -214,7 +231,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
     setIsSubmitting(true);
     const res = updateInvoiceSettlement(invoice.id, {
       bankPreDeterminedExchangeRate: Number(weightedAverageRate.toFixed(7)),
-      advanceExchangeRate: currentAdvRate,
+      advanceExchangeRate: hasAdvForwardRate ? parsedAdvRate : undefined,
       balanceExchangeRate: currentBalRate,
       advanceTermsUSD: currentAdvTermsUSD > 0 ? currentAdvTermsUSD : undefined,
       advanceReceivedCurrency: currentAdvUSD > 0 ? currentAdvUSD : undefined,
@@ -270,9 +287,15 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
           <div>
             <span className="text-ink-500 block font-medium">Bank Forward Rates</span>
             <div className="flex items-center gap-1.5 mt-0.5 font-mono text-[11px] font-bold">
-              <span className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200" title="Advance Forward Rate">
-                Adv: ₹{currentAdvRate.toFixed(2)}
-              </span>
+              {hasAdvForwardRate || currentAdvUSD > 0 ? (
+                <span className="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200" title="Advance Forward Rate">
+                  Adv: ₹{currentAdvRate.toFixed(2)}
+                </span>
+              ) : (
+                <span className="text-ink-500 bg-gray-100 px-1 py-0.5 rounded border border-gray-200" title="Advance Forward Rate (Optional — No Advance)">
+                  Adv: N/A
+                </span>
+              )}
               <span className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200" title="Balance Forward Rate">
                 Bal: ₹{currentBalRate.toFixed(2)}
               </span>
@@ -389,7 +412,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <label className="block text-[11px] font-bold text-blue-900 mb-1">
-                Advance Forward Rate (INR/{invoice.currency}) <span className="text-rose-600">*</span>
+                Advance Forward Rate (INR/{invoice.currency}) <span className="text-ink-400 font-medium">(Optional)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
@@ -399,14 +422,13 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                   min="0.0000001"
                   value={advanceExchangeRate}
                   onChange={(e) => setAdvanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.5000000"
-                  required
+                  placeholder="Optional (if advance applies, e.g. 84.50)"
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-blue-200 rounded-xl font-bold text-xs outline-none focus:border-blue-600"
                 />
               </div>
               <p className="text-[10px] text-ink-500 mt-1">
-                Forward contract booking rate agreed with bank for upfront advance (up to 7 decimals).
+                Optional — leave blank if this invoice has no advance (up to 7 decimals when applicable).
               </p>
             </div>
 
@@ -563,7 +585,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
             <div>
               <label className="block text-[11px] font-bold text-blue-900 mb-1">
-                Advance Forward Rate (INR/USD)
+                Advance Forward Rate (INR/{invoice.currency}) <span className="text-ink-400 font-medium">(Optional)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
@@ -573,7 +595,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                   min="0.0000001"
                   value={advanceExchangeRate}
                   onChange={(e) => setAdvanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.5000000"
+                  placeholder="Optional (if advance)"
                   disabled={!permissions.canManageSalesRealization}
                   className="w-full pl-8 pr-3 py-2 bg-white border border-blue-200 rounded-xl font-bold text-xs outline-none focus:border-blue-500"
                 />

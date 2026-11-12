@@ -15,7 +15,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js?v=19`, { updateViaCache: 'none' })
+      .register(`${import.meta.env.BASE_URL}sw.js?v=20`, { updateViaCache: 'none' })
       .then((reg) => {
         // If a new worker is waiting, activate immediately
         if (reg.waiting) {

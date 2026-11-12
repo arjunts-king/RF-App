@@ -1108,9 +1108,15 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-rose-50/30">
                         <div className="flex flex-col items-center gap-1">
                           <div className="flex items-center justify-center gap-1 font-mono text-[10px] font-bold">
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title={`Advance Forward Rate: ₹${formatForwardRate(advRate)}`}>
-                              Adv: ₹{formatForwardRate(advRate)}
-                            </span>
+                            {inv.advanceExchangeRate || advUSD > 0 ? (
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title={`Advance Forward Rate: ₹${formatForwardRate(advRate)}`}>
+                                Adv: ₹{formatForwardRate(advRate)}
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 bg-gray-100 text-ink-500 rounded border border-gray-200" title="Advance Forward Rate (Optional — No Advance)">
+                                Adv: —
+                              </span>
+                            )}
                             <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200" title={`Balance Forward Rate: ₹${formatForwardRate(balRate)}`}>
                               Bal: ₹{formatForwardRate(balRate)}
                             </span>
