@@ -3598,8 +3598,8 @@ test('Commercial Invoice Saving & StickySaveBar Submission Integrity', async () 
     'SalesInvoiceEntryForm PageHeader must offer prominent top Save primaryAction'
   );
   assert.ok(
-    formCode.includes('form.requestSubmit()'),
-    'PageHeader primaryAction must trigger form submission via requestSubmit()'
+    formCode.includes('onClick: submitInvoice'),
+    'PageHeader primaryAction must trigger direct submitInvoice() submission'
   );
 
   // 3. Verify SalesInvoiceEntryForm auto-resolves speciesId and sizeId in draft
@@ -3634,6 +3634,93 @@ test('Commercial Invoice Saving & StickySaveBar Submission Integrity', async () 
     dataContextCode.includes('saved successfully'),
     'DataContext addSalesInvoice must display clear success feedback'
   );
+});
+
+// ============================================================================
+// SUITE 59: Quota Recovery, IndexedDB Hydration, Invoice Field Preservation & PWA v18
+// ============================================================================
+test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA v18 Cache Busting', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const { sanitizeAuditValue, safeSet } = await import('../utils/storage.ts');
+
+  // 1. Verify sanitizeAuditValue strips oversized base64 images & long strings
+  const cleanSnapshot = sanitizeAuditValue({
+    invoiceNo: 'INV-072',
+    weighmentSlipPhoto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
+    hugeNote: 'x'.repeat(5000),
+    nested: { a: { b: { c: { deep: 'trimmed' } } } }
+  });
+  assert.equal(cleanSnapshot.invoiceNo, 'INV-072');
+  assert.equal(cleanSnapshot.weighmentSlipPhoto, '[omitted large payload]');
+  assert.equal(cleanSnapshot.hugeNote, '[omitted large payload]');
+  assert.equal(cleanSnapshot.nested.a.b, '[Object]');
+
+  // 2. Verify safeSet compacts oversized seafood_v2_audit_logs on QuotaExceededError and retries save
+  const origWindow = globalThis.window;
+  const memStore = new Map();
+  const bloatedLogs = Array.from({ length: 180 }, (_, idx) => ({
+    id: `aud-${idx}`,
+    userEmail: 'admin@test.com',
+    userRole: 'admin',
+    action: 'CREATE',
+    entityName: 'SALES_INVOICE',
+    entityId: `INV-${idx}`,
+    oldValues: { blob: 'z'.repeat(300) },
+    newValues: { blob: 'y'.repeat(300) },
+    createdAt: '2026-11-12T00:00:00.000Z'
+  }));
+  memStore.set('seafood_v2_audit_logs', JSON.stringify(bloatedLogs));
+
+  let simulatedFirstFail = true;
+  globalThis.window = {
+    localStorage: {
+      getItem: (k) => (memStore.has(k) ? memStore.get(k) : null),
+      setItem: (k, v) => {
+        if (k === 'seafood_v2_sales_invoices' && simulatedFirstFail) {
+          simulatedFirstFail = false;
+          const quotaErr = new Error('QuotaExceededError');
+          quotaErr.name = 'QuotaExceededError';
+          throw quotaErr;
+        }
+        memStore.set(k, v);
+      }
+    }
+  };
+
+  try {
+    const saved = safeSet('seafood_v2_sales_invoices', [{ id: 'inv-new', invoiceNo: 'EXP-2026-0072' }]);
+    assert.equal(saved, true, 'safeSet must succeed after compacting oversized audit_logs');
+    assert.ok(memStore.get('seafood_v2_sales_invoices').includes('EXP-2026-0072'));
+    const compactedAudit = JSON.parse(memStore.get('seafood_v2_audit_logs'));
+    assert.ok(compactedAudit.length <= 120 && compactedAudit[0].oldValues === undefined);
+  } finally {
+    if (origWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = origWindow;
+    }
+  }
+
+  // 3. Verify DataContext preserves hsnCode + totalFobValueINR + totalFobValueCurrency and hydrates from IDB
+  const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataContextCode.includes('getNewerIdbSnapshot'), 'DataContext must hydrate newer IDB snapshots');
+  assert.ok(dataContextCode.includes('sanitizeAuditValue'), 'DataContext must sanitize audit log snapshots');
+  assert.ok(dataContextCode.includes('hsnCode: invoiceData.hsnCode'), 'addSalesInvoice must persist hsnCode');
+  assert.ok(dataContextCode.includes('totalFobValueINR'), 'addSalesInvoice must persist totalFobValueINR');
+  assert.ok(dataContextCode.includes('resolveOrCreateConsignee'), 'DataContext must share consignee resolution between create & edit');
+
+  // 4. Verify inline validation alert, App tab reset, list country fallback, and PWA v18 bump
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(formCode.includes('role="alert"'), 'Form must render visible inline validation banner');
+  const appCode = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  assert.ok(appCode.includes('handleSelectSalesTab'), 'App must clear editingSalesInvoiceId on sales tab navigation');
+  const listCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceList.tsx'), 'utf8');
+  assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
+  const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
+  const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
+  assert.ok(swCode.includes('seafood-pwa-v18'), 'Service worker must bump cache version to v18');
+  assert.ok(mainCode.includes('sw.js?v=18'), 'main.tsx must register sw.js?v=18');
 });
 
 

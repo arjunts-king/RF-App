@@ -97,6 +97,11 @@ const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleSelectSalesTab = (tab: SalesNavTab) => {
+    setEditingSalesInvoiceId(null);
+    setSalesTab(tab);
+  };
+
   const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'home', tab: string) => {
     if (module === 'home') {
       setActiveModule('home');
@@ -108,7 +113,7 @@ const MainLayout: React.FC = () => {
     } else if (module === 'production') {
       setProductionTab(tab as ProductionNavTab);
     } else if (module === 'sales') {
-      setSalesTab(tab as SalesNavTab);
+      handleSelectSalesTab(tab as SalesNavTab);
     } else if (module === 'inventory') {
       setInventoryTab(tab as InventoryNavTab);
     }
@@ -153,7 +158,7 @@ const MainLayout: React.FC = () => {
             ) : activeModule === 'production' ? (
               <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
             ) : activeModule === 'sales' ? (
-              <SalesSidebar activeTab={salesTab} onTabChange={setSalesTab} />
+              <SalesSidebar activeTab={salesTab} onTabChange={handleSelectSalesTab} />
             ) : (
               <InventorySidebar activeTab={inventoryTab} onTabChange={setInventoryTab} />
             )}
@@ -254,7 +259,7 @@ const MainLayout: React.FC = () => {
                   <SalesSidebar
                     activeTab={salesTab}
                     onTabChange={(tab) => {
-                      setSalesTab(tab);
+                      handleSelectSalesTab(tab);
                       setIsMobileMenuOpen(false);
                     }}
                   />
@@ -398,30 +403,21 @@ const MainLayout: React.FC = () => {
           ) : activeModule === 'sales' ? (
             <>
               {salesTab === 'sales-dashboard' && (
-                <SalesDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <SalesDashboard onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'fob-dashboard' && (
-                <FobDashboard onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <FobDashboard onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'invoice-entry' && (
                 <SalesInvoiceEntryForm
                   editingInvoiceId={editingSalesInvoiceId}
-                  onCancelEdit={() => {
-                    setEditingSalesInvoiceId(null);
-                    setSalesTab('invoices');
-                  }}
-                  onSuccess={() => {
-                    setEditingSalesInvoiceId(null);
-                    setSalesTab('invoices');
-                  }}
+                  onCancelEdit={() => handleSelectSalesTab('invoices')}
+                  onSuccess={() => handleSelectSalesTab('invoices')}
                 />
               )}
               {salesTab === 'invoices' && (
                 <SalesInvoiceList
-                  onNavigate={(tab) => {
-                    if (tab !== 'invoice-entry') setEditingSalesInvoiceId(null);
-                    setSalesTab(tab as SalesNavTab);
-                  }}
+                  onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)}
                   onEditInvoice={(inv) => {
                     setEditingSalesInvoiceId(inv.id);
                     setSalesTab('invoice-entry');
@@ -429,7 +425,7 @@ const MainLayout: React.FC = () => {
                 />
               )}
               {salesTab === 'realizations' && (
-                <SalesRealizationView onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <SalesRealizationView onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
               )}
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
@@ -439,7 +435,7 @@ const MainLayout: React.FC = () => {
               {salesTab === 'sales-reports' && <SalesReportsHub />}
               {salesTab === 'audit-log' && <AuditLogView />}
               {salesTab === 'sales-excel-import' && (
-                <ExcelImportView defaultModule="sales" onNavigate={(tab) => setSalesTab(tab as SalesNavTab)} />
+                <ExcelImportView defaultModule="sales" onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
               )}
             </>
           ) : (

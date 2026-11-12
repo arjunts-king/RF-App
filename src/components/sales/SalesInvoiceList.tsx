@@ -625,7 +625,7 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
                         <div className="text-[10px] text-ink-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                           <span className="flex items-center gap-1">
                             <Globe className="w-3 h-3 text-ink-400" />
-                            <span>{consignee?.country || 'Export'}</span>
+                            <span>{consignee?.country || inv.countryOfDestination || 'Export'}</span>
                           </span>
                           {(consignee?.isGstExempt || consignee?.customerType === 'Overseas') && (
                             <span className="px-1.5 py-0.2 text-[9px] bg-emerald-50 text-emerald-800 font-bold rounded-sm border border-emerald-200">

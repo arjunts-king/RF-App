@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from 'react';
 import {
   Supplier,
   SupplierType,
@@ -70,7 +70,7 @@ import { useToast } from './ToastContext';
 import { computePurchaseFields, allocateBatchExpenses, allocateBatchYield, getIndianFinancialYear } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
-import { safeSet } from '../utils/storage';
+import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
 
 interface DataContextType {
   businessSettings: BusinessSettings;
@@ -322,7 +322,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [species, setSpecies] = useState<Species[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
     if (currentVersion !== SALES_DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(VERIFIED_SPECIES));
+      safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
       return VERIFIED_SPECIES;
     }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
@@ -350,7 +350,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const existingNames = new Set(reconciled.map((sp) => sp.name.trim().toLowerCase()));
     const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase()));
     const result = [...reconciled, ...missing];
-    localStorage.setItem(`${DB_PREFIX}species`, JSON.stringify(result));
+    safeSet(`${DB_PREFIX}species`, result);
     return result;
   });
 
@@ -362,7 +362,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [sizes, setSizes] = useState<Size[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
     if (currentVersion !== SALES_DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}sizes`, JSON.stringify(VERIFIED_SIZES));
+      safeSet(`${DB_PREFIX}sizes`, VERIFIED_SIZES);
       return VERIFIED_SIZES;
     }
     const saved = localStorage.getItem(`${DB_PREFIX}sizes`);
@@ -523,7 +523,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
     if (currentVersion !== SALES_DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(VERIFIED_CUSTOMERS));
+      safeSet(`${DB_PREFIX}customers`, VERIFIED_CUSTOMERS);
       return VERIFIED_CUSTOMERS;
     }
     const saved = localStorage.getItem(`${DB_PREFIX}customers`);
@@ -547,14 +547,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isGstExempt: c.isGstExempt !== undefined ? c.isGstExempt : true
       };
     });
-    localStorage.setItem(`${DB_PREFIX}customers`, JSON.stringify(result));
+    safeSet(`${DB_PREFIX}customers`, result);
     return result;
   });
 
   const [ports, setPorts] = useState<PortMaster[]>(() => {
     const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
     if (currentVersion !== SALES_DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}ports`, JSON.stringify(VERIFIED_PORTS));
+      safeSet(`${DB_PREFIX}ports`, VERIFIED_PORTS);
       return VERIFIED_PORTS;
     }
     const saved = localStorage.getItem(`${DB_PREFIX}ports`);
@@ -581,14 +581,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const parsed = JSON.parse(purchaseSaved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          localStorage.setItem(`${DB_PREFIX}sales_sizes`, JSON.stringify(parsed));
+          safeSet(`${DB_PREFIX}sales_sizes`, parsed);
           return parsed;
         }
       } catch (e) {
         console.error('Failed to parse purchase sizes for sales fallback:', e);
       }
     }
-    localStorage.setItem(`${DB_PREFIX}sales_sizes`, JSON.stringify(VERIFIED_SIZES));
+    safeSet(`${DB_PREFIX}sales_sizes`, VERIFIED_SIZES);
     return VERIFIED_SIZES;
   });
 
@@ -602,8 +602,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Force-sync to pure 71 uploaded export invoices from the uploaded Excel
     if (currentVersion !== SALES_DATASET_VERSION) {
-      localStorage.setItem(`${DB_PREFIX}sales_dataset_version`, SALES_DATASET_VERSION);
-      localStorage.setItem(`${DB_PREFIX}sales_invoices`, JSON.stringify(VERIFIED_SALES_INVOICES));
+      safeSet(`${DB_PREFIX}sales_dataset_version`, SALES_DATASET_VERSION);
+      safeSet(`${DB_PREFIX}sales_invoices`, VERIFIED_SALES_INVOICES);
       return VERIFIED_SALES_INVOICES;
     }
 
@@ -882,34 +882,102 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [showToast]);
 
+  const [isIdbReady, setIsIdbReady] = useState(false);
+  const mutatedKeysRef = useRef<Set<string>>(new Set());
+
+  // Hydrate any newer IndexedDB snapshots written during a prior session's localStorage QuotaExceededError
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [
+          idbInvoices,
+          idbCustomers,
+          idbPorts,
+          idbSalesSizes,
+          idbPurchases,
+          idbPayments,
+          idbProcessing,
+          idbSpecies,
+          idbSettings
+        ] = await Promise.all([
+          getNewerIdbSnapshot<SalesInvoice[]>(`${DB_PREFIX}sales_invoices`),
+          getNewerIdbSnapshot<Customer[]>(`${DB_PREFIX}customers`),
+          getNewerIdbSnapshot<PortMaster[]>(`${DB_PREFIX}ports`),
+          getNewerIdbSnapshot<Size[]>(`${DB_PREFIX}sales_sizes`),
+          getNewerIdbSnapshot<Purchase[]>(`${DB_PREFIX}purchases`),
+          getNewerIdbSnapshot<PaymentRecord[]>(`${DB_PREFIX}payments`),
+          getNewerIdbSnapshot<DailyProcessingEntry[]>(`${DB_PREFIX}processing_entries`),
+          getNewerIdbSnapshot<Species[]>(`${DB_PREFIX}species`),
+          getNewerIdbSnapshot<BusinessSettings>(`${DB_PREFIX}settings`)
+        ]);
+        if (cancelled) return;
+        if (!mutatedKeysRef.current.has('sales_invoices') && Array.isArray(idbInvoices) && idbInvoices.length > 0) {
+          setSalesInvoices(idbInvoices);
+        }
+        if (!mutatedKeysRef.current.has('customers') && Array.isArray(idbCustomers) && idbCustomers.length > 0) {
+          setCustomers(idbCustomers);
+        }
+        if (!mutatedKeysRef.current.has('ports') && Array.isArray(idbPorts) && idbPorts.length > 0) {
+          setPorts(idbPorts);
+        }
+        if (!mutatedKeysRef.current.has('sales_sizes') && Array.isArray(idbSalesSizes) && idbSalesSizes.length > 0) {
+          setSalesSizes(idbSalesSizes);
+        }
+        if (!mutatedKeysRef.current.has('purchases') && Array.isArray(idbPurchases)) {
+          setPurchases(idbPurchases);
+        }
+        if (!mutatedKeysRef.current.has('payments') && Array.isArray(idbPayments)) {
+          setPayments(idbPayments);
+        }
+        if (!mutatedKeysRef.current.has('processing_entries') && Array.isArray(idbProcessing)) {
+          setProcessingEntries(idbProcessing);
+        }
+        if (!mutatedKeysRef.current.has('species') && Array.isArray(idbSpecies) && idbSpecies.length > 0) {
+          setSpecies(idbSpecies);
+        }
+        if (!mutatedKeysRef.current.has('settings') && idbSettings && typeof idbSettings === 'object') {
+          setBusinessSettings(idbSettings);
+        }
+      } catch (err) {
+        console.warn('IndexedDB newer-snapshot hydration skipped:', err);
+      } finally {
+        if (!cancelled) setIsIdbReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Persist state safely to localStorage with asynchronous IndexedDB backup (prevents QuotaExceededError)
-  useEffect(() => { safeSet(`${DB_PREFIX}settings`, businessSettings); }, [businessSettings]);
-  useEffect(() => { safeSet(`${DB_PREFIX}suppliers`, suppliers); }, [suppliers]);
-  useEffect(() => { safeSet(`${DB_PREFIX}species`, species); }, [species]);
-  useEffect(() => { safeSet(`${DB_PREFIX}grades`, grades); }, [grades]);
-  useEffect(() => { safeSet(`${DB_PREFIX}sizes`, sizes); }, [sizes]);
-  useEffect(() => { safeSet(`${DB_PREFIX}counts`, counts); }, [counts]);
-  useEffect(() => { safeSet(`${DB_PREFIX}locations`, locations); }, [locations]);
-  useEffect(() => { safeSet(`${DB_PREFIX}bank_accounts`, bankAccounts); }, [bankAccounts]);
-  useEffect(() => { safeSet(`${DB_PREFIX}expense_types`, expenseTypes); }, [expenseTypes]);
-  useEffect(() => { safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes]);
-  useEffect(() => { safeSet(`${DB_PREFIX}customers`, customers); }, [customers]);
-  useEffect(() => { safeSet(`${DB_PREFIX}ports`, ports); }, [ports]);
-  useEffect(() => { safeSet(`${DB_PREFIX}sales_sizes`, salesSizes); }, [salesSizes]);
-  useEffect(() => { safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries]);
-  useEffect(() => { safeSet(`${DB_PREFIX}sales_invoices`, salesInvoices); }, [salesInvoices]);
-  useEffect(() => { safeSet(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct]);
-  useEffect(() => { safeSet(`${DB_PREFIX}purchases`, purchases); }, [purchases]);
-  useEffect(() => { safeSet(`${DB_PREFIX}payments`, payments); }, [payments]);
-  useEffect(() => { safeSet(`${DB_PREFIX}purchase_returns`, purchaseReturns); }, [purchaseReturns]);
-  useEffect(() => { safeSet(`${DB_PREFIX}audit_logs`, auditLogs); }, [auditLogs]);
-  useEffect(() => { safeSet(`${DB_PREFIX}offline_queue`, offlineQueue); }, [offlineQueue]);
-  useEffect(() => { safeSet(`${DB_PREFIX}inventory_items`, inventoryItems); }, [inventoryItems]);
-  useEffect(() => { safeSet(`${DB_PREFIX}inventory_mappings`, inventoryMappings); }, [inventoryMappings]);
-  useEffect(() => { safeSet(`${DB_PREFIX}opening_stocks`, openingStocks); }, [openingStocks]);
-  useEffect(() => { safeSet(`${DB_PREFIX}stock_adjustments`, stockAdjustments); }, [stockAdjustments]);
-  useEffect(() => { safeSet(`${DB_PREFIX}physical_counts`, physicalStockCounts); }, [physicalStockCounts]);
-  useEffect(() => { safeSet(`${DB_PREFIX}period_close_locks`, periodCloseLocks); }, [periodCloseLocks]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}settings`, businessSettings); }, [businessSettings, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}suppliers`, suppliers); }, [suppliers, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}species`, species); }, [species, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}grades`, grades); }, [grades, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sizes`, sizes); }, [sizes, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}counts`, counts); }, [counts, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}locations`, locations); }, [locations, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}bank_accounts`, bankAccounts); }, [bankAccounts, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}expense_types`, expenseTypes); }, [expenseTypes, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}customers`, customers); }, [customers, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}ports`, ports); }, [ports, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sales_sizes`, salesSizes); }, [salesSizes, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sales_invoices`, salesInvoices); }, [salesInvoices, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}slab_tolerance`, String(slabTolerancePct)); }, [slabTolerancePct, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}purchases`, purchases); }, [purchases, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}payments`, payments); }, [payments, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}purchase_returns`, purchaseReturns); }, [purchaseReturns, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}audit_logs`, auditLogs); }, [auditLogs, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}offline_queue`, offlineQueue); }, [offlineQueue, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}inventory_items`, inventoryItems); }, [inventoryItems, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}inventory_mappings`, inventoryMappings); }, [inventoryMappings, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}opening_stocks`, openingStocks); }, [openingStocks, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}stock_adjustments`, stockAdjustments); }, [stockAdjustments, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}physical_counts`, physicalStockCounts); }, [physicalStockCounts, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}period_close_locks`, periodCloseLocks); }, [periodCloseLocks, isIdbReady]);
 
   // Perpetual moving average inventory valuation engine
   const inventoryCalculation = useMemo(() => {
@@ -940,7 +1008,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     customers
   ]);
 
-  // Helper to append to Audit Log
+  // Helper to append to Audit Log (strips large base64 payloads & bounds history so quota isn't starved)
   const logAudit = (
     action: AuditAction,
     entityName: string,
@@ -954,12 +1022,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       action,
       entityName,
       entityId,
-      oldValues: options?.oldValues,
-      newValues: options?.newValues,
+      oldValues: options?.oldValues !== undefined ? sanitizeAuditValue(options.oldValues) : undefined,
+      newValues: options?.newValues !== undefined ? sanitizeAuditValue(options.newValues) : undefined,
       changeReason: options?.changeReason,
       createdAt: new Date().toISOString()
     };
-    setAuditLogs((prev) => [newLog, ...prev]);
+    setAuditLogs((prev) => [newLog, ...prev].slice(0, 250));
   };
 
   const updateBusinessSettings = (updates: Partial<BusinessSettings>) => {
@@ -2557,25 +2625,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // SALES INVOICE & REALIZATION ACTIONS
   // --------------------------------------------------------------------------
 
-  const addSalesInvoice = (
-    invoiceData: Partial<SalesInvoice>
-  ): { success: boolean; invoiceNo?: string; warnings?: string[] } => {
-    if (!permissions.canCreateEditSales) {
-      showToast('Unauthorized: Viewer role cannot create sales invoices.', 'error');
-      return { success: false };
-    }
-
-    let finalConsigneeId = invoiceData.consigneeId;
+  const resolveOrCreateConsignee = (
+    invoiceData: Partial<SalesInvoice>,
+    fallbackCustomerId?: string
+  ): { finalConsigneeId: string; consigneeNameStr: string } => {
+    let finalConsigneeId = invoiceData.consigneeId || fallbackCustomerId || '';
     const consigneeNameStr = (invoiceData.consigneeName || '').trim();
 
     if (consigneeNameStr) {
-      const matchedCust = customers.find(
-        (c) =>
-          (finalConsigneeId && c.id === finalConsigneeId) ||
-          c.name.toLowerCase() === consigneeNameStr.toLowerCase()
+      const matchedByName = customers.find(
+        (c) => c.name.toLowerCase() === consigneeNameStr.toLowerCase()
       );
-      if (matchedCust) {
-        finalConsigneeId = matchedCust.id;
+      if (matchedByName) {
+        finalConsigneeId = matchedByName.id;
       } else {
         const autoCustId = `cust-${Date.now()}`;
         const newCust: Customer = {
@@ -2595,12 +2657,66 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           active: true,
           createdAt: new Date().toISOString()
         };
-        setCustomers((prev) => [...prev, newCust]);
+        mutatedKeysRef.current.add('customers');
+        const nextCustomers = [...customers, newCust];
+        setCustomers(nextCustomers);
+        safeSet(`${DB_PREFIX}customers`, nextCustomers);
         finalConsigneeId = autoCustId;
       }
     } else if (!finalConsigneeId || finalConsigneeId === 'consignee-temp') {
       finalConsigneeId = customers[0]?.id || `cust-temp-${Date.now()}`;
     }
+
+    return { finalConsigneeId, consigneeNameStr };
+  };
+
+  const computeSalesLineItems = (
+    rawLines: Partial<SalesInvoiceLine>[],
+    fallbackHsn?: string
+  ): SalesInvoiceLine[] => {
+    const baseTs = Date.now();
+    return rawLines.map((l, idx) => {
+      const weight = Number(l.weightKg);
+      const rate = Number(l.ratePerKg);
+      const amount = Number((weight * rate).toFixed(2));
+      const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
+
+      let resolvedSpeciesId = l.speciesId;
+      if (!resolvedSpeciesId) {
+        const matched = species.find(
+          (s) => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase()
+        );
+        resolvedSpeciesId = matched?.id || (species[0]?.id || `sp-general-${idx}`);
+      }
+      const matchedSpecies = species.find((s) => s.id === resolvedSpeciesId);
+
+      return {
+        id: l.id || `line-${baseTs}-${idx}`,
+        speciesId: resolvedSpeciesId,
+        hsCode: l.hsCode || matchedSpecies?.hsCode || fallbackHsn || '03061790',
+        sizeId: l.sizeId || (sizes[0]?.id || ''),
+        countId: l.countId,
+        cartonsCount: Number(l.cartonsCount || 0),
+        weightKg: weight,
+        ratePerKg: rate,
+        amountCurrency: amount,
+        fobValueCurrency: fobVal,
+        fobValueINR: l.fobValueINR,
+        productDescription: l.productDescription || matchedSpecies?.name || 'Seafood Goods',
+        gradeSize: l.gradeSize || 'Standard'
+      };
+    });
+  };
+
+  const addSalesInvoice = (
+    invoiceData: Partial<SalesInvoice>
+  ): { success: boolean; invoiceNo?: string; warnings?: string[] } => {
+    if (!permissions.canCreateEditSales) {
+      showToast('Unauthorized: Viewer role cannot create sales invoices.', 'error');
+      return { success: false };
+    }
+
+    const { finalConsigneeId, consigneeNameStr } = resolveOrCreateConsignee(invoiceData);
 
     if (!finalConsigneeId && !consigneeNameStr) {
       showToast('Validation Error: Consignee / Customer is required.', 'error');
@@ -2657,41 +2773,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const exchangeRate = invoiceData.exchangeRate && invoiceData.exchangeRate > 0 ? Number(invoiceData.exchangeRate) : 84.5;
 
     // Recalculate line items strictly server-side
-    const computedLines = invoiceData.lineItems.map((l, idx) => {
-      const weight = Number(l.weightKg);
-      const rate = Number(l.ratePerKg);
-      const amount = Number((weight * rate).toFixed(2));
-      const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
-
-      let resolvedSpeciesId = l.speciesId;
-      if (!resolvedSpeciesId) {
-        const matched = species.find(
-          (s) => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase()
-        );
-        resolvedSpeciesId = matched?.id || (species[0]?.id || `sp-general-${idx}`);
-      }
-      const matchedSpecies = species.find((s) => s.id === resolvedSpeciesId);
-
-      return {
-        id: l.id || `line-${Date.now()}-${idx}`,
-        speciesId: resolvedSpeciesId,
-        hsCode: l.hsCode || matchedSpecies?.hsCode || invoiceData.hsnCode || '03061790',
-        sizeId: l.sizeId || (sizes[0]?.id || ''),
-        countId: l.countId,
-        cartonsCount: Number(l.cartonsCount || 0),
-        weightKg: weight,
-        ratePerKg: rate,
-        amountCurrency: amount,
-        fobValueCurrency: fobVal,
-        productDescription: l.productDescription || matchedSpecies?.name || 'Seafood Goods',
-        gradeSize: l.gradeSize || 'Standard'
-      };
-    });
+    const computedLines = computeSalesLineItems(invoiceData.lineItems, invoiceData.hsnCode);
 
     const totalCartons = computedLines.reduce((s, l) => s + l.cartonsCount, 0);
     const totalWeightKg = Number(computedLines.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
     const totalAmountCurrency = Number(computedLines.reduce((s, l) => s + l.amountCurrency, 0).toFixed(2));
-    const totalFobValueCurrency = Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+    const totalFobValueCurrency =
+      invoiceData.totalFobValueCurrency !== undefined && Number(invoiceData.totalFobValueCurrency) > 0
+        ? Number(invoiceData.totalFobValueCurrency)
+        : Number(computedLines.reduce((s, l) => s + l.fobValueCurrency, 0).toFixed(2));
+    const totalFobValueINR =
+      invoiceData.totalFobValueINR !== undefined && Number(invoiceData.totalFobValueINR) > 0
+        ? Number(invoiceData.totalFobValueINR)
+        : undefined;
     const estimatedAmountINR = Number((totalAmountCurrency * exchangeRate).toFixed(2));
 
     const newInvoice: SalesInvoice = {
@@ -2725,6 +2819,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       placeOfReceipt: invoiceData.placeOfReceipt || 'N.A.',
       termsOfPayment: invoiceData.termsOfPayment,
       priceTerms: invoiceData.priceTerms,
+      hsnCode: invoiceData.hsnCode,
       vesselFlightNo: invoiceData.vesselFlightNo,
       portOfLoading: invoiceData.portOfLoading,
       portOfDischarge: invoiceData.portOfDischarge,
@@ -2751,6 +2846,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       totalWeightKg,
       totalAmountCurrency,
       totalFobValueCurrency,
+      totalFobValueINR,
       estimatedAmountINR,
 
       advanceExchangeRate: invoiceData.advanceExchangeRate || invoiceData.bankPreDeterminedExchangeRate || exchangeRate,
@@ -2792,7 +2888,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updatedAt: new Date().toISOString()
     };
 
+    mutatedKeysRef.current.add('sales_invoices');
+    const nextInvoices = [newInvoice, ...salesInvoices];
     setSalesInvoices((prev) => [newInvoice, ...prev]);
+    safeSet(`${DB_PREFIX}sales_invoices`, nextInvoices);
     logAudit('CREATE', 'SALES_INVOICE', newInvoice.invoiceNo, { newValues: newInvoice });
     showToast(`Commercial Invoice ${newInvoice.invoiceNo} saved successfully (${currency} ${totalAmountCurrency.toLocaleString()}).`, 'success');
 
@@ -2822,39 +2921,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: 'At least one line item is required.' };
     }
 
+    const resolvedConsigneeId =
+      updates.consigneeName !== undefined && updates.consigneeName.trim() !== ''
+        ? resolveOrCreateConsignee(updates, existing.consigneeId).finalConsigneeId
+        : (updates.consigneeId || existing.consigneeId);
+
     const exchangeRate =
       updates.exchangeRate !== undefined ? Number(updates.exchangeRate) : existing.exchangeRate;
 
-    const computedLines = lineItemsToCompute.map((l, idx) => {
-      const weight = Number(l.weightKg);
-      const rate = Number(l.ratePerKg);
-      const amount = Number((weight * rate).toFixed(2));
-      const fobVal = l.fobValueCurrency && l.fobValueCurrency > 0 ? Number(l.fobValueCurrency) : amount;
-
-      let resolvedSpeciesId = l.speciesId;
-      if (!resolvedSpeciesId) {
-        const matched = species.find(
-          (s) => s.name.toLowerCase() === (l.productDescription || '').trim().toLowerCase()
-        );
-        resolvedSpeciesId = matched?.id || (species[0]?.id || `sp-general-${idx}`);
-      }
-      const matchedSpecies = species.find((s) => s.id === resolvedSpeciesId);
-
-      return {
-        id: l.id || `line-${Date.now()}-${idx}`,
-        speciesId: resolvedSpeciesId,
-        hsCode: l.hsCode || matchedSpecies?.hsCode || updates.hsnCode || existing.hsnCode || '03061790',
-        sizeId: l.sizeId || (sizes[0]?.id || ''),
-        countId: l.countId,
-        cartonsCount: Number(l.cartonsCount || 0),
-        weightKg: weight,
-        ratePerKg: rate,
-        amountCurrency: amount,
-        fobValueCurrency: fobVal,
-        productDescription: l.productDescription || matchedSpecies?.name || 'Seafood Goods',
-        gradeSize: l.gradeSize || 'Standard'
-      };
-    });
+    const computedLines = computeSalesLineItems(lineItemsToCompute, updates.hsnCode || existing.hsnCode);
 
     const totalCartons = computedLines.reduce((s, l) => s + l.cartonsCount, 0);
     const totalWeightKg = Number(computedLines.reduce((s, l) => s + l.weightKg, 0).toFixed(2));
@@ -2904,6 +2979,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updated: SalesInvoice = {
       ...existing,
       ...updates,
+      consigneeId: resolvedConsigneeId,
       exchangeRate,
       bankPreDeterminedExchangeRate,
       lineItems: computedLines,
@@ -2923,7 +2999,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updatedAt: new Date().toISOString()
     };
 
+    mutatedKeysRef.current.add('sales_invoices');
+    const nextInvoices = salesInvoices.map((inv) => (inv.id === id ? updated : inv));
     setSalesInvoices((prev) => prev.map((inv) => (inv.id === id ? updated : inv)));
+    safeSet(`${DB_PREFIX}sales_invoices`, nextInvoices);
     logAudit('EDIT', 'SALES_INVOICE', existing.invoiceNo, {
       oldValues: existing,
       newValues: updated,

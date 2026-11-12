@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V17 - Authentic FOB USD $5,628,701.27 & INR 52,72,64,283.04)
-const CACHE_VERSION = 'seafood-pwa-v17';
+// Seafood Purchase App - Offline PWA Service Worker (V18 - Quota recovery & reliable commercial invoice persistence)
+const CACHE_VERSION = 'seafood-pwa-v18';
 const STATIC_ASSETS = [
   './',
   './index.html',

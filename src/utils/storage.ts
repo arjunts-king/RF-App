@@ -82,6 +82,87 @@ export async function idbGet<T>(key: string): Promise<T | null> {
 }
 
 /**
+ * Asynchronously delete or clear a key from IndexedDB
+ */
+export async function idbDelete(key: string): Promise<void> {
+  const dbPromise = getIDB();
+  if (!dbPromise) return;
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    const store = tx.objectStore(IDB_STORE);
+    store.delete(key);
+  } catch (err) {
+    console.warn(`IndexedDB delete error for key "${key}":`, err);
+  }
+}
+
+const IDB_NEWER_PREFIX = '__idb_newer_';
+
+export async function getNewerIdbSnapshot<T>(key: string): Promise<T | null> {
+  const newerTs = await idbGet<number>(`${IDB_NEWER_PREFIX}${key}`);
+  if (!newerTs || newerTs <= 0) return null;
+  return idbGet<T>(key);
+}
+
+/**
+ * Sanitize audit log snapshots so large base64 images or deep object trees
+ * cannot bloat localStorage quota and starve primary business records.
+ */
+export function sanitizeAuditValue(value: unknown, depth = 0): any {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') {
+    if (value.startsWith('data:image/') || value.startsWith('data:application/') || value.length > 4000) {
+      return '[omitted large payload]';
+    }
+    return value;
+  }
+  if (typeof value !== 'object') return value;
+  if (depth >= 3) {
+    return Array.isArray(value) ? `[Array(${value.length})]` : '[Object]';
+  }
+  if (Array.isArray(value)) {
+    return value.slice(0, 25).map((item) => sanitizeAuditValue(item, depth + 1));
+  }
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === 'function' || v === undefined) continue;
+    clean[k] = sanitizeAuditValue(v, depth + 1);
+  }
+  return clean;
+}
+
+/**
+ * Free up space in localStorage when QuotaExceededError occurs by compacting oversized audit logs.
+ */
+function compactAuditLogsInLocalStorage(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    const auditKey = 'seafood_v2_audit_logs';
+    const raw = window.localStorage.getItem(auditKey);
+    if (!raw || raw.length < 20_000) return false;
+
+    const logs = JSON.parse(raw);
+    if (!Array.isArray(logs)) return false;
+
+    const compacted = logs.slice(0, 120).map((entry: any) => ({
+      id: entry.id,
+      userEmail: entry.userEmail,
+      userRole: entry.userRole,
+      action: entry.action,
+      entityName: entry.entityName,
+      entityId: entry.entityId,
+      changeReason: entry.changeReason,
+      createdAt: entry.createdAt
+    }));
+    window.localStorage.setItem(auditKey, JSON.stringify(compacted));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Synchronous, safe getter for localStorage.
  * If data is corrupted or unavailable, returns fallback.
  */
@@ -90,7 +171,7 @@ export function safeGet<T>(key: string, fallback: T): T {
     return fallback;
   }
   try {
-    const saved = localStorage.getItem(key);
+    const saved = window.localStorage.getItem(key);
     if (!saved) return fallback;
     return JSON.parse(saved) as T;
   } catch (err) {
@@ -118,18 +199,36 @@ export function safeSet(key: string, value: any): boolean {
   let localStorageSuccess = false;
   try {
     if (window.localStorage) {
-      localStorage.setItem(key, serialized);
+      window.localStorage.setItem(key, serialized);
       localStorageSuccess = true;
     }
   } catch (err: any) {
-    console.warn(
-      `localStorage quota exceeded or write failed for key "${key}". Preserving in IndexedDB backup.`,
-      err
-    );
+    // Attempt automatic recovery by compacting heavy audit logs in localStorage if a non-audit key failed
+    if (!key.endsWith('audit_logs') && compactAuditLogsInLocalStorage() && window.localStorage) {
+      try {
+        window.localStorage.setItem(key, serialized);
+        localStorageSuccess = true;
+      } catch (retryErr) {
+        console.warn(
+          `localStorage quota still exceeded after compaction for key "${key}". Preserving in IndexedDB fallback.`,
+          retryErr
+        );
+      }
+    } else {
+      console.warn(
+        `localStorage quota exceeded or write failed for key "${key}". Preserving in IndexedDB backup.`,
+        err
+      );
+    }
   }
 
   // 2. Mirror to IndexedDB asynchronously without blocking UI
   idbSet(key, value);
+  if (localStorageSuccess) {
+    idbDelete(`${IDB_NEWER_PREFIX}${key}`);
+  } else {
+    idbSet(`${IDB_NEWER_PREFIX}${key}`, Date.now());
+  }
 
   return localStorageSuccess;
 }

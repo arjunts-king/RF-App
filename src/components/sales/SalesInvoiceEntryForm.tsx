@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -66,8 +66,12 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const currentYear = new Date().getFullYear();
 
-  // Audit reason state for editing previous invoice
+  // Audit reason state for editing previous invoice & inline validation feedback
   const [editReason, setEditReason] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const editReasonRef = useRef<HTMLInputElement>(null);
+  const consigneeInputRef = useRef<HTMLInputElement>(null);
+  const linesSectionRef = useRef<HTMLDivElement>(null);
 
   // --- Section 1: Exporter & Document Identification ---
   const [exporterName, setExporterName] = useState(businessSettings.businessName || '');
@@ -592,27 +596,42 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     invoiceNo.trim() !== '' &&
     salesInvoices.some((inv) => !inv.isVoided && inv.invoiceNo.toLowerCase() === invoiceNo.trim().toLowerCase());
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    setValidationError(null);
+  }, [editReason, consigneeId, consigneeName, lines, invoiceToEdit?.id]);
+
+  const failValidation = (msg: string, ref?: { current: HTMLElement | null }) => {
+    setValidationError(msg);
+    showToast(msg, 'error');
+    if (ref?.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if ('focus' in ref.current && typeof ref.current.focus === 'function') {
+        ref.current.focus({ preventScroll: true });
+      }
+    }
+  };
+
+  const submitInvoice = () => {
+    setValidationError(null);
 
     if (isEditing && invoiceToEdit) {
       if (currentUser.role !== 'admin') {
-        showToast('Unauthorized: Only Admin accounts can edit previous invoices.', 'error');
+        failValidation('Unauthorized: Only Admin accounts can edit previous invoices.', editReasonRef);
         return;
       }
       if (!editReason.trim()) {
-        showToast('Mandatory: Please provide a reason for editing this invoice.', 'error');
+        failValidation('Mandatory: Please provide an Audit Reason for editing this invoice.', editReasonRef);
         return;
       }
     }
 
     if (!consigneeId && !consigneeName.trim()) {
-      showToast('Validation Error: Please select or enter a Consignee / Customer.', 'error');
+      failValidation('Validation Error: Please select or enter a Consignee / Customer.', consigneeInputRef);
       return;
     }
 
     if (lines.length === 0) {
-      showToast('Validation Error: At least one line item is required.', 'error');
+      failValidation('Validation Error: At least one product line item is required.', linesSectionRef);
       return;
     }
 
@@ -621,11 +640,11 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       const w = parseFloat(String(l.weightKg)) || 0;
       const r = parseFloat(String(l.ratePerKg)) || 0;
       if (w <= 0) {
-        showToast(`Line ${i + 1}: Net Weight must be greater than 0 Kg.`, 'error');
+        failValidation(`Line ${i + 1}: Net Weight must be greater than 0 Kg.`, linesSectionRef);
         return;
       }
       if (r < 0) {
-        showToast(`Line ${i + 1}: Rate must be >= 0.`, 'error');
+        failValidation(`Line ${i + 1}: Rate must be >= 0.`, linesSectionRef);
         return;
       }
     }
@@ -642,7 +661,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             onSuccess();
           }
         } else {
-          showToast(res.message || 'Failed to update commercial invoice.', 'error');
+          const msg = res.message || 'Failed to update commercial invoice.';
+          setValidationError(msg);
+          showToast(msg, 'error');
         }
         return;
       }
@@ -655,12 +676,21 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
           onSuccess();
         }
       } else {
-        showToast(res.warnings?.join(' ') || 'Failed to save commercial invoice. Please verify required fields.', 'error');
+        const msg = res.warnings?.join(' ') || 'Failed to save commercial invoice. Please verify required fields.';
+        setValidationError(msg);
+        showToast(msg, 'error');
       }
     } catch (err: any) {
       setIsSubmitting(false);
-      showToast(`Error saving commercial invoice: ${err?.message || 'Unknown error'}`, 'error');
+      const msg = `Error saving commercial invoice: ${err?.message || 'Unknown error'}`;
+      setValidationError(msg);
+      showToast(msg, 'error');
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitInvoice();
   };
 
   const handleReset = () => {
@@ -726,12 +756,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             ? (isEditing ? 'Saving Changes...' : 'Saving Invoice...')
             : (isEditing ? 'Save Changes (Admin)' : 'Save Commercial Invoice'),
           icon: Save,
-          onClick: () => {
-            const form = document.getElementById('sales-invoice-form') as HTMLFormElement | null;
-            if (form) {
-              form.requestSubmit();
-            }
-          },
+          onClick: submitInvoice,
           disabled: isSubmitting
         }}
         secondaryActions={[
@@ -801,6 +826,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               Audit Reason for Editing Previous Invoice <span className="text-rose-600">*</span>
             </label>
             <input
+              ref={editReasonRef}
               type="text"
               value={editReason}
               onChange={(e) => setEditReason(e.target.value)}
@@ -996,6 +1022,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             <div>
               <label className="block text-[11px] font-bold text-ink-700 mb-1">Consignee Name</label>
               <input
+                ref={consigneeInputRef}
                 type="text"
                 value={consigneeName}
                 onChange={(e) => setConsigneeName(e.target.value)}
@@ -1474,7 +1501,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       </div>
 
       {/* SECTION 5: LINE ITEMS & CARGO BREAKDOWN */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
+      <div ref={linesSectionRef} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-2">
@@ -1927,6 +1954,25 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
           </div>
         </div>
       </div>
+
+      {validationError && (
+        <div
+          role="alert"
+          className="sticky bottom-24 z-30 p-3.5 bg-rose-600 text-white rounded-2xl shadow-lg border border-rose-700 flex items-center justify-between gap-3 animate-fade-in"
+        >
+          <div className="flex items-center gap-2.5 text-xs font-bold">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-200" />
+            <span>{validationError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setValidationError(null)}
+            className="px-2.5 py-1 bg-rose-800/70 hover:bg-rose-800 text-white rounded-lg text-[11px] font-bold shrink-0 transition"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Floating Sticky Save Bar with live calculated metrics */}
       <StickySaveBar
