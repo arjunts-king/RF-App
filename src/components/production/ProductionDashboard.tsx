@@ -25,22 +25,104 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
   const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>([]);
 
-  const activeEntries = useMemo(() => {
-    return processingEntries.filter((p) => {
-      if (p.isVoided) return false;
-      if (selectedMonth && !p.processingDate.startsWith(selectedMonth)) return false;
-      if (selectedSpeciesIds.length > 0 && !selectedSpeciesIds.includes(p.speciesId)) return false;
-      if (selectedSupplierIds.length > 0 && !selectedSupplierIds.includes(p.supplierId)) return false;
-      if (selectedGradeIds.length > 0 && !selectedGradeIds.includes(p.gradeId)) return false;
-      return true;
-    });
-  }, [processingEntries, selectedMonth, selectedSpeciesIds, selectedSupplierIds, selectedGradeIds]);
+  // Master Lookups
+  const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
+  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+  const gradeMap = useMemo(() => new Map(grades.map((g) => [g.id, g])), [grades]);
 
-  // Options for MultiSelectFilter
-  const speciesOptions = useMemo(
-    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
-    [species]
-  );
+  // Robust species resolver across ID, code, name, and rawSpeciesName
+  const findSpecies = useMemo(() => {
+    const byId = new Map(species.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof species)[0]>();
+    species.forEach((sp) => {
+      if (sp.rawSpeciesName) {
+        byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+      }
+    });
+
+    return (idOrKey: string) => {
+      if (!idOrKey) return undefined;
+      const clean = idOrKey.trim();
+      const lower = clean.toLowerCase();
+      return (
+        byId.get(lower) ||
+        byCode.get(lower) ||
+        byName.get(lower) ||
+        byRaw.get(lower) ||
+        species.find(
+          (sp) =>
+            sp.id.toLowerCase() === lower ||
+            sp.code.toLowerCase() === lower ||
+            sp.name.toLowerCase() === lower ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+        )
+      );
+    };
+  }, [species]);
+
+  // Comprehensive Options for MultiSelectFilter (Registered Master + Distinct Historical Entry Species)
+  const speciesOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string; subLabel?: string; badge?: string }[] = [];
+
+    // 1. Registered Master Species
+    species.forEach((sp) => {
+      seen.add(sp.id.toLowerCase());
+      seen.add(sp.name.trim().toLowerCase());
+      if (sp.code) seen.add(sp.code.trim().toLowerCase());
+      options.push({
+        id: sp.id,
+        label: sp.name,
+        subLabel: sp.scientificName || (sp.category ? sp.category : undefined),
+        badge: sp.code || (sp.rawSpeciesName ? sp.rawSpeciesName : undefined)
+      });
+    });
+
+    // 2. Any additional distinct species found in existing processingEntries
+    processingEntries.forEach((p) => {
+      const rawId = (p.speciesId || '').trim();
+      if (!rawId) return;
+      const lower = rawId.toLowerCase();
+      if (!seen.has(lower)) {
+        const matched = findSpecies(rawId);
+        if (matched) {
+          seen.add(matched.id.toLowerCase());
+          seen.add(matched.name.trim().toLowerCase());
+          if (!options.some((o) => o.id === matched.id)) {
+            options.push({
+              id: matched.id,
+              label: matched.name,
+              subLabel: matched.scientificName || undefined,
+              badge: matched.code || undefined
+            });
+          }
+        } else {
+          seen.add(lower);
+          options.push({
+            id: rawId,
+            label: rawId,
+            badge: 'Recorded'
+          });
+        }
+      }
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [species, processingEntries, findSpecies]);
+
+  const resolveSpeciesName = (spId: string): string => {
+    if (!spId) return 'Unspecified Product';
+    const direct = speciesMap.get(spId);
+    if (direct) return direct.name;
+    const found = findSpecies(spId);
+    if (found) return found.name;
+    const opt = speciesOptions.find((o) => o.id === spId);
+    if (opt) return opt.label;
+    return spId;
+  };
 
   const supplierOptions = useMemo(
     () => suppliers.map((s) => ({ id: s.id, label: s.name, subLabel: s.district ? `${s.district}, ${s.state}` : s.state || s.code || undefined })),
@@ -64,10 +146,101 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
     setSelectedGradeIds([]);
   };
 
-  // Lookups
-  const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
-  const gradeMap = new Map(grades.map((g) => [g.id, g]));
+  const activeEntries = useMemo(() => {
+    return processingEntries.filter((p) => {
+      if (p.isVoided) return false;
+      if (selectedMonth && !p.processingDate.startsWith(selectedMonth)) return false;
+
+      // Species Filter: Robust matching supporting direct ID, code, name, rawSpeciesName, and option label
+      if (selectedSpeciesIds.length > 0) {
+        const rawEntrySpId = (p.speciesId || '').trim();
+        const entrySp = findSpecies(rawEntrySpId);
+        const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+        const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+        const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+        const entrySpSci = (entrySp?.scientificName || '').trim().toLowerCase();
+
+        const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
+          // Direct ID match
+          if (rawEntrySpId === selectedId) return true;
+          if (rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+
+          // Match by resolved species objects
+          const selSp = findSpecies(selectedId);
+          if (entrySp && selSp && entrySp.id === selSp.id) return true;
+
+          // Match entry raw ID against selected species object properties
+          if (selSp) {
+            if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase()) return true;
+            if (rawEntrySpId.toLowerCase() === selSp.code.toLowerCase()) return true;
+            if (rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+            if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+          }
+
+          // Match selected ID against entry species object properties
+          if (entrySp) {
+            if (selectedId.toLowerCase() === entrySp.id.toLowerCase()) return true;
+            if (selectedId.toLowerCase() === entrySpCode) return true;
+            if (selectedId.toLowerCase() === entrySpName) return true;
+            if (entrySpRaw && selectedId.toLowerCase() === entrySpRaw) return true;
+          }
+
+          // Option label match
+          const selOpt = speciesOptions.find((o) => o.id === selectedId);
+          if (selOpt) {
+            const optLabel = selOpt.label.trim().toLowerCase();
+            if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+            if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
+            if (entrySpName && optLabel.includes(entrySpName)) return true;
+            if (entrySpName && entrySpName.includes(optLabel)) return true;
+          }
+
+          // Normalized name match
+          if (selSp && entrySp) {
+            if (entrySpRaw && selSp.rawSpeciesName && entrySpRaw === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+            if (selSp.name.trim().toLowerCase() === entrySpName) return true;
+            if (entrySpSci && selSp.scientificName && entrySpSci === selSp.scientificName.trim().toLowerCase()) return true;
+          }
+
+          return false;
+        });
+
+        if (!matchesSpecies) return false;
+      }
+
+      // Supplier Filter
+      if (selectedSupplierIds.length > 0) {
+        const matchesSupplier = selectedSupplierIds.some((sId) => {
+          if (p.supplierId === sId) return true;
+          const sObj = supplierMap.get(p.supplierId);
+          return sObj && (sObj.id === sId || sObj.code === sId || sObj.name.toLowerCase() === sId.toLowerCase());
+        });
+        if (!matchesSupplier) return false;
+      }
+
+      // Grade Filter
+      if (selectedGradeIds.length > 0) {
+        const matchesGrade = selectedGradeIds.some((gId) => {
+          if (p.gradeId === gId) return true;
+          const gObj = gradeMap.get(p.gradeId);
+          return gObj && (gObj.id === gId || gObj.code === gId || gObj.name.toLowerCase() === gId.toLowerCase());
+        });
+        if (!matchesGrade) return false;
+      }
+
+      return true;
+    });
+  }, [
+    processingEntries,
+    selectedMonth,
+    selectedSpeciesIds,
+    selectedSupplierIds,
+    selectedGradeIds,
+    findSpecies,
+    speciesOptions,
+    supplierMap,
+    gradeMap
+  ]);
 
   // KPI Calculations
   const totalProcessedKg = activeEntries.reduce((s, p) => s + p.processedWeightKg, 0);
@@ -80,12 +253,42 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
   const rejectionRatePct = totalVolumeInput > 0 ? (totalRejectionKg / totalVolumeInput) * 100 : 0;
   const varianceCount = activeEntries.filter((p) => p.hasSlabVariance).length;
 
-  // Prior month comparison
-  const [currY, currM] = selectedMonth.split('-').map(Number);
-  const priorMonthStr = `${currM === 1 ? currY - 1 : currY}-${String(currM === 1 ? 12 : currM - 1).padStart(2, '0')}`;
-  const priorMonthEntries = processingEntries.filter((p) => !p.isVoided && p.processingDate.startsWith(priorMonthStr));
-  const priorMonthTotalKg = priorMonthEntries.reduce((s, p) => s + p.processedWeightKg, 0);
-  const momChangePct = priorMonthTotalKg > 0 ? ((totalProcessedKg - priorMonthTotalKg) / priorMonthTotalKg) * 100 : 0;
+  // Prior month comparison with like-for-like species filtering
+  const momChangePct = useMemo(() => {
+    if (!selectedMonth) return 0;
+    const [currY, currM] = selectedMonth.split('-').map(Number);
+    if (!currY || !currM) return 0;
+    const priorMonthStr = `${currM === 1 ? currY - 1 : currY}-${String(currM === 1 ? 12 : currM - 1).padStart(2, '0')}`;
+    const priorMonthEntries = processingEntries.filter((p) => {
+      if (p.isVoided) return false;
+      if (!p.processingDate.startsWith(priorMonthStr)) return false;
+      if (selectedSpeciesIds.length > 0) {
+        const rawEntrySpId = (p.speciesId || '').trim();
+        const entrySp = findSpecies(rawEntrySpId);
+        const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+        const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+        const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+        const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
+          if (rawEntrySpId === selectedId || rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+          const selSp = findSpecies(selectedId);
+          if (entrySp && selSp && entrySp.id === selSp.id) return true;
+          if (selSp) {
+            if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase() || rawEntrySpId.toLowerCase() === selSp.code.toLowerCase() || rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+            if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+          }
+          if (entrySp) {
+            if (selectedId.toLowerCase() === entrySp.id.toLowerCase() || selectedId.toLowerCase() === entrySpCode || selectedId.toLowerCase() === entrySpName) return true;
+            if (entrySpRaw && selectedId.toLowerCase() === entrySpRaw) return true;
+          }
+          return false;
+        });
+        if (!matchesSpecies) return false;
+      }
+      return true;
+    });
+    const priorMonthTotalKg = priorMonthEntries.reduce((s, p) => s + p.processedWeightKg, 0);
+    return priorMonthTotalKg > 0 ? ((totalProcessedKg - priorMonthTotalKg) / priorMonthTotalKg) * 100 : 0;
+  }, [selectedMonth, processingEntries, selectedSpeciesIds, totalProcessedKg, findSpecies]);
 
   // Daily Trend Grouping
   const daysInMonth: { day: string; date: string; weight: number; slabs: number; rejection: number }[] = [];
@@ -131,11 +334,12 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
   // Product / Species Breakdown
   const speciesBreakdownMap = new Map<string, number>();
   activeEntries.forEach((p) => {
-    speciesBreakdownMap.set(p.speciesId, (speciesBreakdownMap.get(p.speciesId) || 0) + p.processedWeightKg);
+    const rawId = (p.speciesId || '').trim();
+    speciesBreakdownMap.set(rawId, (speciesBreakdownMap.get(rawId) || 0) + p.processedWeightKg);
   });
   const topSpecies = Array.from(speciesBreakdownMap.entries())
     .map(([spId, wt]) => ({
-      name: speciesMap.get(spId)?.name || 'Unknown',
+      name: resolveSpeciesName(spId),
       weight: wt,
       pct: totalProcessedKg > 0 ? (wt / totalProcessedKg) * 100 : 0
     }))
@@ -208,6 +412,25 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
                 className="bg-transparent font-bold text-ink-900 outline-none cursor-pointer text-xs"
                 title="Filter by Production Month"
               />
+              {selectedMonth ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMonth('')}
+                  className="ml-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 hover:underline"
+                  title="Clear month filter to show all months"
+                >
+                  All Months
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMonth(currentMonthStr)}
+                  className="ml-1 text-[11px] font-bold text-ink-600 hover:text-rose-600 hover:underline"
+                  title="Filter to current month"
+                >
+                  This Month
+                </button>
+              )}
             </div>
 
             <MultiSelectFilter
@@ -258,14 +481,13 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
             <span className="text-[11px] font-semibold text-ink-500">Active filters:</span>
 
             {selectedSpeciesIds.map((id) => {
-              const sp = species.find((s) => s.id === id);
-              if (!sp) return null;
+              const displayName = resolveSpeciesName(id);
               return (
                 <span
                   key={id}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200"
                 >
-                  <span>Species: {sp.name}</span>
+                  <span>Species: {displayName}</span>
                   <button
                     onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))}
                     className="hover:text-blue-950"
@@ -278,13 +500,13 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
 
             {selectedSupplierIds.map((id) => {
               const supp = suppliers.find((s) => s.id === id);
-              if (!supp) return null;
+              const displayName = supp?.name || id;
               return (
                 <span
                   key={id}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200"
                 >
-                  <span>Supplier: {supp.name}</span>
+                  <span>Supplier: {displayName}</span>
                   <button
                     onClick={() => setSelectedSupplierIds(selectedSupplierIds.filter((item) => item !== id))}
                     className="hover:text-rose-950"
@@ -297,13 +519,13 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
 
             {selectedGradeIds.map((id) => {
               const grd = grades.find((g) => g.id === id);
-              if (!grd) return null;
+              const displayName = grd?.name || id;
               return (
                 <span
                   key={id}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
                 >
-                  <span>Grade: {grd.name}</span>
+                  <span>Grade: {displayName}</span>
                   <button
                     onClick={() => setSelectedGradeIds(selectedGradeIds.filter((item) => item !== id))}
                     className="hover:text-emerald-950"
@@ -326,10 +548,14 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           linkText="View lot details"
           onLinkClick={() => onNavigate && onNavigate('processing-log')}
           variant="highlight"
-          trend={{
-            value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
-            isPositive: momChangePct >= 0
-          }}
+          trend={
+            selectedMonth
+              ? {
+                  value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
+                  isPositive: momChangePct >= 0
+                }
+              : undefined
+          }
         />
 
         <BentoCard
@@ -343,7 +569,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         <BentoCard
           label="Raw Suppliers"
           value={uniqueSuppliers}
-          caption={`Active in ${selectedMonth}`}
+          caption={selectedMonth ? `Active in ${selectedMonth}` : 'All active suppliers'}
           linkText="View supplier lots"
           onLinkClick={() => onNavigate && onNavigate('processing-log')}
         />
@@ -380,7 +606,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>{varianceCount} processing lot(s)</strong> in {selectedMonth} exceeded the standard slab weight tolerance band.
+              <strong>{varianceCount} processing lot(s)</strong> {selectedMonth ? `in ${selectedMonth}` : 'recorded'} exceeded the standard slab weight tolerance band.
             </span>
           </div>
           {onNavigate && (
@@ -401,7 +627,9 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-ink-900">Daily Production Volume (Kg)</h3>
-              <p className="text-[11px] text-ink-500">Processed kilograms landed per date in {selectedMonth}</p>
+              <p className="text-[11px] text-ink-500">
+                {selectedMonth ? `Processed kilograms landed per date in ${selectedMonth}` : 'Processed kilograms landed across all dates'}
+              </p>
             </div>
             <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
               Peak: {formatKg(maxDailyWeight)}
@@ -410,7 +638,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
 
           {daysInMonth.length === 0 ? (
             <div className="py-16 text-center text-ink-500 text-xs">
-              No processing transactions recorded for {selectedMonth}.
+              {selectedMonth ? `No processing transactions recorded for ${selectedMonth}.` : 'No processing transactions match the selected filters.'}
             </div>
           ) : (
             <div className="h-52 flex items-end gap-2 pt-6 pb-2 border-b border-gray-100 overflow-x-auto">
@@ -444,7 +672,9 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           </div>
 
           {topSuppliers.length === 0 ? (
-            <div className="py-16 text-center text-ink-500 text-xs">No supplier data for this month.</div>
+            <div className="py-16 text-center text-ink-500 text-xs">
+              {selectedMonth ? 'No supplier data for this month.' : 'No supplier data recorded.'}
+            </div>
           ) : (
             <div className="space-y-3">
               {topSuppliers.map((supp, idx) => (

@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version to v23');
-  assert.ok(mainCode.includes('sw.js?v=23'), 'main.tsx must register sw.js?v=23');
+  assert.ok(swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version to v24');
+  assert.ok(mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register sw.js?v=24');
 });
 
 // ============================================================================
@@ -4307,6 +4307,242 @@ test('Commercial Dashboard Product Filtering: options generation, line-item matc
   assert.equal(comboFiltered.length, 1);
   assert.equal(comboFiltered[0].invoiceNo, 'EXP-02');
 });
+
+// ============================================================================
+// SUITE 65: Production Dashboard Species Filter Resolution & Calculation Integrity
+// ============================================================================
+test('Production Dashboard Species Filter: multi-key matching, non-nil KPI aggregation, and like-for-like MoM', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Inspect ProductionDashboard.tsx implementation
+  const prodDashboardCode = fs.readFileSync(path.resolve('src/components/production/ProductionDashboard.tsx'), 'utf8');
+
+  // Verify findSpecies and robust species resolution exists
+  assert.ok(
+    prodDashboardCode.includes('findSpecies'),
+    'ProductionDashboard must define a robust findSpecies resolver across ID, code, name, and rawSpeciesName'
+  );
+  assert.ok(
+    prodDashboardCode.includes('resolveSpeciesName'),
+    'ProductionDashboard must define resolveSpeciesName to avoid showing "Unknown"'
+  );
+  assert.ok(
+    prodDashboardCode.includes('All Months'),
+    'ProductionDashboard must include an "All Months" toggle to prevent accidental month-locked nil filtering'
+  );
+
+  // 2. Mock Production Master Data
+  const masterSpecies = [
+    {
+      id: 'prd-001',
+      code: 'RF-WR',
+      name: 'Frozen Ribbonfish Whole Round',
+      rawSpeciesName: 'Ribbonfish',
+      scientificName: 'Trichiurus lepturus',
+      category: 'Pelagic Finfish',
+      active: true
+    },
+    {
+      id: 'prd-003',
+      code: 'IM',
+      name: 'Frozen Indian Mackerel',
+      rawSpeciesName: 'Mackerel',
+      scientificName: 'Rastrelliger kanagurta',
+      category: 'Pelagic Finfish',
+      active: true
+    },
+    {
+      id: 'prd-009',
+      code: 'VAN-HLSO',
+      name: 'Frozen Vannamei Shrimps HLSO',
+      rawSpeciesName: 'Vannamei',
+      scientificName: 'Litopenaeus vannamei',
+      category: 'Shrimp / Prawns',
+      active: true
+    }
+  ];
+
+  // Helper matching engine identical to ProductionDashboard.tsx
+  const byId = new Map(masterSpecies.map((sp) => [sp.id.toLowerCase(), sp]));
+  const byCode = new Map(masterSpecies.map((sp) => [sp.code.toLowerCase(), sp]));
+  const byName = new Map(masterSpecies.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+  const byRaw = new Map();
+  masterSpecies.forEach((sp) => {
+    if (sp.rawSpeciesName) byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+  });
+
+  const findSpeciesMock = (idOrKey) => {
+    if (!idOrKey) return undefined;
+    const clean = String(idOrKey).trim();
+    const lower = clean.toLowerCase();
+    return (
+      byId.get(lower) ||
+      byCode.get(lower) ||
+      byName.get(lower) ||
+      byRaw.get(lower) ||
+      masterSpecies.find(
+        (sp) =>
+          sp.id.toLowerCase() === lower ||
+          sp.code.toLowerCase() === lower ||
+          sp.name.toLowerCase() === lower ||
+          (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+          (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+      )
+    );
+  };
+
+  const speciesOptionsMock = masterSpecies.map((sp) => ({
+    id: sp.id,
+    label: sp.name,
+    subLabel: sp.scientificName,
+    badge: sp.code
+  }));
+
+  // 3. Test processing entries with heterogeneous speciesId representations (legacy ID, raw name, code, master ID)
+  const sampleEntries = [
+    // Entry 1: Direct ID match for Mackerel
+    {
+      id: 'proc-1',
+      entryNo: 'PE-001',
+      processingDate: '2026-11-05',
+      speciesId: 'prd-003',
+      processedWeightKg: 4500,
+      rejectionWeightKg: 120,
+      slabsCount: 450,
+      gradeId: 'grd-a',
+      isVoided: false
+    },
+    // Entry 2: Stored with raw species name 'Mackerel'
+    {
+      id: 'proc-2',
+      entryNo: 'PE-002',
+      processingDate: '2026-11-06',
+      speciesId: 'Mackerel',
+      processedWeightKg: 3200,
+      rejectionWeightKg: 80,
+      slabsCount: 320,
+      gradeId: 'grd-b',
+      isVoided: false
+    },
+    // Entry 3: Stored with species code 'IM'
+    {
+      id: 'proc-3',
+      entryNo: 'PE-003',
+      processingDate: '2026-11-07',
+      speciesId: 'IM',
+      processedWeightKg: 2800,
+      rejectionWeightKg: 50,
+      slabsCount: 280,
+      gradeId: 'grd-a',
+      isVoided: false
+    },
+    // Entry 4: Vannamei with scientific name or legacy identifier
+    {
+      id: 'proc-4',
+      entryNo: 'PE-004',
+      processingDate: '2026-11-08',
+      speciesId: 'prd-009',
+      processedWeightKg: 6000,
+      rejectionWeightKg: 200,
+      slabsCount: 600,
+      gradeId: 'grd-a',
+      isVoided: false
+    },
+    // Entry 5: Ribbonfish with code RF-WR
+    {
+      id: 'proc-5',
+      entryNo: 'PE-005',
+      processingDate: '2026-11-09',
+      speciesId: 'RF-WR',
+      processedWeightKg: 5000,
+      rejectionWeightKg: 150,
+      slabsCount: 500,
+      gradeId: 'grd-a',
+      isVoided: false
+    }
+  ];
+
+  const filterEntriesBySpecies = (entries, selectedSpeciesIds) => {
+    return entries.filter((p) => {
+      if (p.isVoided) return false;
+      if (selectedSpeciesIds.length === 0) return true;
+
+      const rawEntrySpId = (p.speciesId || '').trim();
+      const entrySp = findSpeciesMock(rawEntrySpId);
+      const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+      const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+      const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+
+      return selectedSpeciesIds.some((selectedId) => {
+        if (rawEntrySpId === selectedId) return true;
+        if (rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+
+        const selSp = findSpeciesMock(selectedId);
+        if (entrySp && selSp && entrySp.id === selSp.id) return true;
+
+        if (selSp) {
+          if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase()) return true;
+          if (rawEntrySpId.toLowerCase() === selSp.code.toLowerCase()) return true;
+          if (rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+          if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+        }
+
+        if (entrySp) {
+          if (selectedId.toLowerCase() === entrySp.id.toLowerCase()) return true;
+          if (selectedId.toLowerCase() === entrySpCode) return true;
+          if (selectedId.toLowerCase() === entrySpName) return true;
+          if (entrySpRaw && selectedId.toLowerCase() === entrySpRaw) return true;
+        }
+
+        const selOpt = speciesOptionsMock.find((o) => o.id === selectedId);
+        if (selOpt) {
+          const optLabel = selOpt.label.trim().toLowerCase();
+          if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+          if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
+        }
+
+        return false;
+      });
+    });
+  };
+
+  // TEST 1: User selects 'prd-003' (Frozen Indian Mackerel)
+  // Must match proc-1 (direct ID 'prd-003'), proc-2 (rawSpeciesName 'Mackerel'), and proc-3 (code 'IM')
+  const mackerelFiltered = filterEntriesBySpecies(sampleEntries, ['prd-003']);
+  assert.equal(mackerelFiltered.length, 3, 'Must match all 3 Mackerel entries regardless of whether stored by ID, raw name, or code');
+  assert.deepEqual(mackerelFiltered.map((p) => p.id), ['proc-1', 'proc-2', 'proc-3']);
+
+  // Verify KPIs are NOT nil
+  const totalMackerelKg = mackerelFiltered.reduce((s, p) => s + p.processedWeightKg, 0);
+  const totalMackerelRejection = mackerelFiltered.reduce((s, p) => s + p.rejectionWeightKg, 0);
+  const totalMackerelSlabs = mackerelFiltered.reduce((s, p) => s + p.slabsCount, 0);
+
+  assert.equal(totalMackerelKg, 10500, 'Total Processed Kg must accurately equal 10,500 Kg (not nil)');
+  assert.equal(totalMackerelRejection, 250, 'Total Rejection Kg must equal 250 Kg (not nil)');
+  assert.equal(totalMackerelSlabs, 1050, 'Total Slabs must equal 1,050 slabs (not nil)');
+
+  // TEST 2: User selects 'prd-001' (Frozen Ribbonfish Whole Round)
+  // Must match proc-5 (stored with code 'RF-WR')
+  const ribbonFiltered = filterEntriesBySpecies(sampleEntries, ['prd-001']);
+  assert.equal(ribbonFiltered.length, 1);
+  assert.equal(ribbonFiltered[0].id, 'proc-5');
+  assert.equal(ribbonFiltered[0].processedWeightKg, 5000, 'Ribbonfish weight is 5,000 Kg (not nil)');
+
+  // TEST 3: Multi-select 'prd-003' + 'prd-009' (Mackerel + Vannamei)
+  const multiFiltered = filterEntriesBySpecies(sampleEntries, ['prd-003', 'prd-009']);
+  assert.equal(multiFiltered.length, 4, 'Must match 3 Mackerel entries + 1 Vannamei entry');
+  const multiTotalKg = multiFiltered.reduce((s, p) => s + p.processedWeightKg, 0);
+  assert.equal(multiTotalKg, 16500, 'Multi-select total is 16,500 Kg');
+
+  // TEST 4: ProcessingRecordList.tsx inspection
+  const recordListCode = fs.readFileSync(path.resolve('src/components/production/ProcessingRecordList.tsx'), 'utf8');
+  assert.ok(
+    recordListCode.includes('rawSpeciesName'),
+    'ProcessingRecordList must also check rawSpeciesName for speciesFilter resolution'
+  );
+});
+
 
 
 

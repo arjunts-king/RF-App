@@ -89,7 +89,15 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
     if (showVoided && !p.isVoided) return false;
 
     if (supplierFilter && p.supplierId !== supplierFilter) return false;
-    if (speciesFilter && p.speciesId !== speciesFilter) return false;
+    if (speciesFilter) {
+      const matchSpecies =
+        p.speciesId === speciesFilter ||
+        speciesMap.get(p.speciesId)?.id === speciesFilter ||
+        species.find((s) => s.id === speciesFilter)?.code.toLowerCase() === p.speciesId.toLowerCase() ||
+        species.find((s) => s.id === speciesFilter)?.name.toLowerCase() === p.speciesId.toLowerCase() ||
+        species.find((s) => s.id === speciesFilter)?.rawSpeciesName?.toLowerCase() === p.speciesId.toLowerCase();
+      if (!matchSpecies) return false;
+    }
     if (shiftFilter && p.shift !== shiftFilter) return false;
     if (varianceOnlyFilter && !p.hasSlabVariance) return false;
 
