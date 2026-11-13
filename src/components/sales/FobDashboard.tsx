@@ -744,13 +744,13 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
           <div className="flex flex-col justify-end">
             <label className="text-[10px] font-bold text-ink-500 uppercase block mb-1">Product / Species</label>
             <MultiSelectFilter
-              label="Species"
+              label="Products"
               options={speciesOptions}
               selectedIds={selectedSpeciesIds}
               onChange={setSelectedSpeciesIds}
               icon={Fish}
               badgeColor="blue"
-              placeholder="Search species..."
+              placeholder="Search products..."
               className="w-full"
             />
           </div>

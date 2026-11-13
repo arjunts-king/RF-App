@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v22'), 'Service worker must bump cache version to v22');
-  assert.ok(mainCode.includes('sw.js?v=22'), 'main.tsx must register sw.js?v=22');
+  assert.ok(swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version to v23');
+  assert.ok(mainCode.includes('sw.js?v=23'), 'main.tsx must register sw.js?v=23');
 });
 
 // ============================================================================
@@ -4165,6 +4165,147 @@ test('Supplier Ledger Statement includes purchase metrics, blank expense rate wh
   // Verify SupplierLedgerView exposes Excel, Word, and A4 Print downloads
   const viewCode = fs.readFileSync(path.resolve('src/components/payments/SupplierLedgerView.tsx'), 'utf8');
   assert.ok(viewCode.includes('Download Excel') && viewCode.includes('Download Word') && viewCode.includes('Print / PDF (A4)'));
+});
+
+// ============================================================================
+// SUITE 64: Commercial Dashboard Product Filtering & Combinable Multi-Filters
+// ============================================================================
+test('Commercial Dashboard Product Filtering: options generation, line-item matching, and KPI recalculation', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify SalesDashboard component source code contains the dedicated Products filter
+  const salesDashboardCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf8');
+  assert.ok(
+    salesDashboardCode.includes('label="Products"'),
+    'SalesDashboard must render MultiSelectFilter with label="Products"'
+  );
+  assert.ok(
+    salesDashboardCode.includes('placeholder="Search products..."'),
+    'SalesDashboard must have placeholder="Search products..."'
+  );
+  assert.ok(
+    salesDashboardCode.includes('Product: {name}'),
+    'SalesDashboard must render active filter chip with "Product: {name}"'
+  );
+  assert.ok(
+    salesDashboardCode.includes('Search invoice #, customer, product, country...'),
+    'Pending outstanding ledger search must explicitly indicate product search support'
+  );
+  assert.ok(
+    salesDashboardCode.includes('productOptions = useMemo('),
+    'SalesDashboard must define productOptions aggregating master species and invoice items'
+  );
+
+  // 2. Test domain product filtering logic across multi-line commercial invoices
+  const speciesList = [
+    { id: 'prd-001', name: 'Frozen RibbonFish B Grade', scientificName: 'Lepturacanthus Savala', hsCode: '03038990', code: 'RF-B' },
+    { id: 'prd-003', name: 'Frozen Indian Mackerel', scientificName: 'Rastrelliger kanagurta', hsCode: '03035400', code: 'IM' },
+    { id: 'prd-009', name: 'Frozen Vannamei Shrimps', scientificName: 'Litopenaeus vannamei', hsCode: '03061790', code: 'VN' }
+  ];
+
+  const testInvoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'EXP-01',
+      consigneeId: 'cust-1',
+      realizationStatus: 'Fully Realized',
+      isVoided: false,
+      totalAmountCurrency: 50000,
+      totalWeightKg: 10000,
+      totalFobValueCurrency: 48000,
+      lineItems: [
+        { speciesId: 'prd-001', productDescription: 'Frozen RibbonFish B Grade 300/500', weightKg: 6000, amountCurrency: 30000 },
+        { speciesId: 'prd-003', productDescription: 'Frozen Indian Mackerel 6/8', weightKg: 4000, amountCurrency: 20000 }
+      ]
+    },
+    {
+      id: 'inv-2',
+      invoiceNo: 'EXP-02',
+      consigneeId: 'cust-2',
+      realizationStatus: 'Not Realized',
+      isVoided: false,
+      totalAmountCurrency: 45000,
+      totalWeightKg: 9000,
+      totalFobValueCurrency: 43000,
+      lineItems: [
+        { speciesId: 'prd-003', productDescription: 'Frozen Indian Mackerel 8/10', weightKg: 9000, amountCurrency: 45000 }
+      ]
+    },
+    {
+      id: 'inv-3',
+      invoiceNo: 'EXP-03',
+      consigneeId: 'cust-1',
+      realizationStatus: 'Partially Realized',
+      isVoided: false,
+      totalAmountCurrency: 60000,
+      totalWeightKg: 5000,
+      totalFobValueCurrency: 58000,
+      lineItems: [
+        { speciesId: 'prd-009', productDescription: 'Frozen Vannamei Shrimps HLSO', weightKg: 5000, amountCurrency: 60000 }
+      ]
+    },
+    {
+      id: 'inv-4-custom',
+      invoiceNo: 'EXP-04',
+      consigneeId: 'cust-3',
+      realizationStatus: 'Not Realized',
+      isVoided: false,
+      totalAmountCurrency: 25000,
+      totalWeightKg: 5000,
+      totalFobValueCurrency: 24000,
+      lineItems: [
+        // Custom invoice item with no speciesId but explicit productDescription
+        { speciesId: '', productDescription: 'Frozen Leather Jacket Whole', weightKg: 5000, amountCurrency: 25000 }
+      ]
+    }
+  ];
+
+  // Helper matching the exact filter implementation in SalesDashboard.tsx
+  const speciesMap = new Map(speciesList.map((s) => [s.id, s]));
+  const filterByProducts = (invoices, selectedProductIds) => {
+    if (!selectedProductIds || selectedProductIds.length === 0) return invoices;
+    return invoices.filter((inv) => {
+      if (inv.isVoided) return false;
+      return inv.lineItems.some((l) => {
+        if (selectedProductIds.includes(l.speciesId)) return true;
+        if (l.productDescription && selectedProductIds.includes(l.productDescription.trim())) return true;
+        const sp = speciesMap.get(l.speciesId);
+        const lineName = (sp?.name || l.productDescription || '').trim().toLowerCase();
+        return selectedProductIds.some((pId) => {
+          const opt = speciesList.find((s) => s.id === pId) || { name: pId };
+          return opt.name.trim().toLowerCase() === lineName;
+        });
+      });
+    });
+  };
+
+  // Case A: Filter by single product 'prd-001' (RibbonFish) -> Only inv-1
+  const rfFiltered = filterByProducts(testInvoices, ['prd-001']);
+  assert.equal(rfFiltered.length, 1);
+  assert.equal(rfFiltered[0].invoiceNo, 'EXP-01');
+
+  // Case B: Filter by product 'prd-003' (Mackerel) -> Matches inv-1 and inv-2
+  const imFiltered = filterByProducts(testInvoices, ['prd-003']);
+  assert.equal(imFiltered.length, 2);
+  assert.deepEqual(imFiltered.map((i) => i.invoiceNo), ['EXP-01', 'EXP-02']);
+  const totalImUSD = imFiltered.reduce((s, i) => s + i.totalAmountCurrency, 0);
+  assert.equal(totalImUSD, 95000, 'Turnover KPI for Mackerel shipments totals $95,000');
+
+  // Case C: Multi-product selection: 'prd-001' + 'prd-009' -> inv-1 (RibbonFish) and inv-3 (Vannamei)
+  const multiProductFiltered = filterByProducts(testInvoices, ['prd-001', 'prd-009']);
+  assert.equal(multiProductFiltered.length, 2);
+  assert.deepEqual(multiProductFiltered.map((i) => i.invoiceNo), ['EXP-01', 'EXP-03']);
+
+  // Case D: Filter by custom invoice product description
+  const customFiltered = filterByProducts(testInvoices, ['Frozen Leather Jacket Whole']);
+  assert.equal(customFiltered.length, 1);
+  assert.equal(customFiltered[0].invoiceNo, 'EXP-04');
+
+  // Case E: Combinable filters - Product ('prd-003' Mackerel) + Status ('Not Realized') -> Only inv-2
+  const comboFiltered = imFiltered.filter((i) => i.realizationStatus === 'Not Realized');
+  assert.equal(comboFiltered.length, 1);
+  assert.equal(comboFiltered[0].invoiceNo, 'EXP-02');
 });
 
 

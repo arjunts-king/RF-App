@@ -22,7 +22,6 @@ import {
   ArrowRight,
   X,
   FileText,
-  Fish,
   Ship,
   DollarSign,
   CheckCircle2,
@@ -44,7 +43,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
-  const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [selectedPolIds, setSelectedPolIds] = useState<string[]>([]);
   const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
@@ -75,10 +74,41 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     [customers]
   );
 
-  const speciesOptions = useMemo(
-    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
-    [species]
-  );
+  // Comprehensive Product Options for MultiSelectFilter (Registered Master + Historical Invoice Products)
+  const productOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string; subLabel?: string; badge?: string }[] = [];
+
+    // 1. Registered Commercial Products from Species Master
+    species.forEach((sp) => {
+      seen.add(sp.id.toLowerCase());
+      seen.add(sp.name.trim().toLowerCase());
+      options.push({
+        id: sp.id,
+        label: sp.name,
+        subLabel: sp.scientificName || (sp.hsCode ? `HS ${sp.hsCode}` : undefined),
+        badge: sp.hsCode ? `HS ${sp.hsCode}` : sp.code || undefined
+      });
+    });
+
+    // 2. Any additional distinct product items/descriptions from sales invoices
+    salesInvoices.forEach((inv) => {
+      inv.lineItems.forEach((l) => {
+        const desc = (l.productDescription || '').trim();
+        if (desc && !seen.has(desc.toLowerCase())) {
+          seen.add(desc.toLowerCase());
+          options.push({
+            id: desc,
+            label: desc,
+            subLabel: l.hsCode ? `HS ${l.hsCode}` : undefined,
+            badge: 'Invoice Item'
+          });
+        }
+      });
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [species, salesInvoices]);
 
   const polOptions = useMemo(
     () => ports.map((p) => ({ id: p.id, label: `${p.code} - ${p.name}`, subLabel: p.country })),
@@ -128,9 +158,18 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       if (selectedCurrencies.length > 0 && !selectedCurrencies.includes(inv.currency)) return false;
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(inv.realizationStatus)) return false;
 
-      if (selectedSpeciesIds.length > 0) {
-        const hasSpecies = inv.lineItems.some((l) => selectedSpeciesIds.includes(l.speciesId));
-        if (!hasSpecies) return false;
+      if (selectedProductIds.length > 0) {
+        const hasProduct = inv.lineItems.some((l) => {
+          if (selectedProductIds.includes(l.speciesId)) return true;
+          if (l.productDescription && selectedProductIds.includes(l.productDescription.trim())) return true;
+          const sp = speciesMap.get(l.speciesId);
+          const lineName = (sp?.name || l.productDescription || '').trim().toLowerCase();
+          return selectedProductIds.some((pId) => {
+            const opt = productOptions.find((o) => o.id === pId);
+            return opt && opt.label.trim().toLowerCase() === lineName;
+          });
+        });
+        if (!hasProduct) return false;
       }
 
       return true;
@@ -140,11 +179,13 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     startDate,
     endDate,
     selectedCustomerIds,
-    selectedSpeciesIds,
+    selectedProductIds,
     selectedPolIds,
     selectedPodIds,
     selectedCurrencies,
-    selectedStatuses
+    selectedStatuses,
+    speciesMap,
+    productOptions
   ]);
 
   // KPI Calculations
@@ -443,7 +484,11 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           const matchCountry = inv.countryDisplay.toLowerCase().includes(q);
           const matchSO = inv.salesOrderNo?.toLowerCase().includes(q);
           const matchPO = inv.orderNo?.toLowerCase().includes(q);
-          if (!matchNo && !matchCust && !matchCountry && !matchSO && !matchPO) return false;
+          const matchProduct = inv.lineItems?.some((l) => {
+            const sp = speciesMap.get(l.speciesId);
+            return (sp?.name || l.productDescription || '').toLowerCase().includes(q);
+          });
+          if (!matchNo && !matchCust && !matchCountry && !matchSO && !matchPO && !matchProduct) return false;
         }
 
         return true;
@@ -457,7 +502,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         if (outstandingSortBy === 'inv-asc') return a.invoiceNo.localeCompare(b.invoiceNo);
         return 0;
       });
-  }, [pendingOutstandingInvoices, outstandingStatusFilter, outstandingSearch, outstandingSortBy]);
+  }, [pendingOutstandingInvoices, outstandingStatusFilter, outstandingSearch, outstandingSortBy, speciesMap]);
 
   // Paginated records for table view
   const paginatedOutstandingInvoices = useMemo(() => {
@@ -530,7 +575,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     setStartDate('');
     setEndDate('');
     setSelectedCustomerIds([]);
-    setSelectedSpeciesIds([]);
+    setSelectedProductIds([]);
     setSelectedPolIds([]);
     setSelectedPodIds([]);
     setSelectedCurrencies([]);
@@ -541,7 +586,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     startDate ||
     endDate ||
     selectedCustomerIds.length > 0 ||
-    selectedSpeciesIds.length > 0 ||
+    selectedProductIds.length > 0 ||
     selectedPolIds.length > 0 ||
     selectedPodIds.length > 0 ||
     selectedCurrencies.length > 0 ||
@@ -684,15 +729,15 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             placeholder="Search customers..."
           />
 
-          {/* Multi-select Species / Products */}
+          {/* Multi-select Products */}
           <MultiSelectFilter
-            label="Species"
-            options={speciesOptions}
-            selectedIds={selectedSpeciesIds}
-            onChange={setSelectedSpeciesIds}
-            icon={Fish}
+            label="Products"
+            options={productOptions}
+            selectedIds={selectedProductIds}
+            onChange={setSelectedProductIds}
+            icon={Boxes}
             badgeColor="blue"
-            placeholder="Search species..."
+            placeholder="Search products..."
           />
 
           {/* Multi-select Port of Loading */}
@@ -777,16 +822,17 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 </span>
               );
             })}
-            {selectedSpeciesIds.map((id) => {
+            {selectedProductIds.map((id) => {
+              const opt = productOptions.find((o) => o.id === id);
               const sp = speciesMap.get(id);
-              if (!sp) return null;
+              const name = opt?.label || sp?.name || id;
               return (
                 <span
                   key={id}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-800 rounded-full text-xs font-semibold border border-blue-200"
                 >
-                  Species: {sp.name}
-                  <button onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))} className="hover:text-blue-950">
+                  Product: {name}
+                  <button onClick={() => setSelectedProductIds(selectedProductIds.filter((item) => item !== id))} className="hover:text-blue-950">
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -1070,7 +1116,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 type="text"
-                placeholder="Search invoice #, customer, country..."
+                placeholder="Search invoice #, customer, product, country..."
                 value={outstandingSearch}
                 onChange={(e) => setOutstandingSearch(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
@@ -1299,6 +1345,18 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                             <span className="text-ink-400 truncate max-w-[120px]">· Buyer: {inv.buyerNameDisplay}</span>
                           )}
                         </div>
+                        {inv.lineItems && inv.lineItems.length > 0 && (
+                          <div
+                            className="text-[10px] text-ink-600 truncate max-w-[220px] mt-0.5 flex items-center gap-1 font-normal"
+                            title={inv.lineItems.map((l) => speciesMap.get(l.speciesId)?.name || l.productDescription || 'Product').join(', ')}
+                          >
+                            <Boxes className="w-2.5 h-2.5 text-ink-400 shrink-0" />
+                            <span className="truncate">
+                              {inv.lineItems.map((l) => speciesMap.get(l.speciesId)?.name || l.productDescription || 'Product').slice(0, 2).join(', ')}
+                              {inv.lineItems.length > 2 ? ` +${inv.lineItems.length - 2} more` : ''}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-right font-extrabold text-ink-900 tabular-nums whitespace-nowrap">
                         ${inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1465,9 +1523,21 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               topProducts.map((p) => (
                 <div key={p.id} className="space-y-1">
                   <div className="flex justify-between items-baseline text-xs font-semibold">
-                    <span className="truncate max-w-[170px] text-ink-900 font-bold" title={p.name}>
-                      {p.name}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedProductIds((prev) =>
+                          prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]
+                        )
+                      }
+                      className="truncate max-w-[170px] text-ink-900 font-bold hover:text-rose-700 hover:underline text-left transition flex items-center gap-1 cursor-pointer"
+                      title={`Filter dashboard for ${p.name}`}
+                    >
+                      <span className="truncate">{p.name}</span>
+                      {selectedProductIds.includes(p.id) && (
+                        <span className="shrink-0 text-[9px] px-1 bg-blue-100 text-blue-800 rounded font-bold">Filtered</span>
+                      )}
+                    </button>
                     <span className="text-ink-700 tabular-nums font-bold text-[11px]">
                       ${p.totalUSD.toLocaleString()} ({p.valueSharePct.toFixed(1)}%)
                     </span>
@@ -1715,7 +1785,25 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                     <tr key={p.id} className="hover:bg-rose-50/20 transition-colors">
                       <td className="py-2.5 px-3 text-center font-mono text-ink-400 font-semibold">{idx + 1}</td>
                       <td className="py-2.5 px-3">
-                        <div className="font-extrabold text-ink-900">{p.name}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedProductIds((prev) =>
+                                prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]
+                              )
+                            }
+                            className="font-extrabold text-ink-900 hover:text-rose-700 hover:underline text-left transition cursor-pointer"
+                            title={`Filter dashboard for ${p.name}`}
+                          >
+                            {p.name}
+                          </button>
+                          {selectedProductIds.includes(p.id) && (
+                            <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded text-[9px] font-bold">
+                              Filtered
+                            </span>
+                          )}
+                        </div>
                         {p.scientificName && (
                           <div className="text-[10px] italic text-ink-400 font-normal">{p.scientificName}</div>
                         )}
@@ -1801,12 +1889,30 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <span className="text-[10px] font-mono text-ink-400 font-bold">#{idx + 1}</span>
-                    <h4 className="text-sm font-extrabold text-ink-900 leading-snug">{p.name}</h4>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedProductIds((prev) =>
+                          prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]
+                        )
+                      }
+                      className="text-sm font-extrabold text-ink-900 leading-snug hover:text-rose-700 hover:underline text-left block cursor-pointer"
+                      title={`Filter dashboard for ${p.name}`}
+                    >
+                      {p.name}
+                    </button>
                     <span className="text-[11px] font-mono text-ink-500">HS {p.hsCode}</span>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-gray-200 text-ink-700">
-                    {p.invoicesCount} inv
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-gray-200 text-ink-700">
+                      {p.invoicesCount} inv
+                    </span>
+                    {selectedProductIds.includes(p.id) && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                        Filtered
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-200/60">

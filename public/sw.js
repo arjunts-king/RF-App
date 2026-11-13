@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V22 - Detailed Supplier Ledger Statement with Word/Excel/A4 exports)
-const CACHE_VERSION = 'seafood-pwa-v22';
+// Seafood Purchase App - Offline PWA Service Worker (V23 - Commercial Dashboard Product Filtering)
+const CACHE_VERSION = 'seafood-pwa-v23';
 const STATIC_ASSETS = [
   './',
   './index.html',
