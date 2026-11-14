@@ -69,65 +69,134 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     };
   }, [species]);
 
-  // Comprehensive Options for MultiSelectFilter (Registered Master + Distinct Historical Purchase Species)
+  const isAutoString = (str?: string): boolean => {
+    if (!str) return false;
+    const s = str.trim().toLowerCase();
+    return (
+      s.startsWith('sp-auto') ||
+      s.startsWith('auto-') ||
+      s.includes('auto uploaded') ||
+      s.includes('autouploaded') ||
+      s.includes('auto-uploaded') ||
+      s.includes('auto-created') ||
+      s.includes('autocreated') ||
+      s === 'auto' ||
+      s === 'recorded'
+    );
+  };
+
+  // Helper to obtain clean authentic purchase/raw species name (never sales export names)
+  const getRawPurchaseSpeciesName = (rawId: string, p?: (typeof purchases)[0]): { id: string; label: string; subLabel?: string } => {
+    const sp = findSpecies(rawId);
+    let label = '';
+    let subLabel = sp?.scientificName || undefined;
+
+    if (sp) {
+      if (sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name && !isAutoString(sp.name)) {
+        // Strip export sales prefixes/suffixes (e.g. "Frozen Indian Mackerel" -> "Indian Mackerel")
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code && !isAutoString(sp.code)) {
+        label = sp.code.trim();
+      }
+    }
+
+    // Fallback: If label is empty or still an auto string, check purchase remarks or rawId
+    if (!label || isAutoString(label)) {
+      if (p?.remarks && !isAutoString(p.remarks)) {
+        label = p.remarks.trim();
+      } else if (!isAutoString(rawId)) {
+        label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else {
+        const extracted = rawId.replace(/^(sp-)?auto[-_]?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = extracted ? extracted.charAt(0).toUpperCase() + extracted.slice(1) : (sp?.rawSpeciesName || sp?.name || 'Raw Material');
+      }
+    }
+
+    const resolvedSp = sp || findSpecies(label);
+    const resolvedId = resolvedSp ? resolvedSp.id : (isAutoString(rawId) ? label : rawId);
+
+    return {
+      id: resolvedId,
+      label,
+      subLabel: subLabel || resolvedSp?.scientificName
+    };
+  };
+
+  // Purchase-Only Species Options for MultiSelectFilter:
+  // Strictly includes ONLY species that have been purchased / uploaded through Excel.
+  // Displays authentic purchase/raw species names (e.g. "Mackerel", "Ribbonfish Net") rather than export sales product names.
+  // Replaces any auto-generated IDs/labels ("auto uploaded", "sp-auto-...") with the genuine species name.
   const speciesOptions = useMemo(() => {
     const seen = new Set<string>();
-    const options: { id: string; label: string; subLabel?: string; badge?: string }[] = [];
+    const options: { id: string; label: string; subLabel?: string }[] = [];
 
-    // 1. Registered Master Species
-    species.forEach((sp) => {
-      seen.add(sp.id.toLowerCase());
-      seen.add(sp.name.trim().toLowerCase());
-      if (sp.code) seen.add(sp.code.trim().toLowerCase());
-      options.push({
-        id: sp.id,
-        label: sp.name,
-        subLabel: sp.scientificName || (sp.category ? sp.category : undefined),
-        badge: sp.code || (sp.rawSpeciesName ? sp.rawSpeciesName : undefined)
-      });
-    });
+    // When purchases exist, strictly derive options from purchases uploaded through Excel
+    if (purchases.length > 0) {
+      purchases.forEach((p) => {
+        if (p.isVoided) return;
+        const rawId = (p.speciesId || '').trim();
+        if (!rawId) return;
 
-    // 2. Any additional distinct species found in existing purchases
-    purchases.forEach((p) => {
-      const rawId = (p.speciesId || '').trim();
-      if (!rawId) return;
-      const lower = rawId.toLowerCase();
-      if (!seen.has(lower)) {
-        const matched = findSpecies(rawId);
-        if (matched) {
-          seen.add(matched.id.toLowerCase());
-          seen.add(matched.name.trim().toLowerCase());
-          if (!options.some((o) => o.id === matched.id)) {
-            options.push({
-              id: matched.id,
-              label: matched.name,
-              subLabel: matched.scientificName || undefined,
-              badge: matched.code || undefined
-            });
-          }
-        } else {
-          seen.add(lower);
+        const info = getRawPurchaseSpeciesName(rawId, p);
+        const lowerLabel = info.label.toLowerCase();
+
+        if (!seen.has(lowerLabel) && !isAutoString(info.label)) {
+          seen.add(lowerLabel);
+          seen.add(info.id.toLowerCase());
+          seen.add(rawId.toLowerCase());
           options.push({
-            id: rawId,
-            label: rawId,
-            badge: 'Recorded'
+            id: info.id,
+            label: info.label,
+            subLabel: info.subLabel
           });
         }
-      }
-    });
+      });
+    } else {
+      // In initial state before any purchases are recorded/uploaded, show registered raw species names (never sales products)
+      species.forEach((sp) => {
+        const rawName = sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)
+          ? sp.rawSpeciesName.trim()
+          : sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+
+        const lowerLabel = rawName.toLowerCase();
+        if (!seen.has(lowerLabel) && !isAutoString(rawName)) {
+          seen.add(lowerLabel);
+          options.push({
+            id: sp.id,
+            label: rawName,
+            subLabel: sp.scientificName || undefined
+          });
+        }
+      });
+    }
 
     return options.sort((a, b) => a.label.localeCompare(b.label));
-  }, [species, purchases, findSpecies]);
+  }, [purchases, species, findSpecies]);
 
   const resolveSpeciesName = (spId: string): string => {
     if (!spId) return 'Unspecified Species';
-    const direct = speciesMap.get(spId);
-    if (direct) return direct.name;
-    const found = findSpecies(spId);
-    if (found) return found.name;
-    const opt = speciesOptions.find((o) => o.id === spId);
+    const opt = speciesOptions.find((o) => o.id === spId || o.label.toLowerCase() === spId.toLowerCase());
     if (opt) return opt.label;
-    return spId;
+    const direct = speciesMap.get(spId);
+    if (direct) {
+      if (direct.rawSpeciesName && !isAutoString(direct.rawSpeciesName)) return direct.rawSpeciesName;
+      if (direct.name && !isAutoString(direct.name)) {
+        return direct.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    const found = findSpecies(spId);
+    if (found) {
+      if (found.rawSpeciesName && !isAutoString(found.rawSpeciesName)) return found.rawSpeciesName;
+      if (found.name && !isAutoString(found.name)) {
+        return found.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    if (!isAutoString(spId) && !spId.startsWith('prd-') && !spId.startsWith('sp-')) {
+      return spId.replace(/^Frozen\s+/i, '').trim();
+    }
+    return 'Raw Material';
   };
 
   const filteredPurchases = useMemo(() => {
@@ -159,6 +228,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
         const entrySpSci = (entrySp?.scientificName || '').trim().toLowerCase();
 
+        const entryRawName = getRawPurchaseSpeciesName(rawEntrySpId, p).label.trim().toLowerCase();
+
         const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
           // Direct ID match
           if (rawEntrySpId === selectedId) return true;
@@ -179,6 +250,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             if (entrySpName && entrySpName === selSp.name.trim().toLowerCase()) return true;
             if (entrySpCode && entrySpCode === selSp.code.toLowerCase()) return true;
             if (entrySpRaw && selSp.rawSpeciesName && entrySpRaw === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+
+            const selRawName = (selSp.rawSpeciesName || selSp.name).replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+            if (entryRawName && entryRawName === selRawName) return true;
           }
 
           // Match selected ID against entry species object properties
@@ -196,6 +270,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           if (selOpt) {
             const optLabel = selOpt.label.trim().toLowerCase();
             if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+            if (optLabel === entryRawName) return true;
             if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
           }
 

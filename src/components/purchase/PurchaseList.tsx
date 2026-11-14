@@ -138,38 +138,116 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     };
   }, [species]);
 
+  const isAutoString = (str?: string): boolean => {
+    if (!str) return false;
+    const s = str.trim().toLowerCase();
+    return (
+      s.startsWith('sp-auto') ||
+      s.startsWith('auto-') ||
+      s.includes('auto uploaded') ||
+      s.includes('autouploaded') ||
+      s.includes('auto-uploaded') ||
+      s.includes('auto-created') ||
+      s.includes('autocreated') ||
+      s === 'auto' ||
+      s === 'recorded'
+    );
+  };
+
+  const getRawPurchaseSpeciesName = (rawId: string, p?: (typeof purchases)[0]): { id: string; label: string } => {
+    const sp = findSpecies(rawId);
+    let label = '';
+
+    if (sp) {
+      if (sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name && !isAutoString(sp.name)) {
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code && !isAutoString(sp.code)) {
+        label = sp.code.trim();
+      }
+    }
+
+    if (!label || isAutoString(label)) {
+      if (p?.remarks && !isAutoString(p.remarks)) {
+        label = p.remarks.trim();
+      } else if (!isAutoString(rawId)) {
+        label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else {
+        const extracted = rawId.replace(/^(sp-)?auto[-_]?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = extracted ? extracted.charAt(0).toUpperCase() + extracted.slice(1) : (sp?.rawSpeciesName || sp?.name || 'Raw Material');
+      }
+    }
+
+    const resolvedSp = sp || findSpecies(label);
+    const resolvedId = resolvedSp ? resolvedSp.id : (isAutoString(rawId) ? label : rawId);
+
+    return {
+      id: resolvedId,
+      label
+    };
+  };
+
   const speciesOptions = useMemo(() => {
     const seen = new Set<string>();
     const options: { id: string; label: string }[] = [];
 
-    species.forEach((sp) => {
-      seen.add(sp.id.toLowerCase());
-      seen.add(sp.name.trim().toLowerCase());
-      if (sp.code) seen.add(sp.code.trim().toLowerCase());
-      options.push({ id: sp.id, label: sp.name });
-    });
+    if (purchases.length > 0) {
+      purchases.forEach((p) => {
+        if (p.isVoided) return;
+        const rawId = (p.speciesId || '').trim();
+        if (!rawId) return;
 
-    purchases.forEach((p) => {
-      const rawId = (p.speciesId || '').trim();
-      if (!rawId) return;
-      const lower = rawId.toLowerCase();
-      if (!seen.has(lower)) {
-        const matched = findSpecies(rawId);
-        if (matched) {
-          seen.add(matched.id.toLowerCase());
-          seen.add(matched.name.trim().toLowerCase());
-          if (!options.some((o) => o.id === matched.id)) {
-            options.push({ id: matched.id, label: matched.name });
-          }
-        } else {
-          seen.add(lower);
-          options.push({ id: rawId, label: rawId });
+        const info = getRawPurchaseSpeciesName(rawId, p);
+        const lowerLabel = info.label.toLowerCase();
+
+        if (!seen.has(lowerLabel) && !isAutoString(info.label)) {
+          seen.add(lowerLabel);
+          seen.add(info.id.toLowerCase());
+          seen.add(rawId.toLowerCase());
+          options.push({ id: info.id, label: info.label });
         }
-      }
-    });
+      });
+    } else {
+      species.forEach((sp) => {
+        const rawName = sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)
+          ? sp.rawSpeciesName.trim()
+          : sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+
+        const lowerLabel = rawName.toLowerCase();
+        if (!seen.has(lowerLabel) && !isAutoString(rawName)) {
+          seen.add(lowerLabel);
+          options.push({ id: sp.id, label: rawName });
+        }
+      });
+    }
 
     return options.sort((a, b) => a.label.localeCompare(b.label));
   }, [species, purchases, findSpecies]);
+
+  const resolveSpeciesName = (spId: string): string => {
+    if (!spId) return 'Unspecified Species';
+    const opt = speciesOptions.find((o) => o.id === spId || o.label.toLowerCase() === spId.toLowerCase());
+    if (opt) return opt.label;
+    const direct = speciesMap.get(spId);
+    if (direct) {
+      if (direct.rawSpeciesName && !isAutoString(direct.rawSpeciesName)) return direct.rawSpeciesName;
+      if (direct.name && !isAutoString(direct.name)) {
+        return direct.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    const found = findSpecies(spId);
+    if (found) {
+      if (found.rawSpeciesName && !isAutoString(found.rawSpeciesName)) return found.rawSpeciesName;
+      if (found.name && !isAutoString(found.name)) {
+        return found.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    if (!isAutoString(spId) && !spId.startsWith('prd-') && !spId.startsWith('sp-')) {
+      return spId.replace(/^Frozen\s+/i, '').trim();
+    }
+    return 'Raw Material';
+  };
 
   // Precomputed returns by purchaseId Map to eliminate O(N*M) scans during rendering
   const returnsByPurchaseId = useMemo(() => {
@@ -220,7 +298,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       const matchInvoice = p.invoiceNo?.toLowerCase().includes(q);
       const matchBatch = p.batchNo?.toLowerCase().includes(q) || p.expenseBatchNo?.toLowerCase().includes(q) || p.yieldBatchNo?.toLowerCase().includes(q);
       const matchSupplier = supplierMap.get(p.supplierId)?.name.toLowerCase().includes(q);
-      const matchSpecies = speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
+      const matchSpecies = resolveSpeciesName(p.speciesId).toLowerCase().includes(q) || speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
       const secSzName = p.secondarySizeId ? sizeMap.get(p.secondarySizeId)?.name.toLowerCase() : '';
       const matchSize = sizeMap.get(p.sizeId)?.name.toLowerCase().includes(q) || secSzName?.includes(q);
       const matchRemarks = p.remarks?.toLowerCase().includes(q);
@@ -296,7 +374,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       ExpenseBatchNo: p.expenseBatchNo || 'None',
       YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
-      Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+      Species: resolveSpeciesName(p.speciesId),
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
       Size: p.isDualSize && p.secondarySizeId
         ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
@@ -484,7 +562,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       ExpenseBatchNo: p.expenseBatchNo || 'None',
       YieldBatchNo: p.yieldBatchNo || 'None',
       BatchNo: p.batchNo || 'None',
-      Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+      Species: resolveSpeciesName(p.speciesId),
       Grade: gradeMap.get(p.gradeId)?.name || 'N/A',
       Size: p.isDualSize && p.secondarySizeId
         ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
@@ -763,7 +841,6 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               ) : (
                 paginatedPurchases.map((p) => {
                   const supp = supplierMap.get(p.supplierId);
-                  const spec = speciesMap.get(p.speciesId);
                   const sz = sizeMap.get(p.sizeId);
                   const cnt = countMap.get(p.countId);
                   const totalReturnedKg = returnsByPurchaseId.get(p.id) || 0;
@@ -823,7 +900,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                       </td>
 
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-ink-900 line-clamp-1">{spec?.name || 'Species'}</div>
+                        <div className="font-semibold text-ink-900 line-clamp-1">{resolveSpeciesName(p.speciesId)}</div>
                         <div className="text-[10px] text-ink-500">
                           {p.isDualSize && p.secondarySizeId ? (
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1109,7 +1186,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               <div className="p-4 border border-gray-200 rounded-xl space-y-2">
                 <h4 className="font-bold text-ink-900 uppercase text-[11px] text-rose-700">Product Specification</h4>
                 <div>
-                  <strong>Species:</strong> {speciesMap.get(selectedPurchase.speciesId)?.name}
+                  <strong>Species:</strong> {resolveSpeciesName(selectedPurchase.speciesId)}
                 </div>
                 <div>
                   <strong>Grade:</strong> {gradeMap.get(selectedPurchase.gradeId)?.name || 'Standard'}

@@ -442,11 +442,14 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                 className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
               >
                 <option value="">-- Select Species --</option>
-                {activeSpecies.map((sp) => (
-                  <option key={sp.id} value={sp.id}>
-                    {sp.name} ({sp.category})
-                  </option>
-                ))}
+                {activeSpecies.map((sp) => {
+                  const displayName = sp.rawSpeciesName || sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+                  return (
+                    <option key={sp.id} value={sp.id}>
+                      {displayName} ({sp.category})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

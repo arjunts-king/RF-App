@@ -328,11 +328,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
 
   const [species, setSpecies] = useState<Species[]>(() => {
-    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
-    if (currentVersion !== SALES_DATASET_VERSION) {
-      safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
-      return VERIFIED_SPECIES;
-    }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
     const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
@@ -351,6 +346,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           processingType: v.processingType || sp.processingType,
           hsCode: v.hsCode || sp.hsCode,
           active: v.active !== undefined ? v.active : sp.active
+        };
+      }
+      // Clean any legacy auto-uploaded strings
+      const spNameLower = sp.name.trim().toLowerCase();
+      if (
+        spNameLower.includes('auto uploaded') ||
+        spNameLower.includes('autouploaded') ||
+        spNameLower.includes('auto-uploaded') ||
+        spNameLower.includes('auto-created') ||
+        spNameLower === 'auto'
+      ) {
+        const cleanFallback = sp.rawSpeciesName || sp.code || 'Seafood Catch';
+        return {
+          ...sp,
+          name: cleanFallback,
+          rawSpeciesName: cleanFallback
         };
       }
       return sp;
@@ -452,6 +463,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         if (cleanP.batchNo && !isNaN(Number(cleanP.batchNo))) {
           cleanP.batchNo = undefined;
+        }
+        // Sanitize speciesId if stored as legacy "auto uploaded"
+        const spLower = (cleanP.speciesId || '').trim().toLowerCase();
+        if (spLower === 'auto uploaded' || spLower === 'autouploaded' || spLower === 'auto-uploaded' || spLower === 'auto') {
+          if (cleanP.remarks && !cleanP.remarks.toLowerCase().includes('auto')) {
+            cleanP.speciesId = cleanP.remarks.trim();
+          }
         }
         if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
 
@@ -4693,11 +4711,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       if (!resolvedSpecies) {
         if (autoCreateMaster && speciesVal) {
-          const spName = String(speciesVal).trim();
+          const rawSpName = String(speciesVal).trim();
+          const cleanName =
+            (rawSpName.toLowerCase().includes('auto uploaded') || rawSpName.toLowerCase() === 'auto') && row.remarks
+              ? String(row.remarks).trim()
+              : rawSpName;
           resolvedSpecies = {
-            id: `sp-auto-${Date.now()}-${createdSpecies}`,
-            code: spName.slice(0, 3).toUpperCase(),
-            name: spName,
+            id: `sp-${normalizeKey(cleanName) || `catch-${Date.now()}-${createdSpecies}`}`,
+            code: cleanName.slice(0, 3).toUpperCase(),
+            name: cleanName,
+            rawSpeciesName: cleanName,
             scientificName: '',
             category: 'Fish',
             active: true

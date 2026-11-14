@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V25 - Purchase Dashboard Species Filter Resolution)
-const CACHE_VERSION = 'seafood-pwa-v25';
+// Seafood Purchase App - Offline PWA Service Worker (V26 - Purchase Species Name Resolution and Auto-Clean)
+const CACHE_VERSION = 'seafood-pwa-v26';
 const STATIC_ASSETS = [
   './',
   './index.html',

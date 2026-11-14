@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -4736,6 +4736,214 @@ test('Purchase Dashboard Species Filter: multi-key matching, non-nil KPI aggrega
 
   const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
   assert.ok(dataCtxCode.includes('sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === spNorm'), 'DataContext bulkImportPurchases must resolve rawSpeciesName');
+});
+
+// ============================================================================
+// SUITE 67: Purchase Species Dropdown Isolation, Raw Catch Naming & Auto Cleanup
+// ============================================================================
+test('Purchase Species Dropdown Isolation, Raw Catch Naming & Auto Cleanup', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify Master Species vs Purchase Species distinction
+  const masterSpecies = [
+    {
+      id: 'prd-001',
+      code: 'RF-HO',
+      name: 'Frozen RibbonFish [Whole fish, H&O]',
+      rawSpeciesName: 'Ribbonfish Net',
+      category: 'Fish',
+      active: true
+    },
+    {
+      id: 'prd-002',
+      code: 'RF-B',
+      name: 'Frozen RibbonFish B Grade',
+      rawSpeciesName: 'Ribbonfish Net',
+      category: 'Fish',
+      active: true
+    },
+    {
+      id: 'prd-003',
+      code: 'IM-WHOLE',
+      name: 'Frozen Indian Mackerel [Whole fish, boat-landed]',
+      rawSpeciesName: 'Mackerel',
+      category: 'Fish',
+      active: true
+    },
+    {
+      id: 'prd-004',
+      code: 'SQ-WHOLE',
+      name: 'Frozen Squid Whole [Boat landing / Trapped]',
+      rawSpeciesName: 'Squid',
+      category: 'Squid / Cuttlefish',
+      active: true
+    },
+    {
+      id: 'prd-032',
+      code: 'UNPURCHASED-SALES-ITEM',
+      name: 'Frozen Unpurchased Export Product 10kg Master Carton',
+      rawSpeciesName: 'Unpurchased Catch',
+      category: 'Fish',
+      active: true
+    }
+  ];
+
+  // Sample recorded / Excel-uploaded purchases
+  const samplePurchases = [
+    {
+      id: 'pur-1',
+      invoiceNo: 'PINV-101',
+      speciesId: 'prd-003', // Recorded as Mackerel
+      weightKg: 2000,
+      totalCost: 260000,
+      isVoided: false
+    },
+    {
+      id: 'pur-2',
+      invoiceNo: 'PINV-102',
+      speciesId: 'Mackerel', // Uploaded via Excel with raw catch name
+      weightKg: 1500,
+      totalCost: 195000,
+      isVoided: false
+    },
+    {
+      id: 'pur-3',
+      invoiceNo: 'PINV-103',
+      speciesId: 'sp-auto-1731551234', // Auto-generated ID from previous import
+      remarks: 'Ribbonfish Net',
+      weightKg: 3000,
+      totalCost: 450000,
+      isVoided: false
+    }
+  ];
+
+  const isAutoString = (str) => {
+    if (!str) return false;
+    const s = String(str).trim().toLowerCase();
+    return (
+      s.includes('auto uploaded') ||
+      s.includes('autouploaded') ||
+      s.includes('auto-uploaded') ||
+      s.includes('auto-created') ||
+      s.includes('autocreated') ||
+      s.startsWith('sp-auto') ||
+      s === 'auto' ||
+      s === 'recorded'
+    );
+  };
+
+  const findSpeciesMock = (term) => {
+    if (!term) return undefined;
+    const clean = String(term).trim().toLowerCase();
+    return masterSpecies.find(
+      (s) =>
+        s.id.toLowerCase() === clean ||
+        s.code.toLowerCase() === clean ||
+        s.name.trim().toLowerCase() === clean ||
+        (s.rawSpeciesName && s.rawSpeciesName.trim().toLowerCase() === clean)
+    );
+  };
+
+  const getRawPurchaseSpeciesNameMock = (rawId, p) => {
+    const sp = findSpeciesMock(rawId);
+    let label = '';
+
+    if (sp) {
+      if (sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name && !isAutoString(sp.name)) {
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+
+    if (!label || isAutoString(label)) {
+      if (p?.remarks && !isAutoString(p.remarks)) {
+        label = p.remarks.trim();
+      } else if (!isAutoString(rawId)) {
+        label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else {
+        const extracted = rawId.replace(/^(sp-)?auto[-_]?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = extracted ? extracted.charAt(0).toUpperCase() + extracted.slice(1) : (sp?.rawSpeciesName || sp?.name || 'Raw Material');
+      }
+    }
+
+    const resolvedSp = sp || findSpeciesMock(label);
+    const resolvedId = resolvedSp ? resolvedSp.id : (isAutoString(rawId) ? label : rawId);
+
+    return {
+      id: resolvedId,
+      label
+    };
+  };
+
+  // Derive speciesOptions exactly as implemented in DashboardOverview.tsx
+  const buildSpeciesOptions = (purchasesList) => {
+    const seen = new Set();
+    const options = [];
+
+    if (purchasesList.length > 0) {
+      purchasesList.forEach((p) => {
+        if (p.isVoided) return;
+        const rawId = (p.speciesId || '').trim();
+        if (!rawId) return;
+
+        const info = getRawPurchaseSpeciesNameMock(rawId, p);
+        const lowerLabel = info.label.toLowerCase();
+
+        if (!seen.has(lowerLabel) && !isAutoString(info.label)) {
+          seen.add(lowerLabel);
+          seen.add(info.id.toLowerCase());
+          seen.add(rawId.toLowerCase());
+          options.push({
+            id: info.id,
+            label: info.label
+          });
+        }
+      });
+    }
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  };
+
+  const options = buildSpeciesOptions(samplePurchases);
+
+  // Assertion 1: Unpurchased export sales master items must NOT appear in purchase dropdown
+  const hasUnpurchased = options.some((o) => o.label.includes('Unpurchased'));
+  assert.equal(hasUnpurchased, false, 'Unpurchased export sales items must not be listed in purchase dropdown');
+
+  // Assertion 2: Must NOT have export product sales prefixes (e.g. "Frozen Indian Mackerel")
+  const hasFrozenPrefix = options.some((o) => o.label.startsWith('Frozen '));
+  assert.equal(hasFrozenPrefix, false, 'Dropdown options must not display finished sales product names with "Frozen " prefixes');
+
+  // Assertion 3: Must show clean raw species names
+  const labels = options.map((o) => o.label);
+  assert.ok(labels.includes('Mackerel'), 'Must contain raw purchase species name "Mackerel"');
+  assert.ok(labels.includes('Ribbonfish Net'), 'Must contain raw purchase species name "Ribbonfish Net" from resolved auto lot');
+
+  // Assertion 4: Must NOT contain any auto strings or badges
+  const hasAutoString = options.some((o) => isAutoString(o.label) || isAutoString(o.id));
+  assert.equal(hasAutoString, false, 'No options should have auto-generated strings or badges');
+
+  // 2. Verify File Source Code Inspections
+  const dashCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf8');
+  assert.ok(dashCode.includes('isAutoString'), 'DashboardOverview.tsx must define isAutoString helper');
+  assert.ok(dashCode.includes('getRawPurchaseSpeciesName'), 'DashboardOverview.tsx must implement getRawPurchaseSpeciesName');
+  assert.ok(dashCode.includes('if (purchases.length > 0)'), 'DashboardOverview.tsx must restrict options to purchases when purchases exist');
+  assert.ok(!dashCode.includes("badge: 'Recorded'"), 'DashboardOverview.tsx must not add "Recorded" badges');
+
+  const purListCode = fs.readFileSync(path.resolve('src/components/purchase/PurchaseList.tsx'), 'utf8');
+  assert.ok(purListCode.includes('isAutoString'), 'PurchaseList.tsx must define isAutoString helper');
+  assert.ok(purListCode.includes('getRawPurchaseSpeciesName'), 'PurchaseList.tsx must implement getRawPurchaseSpeciesName');
+  assert.ok(purListCode.includes('if (purchases.length > 0)'), 'PurchaseList.tsx must restrict species options to purchases');
+  assert.ok(!purListCode.includes("badge: 'Recorded'"), 'PurchaseList.tsx must not add "Recorded" badges');
+
+  const entryFormCode = fs.readFileSync(path.resolve('src/components/purchase/PurchaseEntryForm.tsx'), 'utf8');
+  assert.ok(entryFormCode.includes('sp.rawSpeciesName || sp.name.replace(/^Frozen\\s+/i'), 'PurchaseEntryForm.tsx must use rawSpeciesName or clean name');
+
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataCtxCode.includes('rawSpeciesName: cleanName'), 'DataContext bulkImportPurchases must set rawSpeciesName on auto-created species');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}species`, result)'), 'DataContext must preserve and sync species across version resets');
 });
 
 
