@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V26 - Purchase Species Name Resolution and Auto-Clean)
-const CACHE_VERSION = 'seafood-pwa-v26';
+// Seafood Purchase App - Offline PWA Service Worker (V27 - Purchase Module Purge Clean Slate)
+const CACHE_VERSION = 'seafood-pwa-v27';
 const STATIC_ASSETS = [
   './',
   './index.html',

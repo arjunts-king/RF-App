@@ -19,6 +19,7 @@ export const BusinessSettingsView: React.FC = () => {
     updateBusinessSettings,
     clearAllTransactions,
     wipeDatabaseCompletely,
+    purgePurchaseModuleData,
     loadStarterPresets
   } = useData();
   const {
@@ -31,7 +32,7 @@ export const BusinessSettingsView: React.FC = () => {
   } = useLiquidGlass();
 
   const [formData, setFormData] = useState({ ...businessSettings });
-  const [confirmAction, setConfirmAction] = useState<'wipe' | 'clear-transactions' | 'starter-presets' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'wipe' | 'clear-transactions' | 'purge-purchase' | 'starter-presets' | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,7 +348,32 @@ export const BusinessSettingsView: React.FC = () => {
             </button>
           </div>
 
-          {/* Option 3: Load Starter Presets */}
+          {/* Option 3: Purge Purchase Module Only */}
+          <div className="p-4 rounded-xl border border-rose-300 bg-rose-50/50 space-y-3 flex flex-col justify-between">
+            <div>
+              <span className="font-bold text-rose-950 block text-sm">Purge Purchase Module</span>
+              <p className="text-ink-500 mt-1">
+                Deletes all purchase transactions and purchase master reference data (suppliers, locations, grades, sizes, counts, expenses, accounts) while keeping Sales and other modules intact.
+              </p>
+            </div>
+            <button
+              disabled={!permissions.isOwnerAdmin}
+              onClick={() => {
+                if (!permissions.isOwnerAdmin) return;
+                setConfirmAction('purge-purchase');
+              }}
+              className={`w-full py-2 font-bold rounded-full transition ${
+                permissions.isOwnerAdmin
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-xs'
+                  : 'bg-rose-200 text-rose-400 cursor-not-allowed'
+              }`}
+              title={!permissions.isOwnerAdmin ? 'Requires Owner/Admin role' : ''}
+            >
+              Purge Purchase Module Data
+            </button>
+          </div>
+
+          {/* Option 4: Load Starter Presets */}
           <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-3 flex flex-col justify-between">
             <div>
               <span className="font-bold text-emerald-950 block text-sm">Load Starter Presets</span>
@@ -383,6 +409,8 @@ export const BusinessSettingsView: React.FC = () => {
             ? 'Confirm Complete Database Wipe'
             : confirmAction === 'clear-transactions'
             ? 'Confirm Clear Transactions'
+            : confirmAction === 'purge-purchase'
+            ? 'Confirm Purge Purchase Module'
             : 'Confirm Loading Starter Templates'
         }
         subtitle={
@@ -390,6 +418,8 @@ export const BusinessSettingsView: React.FC = () => {
             ? 'Permanent reset to a completely blank slate'
             : confirmAction === 'clear-transactions'
             ? 'Reset purchases and payments ledger'
+            : confirmAction === 'purge-purchase'
+            ? 'Delete all purchase transactions and master reference data'
             : 'Import standard seafood master presets'
         }
         maxWidth="max-w-md"
@@ -418,6 +448,20 @@ export const BusinessSettingsView: React.FC = () => {
                 <span className="font-bold text-amber-800 uppercase text-[10px] tracking-wider block">Transactions Reset</span>
                 <p className="text-[11px] leading-relaxed">
                   All procurement entries and voucher payments will be permanently deleted. Your master suppliers, species, landing centres, and bank accounts will remain intact.
+                </p>
+              </div>
+            </>
+          )}
+
+          {confirmAction === 'purge-purchase' && (
+            <>
+              <p className="text-ink-700 font-medium">
+                Are you sure you want to delete all purchase transactions and master reference data from the purchase module?
+              </p>
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 space-y-1">
+                <span className="font-bold text-rose-800 uppercase text-[10px] tracking-wider block">Procurement Module Purge</span>
+                <p className="text-[11px] leading-relaxed">
+                  All <strong>purchase entries, voucher payments, purchase returns, suppliers, locations, grades, sizes, counts, expense types, and bank accounts</strong> in the purchase module will be deleted. Commercial Export Invoices and Sales Masters remain completely untouched.
                 </p>
               </div>
             </>
@@ -452,6 +496,8 @@ export const BusinessSettingsView: React.FC = () => {
                   wipeDatabaseCompletely();
                 } else if (confirmAction === 'clear-transactions') {
                   clearAllTransactions();
+                } else if (confirmAction === 'purge-purchase') {
+                  purgePurchaseModuleData();
                 } else if (confirmAction === 'starter-presets') {
                   loadStarterPresets();
                 }
@@ -467,6 +513,8 @@ export const BusinessSettingsView: React.FC = () => {
                 ? 'Confirm Wipe 100%'
                 : confirmAction === 'clear-transactions'
                 ? 'Confirm Clear Transactions'
+                : confirmAction === 'purge-purchase'
+                ? 'Confirm Purge Purchase Data'
                 : 'Load Presets'}
             </button>
           </div>

@@ -239,6 +239,7 @@ interface DataContextType {
   // Complete Database Customization & Wipe Controls
   clearAllTransactions: () => void;
   wipeDatabaseCompletely: () => void;
+  purgePurchaseModuleData: () => void;
   loadStarterPresets: () => void;
 
   // Bulk Excel Import Actions
@@ -314,6 +315,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fresh storage key version v2 to ensure clean empty slate on update
   const DB_PREFIX = 'seafood_v2_';
+  const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
+  const PURCHASE_DATASET_VERSION = 'v27_purchase_module_purged_v1';
+
+  // Synchronize clean slate purge for purchase module
+  const currentPurchaseVersion = localStorage.getItem(`${DB_PREFIX}purchase_dataset_version`);
+  if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) {
+    safeSet(`${DB_PREFIX}purchase_dataset_version`, PURCHASE_DATASET_VERSION);
+    safeSet(`${DB_PREFIX}purchases`, []);
+    safeSet(`${DB_PREFIX}payments`, []);
+    safeSet(`${DB_PREFIX}purchase_returns`, []);
+    safeSet(`${DB_PREFIX}suppliers`, []);
+    safeSet(`${DB_PREFIX}locations`, []);
+    safeSet(`${DB_PREFIX}grades`, []);
+    safeSet(`${DB_PREFIX}sizes`, []);
+    safeSet(`${DB_PREFIX}counts`, []);
+    safeSet(`${DB_PREFIX}expense_types`, []);
+    safeSet(`${DB_PREFIX}bank_accounts`, []);
+    safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
+  }
 
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(() => {
     const saved = localStorage.getItem(`${DB_PREFIX}settings`);
@@ -321,13 +341,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}suppliers`);
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
-  const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
-
   const [species, setSpecies] = useState<Species[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) {
+      safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
+      return VERIFIED_SPECIES;
+    }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
     const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
@@ -374,39 +397,37 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [grades, setGrades] = useState<Grade[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}grades`);
     return saved ? JSON.parse(saved) : INITIAL_GRADES;
   });
 
   const [sizes, setSizes] = useState<Size[]>(() => {
-    const currentVersion = localStorage.getItem(`${DB_PREFIX}sales_dataset_version`);
-    if (currentVersion !== SALES_DATASET_VERSION) {
-      safeSet(`${DB_PREFIX}sizes`, VERIFIED_SIZES);
-      return VERIFIED_SIZES;
-    }
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}sizes`);
-    const list: Size[] = saved ? JSON.parse(saved) : INITIAL_SIZES;
-    const existingNames = new Set(list.map((sz) => sz.name.trim().toUpperCase()));
-    const missing = VERIFIED_SIZES.filter((sz) => !existingNames.has(sz.name.trim().toUpperCase()));
-    return [...list, ...missing];
+    return saved ? JSON.parse(saved) : INITIAL_SIZES;
   });
 
   const [counts, setCounts] = useState<Count[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}counts`);
     return saved ? JSON.parse(saved) : INITIAL_COUNTS;
   });
 
   const [locations, setLocations] = useState<PurchaseLocation[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}locations`);
     return saved ? JSON.parse(saved) : INITIAL_LOCATIONS;
   });
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}bank_accounts`);
     return saved ? JSON.parse(saved) : INITIAL_BANK_ACCOUNTS;
   });
 
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}expense_types`);
     let list: ExpenseType[] = saved ? JSON.parse(saved) : INITIAL_EXPENSE_TYPES;
     if (list && list.length > 0) {
@@ -422,25 +443,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           deduplicated.push({ ...et, name: cleanName });
         }
       }
-      list = deduplicated;
-
-      const hasOther = list.some((e) => e.name.toLowerCase().includes('other') || e.name.toLowerCase().includes('misc'));
-      if (!hasOther) {
-        list.push({
-          id: 'exp-5',
-          code: `EXP-${String(list.length + 1).padStart(3, '0')}`,
-          name: 'Other Expenses',
-          category: 'Landing',
-          active: true
-        });
-      }
-    } else {
-      list = SAMPLE_STARTER_PRESETS.expenseTypes;
+      return deduplicated;
     }
-    return list;
+    return [];
   });
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}purchases`);
     let list: Purchase[] = saved ? JSON.parse(saved) : INITIAL_PURCHASES;
     if (list && list.length > 0) {
@@ -532,11 +541,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [payments, setPayments] = useState<PaymentRecord[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}payments`);
     return saved ? JSON.parse(saved) : INITIAL_PAYMENTS;
   });
 
   const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}purchase_returns`);
     return saved ? JSON.parse(saved) : INITIAL_PURCHASE_RETURNS;
   });
@@ -969,11 +980,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!mutatedKeysRef.current.has('sales_sizes') && Array.isArray(idbSalesSizes) && idbSalesSizes.length > 0) {
           setSalesSizes(idbSalesSizes);
         }
+        const isPurchasePurged = localStorage.getItem(`${DB_PREFIX}purchase_dataset_version`) === PURCHASE_DATASET_VERSION;
         if (!mutatedKeysRef.current.has('purchases') && Array.isArray(idbPurchases)) {
-          setPurchases(idbPurchases);
+          if (!isPurchasePurged) {
+            setPurchases(idbPurchases);
+          } else if (idbPurchases.length > 0) {
+            safeSet(`${DB_PREFIX}purchases`, []);
+          }
         }
         if (!mutatedKeysRef.current.has('payments') && Array.isArray(idbPayments)) {
-          setPayments(idbPayments);
+          if (!isPurchasePurged) {
+            setPayments(idbPayments);
+          } else if (idbPayments.length > 0) {
+            safeSet(`${DB_PREFIX}payments`, []);
+          }
         }
         if (!mutatedKeysRef.current.has('processing_entries') && Array.isArray(idbProcessing)) {
           setProcessingEntries(idbProcessing);
@@ -3583,6 +3603,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPeriodCloseLocks([]);
     setAuditLogs([]);
     showToast('Database reset to 100% clean blank state.', 'success');
+  };
+
+  const purgePurchaseModuleData = () => {
+    if (!permissions.canPermanentlyDelete) {
+      showToast('Unauthorized: Only Owner / Admin can purge purchase module data.', 'error');
+      return;
+    }
+    setPurchases([]);
+    setPayments([]);
+    setPurchaseReturns([]);
+    setSuppliers([]);
+    setLocations([]);
+    setGrades([]);
+    setSizes([]);
+    setCounts([]);
+    setExpenseTypes([]);
+    setBankAccounts([]);
+    setSpecies(VERIFIED_SPECIES);
+
+    safeSet(`${DB_PREFIX}purchases`, []);
+    safeSet(`${DB_PREFIX}payments`, []);
+    safeSet(`${DB_PREFIX}purchase_returns`, []);
+    safeSet(`${DB_PREFIX}suppliers`, []);
+    safeSet(`${DB_PREFIX}locations`, []);
+    safeSet(`${DB_PREFIX}grades`, []);
+    safeSet(`${DB_PREFIX}sizes`, []);
+    safeSet(`${DB_PREFIX}counts`, []);
+    safeSet(`${DB_PREFIX}expense_types`, []);
+    safeSet(`${DB_PREFIX}bank_accounts`, []);
+    safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
+    safeSet(`${DB_PREFIX}purchase_dataset_version`, PURCHASE_DATASET_VERSION);
+
+    logAudit('DELETE', 'Procurement', 'Purge', { changeReason: 'User purged all purchase transactions and purchase master reference data' });
+    showToast('All purchase transactions and master reference data have been deleted.', 'success');
   };
 
   const loadStarterPresets = () => {
@@ -7035,6 +7089,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     clearAllTransactions,
     wipeDatabaseCompletely,
+    purgePurchaseModuleData,
     loadStarterPresets,
 
     bulkImportSuppliers,

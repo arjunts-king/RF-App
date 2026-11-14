@@ -68,11 +68,13 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     addExpenseType,
     updateExpenseType,
     deleteExpenseType,
-    toggleExpenseTypeActive
+    toggleExpenseTypeActive,
+    purgePurchaseModuleData
   } = useData();
 
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
 
@@ -543,8 +545,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
           onClick: handleOpenAdd,
           icon: PlusCircle
         }}
-        secondaryActions={
-          onNavigate
+        secondaryActions={[
+          ...(onNavigate
             ? [
                 {
                   label: 'Import from Excel',
@@ -552,8 +554,13 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                   icon: FileSpreadsheet
                 }
               ]
-            : undefined
-        }
+            : []),
+          {
+            label: 'Purge Procurement Data',
+            onClick: () => setIsPurgeModalOpen(true),
+            icon: Trash2
+          }
+        ]}
       />
 
       {/* Pill Tab Switcher (Liquid Glass Surface) */}
@@ -1502,6 +1509,45 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-xs"
             >
               Confirm Delete Selected
+            </button>
+          </div>
+        </div>
+      </Modal>
+      {/* Purge Procurement Data Confirmation Modal */}
+      <Modal
+        isOpen={isPurgeModalOpen}
+        onClose={() => setIsPurgeModalOpen(false)}
+        title="Confirm Purge of Procurement Data"
+        subtitle="Delete all purchase transactions and master reference data"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-ink-700 font-medium">
+            Are you sure you want to delete all purchase transactions and master reference data from the purchase module?
+          </p>
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 space-y-1">
+            <span className="font-bold text-rose-800 uppercase text-[10px] tracking-wider block">Procurement Module Purge</span>
+            <p className="text-[11px] leading-relaxed">
+              All <strong>purchases, voucher payments, purchase returns, suppliers, harbour locations, grades, sizes, counts, landing expenses, and bank accounts</strong> will be permanently wiped. Commercial Export Invoices and Sales Masters remain completely untouched.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setIsPurgeModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-200 text-ink-700 font-semibold hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                purgePurchaseModuleData();
+                setIsPurgeModalOpen(false);
+              }}
+              className="px-4 py-2 rounded-full font-bold text-white bg-rose-700 hover:bg-rose-800 transition shadow-xs"
+            >
+              Confirm Purge
             </button>
           </div>
         </div>

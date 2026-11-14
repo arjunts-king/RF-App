@@ -1,7 +1,6 @@
 import {
   VERIFIED_CUSTOMERS,
   VERIFIED_SPECIES,
-  VERIFIED_SIZES,
   VERIFIED_PORTS,
   VERIFIED_SALES_INVOICES
 } from './exportSalesData';
@@ -86,7 +85,7 @@ export const INITIAL_USERS: User[] = [
 export const INITIAL_SUPPLIERS: Supplier[] = [];
 export const INITIAL_SPECIES: Species[] = VERIFIED_SPECIES;
 export const INITIAL_GRADES: Grade[] = [];
-export const INITIAL_SIZES: Size[] = VERIFIED_SIZES;
+export const INITIAL_SIZES: Size[] = [];
 export const INITIAL_COUNTS: Count[] = [];
 export const INITIAL_LOCATIONS: PurchaseLocation[] = [];
 export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [];

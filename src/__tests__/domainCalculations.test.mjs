@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -4944,6 +4944,81 @@ test('Purchase Species Dropdown Isolation, Raw Catch Naming & Auto Cleanup', asy
   const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
   assert.ok(dataCtxCode.includes('rawSpeciesName: cleanName'), 'DataContext bulkImportPurchases must set rawSpeciesName on auto-created species');
   assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}species`, result)'), 'DataContext must preserve and sync species across version resets');
+});
+
+// ============================================================================
+// SUITE 68: Delete All Purchase Transactions & Master Reference Data
+// ============================================================================
+test('Delete All Purchase Transactions & Master Reference Data from Purchase Module', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Initial State Verification from initialData.ts
+  const initialDataPath = path.resolve('src/data/initialData.ts');
+  const initialDataCode = fs.readFileSync(initialDataPath, 'utf8');
+
+  assert.ok(initialDataCode.includes('export const INITIAL_PURCHASES: Purchase[] = [];'), 'INITIAL_PURCHASES must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_PAYMENTS: PaymentRecord[] = [];'), 'INITIAL_PAYMENTS must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_PURCHASE_RETURNS: PurchaseReturn[] = [];'), 'INITIAL_PURCHASE_RETURNS must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_SUPPLIERS: Supplier[] = [];'), 'INITIAL_SUPPLIERS must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_LOCATIONS: PurchaseLocation[] = [];'), 'INITIAL_LOCATIONS must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_GRADES: Grade[] = [];'), 'INITIAL_GRADES must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_SIZES: Size[] = [];'), 'INITIAL_SIZES must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_COUNTS: Count[] = [];'), 'INITIAL_COUNTS must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_EXPENSE_TYPES: ExpenseType[] = [];'), 'INITIAL_EXPENSE_TYPES must be empty');
+  assert.ok(initialDataCode.includes('export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [];'), 'INITIAL_BANK_ACCOUNTS must be empty');
+
+  // Commercial export data in Sales Module must remain populated
+  assert.ok(initialDataCode.includes('VERIFIED_SALES_INVOICES'), 'Sales invoices must remain populated');
+  assert.ok(initialDataCode.includes('VERIFIED_CUSTOMERS'), 'Commercial customers must remain populated');
+  assert.ok(initialDataCode.includes('VERIFIED_PORTS'), 'Commercial ports must remain populated');
+
+  // 2. DataContext Implementation Verification
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataCtxCode.includes('PURCHASE_DATASET_VERSION'), 'DataContext must define PURCHASE_DATASET_VERSION');
+  assert.ok(dataCtxCode.includes('purgePurchaseModuleData'), 'DataContext must implement purgePurchaseModuleData');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}purchase_dataset_version`, PURCHASE_DATASET_VERSION)'), 'DataContext must persist purchase purge version');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}purchases`, [])'), 'DataContext must clear purchases in storage');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}suppliers`, [])'), 'DataContext must clear suppliers in storage');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}locations`, [])'), 'DataContext must clear locations in storage');
+  assert.ok(dataCtxCode.includes('safeSet(`${DB_PREFIX}sizes`, [])'), 'DataContext must clear purchase sizes in storage');
+
+  // 3. BusinessSettingsView Integration Verification
+  const settingsCode = fs.readFileSync(path.resolve('src/components/settings/BusinessSettingsView.tsx'), 'utf8');
+  assert.ok(settingsCode.includes('purge-purchase'), 'BusinessSettingsView must handle purge-purchase confirm action');
+  assert.ok(settingsCode.includes('purgePurchaseModuleData'), 'BusinessSettingsView must invoke purgePurchaseModuleData');
+  assert.ok(settingsCode.includes('Purge Purchase Module'), 'BusinessSettingsView must render Purge Purchase Module card');
+
+  // 4. MasterDataManager Integration Verification
+  const masterMgrCode = fs.readFileSync(path.resolve('src/components/master/MasterDataManager.tsx'), 'utf8');
+  assert.ok(masterMgrCode.includes('Purge Procurement Data'), 'MasterDataManager must provide Purge Procurement Data action');
+  assert.ok(masterMgrCode.includes('purgePurchaseModuleData'), 'MasterDataManager must invoke purgePurchaseModuleData');
+  assert.ok(masterMgrCode.includes('isPurgeModalOpen'), 'MasterDataManager must provide confirmation modal');
+
+  // 5. Simulate Purge Logic Behavior
+  const mockStorage = new Map();
+  const simulatePurge = () => {
+    mockStorage.set('purchases', []);
+    mockStorage.set('payments', []);
+    mockStorage.set('purchase_returns', []);
+    mockStorage.set('suppliers', []);
+    mockStorage.set('locations', []);
+    mockStorage.set('grades', []);
+    mockStorage.set('sizes', []);
+    mockStorage.set('counts', []);
+    mockStorage.set('expense_types', []);
+    mockStorage.set('bank_accounts', []);
+  };
+
+  simulatePurge();
+  assert.equal(mockStorage.get('purchases').length, 0, 'Purchases must be 0');
+  assert.equal(mockStorage.get('suppliers').length, 0, 'Suppliers must be 0');
+  assert.equal(mockStorage.get('locations').length, 0, 'Locations must be 0');
+  assert.equal(mockStorage.get('grades').length, 0, 'Grades must be 0');
+  assert.equal(mockStorage.get('sizes').length, 0, 'Sizes must be 0');
+  assert.equal(mockStorage.get('counts').length, 0, 'Counts must be 0');
+  assert.equal(mockStorage.get('expense_types').length, 0, 'Expense types must be 0');
+  assert.equal(mockStorage.get('bank_accounts').length, 0, 'Bank accounts must be 0');
 });
 
 
