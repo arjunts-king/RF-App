@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -5298,11 +5298,82 @@ test('Purchase Module Master Data Species Decoupling & Sales Product Exclusion',
   const dashboardCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf8');
   assert.ok(dashboardCode.includes('purchaseSpecies'), 'DashboardOverview must use purchaseSpecies');
 
-  // 6. CommercialSpeciesManager preserves sales products while linking to purchaseSpecies
+  // 6. CommercialSpeciesManager manages sales commercial export products distinctly
   const commCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
-  assert.ok(commCode.includes('purchaseSpecies'), 'CommercialSpeciesManager must reference purchaseSpecies for distinct procurement origins');
+  assert.ok(!commCode.includes('purchaseSpecies'), 'CommercialSpeciesManager must NOT reference purchaseSpecies (zero connections to purchase module)');
+  assert.ok(!commCode.includes('distinctPurchaseSpecies'), 'CommercialSpeciesManager must NOT have distinctPurchaseSpecies');
   assert.ok(commCode.includes('filteredSpecies = species.filter'), 'CommercialSpeciesManager must manage commercial export species');
 });
+
+// ============================================================================
+// SUITE 71: Complete Module Decoupling: Excel Import Routing, Zero Shared Species Mutation & Standalone Sales Masters
+// ============================================================================
+test('Complete Separation of Purchase and Sales Modules: Excel Import Isolation & Zero Strings', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. ExcelImportView.tsx imports and calls bulkImportPurchaseSpecies when importing in purchase module
+  const importViewCode = fs.readFileSync(path.resolve('src/components/excel/ExcelImportView.tsx'), 'utf8');
+  assert.ok(importViewCode.includes('bulkImportPurchaseSpecies'), 'ExcelImportView must destructure bulkImportPurchaseSpecies');
+  assert.ok(
+    importViewCode.includes("selectedModule === 'purchase'\n            ? bulkImportPurchaseSpecies(activeRows)\n            : bulkImportSpecies(activeRows)") ||
+    importViewCode.includes('bulkImportPurchaseSpecies(activeRows)'),
+    'ExcelImportView must route purchase species import to bulkImportPurchaseSpecies'
+  );
+  assert.ok(
+    importViewCode.includes('bulkImportPurchaseSpecies(sheet.rows)'),
+    'ExcelImportView multi-sheet purchase workbook must route species to bulkImportPurchaseSpecies'
+  );
+  assert.ok(
+    importViewCode.includes('downloadExcelTemplate(selectedEntity, expenseTypes, selectedModule)'),
+    'ExcelImportView must pass selectedModule to downloadExcelTemplate'
+  );
+
+  // 2. excelImport.ts provides dedicated templates for purchase species vs commercial export products
+  const excelUtilCode = fs.readFileSync(path.resolve('src/utils/excelImport.ts'), 'utf8');
+  assert.ok(
+    excelUtilCode.includes("moduleContext === 'purchase'"),
+    'downloadExcelTemplate must check moduleContext for purchase species'
+  );
+  assert.ok(
+    excelUtilCode.includes('Purchase_Species_Master_Template.xlsx'),
+    'downloadExcelTemplate must generate Purchase_Species_Master_Template.xlsx for purchase'
+  );
+  assert.ok(
+    excelUtilCode.includes('Commercial_Product_Master_Template.xlsx'),
+    'downloadExcelTemplate must generate Commercial_Product_Master_Template.xlsx for sales'
+  );
+
+  // 3. DataContext.tsx isolates species from purchase species and cleanses on load
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(
+    dataCtxCode.includes('const salesOnlyList = list.filter((sp) => isSalesExportProduct(sp));'),
+    'DataContext must keep ONLY commercial export products in sales species state'
+  );
+  assert.ok(
+    dataCtxCode.includes('safeSet(`${DB_PREFIX}purchase_species`, currentList);'),
+    'bulkImportPurchaseSpecies must persist to DB_PREFIX purchase_species'
+  );
+  assert.ok(
+    dataCtxCode.includes('safeSet(`${DB_PREFIX}species`, currentList);'),
+    'bulkImportSpecies must persist to DB_PREFIX species'
+  );
+
+  // 4. CommercialSpeciesManager has NO strings, links, or dropdowns to purchase species
+  const commMgrCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
+  assert.ok(!commMgrCode.includes('Purchase Species (Raw Material Catch Origin)'), 'CommercialSpeciesManager must NOT ask for purchase species in modal');
+  assert.ok(!commMgrCode.includes('-- Select Origin Species from Purchase Module --'), 'CommercialSpeciesManager must NOT have purchase species dropdown');
+  assert.ok(!commMgrCode.includes('Purchase Species (Raw Catch)'), 'CommercialSpeciesManager must NOT have purchase species column');
+
+  // 5. ProductCombobox does not display "Raw:" catch badge
+  const comboCode = fs.readFileSync(path.resolve('src/components/sales/ProductCombobox.tsx'), 'utf8');
+  assert.ok(!comboCode.includes('<span>Raw: {sp.rawSpeciesName}</span>'), 'ProductCombobox must NOT display raw purchase catch badge');
+
+  // 6. SalesSizeManager does not have "Import from Purchase Sizes" button
+  const sizeMgrCode = fs.readFileSync(path.resolve('src/components/sales/SalesSizeManager.tsx'), 'utf8');
+  assert.ok(!sizeMgrCode.includes('Import from Purchase Sizes'), 'SalesSizeManager must NOT link to purchase sizes');
+});
+
 
 
 

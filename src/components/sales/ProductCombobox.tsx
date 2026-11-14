@@ -299,20 +299,14 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
                         )}
                       </div>
 
-                      {/* Line 2: Origin Purchase Species & Scientific Name */}
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                        {sp.rawSpeciesName && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                            <Fish className="w-2.5 h-2.5 text-emerald-600" />
-                            <span>Raw: {sp.rawSpeciesName}</span>
-                          </span>
-                        )}
-                        {sp.scientificName && (
+                      {/* Line 2: Scientific Name */}
+                      {sp.scientificName && (
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                           <span className="italic text-ink-500 text-[11px] truncate">
                             {sp.scientificName}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
                       {/* Line 3: Product Form / Processing Type */}
                       {(sp.productForm || sp.processingType) && (

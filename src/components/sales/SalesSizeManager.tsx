@@ -14,7 +14,6 @@ import {
   Trash2,
   Search,
   Download,
-  RotateCcw,
   CheckCircle2,
   AlertTriangle,
   Layers
@@ -27,7 +26,6 @@ export const SalesSizeManager: React.FC = () => {
     updateSalesSize,
     deleteSalesSize,
     toggleSalesSizeActive,
-    syncSalesSizesFromPurchase,
     salesInvoices
   } = useData();
 
@@ -218,11 +216,6 @@ export const SalesSizeManager: React.FC = () => {
             : undefined
         }
         secondaryActions={[
-          {
-            label: 'Import from Purchase Sizes',
-            onClick: () => syncSalesSizesFromPurchase(),
-            icon: RotateCcw
-          },
           {
             label: 'Export CSV',
             onClick: handleExportCSV,

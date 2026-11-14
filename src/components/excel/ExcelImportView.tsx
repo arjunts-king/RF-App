@@ -54,6 +54,7 @@ export const ExcelImportView: React.FC<{
   const {
     suppliers,
     species,
+    purchaseSpecies,
     grades,
     sizes,
     counts,
@@ -67,6 +68,7 @@ export const ExcelImportView: React.FC<{
     salesInvoices,
     bulkImportSuppliers,
     bulkImportSpecies,
+    bulkImportPurchaseSpecies,
     bulkImportGrades,
     bulkImportSizes,
     bulkImportCounts,
@@ -135,9 +137,9 @@ export const ExcelImportView: React.FC<{
     },
     {
       id: 'species',
-      label: 'Species & Products',
+      label: 'Purchase Species / Raw Catch',
       icon: Fish,
-      desc: 'Seafood species catalog, scientific names & categories'
+      desc: 'Procurement raw seafood catch varieties, scientific names & categories'
     },
     {
       id: 'grades',
@@ -255,9 +257,9 @@ export const ExcelImportView: React.FC<{
     },
     {
       id: 'species',
-      label: 'Product Master',
+      label: 'Commercial Product Master',
       icon: Fish,
-      desc: 'Export-ready commercial products, purchase species link & customs HSN codes'
+      desc: 'Export-ready commercial products, categories, forms & customs HSN codes'
     },
     {
       id: 'sizes',
@@ -438,8 +440,8 @@ export const ExcelImportView: React.FC<{
             const res = bulkImportSuppliers(sheet.rows, updateExistingMaster);
             totalSuppliersAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
-            const res = bulkImportSpecies(sheet.rows);
+          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('variety') || sheetNameNorm.includes('catch') || sheetNameNorm.includes('fish')) {
+            const res = bulkImportPurchaseSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
           } else if (sheetNameNorm.includes('location') || sheetNameNorm.includes('harbour')) {
@@ -482,7 +484,7 @@ export const ExcelImportView: React.FC<{
             const res = bulkImportSlabTypes(sheet.rows);
             totalSlabsAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
+          } else if (sheetNameNorm.includes('product') || sheetNameNorm.includes('specie')) {
             const res = bulkImportSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
@@ -527,7 +529,7 @@ export const ExcelImportView: React.FC<{
             const res = bulkImportPorts(sheet.rows);
             totalPortsAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('specie') || sheetNameNorm.includes('product')) {
+          } else if (sheetNameNorm.includes('product') || sheetNameNorm.includes('specie')) {
             const res = bulkImportSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
@@ -612,7 +614,10 @@ export const ExcelImportView: React.FC<{
           errors: res.errors
         });
       } else if (selectedEntity === 'species') {
-        const res = bulkImportSpecies(activeRows);
+        const res =
+          selectedModule === 'purchase'
+            ? bulkImportPurchaseSpecies(activeRows)
+            : bulkImportSpecies(activeRows);
         setImportSummary({
           added: res.added,
           updated: res.updated,
@@ -825,7 +830,7 @@ export const ExcelImportView: React.FC<{
 
     const purchasesExport = purchases.map((p) => {
       const supp = suppliers.find((s) => s.id === p.supplierId);
-      const sp = species.find((s) => s.id === p.speciesId);
+      const sp = purchaseSpecies.find((s) => s.id === p.speciesId) || species.find((s) => s.id === p.speciesId);
       const loc = locations.find((l) => l.id === p.locationId);
       const grd = grades.find((g) => g.id === p.gradeId);
       const sz = sizes.find((s) => s.id === p.sizeId);
@@ -935,7 +940,7 @@ export const ExcelImportView: React.FC<{
         secondaryAction={{
           label: 'Sample template',
           icon: FileSpreadsheet,
-          onClick: () => downloadExcelTemplate(selectedEntity, expenseTypes)
+          onClick: () => downloadExcelTemplate(selectedEntity, expenseTypes, selectedModule)
         }}
       />
 
@@ -989,7 +994,7 @@ export const ExcelImportView: React.FC<{
             Step 1: Select What You Want to Import
           </h3>
           <button
-            onClick={() => downloadExcelTemplate(selectedEntity, expenseTypes)}
+            onClick={() => downloadExcelTemplate(selectedEntity, expenseTypes, selectedModule)}
             className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition"
           >
             <Download className="w-3.5 h-3.5" />

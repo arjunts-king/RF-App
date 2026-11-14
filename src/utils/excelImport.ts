@@ -65,7 +65,11 @@ export async function parseExcelWorkbook(file: File): Promise<{
 /**
  * Generates and triggers instant download of pre-formatted Excel templates.
  */
-export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: ExpenseType[]): void {
+export function downloadExcelTemplate(
+  type: ImportEntityType,
+  expenseTypes?: ExpenseType[],
+  moduleContext?: 'purchase' | 'production' | 'sales'
+): void {
   const wb = XLSX.utils.book_new();
 
   if (type === 'suppliers') {
@@ -114,11 +118,47 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
   }
 
   if (type === 'species') {
+    if (moduleContext === 'purchase') {
+      const purchaseSpeciesData = [
+        {
+          'Species Code': 'SPE-001',
+          'Species Name': 'Vannamei Shrimp',
+          'Scientific Name': 'Litopenaeus vannamei',
+          'Category': 'Shrimp / Prawns',
+          'Active': 'Yes'
+        },
+        {
+          'Species Code': 'SPE-002',
+          'Species Name': 'Yellowfin Tuna',
+          'Scientific Name': 'Thunnus albacares',
+          'Category': 'Fish',
+          'Active': 'Yes'
+        },
+        {
+          'Species Code': 'SPE-003',
+          'Species Name': 'Indian Squid',
+          'Scientific Name': 'Uroteuthis duvaucelii',
+          'Category': 'Cephalopods',
+          'Active': 'Yes'
+        },
+        {
+          'Species Code': 'SPE-004',
+          'Species Name': 'Black Tiger',
+          'Scientific Name': 'Penaeus monodon',
+          'Category': 'Shrimp / Prawns',
+          'Active': 'Yes'
+        }
+      ];
+      const wsPur = XLSX.utils.json_to_sheet(purchaseSpeciesData);
+      XLSX.utils.book_append_sheet(wb, wsPur, 'PurchaseSpecies');
+      XLSX.writeFile(wb, 'Purchase_Species_Master_Template.xlsx');
+      return;
+    }
+
     const data = [
       {
         'Product Code': 'PRD-001',
         'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
-        'Purchase Species Name': 'Vannamei Shrimp',
         'Scientific Name': 'Litopenaeus vannamei',
         'Category': 'Shrimp / Prawns',
         'Product Form': 'Headless Shell-On (HLSO)',
@@ -129,7 +169,6 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       {
         'Product Code': 'PRD-002',
         'Product Name (Export Ready Name)': 'Yellowfin Tuna Steaks (CO Treated)',
-        'Purchase Species Name': 'Yellowfin Tuna',
         'Scientific Name': 'Thunnus albacares',
         'Category': 'Fish',
         'Product Form': 'Steaks',
@@ -140,7 +179,6 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       {
         'Product Code': 'PRD-003',
         'Product Name (Export Ready Name)': 'Indian Squid Cleaned Tubes & Rings',
-        'Purchase Species Name': 'Indian Squid',
         'Scientific Name': 'Uroteuthis duvaucelii',
         'Category': 'Cephalopods (Squid / Cuttlefish / Octopus)',
         'Product Form': 'Tubes / Rings',
@@ -151,7 +189,6 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       {
         'Product Code': 'PRD-004',
         'Product Name (Export Ready Name)': 'Black Tiger Head-On Shell-On Raw',
-        'Purchase Species Name': 'Black Tiger',
         'Scientific Name': 'Penaeus monodon',
         'Category': 'Shrimp / Prawns',
         'Product Form': 'Head-On Shell-On (HOSO)',
@@ -611,7 +648,6 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       {
         'Product Code': 'PRD-001',
         'Product Name (Export Ready Name)': 'Frozen Raw Headless Shell-On Vannamei Shrimp',
-        'Purchase Species Name': 'Vannamei Shrimp',
         'Scientific Name': 'Litopenaeus vannamei',
         'Category': 'Shrimp / Prawns',
         'Product Form': 'Headless Shell-On (HLSO)',
@@ -622,7 +658,6 @@ export function downloadExcelTemplate(type: ImportEntityType, expenseTypes?: Exp
       {
         'Product Code': 'PRD-002',
         'Product Name (Export Ready Name)': 'Yellowfin Tuna Steaks (CO Treated)',
-        'Purchase Species Name': 'Yellowfin Tuna',
         'Scientific Name': 'Thunnus albacares',
         'Category': 'Fish',
         'Product Form': 'Steaks',

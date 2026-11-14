@@ -372,32 +372,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Dedicated Purchase Species State (strictly raw seafood varieties for procurement, 0 sales products)
   const [purchaseSpecies, setPurchaseSpecies] = useState<Species[]>(() => {
-    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) {
-      safeSet(`${DB_PREFIX}purchase_species`, []);
-      return [];
-    }
     const saved = localStorage.getItem(`${DB_PREFIX}purchase_species`);
-    if (!saved) return [];
+    const parsed: Species[] = saved ? JSON.parse(saved) : [];
+
+    // Automatically recover any procurement species that were mistakenly imported into species
     try {
-      const parsed: Species[] = JSON.parse(saved);
-      const filtered = Array.isArray(parsed) ? parsed.filter((sp) => !isSalesExportProduct(sp)) : [];
-      safeSet(`${DB_PREFIX}purchase_species`, filtered);
-      return filtered;
-    } catch {
-      return [];
-    }
+      const salesSaved = localStorage.getItem(`${DB_PREFIX}species`);
+      if (salesSaved) {
+        const salesParsed: Species[] = JSON.parse(salesSaved);
+        if (Array.isArray(salesParsed)) {
+          const names = new Set(parsed.map((p) => p.name.trim().toLowerCase()));
+          salesParsed.forEach((sp) => {
+            if (!isSalesExportProduct(sp) && !names.has(sp.name.trim().toLowerCase())) {
+              parsed.push({
+                id: sp.id.startsWith('spe-pur-') ? sp.id : `spe-pur-${sp.id}`,
+                code: sp.code || `SPE-${String(parsed.length + 1).padStart(3, '0')}`,
+                name: sp.name,
+                rawSpeciesName: sp.name,
+                scientificName: sp.scientificName || '',
+                category: sp.category || 'Fish',
+                active: sp.active !== undefined ? sp.active : true
+              });
+              names.add(sp.name.trim().toLowerCase());
+            }
+          });
+        }
+      }
+    } catch {}
+
+    const filtered = parsed.filter((sp) => !isSalesExportProduct(sp));
+    safeSet(`${DB_PREFIX}purchase_species`, filtered);
+    return filtered;
   });
 
   const [species, setSpecies] = useState<Species[]>(() => {
-    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) {
-      safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
-      return VERIFIED_SPECIES;
-    }
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
+
+    // STRICT MODULE ISOLATION: Keep ONLY commercial export products in sales module
+    const salesOnlyList = list.filter((sp) => isSalesExportProduct(sp));
+
     const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
     const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
-    const reconciled = list.map((sp) => {
+    const reconciled = salesOnlyList.map((sp) => {
       const v = verifiedMap.get(sp.code.toLowerCase()) || verifiedNameMap.get(sp.name.trim().toLowerCase());
       if (v) {
         return {
@@ -411,22 +428,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           processingType: v.processingType || sp.processingType,
           hsCode: v.hsCode || sp.hsCode,
           active: v.active !== undefined ? v.active : sp.active
-        };
-      }
-      // Clean any legacy auto-uploaded strings
-      const spNameLower = sp.name.trim().toLowerCase();
-      if (
-        spNameLower.includes('auto uploaded') ||
-        spNameLower.includes('autouploaded') ||
-        spNameLower.includes('auto-uploaded') ||
-        spNameLower.includes('auto-created') ||
-        spNameLower === 'auto'
-      ) {
-        const cleanFallback = sp.rawSpeciesName || sp.code || 'Seafood Catch';
-        return {
-          ...sp,
-          name: cleanFallback,
-          rawSpeciesName: cleanFallback
         };
       }
       return sp;
@@ -1043,11 +1044,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setProcessingEntries(idbProcessing);
         }
         if (!mutatedKeysRef.current.has('species') && Array.isArray(idbSpecies) && idbSpecies.length > 0) {
-          setSpecies(idbSpecies);
+          const salesOnlyIdb = idbSpecies.filter((sp) => isSalesExportProduct(sp));
+          setSpecies(salesOnlyIdb);
+          const misplacedIdb = idbSpecies.filter((sp) => !isSalesExportProduct(sp));
+          if (misplacedIdb.length > 0) {
+            setPurchaseSpecies((prev) => {
+              const existingNames = new Set(prev.map((p) => p.name.trim().toLowerCase()));
+              const toAdd = misplacedIdb.filter((m) => !existingNames.has(m.name.trim().toLowerCase()));
+              return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+            });
+          }
         }
         if (!mutatedKeysRef.current.has('purchase_species') && Array.isArray(idbPurchaseSpecies)) {
           if (!isPurchasePurged) {
-            setPurchaseSpecies(idbPurchaseSpecies.filter((sp) => !isSalesExportProduct(sp)));
+            setPurchaseSpecies((prev) => {
+              const cleanIdb = idbPurchaseSpecies.filter((sp) => !isSalesExportProduct(sp));
+              const existingNames = new Set(prev.map((p) => p.name.trim().toLowerCase()));
+              const toAdd = cleanIdb.filter((c) => !existingNames.has(c.name.trim().toLowerCase()));
+              return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+            });
           } else {
             safeSet(`${DB_PREFIX}purchase_species`, []);
           }
@@ -1228,14 +1243,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // PURCHASE SPECIES (Procurement raw seafood catch varieties, strictly separate from sales products)
   const addPurchaseSpecies = (spData: Omit<Species, 'id'>) => {
     const newSpecies: Species = { ...spData, id: `spe-pur-${Date.now()}` };
-    setPurchaseSpecies((prev) => [...prev, newSpecies]);
+    mutatedKeysRef.current.add('purchase_species');
+    setPurchaseSpecies((prev) => {
+      const next = [...prev, newSpecies];
+      safeSet(`${DB_PREFIX}purchase_species`, next);
+      return next;
+    });
     logAudit('CREATE', 'Purchase Species', newSpecies.code, { newValues: newSpecies });
     showToast(`Purchase species "${newSpecies.name}" registered.`, 'success');
   };
 
   const updatePurchaseSpecies = (id: string, updates: Partial<Species>) => {
     const old = purchaseSpecies.find((s) => s.id === id);
-    setPurchaseSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    mutatedKeysRef.current.add('purchase_species');
+    setPurchaseSpecies((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, ...updates } : s));
+      safeSet(`${DB_PREFIX}purchase_species`, next);
+      return next;
+    });
     logAudit('EDIT', 'Purchase Species', old?.code || id, { oldValues: old, newValues: updates });
     showToast('Purchase species updated.', 'success');
   };
@@ -1247,14 +1272,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: 'Species referenced in transactions.' };
     }
     const old = purchaseSpecies.find((s) => s.id === id);
-    setPurchaseSpecies((prev) => prev.filter((s) => s.id !== id));
+    mutatedKeysRef.current.add('purchase_species');
+    setPurchaseSpecies((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      safeSet(`${DB_PREFIX}purchase_species`, next);
+      return next;
+    });
     logAudit('DELETE', 'Purchase Species', old?.code || id, { oldValues: old });
     showToast('Purchase species deleted.', 'info');
     return { success: true };
   };
 
   const togglePurchaseSpeciesActive = (id: string) => {
-    setPurchaseSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
+    mutatedKeysRef.current.add('purchase_species');
+    setPurchaseSpecies((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s));
+      safeSet(`${DB_PREFIX}purchase_species`, next);
+      return next;
+    });
   };
 
   // GRADES
@@ -4257,7 +4292,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (added > 0 || updated > 0) {
+      mutatedKeysRef.current.add('species');
       setSpecies(currentList);
+      safeSet(`${DB_PREFIX}species`, currentList);
     }
     return { added, updated, errors };
   };
@@ -4280,7 +4317,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'catchname',
         'fish',
         'variety',
-        'name'
+        'name',
+        'productname',
+        'product',
+        'item',
+        'catch',
+        'rawmaterial'
       ]);
       const name = String(rawName || '').trim();
       if (!name) {
@@ -4292,10 +4334,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      const rawCode = getFlexibleValue(row, ['code', 'speciescode']);
+      const rawCode = getFlexibleValue(row, ['code', 'speciescode', 'spe_code', 'itemcode']);
       const code = rawCode ? String(rawCode).trim() : `SPE-${String(currentList.length + 1).padStart(3, '0')}`;
-      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
-      const category = String(getFlexibleValue(row, ['category', 'group']) || 'Fish').trim();
+      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific', 'zoologicalname', 'latinname']) || '').trim();
+      const category = String(getFlexibleValue(row, ['category', 'group', 'type']) || 'Fish').trim();
 
       const existingIdx = currentList.findIndex(
         (s) =>
@@ -4323,7 +4365,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (added > 0 || updated > 0) {
+      mutatedKeysRef.current.add('purchase_species');
       setPurchaseSpecies(currentList);
+      safeSet(`${DB_PREFIX}purchase_species`, currentList);
+      showToast(`Imported ${added} new purchase species (${updated} updated).`, 'success');
     }
     return { added, updated, errors };
   };

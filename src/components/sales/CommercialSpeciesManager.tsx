@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -14,8 +14,7 @@ import {
   Search,
   Download,
   Hash,
-  Layers,
-  ArrowRight
+  Layers
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -50,13 +49,12 @@ const PROCESSING_TYPES = [
 ];
 
 export const CommercialSpeciesManager: React.FC = () => {
-  const { species, purchaseSpecies, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
+  const { species, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [rawSpeciesFilter, setRawSpeciesFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Species | null>(null);
@@ -68,56 +66,22 @@ export const CommercialSpeciesManager: React.FC = () => {
   // Form State for Commercial Product
   const [code, setCode] = useState('');
   const [name, setName] = useState(''); // Export Ready Name
-  const [rawSpeciesName, setRawSpeciesName] = useState(''); // Purchase origin raw species
-  const [rawSpeciesId, setRawSpeciesId] = useState('');
-  const [isCustomRawSpecies, setIsCustomRawSpecies] = useState(false);
-  const [customRawSpeciesInput, setCustomRawSpeciesInput] = useState('');
   const [scientificName, setScientificName] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [productForm, setProductForm] = useState(PRODUCT_FORMS[0]);
   const [processingType, setProcessingType] = useState(PROCESSING_TYPES[0]);
   const [hsCode, setHsCode] = useState('');
 
-  // Collect distinct raw catch species names from procurement
-  const distinctPurchaseSpecies = useMemo(() => {
-    const set = new Set<string>();
-    purchaseSpecies.forEach((s) => {
-      if (s.name && s.name.trim()) {
-        set.add(s.name.trim());
-      }
-    });
-    species.forEach((s) => {
-      if (s.rawSpeciesName && s.rawSpeciesName.trim()) {
-        set.add(s.rawSpeciesName.trim());
-      }
-    });
-    // Add default popular procurement raw species if list is empty
-    if (set.size === 0) {
-      set.add('Vannamei Shrimp');
-      set.add('Black Tiger');
-      set.add('Yellowfin Tuna');
-      set.add('Indian Squid');
-      set.add('Cuttlefish');
-      set.add('Ribbon Fish');
-    }
-    return Array.from(set).sort();
-  }, [purchaseSpecies, species]);
-
   const filteredSpecies = species.filter((sp) => {
     if (categoryFilter && sp.category !== categoryFilter) return false;
-    if (rawSpeciesFilter) {
-      const spRaw = (sp.rawSpeciesName || sp.name || '').toLowerCase();
-      if (spRaw !== rawSpeciesFilter.toLowerCase()) return false;
-    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const matchName = sp.name.toLowerCase().includes(q);
-      const matchRaw = (sp.rawSpeciesName || '').toLowerCase().includes(q);
       const matchCode = sp.code.toLowerCase().includes(q);
       const matchSci = sp.scientificName?.toLowerCase().includes(q);
       const matchHs = sp.hsCode?.toLowerCase().includes(q);
       const matchForm = sp.productForm?.toLowerCase().includes(q);
-      return matchName || matchRaw || matchCode || matchSci || matchHs || matchForm;
+      return matchName || matchCode || matchSci || matchHs || matchForm;
     }
     return true;
   });
@@ -126,24 +90,11 @@ export const CommercialSpeciesManager: React.FC = () => {
     setEditingId(null);
     setCode(`PRD-${String(species.length + 1).padStart(3, '0')}`);
     setName('');
-    const defaultRaw = distinctPurchaseSpecies[0] || '';
-    setRawSpeciesName(defaultRaw);
-    setRawSpeciesId('');
-    setIsCustomRawSpecies(false);
-    setCustomRawSpeciesInput('');
     setScientificName('');
     setCategory(CATEGORIES[0]);
     setProductForm(PRODUCT_FORMS[0]);
     setProcessingType(PROCESSING_TYPES[0]);
     setHsCode('');
-
-    // Pre-populate scientific name and HSN from matched purchase species if available
-    const matched = species.find((s) => s.name.toLowerCase() === defaultRaw.toLowerCase());
-    if (matched) {
-      if (matched.scientificName) setScientificName(matched.scientificName);
-      if (matched.category && CATEGORIES.includes(matched.category)) setCategory(matched.category);
-      if (matched.hsCode) setHsCode(matched.hsCode);
-    }
     setIsModalOpen(true);
   };
 
@@ -151,47 +102,12 @@ export const CommercialSpeciesManager: React.FC = () => {
     setEditingId(sp.id);
     setCode(sp.code);
     setName(sp.name);
-    const existingRaw = sp.rawSpeciesName || sp.name;
-    const isKnown = distinctPurchaseSpecies.includes(existingRaw);
-    if (isKnown || !existingRaw) {
-      setRawSpeciesName(existingRaw);
-      setIsCustomRawSpecies(false);
-      setCustomRawSpeciesInput('');
-    } else {
-      setRawSpeciesName('__custom__');
-      setIsCustomRawSpecies(true);
-      setCustomRawSpeciesInput(existingRaw);
-    }
-    setRawSpeciesId(sp.rawSpeciesId || '');
     setScientificName(sp.scientificName || '');
     setCategory(sp.category || CATEGORIES[0]);
     setProductForm(sp.productForm || PRODUCT_FORMS[0]);
     setProcessingType(sp.processingType || PROCESSING_TYPES[0]);
     setHsCode(sp.hsCode || '');
     setIsModalOpen(true);
-  };
-
-  const handlePurchaseSpeciesSelect = (val: string) => {
-    if (val === '__custom__') {
-      setIsCustomRawSpecies(true);
-      setRawSpeciesName('__custom__');
-    } else {
-      setIsCustomRawSpecies(false);
-      setRawSpeciesName(val);
-      const matched = species.find((s) => s.name.toLowerCase() === val.toLowerCase());
-      if (matched) {
-        setRawSpeciesId(matched.id);
-        if (!scientificName && matched.scientificName) {
-          setScientificName(matched.scientificName);
-        }
-        if (matched.category && CATEGORIES.includes(matched.category)) {
-          setCategory(matched.category);
-        }
-        if (!hsCode && matched.hsCode) {
-          setHsCode(matched.hsCode);
-        }
-      }
-    }
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -201,13 +117,9 @@ export const CommercialSpeciesManager: React.FC = () => {
       return;
     }
 
-    const finalRawSpecies = isCustomRawSpecies ? customRawSpeciesInput.trim() : rawSpeciesName.trim();
-
     const payload = {
       code: code.trim().toUpperCase(),
       name: name.trim(), // Export Ready Product Name
-      rawSpeciesName: finalRawSpecies || undefined, // Purchase Origin Species Name
-      rawSpeciesId: rawSpeciesId || undefined,
       scientificName: scientificName.trim(),
       category: category.trim(),
       productForm: productForm.trim(),
@@ -265,7 +177,6 @@ export const CommercialSpeciesManager: React.FC = () => {
     const data = targetSpecies.map((sp) => ({
       Code: sp.code,
       ProductName: sp.name,
-      PurchaseSpecies: sp.rawSpeciesName || sp.name,
       ScientificName: sp.scientificName || '',
       Category: sp.category,
       ProductForm: sp.productForm || 'Standard',
@@ -277,7 +188,6 @@ export const CommercialSpeciesManager: React.FC = () => {
     const csv = convertToCSV(data, [
       { key: 'Code', label: 'Product Code' },
       { key: 'ProductName', label: 'Product Name (Export Ready Name)' },
-      { key: 'PurchaseSpecies', label: 'Purchase Species' },
       { key: 'ScientificName', label: 'Scientific Name' },
       { key: 'Category', label: 'Category' },
       { key: 'ProductForm', label: 'Product Form' },
@@ -315,7 +225,7 @@ export const CommercialSpeciesManager: React.FC = () => {
       {/* Page Header */}
       <PageHeader
         title="Commercial product master"
-        subtitle="Manage export-ready seafood products, link to purchase raw material catch species, define product packaging forms, processing methods, and customs HSN codes."
+        subtitle="Manage export-ready commercial seafood products, define product packaging forms, processing methods, and customs HSN codes."
         breadcrumbs={['Commercial Sales', 'Product Master']}
         primaryAction={
           permissions.canManageSalesMasterData || permissions.canManageMasterData
@@ -342,7 +252,7 @@ export const CommercialSpeciesManager: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
             <input
               type="text"
-              placeholder="Search product name, purchase species, code, HSN code, form..."
+              placeholder="Search product name, code, HSN code, form..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
@@ -358,19 +268,6 @@ export const CommercialSpeciesManager: React.FC = () => {
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={rawSpeciesFilter}
-            onChange={(e) => setRawSpeciesFilter(e.target.value)}
-            className="text-xs font-medium px-3 py-2 bg-emerald-50/80 border border-emerald-200 text-emerald-900 rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition"
-          >
-            <option value="">All Purchase Species ({distinctPurchaseSpecies.length})</option>
-            {distinctPurchaseSpecies.map((sp) => (
-              <option key={sp} value={sp}>
-                Raw: {sp}
               </option>
             ))}
           </select>
@@ -446,7 +343,6 @@ export const CommercialSpeciesManager: React.FC = () => {
                 </th>
                 <th className="py-3 px-4">Code</th>
                 <th className="py-3 px-4">Product Name (Export Ready Name)</th>
-                <th className="py-3 px-4">Purchase Species (Raw Catch)</th>
                 <th className="py-3 px-4">Scientific Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Product Form</th>
@@ -461,7 +357,7 @@ export const CommercialSpeciesManager: React.FC = () => {
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredSpecies.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-ink-500">
+                  <td colSpan={10} className="py-12 text-center text-ink-500">
                     <Fish className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     No commercial export products match your criteria.
                   </td>
@@ -469,7 +365,6 @@ export const CommercialSpeciesManager: React.FC = () => {
               ) : (
                 filteredSpecies.map((sp) => {
                   const isSelected = selectedIds.includes(sp.id);
-                  const originRawSpecies = sp.rawSpeciesName || sp.name;
                   return (
                     <tr
                       key={sp.id}
@@ -498,12 +393,6 @@ export const CommercialSpeciesManager: React.FC = () => {
                             <span>{sp.productForm} · {sp.processingType || 'Block Frozen'}</span>
                           </div>
                         )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <Fish className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{originRawSpecies}</span>
-                        </span>
                       </td>
                       <td className="py-3 px-4 italic text-ink-500">{sp.scientificName || '—'}</td>
                       <td className="py-3 px-4 text-ink-700">{sp.category}</td>
@@ -565,7 +454,7 @@ export const CommercialSpeciesManager: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingId ? `Edit Product — ${code}` : 'Register New Commercial Product'}
-        subtitle="Export-ready commercial seafood product linked to purchase raw catch species"
+        subtitle="Export-ready commercial seafood product for foreign buyer invoices"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           {/* Product Name (Export Ready Name) */}
@@ -583,43 +472,6 @@ export const CommercialSpeciesManager: React.FC = () => {
             />
             <p className="text-[10px] text-ink-500 mt-1">
               Official export designation used on commercial shipping invoices, packing lists, and bill of lading.
-            </p>
-          </div>
-
-          {/* Purchase Species Selection */}
-          <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
-            <label className="block text-[11px] font-bold text-emerald-950 mb-1 flex items-center gap-1.5">
-              <Fish className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Purchase Species (Raw Material Catch Origin) <span className="text-rose-600">*</span></span>
-            </label>
-            <select
-              value={isCustomRawSpecies ? '__custom__' : rawSpeciesName}
-              onChange={(e) => handlePurchaseSpeciesSelect(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-semibold text-emerald-950 outline-none focus:border-emerald-600"
-            >
-              <option value="">-- Select Origin Species from Purchase Module --</option>
-              {distinctPurchaseSpecies.map((spName) => (
-                <option key={spName} value={spName}>
-                  {spName}
-                </option>
-              ))}
-              <option value="__custom__">+ Enter Custom Raw Species Name...</option>
-            </select>
-
-            {isCustomRawSpecies && (
-              <div className="mt-2 animate-fade-in">
-                <input
-                  type="text"
-                  placeholder="Enter raw catch species name (e.g. Vannamei, Tiger, Yellowfin Tuna)"
-                  value={customRawSpeciesInput}
-                  onChange={(e) => setCustomRawSpeciesInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-bold text-ink-900 outline-none focus:border-emerald-600"
-                />
-              </div>
-            )}
-            <p className="text-[10px] text-emerald-800 mt-1 flex items-center gap-1">
-              <ArrowRight className="w-3 h-3 shrink-0" />
-              <span>Specifies which raw catch species from the Purchase Module this export product belongs to and is processed from.</span>
             </p>
           </div>
 
@@ -740,7 +592,7 @@ export const CommercialSpeciesManager: React.FC = () => {
       >
         <div className="space-y-4 text-xs">
           <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed">
-            <strong>Warning:</strong> You are about to permanently delete product <strong>{deleteTarget?.name}</strong> ({deleteTarget?.code}), derived from purchase species <em>{deleteTarget?.rawSpeciesName || deleteTarget?.name}</em>.
+            <strong>Warning:</strong> You are about to permanently delete product <strong>{deleteTarget?.name}</strong> ({deleteTarget?.code}).
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
