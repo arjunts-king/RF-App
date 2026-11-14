@@ -51,12 +51,26 @@ export interface Supplier {
   createdAt?: string;
 }
 
+export interface SpeciesHead {
+  id: string;
+  code: string; // e.g. "SH-001"
+  name: string; // Common Species Head e.g. "Ribbonfish", "Indian Mackerel", "Vannamei Shrimp"
+  scientificName?: string; // e.g. "Lepturacanthus Savala"
+  category: string; // e.g. "Fish", "Shrimp / Prawns", "Cephalopods (Squid / Cuttlefish / Octopus)"
+  description?: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Species {
   id: string;
   code: string;
   name: string;
   scientificName: string;
   category: string;
+  speciesHeadId?: string; // Linked common Species Head ID
+  speciesHeadName?: string; // Linked common Species Head Name e.g. "Ribbonfish"
   productForm?: string; // e.g. "Whole", "HLSO", "PUD", "PD", "Steaks", "Fillets"
   processingType?: string; // e.g. "Block Frozen", "IQF", "Blast Frozen", "Plate Frozen", "Fresh/Chilled"
   hsCode?: string; // Harmonized System Code, e.g. "03061790" for Shrimps, "03038990" for Marine Fish

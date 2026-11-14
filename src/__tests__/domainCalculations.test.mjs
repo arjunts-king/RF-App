@@ -5374,6 +5374,91 @@ test('Complete Separation of Purchase and Sales Modules: Excel Import Isolation 
   assert.ok(!sizeMgrCode.includes('Import from Purchase Sizes'), 'SalesSizeManager must NOT link to purchase sizes');
 });
 
+// ============================================================================
+// SUITE 72: Sales Module Species Head Master & Commercial Product Grouping Integration
+// ============================================================================
+test('Sales Module Species Head Master & Product Integration (Ribbonfish Grouping)', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Initial Species Heads Data Integrity
+  const speciesHeadsData = await import('../data/speciesHeadsData.ts');
+  const { INITIAL_SPECIES_HEADS, DEFAULT_PRODUCT_HEAD_MAP, inferSpeciesHeadFromName } = speciesHeadsData;
+
+  assert.ok(Array.isArray(INITIAL_SPECIES_HEADS), 'INITIAL_SPECIES_HEADS must be an array');
+  assert.ok(INITIAL_SPECIES_HEADS.length >= 10, 'Should have at least 10 core seafood species heads');
+
+  const ribbonfishHead = INITIAL_SPECIES_HEADS.find((h) => h.name.toLowerCase() === 'ribbonfish');
+  assert.ok(ribbonfishHead, 'Ribbonfish species head must exist');
+  assert.equal(ribbonfishHead.code, 'SH-001');
+  assert.equal(ribbonfishHead.category, 'Fish');
+  assert.equal(ribbonfishHead.active, true);
+
+  // 2. Default Product Grouping Map
+  assert.ok(DEFAULT_PRODUCT_HEAD_MAP && typeof DEFAULT_PRODUCT_HEAD_MAP === 'object', 'DEFAULT_PRODUCT_HEAD_MAP must be an object');
+  const mappedProductIds = Object.keys(DEFAULT_PRODUCT_HEAD_MAP);
+  assert.ok(mappedProductIds.length >= 30, 'Should map the 32 verified catalog products');
+
+  // Verify Ribbonfish products are mapped to Ribbonfish head
+  const ribbonfishProductIds = ['prd-001', 'prd-002', 'prd-006', 'prd-007', 'prd-008', 'prd-025', 'prd-026', 'prd-028'];
+  for (const prdId of ribbonfishProductIds) {
+    const headMapping = DEFAULT_PRODUCT_HEAD_MAP[prdId];
+    assert.ok(headMapping, `Product ${prdId} must be in DEFAULT_PRODUCT_HEAD_MAP`);
+    assert.equal(headMapping.speciesHeadId, ribbonfishHead.id);
+    assert.equal(headMapping.speciesHeadName, 'Ribbonfish');
+  }
+
+  // 3. Name Inference Helper
+  const inferredA = inferSpeciesHeadFromName('Frozen Ribbonfish A Grade', INITIAL_SPECIES_HEADS);
+  assert.ok(inferredA, 'Should infer Ribbonfish head for Frozen Ribbonfish A Grade');
+  assert.equal(inferredA.speciesHeadName, 'Ribbonfish');
+
+  const inferredB = inferSpeciesHeadFromName('Frozen Ribbonfish B Grade Whole Round', INITIAL_SPECIES_HEADS);
+  assert.ok(inferredB, 'Should infer Ribbonfish head for Frozen Ribbonfish B Grade');
+  assert.equal(inferredB.speciesHeadName, 'Ribbonfish');
+
+  // 4. DataContext.tsx contains Species Head actions & persistence
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataCtxCode.includes('speciesHeads: SpeciesHead[];'), 'DataContextType must expose speciesHeads');
+  assert.ok(dataCtxCode.includes('integrateProductsIntoSpeciesHead:'), 'DataContextType must expose integrateProductsIntoSpeciesHead');
+  assert.ok(dataCtxCode.includes('addSpeciesHead:'), 'DataContextType must expose addSpeciesHead');
+  assert.ok(dataCtxCode.includes('updateSpeciesHead:'), 'DataContextType must expose updateSpeciesHead');
+  assert.ok(dataCtxCode.includes('deleteSpeciesHead:'), 'DataContextType must expose deleteSpeciesHead');
+  assert.ok(dataCtxCode.includes('toggleSpeciesHeadActive:'), 'DataContextType must expose toggleSpeciesHeadActive');
+  assert.ok(dataCtxCode.includes('species_heads'), 'DataContext must persist species_heads');
+
+  // 5. SalesSidebar.tsx has Species Heads tab under Commercial Masters
+  const sidebarCode = fs.readFileSync(path.resolve('src/components/sales/SalesSidebar.tsx'), 'utf8');
+  assert.ok(sidebarCode.includes("'species-heads'"), "SalesSidebar must include 'species-heads' tab");
+  assert.ok(sidebarCode.includes('Species Heads'), 'SalesSidebar must have label Species Heads');
+  assert.ok(sidebarCode.includes('Ribbonfish'), 'SalesSidebar must mention Ribbonfish grouping');
+
+  // 6. App.tsx routes species-heads tab to SpeciesHeadManager
+  const appCode = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  assert.ok(appCode.includes("salesTab === 'species-heads'"), "App.tsx must route salesTab === 'species-heads'");
+  assert.ok(appCode.includes('SpeciesHeadManager'), 'App.tsx must render SpeciesHeadManager');
+
+  // 7. CommercialSpeciesManager.tsx displays Species Head column & allows assignment
+  const commMgrCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
+  assert.ok(commMgrCode.includes('speciesHeadFilter'), 'CommercialSpeciesManager must support speciesHeadFilter');
+  assert.ok(commMgrCode.includes('Species Head'), 'CommercialSpeciesManager must display Species Head column/field');
+  assert.ok(commMgrCode.includes('BulkAssignModal'), 'CommercialSpeciesManager must support bulk species head assignment');
+
+  // 8. SalesDashboard.tsx supports filtering by Species Head
+  const dashCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf8');
+  assert.ok(dashCode.includes('selectedSpeciesHeadIds'), 'SalesDashboard must maintain selectedSpeciesHeadIds state');
+  assert.ok(dashCode.includes('speciesHeadOptions'), 'SalesDashboard must compute speciesHeadOptions');
+  assert.ok(dashCode.includes('Species Head'), 'SalesDashboard must render Species Head filter');
+  assert.ok(dashCode.includes('speciesHeadName'), 'SalesDashboard must display speciesHeadName in product matrix');
+
+  // 9. SpeciesHeadManager.tsx exists and is well-structured
+  const headMgrCode = fs.readFileSync(path.resolve('src/components/sales/SpeciesHeadManager.tsx'), 'utf8');
+  assert.ok(headMgrCode.includes('integrateProductsIntoSpeciesHead'), 'SpeciesHeadManager must call integrateProductsIntoSpeciesHead');
+  assert.ok(headMgrCode.includes('Integrate Products under'), 'SpeciesHeadManager must have Integrate Products modal');
+  assert.ok(headMgrCode.includes('Ribbonfish'), 'SpeciesHeadManager must reference Ribbonfish example in banner');
+});
+
+
 
 
 

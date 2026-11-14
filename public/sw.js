@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V30 - Complete Purchase & Sales Module Decoupling)
-const CACHE_VERSION = 'seafood-pwa-v30';
+// Seafood Purchase App - Offline PWA Service Worker (V31 - Sales Species Heads & Commercial Product Grouping)
+const CACHE_VERSION = 'seafood-pwa-v31';
 const STATIC_ASSETS = [
   './',
   './index.html',

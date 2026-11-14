@@ -48,13 +48,18 @@ const PROCESSING_TYPES = [
   'Cooked & Frozen'
 ];
 
-export const CommercialSpeciesManager: React.FC = () => {
-  const { species, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
+interface CommercialSpeciesManagerProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const CommercialSpeciesManager: React.FC<CommercialSpeciesManagerProps> = ({ onNavigate }) => {
+  const { species, speciesHeads, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [speciesHeadFilter, setSpeciesHeadFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Species | null>(null);
@@ -62,10 +67,13 @@ export const CommercialSpeciesManager: React.FC = () => {
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
+  const [bulkTargetHeadId, setBulkTargetHeadId] = useState('');
 
   // Form State for Commercial Product
   const [code, setCode] = useState('');
   const [name, setName] = useState(''); // Export Ready Name
+  const [speciesHeadId, setSpeciesHeadId] = useState('');
   const [scientificName, setScientificName] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [productForm, setProductForm] = useState(PRODUCT_FORMS[0]);
@@ -74,14 +82,22 @@ export const CommercialSpeciesManager: React.FC = () => {
 
   const filteredSpecies = species.filter((sp) => {
     if (categoryFilter && sp.category !== categoryFilter) return false;
+    if (speciesHeadFilter) {
+      if (speciesHeadFilter === '__unassigned__') {
+        if (sp.speciesHeadId) return false;
+      } else if (sp.speciesHeadId !== speciesHeadFilter && sp.speciesHeadName !== speciesHeadFilter) {
+        return false;
+      }
+    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const matchName = sp.name.toLowerCase().includes(q);
       const matchCode = sp.code.toLowerCase().includes(q);
+      const matchHead = sp.speciesHeadName?.toLowerCase().includes(q);
       const matchSci = sp.scientificName?.toLowerCase().includes(q);
       const matchHs = sp.hsCode?.toLowerCase().includes(q);
       const matchForm = sp.productForm?.toLowerCase().includes(q);
-      return matchName || matchCode || matchSci || matchHs || matchForm;
+      return matchName || matchCode || matchHead || matchSci || matchHs || matchForm;
     }
     return true;
   });
@@ -90,6 +106,7 @@ export const CommercialSpeciesManager: React.FC = () => {
     setEditingId(null);
     setCode(`PRD-${String(species.length + 1).padStart(3, '0')}`);
     setName('');
+    setSpeciesHeadId('');
     setScientificName('');
     setCategory(CATEGORIES[0]);
     setProductForm(PRODUCT_FORMS[0]);
@@ -102,6 +119,7 @@ export const CommercialSpeciesManager: React.FC = () => {
     setEditingId(sp.id);
     setCode(sp.code);
     setName(sp.name);
+    setSpeciesHeadId(sp.speciesHeadId || '');
     setScientificName(sp.scientificName || '');
     setCategory(sp.category || CATEGORIES[0]);
     setProductForm(sp.productForm || PRODUCT_FORMS[0]);
@@ -117,9 +135,13 @@ export const CommercialSpeciesManager: React.FC = () => {
       return;
     }
 
+    const matchedHead = speciesHeads.find((h) => h.id === speciesHeadId);
+
     const payload = {
       code: code.trim().toUpperCase(),
       name: name.trim(), // Export Ready Product Name
+      speciesHeadId: speciesHeadId || undefined,
+      speciesHeadName: matchedHead ? matchedHead.name : undefined,
       scientificName: scientificName.trim(),
       category: category.trim(),
       productForm: productForm.trim(),
@@ -220,12 +242,27 @@ export const CommercialSpeciesManager: React.FC = () => {
     setSelectedIds([]);
   };
 
+  const handleBulkAssignSpeciesHead = () => {
+    if (!bulkTargetHeadId) {
+      showToast('Please select a species head to assign.', 'error');
+      return;
+    }
+    const head = speciesHeads.find((h) => h.id === bulkTargetHeadId);
+    const headName = head ? head.name : '';
+    for (const id of selectedIds) {
+      updateSpecies(id, { speciesHeadId: bulkTargetHeadId, speciesHeadName: headName });
+    }
+    showToast(`Assigned ${selectedIds.length} product(s) to species head "${headName}".`, 'success');
+    setIsBulkAssignModalOpen(false);
+    setSelectedIds([]);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Page Header */}
       <PageHeader
         title="Commercial product master"
-        subtitle="Manage export-ready commercial seafood products, define product packaging forms, processing methods, and customs HSN codes."
+        subtitle="Manage export-ready commercial seafood products, define product packaging forms, processing methods, customs HSN codes, and assign to common Species Heads."
         breadcrumbs={['Commercial Sales', 'Product Master']}
         primaryAction={
           permissions.canManageSalesMasterData || permissions.canManageMasterData
@@ -241,7 +278,16 @@ export const CommercialSpeciesManager: React.FC = () => {
             label: 'Export CSV',
             onClick: handleBulkExportCSV,
             icon: Download
-          }
+          },
+          ...(onNavigate
+            ? [
+                {
+                  label: 'Manage Species Heads',
+                  onClick: () => onNavigate('species-heads'),
+                  icon: Layers
+                }
+              ]
+            : [])
         ]}
       />
 
@@ -271,6 +317,20 @@ export const CommercialSpeciesManager: React.FC = () => {
               </option>
             ))}
           </select>
+
+          <select
+            value={speciesHeadFilter}
+            onChange={(e) => setSpeciesHeadFilter(e.target.value)}
+            className="text-xs font-semibold px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition text-ink-800"
+          >
+            <option value="">All Species Heads</option>
+            {speciesHeads.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+            <option value="__unassigned__">(Unassigned Products)</option>
+          </select>
         </div>
 
         <span className="text-xs text-ink-500 font-medium">
@@ -297,6 +357,18 @@ export const CommercialSpeciesManager: React.FC = () => {
             >
               Toggle Active Status
             </button>
+            {(permissions.canManageSalesMasterData || permissions.canManageMasterData) && (
+              <button
+                onClick={() => {
+                  setBulkTargetHeadId(speciesHeads[0]?.id || '');
+                  setIsBulkAssignModalOpen(true);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-300 bg-white text-rose-800 hover:bg-rose-100/70 transition flex items-center gap-1.5"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Assign Species Head
+              </button>
+            )}
             <button
               onClick={handleBulkExportCSV}
               className="text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-300 bg-white text-rose-800 hover:bg-rose-100/70 transition flex items-center gap-1.5"
@@ -343,6 +415,7 @@ export const CommercialSpeciesManager: React.FC = () => {
                 </th>
                 <th className="py-3 px-4">Code</th>
                 <th className="py-3 px-4">Product Name (Export Ready Name)</th>
+                <th className="py-3 px-4">Species Head</th>
                 <th className="py-3 px-4">Scientific Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Product Form</th>
@@ -357,7 +430,7 @@ export const CommercialSpeciesManager: React.FC = () => {
             <tbody className="divide-y divide-gray-100 font-medium">
               {filteredSpecies.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-ink-500">
+                  <td colSpan={11} className="py-12 text-center text-ink-500">
                     <Fish className="w-8 h-8 mx-auto mb-2 text-ink-400" />
                     No commercial export products match your criteria.
                   </td>
@@ -392,6 +465,16 @@ export const CommercialSpeciesManager: React.FC = () => {
                             <Layers className="w-3 h-3 text-ink-400" />
                             <span>{sp.productForm} · {sp.processingType || 'Block Frozen'}</span>
                           </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {sp.speciesHeadName ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                            <Fish className="w-3 h-3 text-rose-500" />
+                            {sp.speciesHeadName}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-gray-400 italic">Unassigned</span>
                         )}
                       </td>
                       <td className="py-3 px-4 italic text-ink-500">{sp.scientificName || '—'}</td>
@@ -472,6 +555,40 @@ export const CommercialSpeciesManager: React.FC = () => {
             />
             <p className="text-[10px] text-ink-500 mt-1">
               Official export designation used on commercial shipping invoices, packing lists, and bill of lading.
+            </p>
+          </div>
+
+          {/* Species Head (Common Grouping) */}
+          <div>
+            <label className="block text-[11px] font-bold text-ink-800 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Fish className="w-3.5 h-3.5 text-rose-600" />
+                <span>Species Head (Common Grouping)</span>
+              </span>
+              <span className="text-[10px] text-rose-600 font-semibold">e.g. Ribbonfish</span>
+            </label>
+            <select
+              value={speciesHeadId}
+              onChange={(e) => {
+                const newHeadId = e.target.value;
+                setSpeciesHeadId(newHeadId);
+                const matched = speciesHeads.find((h) => h.id === newHeadId);
+                if (matched) {
+                  if (!scientificName && matched.scientificName) setScientificName(matched.scientificName);
+                  if (category === CATEGORIES[0] && matched.category) setCategory(matched.category);
+                }
+              }}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold text-ink-900 outline-none focus:border-rose-400"
+            >
+              <option value="">-- None / Unassigned --</option>
+              {speciesHeads.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name} ({h.category})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-ink-500 mt-1">
+              Integrate this product under a common Species Head (e.g. <em>Ribbonfish</em> for all Ribbonfish grades) for grouped commercial analytics.
             </p>
           </div>
 
@@ -634,6 +751,51 @@ export const CommercialSpeciesManager: React.FC = () => {
               className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-full transition"
             >
               Yes, Delete {selectedIds.length} Products
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bulk Assign Species Head Modal */}
+      <Modal
+        isOpen={isBulkAssignModalOpen}
+        onClose={() => setIsBulkAssignModalOpen(false)}
+        title={`Assign Species Head to ${selectedIds.length} Products`}
+        subtitle="Integrate selected commercial products into a common species head"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-gray-600 leading-relaxed">
+            Select a common Species Head to integrate all <strong>{selectedIds.length}</strong> selected products into:
+          </p>
+
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Target Species Head</label>
+            <select
+              value={bulkTargetHeadId}
+              onChange={(e) => setBulkTargetHeadId(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold text-ink-900 outline-none focus:border-rose-400"
+            >
+              {speciesHeads.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name} ({h.category})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+            <button
+              onClick={() => setIsBulkAssignModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-700 font-bold rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkAssignSpeciesHead}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition shadow-xs flex items-center gap-1.5"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Assign to Species Head</span>
             </button>
           </div>
         </div>

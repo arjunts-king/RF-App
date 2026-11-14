@@ -39,6 +39,7 @@ const SalesInvoiceList = lazy(() => import('./components/sales/SalesInvoiceList'
 const SalesRealizationView = lazy(() => import('./components/sales/SalesRealizationView').then(m => ({ default: m.SalesRealizationView })));
 const CustomerManager = lazy(() => import('./components/sales/CustomerManager').then(m => ({ default: m.CustomerManager })));
 const PortManager = lazy(() => import('./components/sales/PortManager').then(m => ({ default: m.PortManager })));
+const SpeciesHeadManager = lazy(() => import('./components/sales/SpeciesHeadManager').then(m => ({ default: m.SpeciesHeadManager })));
 const CommercialSpeciesManager = lazy(() => import('./components/sales/CommercialSpeciesManager').then(m => ({ default: m.CommercialSpeciesManager })));
 const SalesSizeManager = lazy(() => import('./components/sales/SalesSizeManager').then(m => ({ default: m.SalesSizeManager })));
 const SalesReportsHub = lazy(() => import('./components/sales/SalesReportsHub').then(m => ({ default: m.SalesReportsHub })));
@@ -429,7 +430,10 @@ const MainLayout: React.FC = () => {
               )}
               {salesTab === 'customers' && <CustomerManager />}
               {salesTab === 'ports' && <PortManager />}
-              {salesTab === 'species' && <CommercialSpeciesManager />}
+              {salesTab === 'species-heads' && (
+                <SpeciesHeadManager onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
+              )}
+              {salesTab === 'species' && <CommercialSpeciesManager onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />}
               {salesTab === 'sales-sizes' && <SalesSizeManager />}
 
               {salesTab === 'sales-reports' && <SalesReportsHub />}

@@ -61,6 +61,7 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     return speciesList.filter((sp) => {
       const matchName = (sp.name || '').toLowerCase().includes(q);
       const matchCode = (sp.code || '').toLowerCase().includes(q);
+      const matchHead = (sp.speciesHeadName || '').toLowerCase().includes(q);
       const matchRaw = (sp.rawSpeciesName || '').toLowerCase().includes(q);
       const matchSci = (sp.scientificName || '').toLowerCase().includes(q);
       const matchCat = (sp.category || '').toLowerCase().includes(q);
@@ -71,6 +72,7 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
       return (
         matchName ||
         matchCode ||
+        matchHead ||
         matchRaw ||
         matchSci ||
         matchCat ||
@@ -299,14 +301,19 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
                         )}
                       </div>
 
-                      {/* Line 2: Scientific Name */}
-                      {sp.scientificName && (
-                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      {/* Line 2: Scientific Name & Species Head */}
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        {sp.speciesHeadName && (
+                          <span className="font-bold text-[10px] text-rose-800 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                            {sp.speciesHeadName}
+                          </span>
+                        )}
+                        {sp.scientificName && (
                           <span className="italic text-ink-500 text-[11px] truncate">
                             {sp.scientificName}
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       {/* Line 3: Product Form / Processing Type */}
                       {(sp.productForm || sp.processingType) && (

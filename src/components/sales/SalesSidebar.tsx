@@ -12,7 +12,8 @@ import {
   BarChart3,
   ShieldAlert,
   PlusCircle,
-  Scale
+  Scale,
+  Layers
 } from 'lucide-react';
 
 export type SalesNavTab =
@@ -23,6 +24,7 @@ export type SalesNavTab =
   | 'realizations'
   | 'customers'
   | 'ports'
+  | 'species-heads'
   | 'species'
   | 'sales-sizes'
   | 'sales-reports'
@@ -115,6 +117,14 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           badge: 'Port',
           desc: 'Loading & destination ports',
           show: permissions.canManageSalesMasterData
+        },
+        {
+          id: 'species-heads',
+          label: 'Species Heads',
+          icon: Layers,
+          badge: 'Grouping',
+          desc: 'Group export products into common heads (e.g. Ribbonfish)',
+          show: permissions.canManageSalesMasterData || permissions.canManageMasterData
         },
         {
           id: 'species',

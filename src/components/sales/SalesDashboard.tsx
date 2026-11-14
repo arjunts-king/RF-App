@@ -33,16 +33,18 @@ import {
   LayoutGrid,
   Clock,
   Globe,
-  BarChart3
+  BarChart3,
+  Fish
 } from 'lucide-react';
 
 export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
-  const { salesInvoices, customers, ports, species } = useData();
+  const { salesInvoices, customers, ports, species, speciesHeads } = useData();
 
   // Multi-Filter States (all combinable)
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [selectedSpeciesHeadIds, setSelectedSpeciesHeadIds] = useState<string[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [selectedPolIds, setSelectedPolIds] = useState<string[]>([]);
   const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
@@ -73,6 +75,19 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     () => customers.map((c) => ({ id: c.id, label: c.name, subLabel: c.country })),
     [customers]
   );
+
+  // Species Head Options for MultiSelectFilter
+  const speciesHeadOptions = useMemo(() => {
+    return speciesHeads.map((h) => {
+      const count = species.filter((sp) => sp.speciesHeadId === h.id || sp.speciesHeadName === h.name).length;
+      return {
+        id: h.id,
+        label: h.name,
+        subLabel: h.category,
+        badge: `${count} prods`
+      };
+    });
+  }, [speciesHeads, species]);
 
   // Comprehensive Product Options for MultiSelectFilter (Registered Master + Historical Invoice Products)
   const productOptions = useMemo(() => {
@@ -172,6 +187,25 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
         if (!hasProduct) return false;
       }
 
+      if (selectedSpeciesHeadIds.length > 0) {
+        const hasHead = inv.lineItems.some((l) => {
+          const sp = speciesMap.get(l.speciesId);
+          const headId = sp?.speciesHeadId;
+          const headName = (sp?.speciesHeadName || '').toLowerCase();
+          const descLower = (l.productDescription || '').toLowerCase();
+          return selectedSpeciesHeadIds.some((selectedHeadId) => {
+            const headObj = speciesHeads.find((h) => h.id === selectedHeadId);
+            const headNameLower = headObj ? headObj.name.toLowerCase() : '';
+            return (
+              headId === selectedHeadId ||
+              (headName && headNameLower && headName === headNameLower) ||
+              (headNameLower && descLower.includes(headNameLower))
+            );
+          });
+        });
+        if (!hasHead) return false;
+      }
+
       return true;
     });
   }, [
@@ -179,12 +213,14 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     startDate,
     endDate,
     selectedCustomerIds,
+    selectedSpeciesHeadIds,
     selectedProductIds,
     selectedPolIds,
     selectedPodIds,
     selectedCurrencies,
     selectedStatuses,
     speciesMap,
+    speciesHeads,
     productOptions
   ]);
 
@@ -252,6 +288,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     const map = new Map<string, {
       id: string;
       name: string;
+      speciesHeadName?: string;
       scientificName?: string;
       hsCode: string;
       invoices: Set<string>;
@@ -266,6 +303,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       inv.lineItems.forEach((l) => {
         const sp = speciesMap.get(l.speciesId);
         const name = (sp?.name || l.productDescription || 'Export Seafood').trim();
+        const headName = sp?.speciesHeadName || (sp?.speciesHeadId ? speciesHeads.find((h) => h.id === sp.speciesHeadId)?.name : undefined);
         const key = (l.speciesId || name).trim().toLowerCase();
         const hs = l.hsCode || sp?.hsCode || '03061790';
         const wt = Number(l.weightKg) || 0;
@@ -277,6 +315,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           map.set(key, {
             id: l.speciesId || key,
             name,
+            speciesHeadName: headName,
             scientificName: sp?.scientificName,
             hsCode: hs,
             invoices: new Set(),
@@ -301,7 +340,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     });
 
     return map;
-  }, [filteredInvoices, speciesMap]);
+  }, [filteredInvoices, speciesMap, speciesHeads]);
 
   const fullProductShareMatrix = useMemo(() => {
     return Array.from(productShareMap.values()).map((item) => {
@@ -313,6 +352,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       return {
         id: item.id,
         name: item.name,
+        speciesHeadName: item.speciesHeadName,
         scientificName: item.scientificName,
         hsCode: item.hsCode,
         invoicesCount: item.invoices.size,
@@ -575,6 +615,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     setStartDate('');
     setEndDate('');
     setSelectedCustomerIds([]);
+    setSelectedSpeciesHeadIds([]);
     setSelectedProductIds([]);
     setSelectedPolIds([]);
     setSelectedPodIds([]);
@@ -586,6 +627,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     startDate ||
     endDate ||
     selectedCustomerIds.length > 0 ||
+    selectedSpeciesHeadIds.length > 0 ||
     selectedProductIds.length > 0 ||
     selectedPolIds.length > 0 ||
     selectedPodIds.length > 0 ||
@@ -729,6 +771,17 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             placeholder="Search customers..."
           />
 
+          {/* Multi-select Species Heads */}
+          <MultiSelectFilter
+            label="Species Heads"
+            options={speciesHeadOptions}
+            selectedIds={selectedSpeciesHeadIds}
+            onChange={setSelectedSpeciesHeadIds}
+            icon={Fish}
+            badgeColor="rose"
+            placeholder="Search species heads..."
+          />
+
           {/* Multi-select Products */}
           <MultiSelectFilter
             label="Products"
@@ -817,6 +870,21 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                 >
                   Client: {c.name}
                   <button onClick={() => setSelectedCustomerIds(selectedCustomerIds.filter((item) => item !== id))} className="hover:text-rose-950">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {selectedSpeciesHeadIds.map((id) => {
+              const head = speciesHeads.find((h) => h.id === id);
+              if (!head) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 text-rose-800 rounded-full text-xs font-semibold border border-rose-200"
+                >
+                  Species Head: {head.name}
+                  <button onClick={() => setSelectedSpeciesHeadIds(selectedSpeciesHeadIds.filter((item) => item !== id))} className="hover:text-rose-950">
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -1798,6 +1866,11 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                           >
                             {p.name}
                           </button>
+                          {p.speciesHeadName && (
+                            <span className="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold">
+                              {p.speciesHeadName}
+                            </span>
+                          )}
                           {selectedProductIds.includes(p.id) && (
                             <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded text-[9px] font-bold">
                               Filtered
@@ -1901,7 +1974,14 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
                     >
                       {p.name}
                     </button>
-                    <span className="text-[11px] font-mono text-ink-500">HS {p.hsCode}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[11px] font-mono text-ink-500">HS {p.hsCode}</span>
+                      {p.speciesHeadName && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                          {p.speciesHeadName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-gray-200 text-ink-700">

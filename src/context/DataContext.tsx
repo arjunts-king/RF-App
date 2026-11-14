@@ -20,6 +20,7 @@ import {
   Customer,
   CustomerType,
   PortMaster,
+  SpeciesHead,
   SalesInvoice,
   SalesInvoiceLine,
   SalesCurrency,
@@ -65,6 +66,11 @@ import {
   VERIFIED_PORTS,
   VERIFIED_SALES_INVOICES
 } from '../data/exportSalesData';
+import {
+  INITIAL_SPECIES_HEADS,
+  DEFAULT_PRODUCT_HEAD_MAP,
+  inferSpeciesHeadFromName
+} from '../data/speciesHeadsData';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import {
@@ -96,6 +102,7 @@ interface DataContextType {
   slabTypes: SlabType[];
   customers: Customer[];
   ports: PortMaster[];
+  speciesHeads: SpeciesHead[];
   salesSizes: Size[];
   purchases: Purchase[];
   payments: PaymentRecord[];
@@ -172,6 +179,14 @@ interface DataContextType {
   deletePort: (id: string) => { success: boolean; message?: string };
   togglePortActive: (id: string) => void;
   bulkImportPorts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+
+  // Species Head Master Actions (Sales Module Product Integration)
+  addSpeciesHead: (head: Omit<SpeciesHead, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateSpeciesHead: (id: string, updates: Partial<SpeciesHead>) => void;
+  deleteSpeciesHead: (id: string) => { success: boolean; message?: string };
+  toggleSpeciesHeadActive: (id: string) => void;
+  integrateProductsIntoSpeciesHead: (headId: string, productIds: string[]) => void;
+  bulkImportSpeciesHeads: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
 
   // Commercial Grade / Size Master Actions (Independent from Purchase Sizes)
   addSalesSize: (size: Omit<Size, 'id'>) => void;
@@ -416,11 +431,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
     const reconciled = salesOnlyList.map((sp) => {
       const v = verifiedMap.get(sp.code.toLowerCase()) || verifiedNameMap.get(sp.name.trim().toLowerCase());
+      const defaultMapping = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || inferSpeciesHeadFromName(sp.name);
+      const headId = sp.speciesHeadId || defaultMapping?.speciesHeadId;
+      const headName = sp.speciesHeadName || defaultMapping?.speciesHeadName;
       if (v) {
         return {
           ...sp,
           code: v.code,
           name: v.name,
+          speciesHeadId: headId,
+          speciesHeadName: headName,
           rawSpeciesName: v.rawSpeciesName || sp.rawSpeciesName,
           scientificName: v.scientificName || sp.scientificName,
           category: v.category || sp.category,
@@ -430,10 +450,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           active: v.active !== undefined ? v.active : sp.active
         };
       }
-      return sp;
+      return {
+        ...sp,
+        speciesHeadId: headId,
+        speciesHeadName: headName
+      };
     });
     const existingNames = new Set(reconciled.map((sp) => sp.name.trim().toLowerCase()));
-    const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase()));
+    const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase())).map((sp) => {
+      const defaultMapping = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
+      return {
+        ...sp,
+        speciesHeadId: sp.speciesHeadId || defaultMapping?.speciesHeadId,
+        speciesHeadName: sp.speciesHeadName || defaultMapping?.speciesHeadName
+      };
+    });
     const result = [...reconciled, ...missing];
     safeSet(`${DB_PREFIX}species`, result);
     return result;
@@ -642,6 +673,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const existingNames = new Set(list.map((p) => p.name.trim().toLowerCase()));
     const missing = VERIFIED_PORTS.filter((p) => !existingNames.has(p.name.trim().toLowerCase()));
     return [...list, ...missing];
+  });
+
+  // Dedicated Species Head Master for Sales Module (Grouping export products into common heads)
+  const [speciesHeads, setSpeciesHeads] = useState<SpeciesHead[]>(() => {
+    const saved = localStorage.getItem(`${DB_PREFIX}species_heads`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingNames = new Set(parsed.map((p: SpeciesHead) => p.name.trim().toLowerCase()));
+          const missing = INITIAL_SPECIES_HEADS.filter((v) => !existingNames.has(v.name.trim().toLowerCase()));
+          return [...parsed, ...missing];
+        }
+      } catch (e) {
+        console.error('Failed to parse species heads from storage:', e);
+      }
+    }
+    safeSet(`${DB_PREFIX}species_heads`, INITIAL_SPECIES_HEADS);
+    return INITIAL_SPECIES_HEADS;
   });
 
   // Distinct Commercial Grade / Size Master for Sales (Separate from Purchase Sizes)
@@ -993,6 +1043,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           idbInvoices,
           idbCustomers,
           idbPorts,
+          idbSpeciesHeads,
           idbSalesSizes,
           idbPurchases,
           idbPayments,
@@ -1004,6 +1055,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           getNewerIdbSnapshot<SalesInvoice[]>(`${DB_PREFIX}sales_invoices`),
           getNewerIdbSnapshot<Customer[]>(`${DB_PREFIX}customers`),
           getNewerIdbSnapshot<PortMaster[]>(`${DB_PREFIX}ports`),
+          getNewerIdbSnapshot<SpeciesHead[]>(`${DB_PREFIX}species_heads`),
           getNewerIdbSnapshot<Size[]>(`${DB_PREFIX}sales_sizes`),
           getNewerIdbSnapshot<Purchase[]>(`${DB_PREFIX}purchases`),
           getNewerIdbSnapshot<PaymentRecord[]>(`${DB_PREFIX}payments`),
@@ -1021,6 +1073,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         if (!mutatedKeysRef.current.has('ports') && Array.isArray(idbPorts) && idbPorts.length > 0) {
           setPorts(idbPorts);
+        }
+        if (!mutatedKeysRef.current.has('species_heads') && Array.isArray(idbSpeciesHeads) && idbSpeciesHeads.length > 0) {
+          setSpeciesHeads((prev) => {
+            const existingNames = new Set(prev.map((p) => p.name.trim().toLowerCase()));
+            const toAdd = idbSpeciesHeads.filter((c) => !existingNames.has(c.name.trim().toLowerCase()));
+            return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+          });
         }
         if (!mutatedKeysRef.current.has('sales_sizes') && Array.isArray(idbSalesSizes) && idbSalesSizes.length > 0) {
           setSalesSizes(idbSalesSizes);
@@ -1095,6 +1154,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}customers`, customers); }, [customers, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}ports`, ports); }, [ports, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}species_heads`, speciesHeads); }, [speciesHeads, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sales_sizes`, salesSizes); }, [salesSizes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sales_invoices`, salesInvoices); }, [salesInvoices, isIdbReady]);
@@ -1208,19 +1268,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSuppliers((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
   };
 
-  // SPECIES
+  // SPECIES (Sales Commercial Products)
   const addSpecies = (spData: Omit<Species, 'id'>) => {
-    const newSpecies: Species = { ...spData, id: `spe-${Date.now()}` };
+    let headId = spData.speciesHeadId;
+    let headName = spData.speciesHeadName;
+    if (headId) {
+      const head = speciesHeads.find((h) => h.id === headId);
+      if (head) headName = head.name;
+    } else if (!headName) {
+      const inferred = inferSpeciesHeadFromName(spData.name);
+      if (inferred) {
+        headId = inferred.speciesHeadId;
+        headName = inferred.speciesHeadName;
+      }
+    }
+    const newSpecies: Species = {
+      ...spData,
+      id: `spe-${Date.now()}`,
+      speciesHeadId: headId,
+      speciesHeadName: headName
+    };
+    mutatedKeysRef.current.add('species');
     setSpecies((prev) => [...prev, newSpecies]);
     logAudit('CREATE', 'Species', newSpecies.code, { newValues: newSpecies });
-    showToast(`Species "${newSpecies.name}" registered.`, 'success');
+    showToast(`Product "${newSpecies.name}" registered.`, 'success');
   };
 
   const updateSpecies = (id: string, updates: Partial<Species>) => {
     const old = species.find((s) => s.id === id);
-    setSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
-    logAudit('EDIT', 'Species', old?.code || id, { oldValues: old, newValues: updates });
-    showToast('Species updated.', 'success');
+    const resolvedUpdates: Partial<Species> = { ...updates };
+    if (updates.speciesHeadId !== undefined) {
+      if (updates.speciesHeadId) {
+        const head = speciesHeads.find((h) => h.id === updates.speciesHeadId);
+        resolvedUpdates.speciesHeadName = head ? head.name : updates.speciesHeadName;
+      } else {
+        resolvedUpdates.speciesHeadId = undefined;
+        resolvedUpdates.speciesHeadName = undefined;
+      }
+    }
+    mutatedKeysRef.current.add('species');
+    setSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, ...resolvedUpdates } : s)));
+    logAudit('EDIT', 'Species', old?.code || id, { oldValues: old, newValues: resolvedUpdates });
+    showToast('Product updated.', 'success');
   };
 
   const deleteSpecies = (id: string): { success: boolean; message?: string } => {
@@ -1793,6 +1882,197 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     setPorts(currentList);
+    return { added, updated, errors };
+  };
+
+  // --------------------------------------------------------------------------
+  // SPECIES HEAD MASTER (Group commercial export products into common heads)
+  // --------------------------------------------------------------------------
+
+  const addSpeciesHead = (headData: Omit<SpeciesHead, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can manage Species Heads.', 'error');
+      return;
+    }
+    const newHead: SpeciesHead = {
+      ...headData,
+      id: `sh-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    mutatedKeysRef.current.add('species_heads');
+    setSpeciesHeads((prev) => [...prev, newHead]);
+    logAudit('CREATE', 'SpeciesHead', newHead.name, { newValues: newHead });
+    showToast(`Species Head "${newHead.name}" registered.`, 'success');
+  };
+
+  const updateSpeciesHead = (id: string, updates: Partial<SpeciesHead>) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can edit Species Heads.', 'error');
+      return;
+    }
+    const old = speciesHeads.find((h) => h.id === id);
+    mutatedKeysRef.current.add('species_heads');
+    setSpeciesHeads((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates, updatedAt: new Date().toISOString() } : h)));
+
+    // If name changed, synchronize speciesHeadName across all linked products
+    if (updates.name && old && old.name !== updates.name) {
+      mutatedKeysRef.current.add('species');
+      setSpecies((prev) =>
+        prev.map((sp) =>
+          sp.speciesHeadId === id ? { ...sp, speciesHeadName: updates.name } : sp
+        )
+      );
+    }
+    logAudit('EDIT', 'SpeciesHead', old?.name || id, { oldValues: old, newValues: updates });
+    showToast('Species Head updated.', 'success');
+  };
+
+  const deleteSpeciesHead = (id: string): { success: boolean; message?: string } => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can delete Species Heads.', 'error');
+      return { success: false, message: 'Unauthorized' };
+    }
+    const old = speciesHeads.find((h) => h.id === id);
+    const linkedProducts = species.filter((sp) => sp.speciesHeadId === id);
+    if (linkedProducts.length > 0) {
+      // Unlink products before deletion
+      mutatedKeysRef.current.add('species');
+      setSpecies((prev) =>
+        prev.map((sp) =>
+          sp.speciesHeadId === id
+            ? { ...sp, speciesHeadId: undefined, speciesHeadName: undefined }
+            : sp
+        )
+      );
+    }
+    mutatedKeysRef.current.add('species_heads');
+    setSpeciesHeads((prev) => prev.filter((h) => h.id !== id));
+    logAudit('DELETE', 'SpeciesHead', old?.name || id, { oldValues: old, changeReason: `Deleted species head; unlinked ${linkedProducts.length} product(s)` });
+    showToast(`Species Head "${old?.name || id}" deleted (${linkedProducts.length} product(s) unlinked).`, 'info');
+    return { success: true };
+  };
+
+  const toggleSpeciesHeadActive = (id: string) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) return;
+    mutatedKeysRef.current.add('species_heads');
+    setSpeciesHeads((prev) => prev.map((h) => (h.id === id ? { ...h, active: !h.active, updatedAt: new Date().toISOString() } : h)));
+  };
+
+  const integrateProductsIntoSpeciesHead = (headId: string, productIds: string[]) => {
+    if (!permissions.canManageSalesMasterData && !permissions.canManageMasterData) {
+      showToast('Unauthorized: Only Master Accountant and Admin can integrate products.', 'error');
+      return;
+    }
+    const head = speciesHeads.find((h) => h.id === headId);
+    if (!head) {
+      showToast('Species Head not found.', 'error');
+      return;
+    }
+
+    const productIdSet = new Set(productIds);
+    let linkedCount = 0;
+    let unlinkedCount = 0;
+
+    mutatedKeysRef.current.add('species');
+    setSpecies((prev) =>
+      prev.map((sp) => {
+        if (productIdSet.has(sp.id)) {
+          if (sp.speciesHeadId !== headId) linkedCount++;
+          return {
+            ...sp,
+            speciesHeadId: head.id,
+            speciesHeadName: head.name
+          };
+        } else if (sp.speciesHeadId === headId) {
+          unlinkedCount++;
+          return {
+            ...sp,
+            speciesHeadId: undefined,
+            speciesHeadName: undefined
+          };
+        }
+        return sp;
+      })
+    );
+
+    logAudit('EDIT', 'SpeciesHead', head.name, {
+      newValues: {
+        headId,
+        headName: head.name,
+        totalLinked: productIds.length,
+        newlyLinked: linkedCount,
+        unlinked: unlinkedCount
+      },
+      changeReason: `Integrated ${productIds.length} product(s) under species head "${head.name}"`
+    });
+
+    showToast(
+      `Integrated ${productIds.length} product(s) under "${head.name}".`,
+      'success'
+    );
+  };
+
+  const bulkImportSpeciesHeads = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...speciesHeads];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const codeRaw = String(getFlexibleValue(row, ['code', 'headcode', 'speciesheadcode', 'id']) || '').trim().toUpperCase();
+      const nameRaw = String(getFlexibleValue(row, ['name', 'headname', 'specieshead', 'speciesheadname']) || '').trim();
+      const sciRaw = String(getFlexibleValue(row, ['scientificname', 'sciencename', 'latinname']) || '').trim();
+      const catRaw = String(getFlexibleValue(row, ['category', 'group', 'type']) || '').trim() || 'Fish';
+      const descRaw = String(getFlexibleValue(row, ['description', 'notes', 'remarks']) || '').trim();
+      const activeRaw = getFlexibleValue(row, ['active', 'status']);
+
+      if (!nameRaw) {
+        errors.push(`Row ${idx + 1}: Missing Species Head Name`);
+        return;
+      }
+
+      const existingIndex = currentList.findIndex(
+        (h) => (codeRaw && h.code.toUpperCase() === codeRaw) || h.name.toLowerCase() === nameRaw.toLowerCase()
+      );
+
+      if (existingIndex >= 0) {
+        currentList[existingIndex] = {
+          ...currentList[existingIndex],
+          name: nameRaw,
+          scientificName: sciRaw || currentList[existingIndex].scientificName,
+          category: catRaw || currentList[existingIndex].category,
+          description: descRaw || currentList[existingIndex].description,
+          active: activeRaw !== undefined ? String(activeRaw).toLowerCase() !== 'false' && String(activeRaw) !== '0' : currentList[existingIndex].active,
+          updatedAt: new Date().toISOString()
+        };
+        updated++;
+      } else {
+        const nextCode = codeRaw || `SH-${String(currentList.length + 1).padStart(3, '0')}`;
+        currentList.push({
+          id: `sh-${Date.now()}-${idx}`,
+          code: nextCode,
+          name: nameRaw,
+          scientificName: sciRaw,
+          category: catRaw,
+          description: descRaw,
+          active: activeRaw !== undefined ? String(activeRaw).toLowerCase() !== 'false' && String(activeRaw) !== '0' : true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        added++;
+      }
+    });
+
+    if (added > 0 || updated > 0) {
+      mutatedKeysRef.current.add('species_heads');
+      setSpeciesHeads(currentList);
+      safeSet(`${DB_PREFIX}species_heads`, currentList);
+      showToast(`Imported ${added} new species heads (${updated} updated).`, 'success');
+    }
     return { added, updated, errors };
   };
 
@@ -7173,6 +7453,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     slabTypes,
     customers,
     ports,
+    speciesHeads,
     salesSizes,
     purchases,
     payments,
@@ -7247,6 +7528,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     deletePort,
     togglePortActive,
     bulkImportPorts,
+
+    addSpeciesHead,
+    updateSpeciesHead,
+    deleteSpeciesHead,
+    toggleSpeciesHeadActive,
+    integrateProductsIntoSpeciesHead,
+    bulkImportSpeciesHeads,
 
     addSalesSize,
     updateSalesSize,
@@ -7352,6 +7640,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     slabTypes,
     customers,
     ports,
+    speciesHeads,
     salesSizes,
     purchases,
     payments,
