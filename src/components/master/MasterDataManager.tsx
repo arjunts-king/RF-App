@@ -33,7 +33,7 @@ export interface MasterDataManagerProps {
 export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate, initialTab = 'suppliers' }) => {
   const {
     suppliers,
-    species,
+    purchaseSpecies,
     grades,
     sizes,
     counts,
@@ -44,10 +44,10 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     updateSupplier,
     deleteSupplier,
     toggleSupplierActive,
-    addSpecies,
-    updateSpecies,
-    deleteSpecies,
-    toggleSpeciesActive,
+    addPurchaseSpecies,
+    updatePurchaseSpecies,
+    deletePurchaseSpecies,
+    togglePurchaseSpeciesActive,
     addGrade,
     updateGrade,
     deleteGrade,
@@ -95,7 +95,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
   const currentTabItems: Array<{ id: string }> = React.useMemo(() => {
     switch (activeTab) {
       case 'suppliers': return suppliers;
-      case 'species': return species;
+      case 'species': return purchaseSpecies;
       case 'grades': return grades;
       case 'sizes': return sizes;
       case 'counts': return counts;
@@ -104,7 +104,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       case 'expenses': return expenseTypes;
       default: return [];
     }
-  }, [activeTab, suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes]);
+  }, [activeTab, suppliers, purchaseSpecies, grades, sizes, counts, locations, bankAccounts, expenseTypes]);
 
   const allCurrentSelected =
     currentTabItems.length > 0 &&
@@ -130,7 +130,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     let count = 0;
     for (const id of selectedIds) {
       if (activeTab === 'suppliers') deleteSupplier(id);
-      else if (activeTab === 'species') deleteSpecies(id);
+      else if (activeTab === 'species') deletePurchaseSpecies(id);
       else if (activeTab === 'grades') deleteGrade(id);
       else if (activeTab === 'sizes') deleteSize(id);
       else if (activeTab === 'counts') deleteCount(id);
@@ -150,7 +150,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
     let count = 0;
     for (const id of selectedIds) {
       if (activeTab === 'suppliers') toggleSupplierActive(id);
-      else if (activeTab === 'species') toggleSpeciesActive(id);
+      else if (activeTab === 'species') togglePurchaseSpeciesActive(id);
       else if (activeTab === 'grades') toggleGradeActive(id);
       else if (activeTab === 'locations') toggleLocationActive(id);
       else if (activeTab === 'expenses') toggleExpenseTypeActive(id);
@@ -188,7 +188,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       );
       downloadFile(csv, `Suppliers_Selected_${new Date().toISOString().split('T')[0]}.csv`);
     } else if (activeTab === 'species') {
-      const selected = species.filter((sp) => selectedIds.includes(sp.id));
+      const selected = purchaseSpecies.filter((sp) => selectedIds.includes(sp.id));
       const csv = convertToCSV(
         selected.map((sp) => ({
           Code: sp.code,
@@ -202,7 +202,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         })),
         [
           { key: 'Code', label: 'Species Code' },
-          { key: 'Name', label: 'Commercial Name' },
+          { key: 'Name', label: 'Species Name' },
           { key: 'ScientificName', label: 'Scientific Name' },
           { key: 'Category', label: 'Category' },
           { key: 'Form', label: 'Product Form' },
@@ -211,7 +211,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
           { key: 'Active', label: 'Active' }
         ]
       );
-      downloadFile(csv, `Species_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+      downloadFile(csv, `Purchase_Species_Selected_${new Date().toISOString().split('T')[0]}.csv`);
     } else if (activeTab === 'expenses') {
       const selected = expenseTypes.filter((e) => selectedIds.includes(e.id));
       const csv = convertToCSV(
@@ -255,7 +255,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
   const confirmDelete = () => {
     if (!deleteTarget) return;
     if (deleteTarget.type === 'supplier') deleteSupplier(deleteTarget.id);
-    else if (deleteTarget.type === 'species') deleteSpecies(deleteTarget.id);
+    else if (deleteTarget.type === 'species') deletePurchaseSpecies(deleteTarget.id);
     else if (deleteTarget.type === 'grade') deleteGrade(deleteTarget.id);
     else if (deleteTarget.type === 'size') deleteSize(deleteTarget.id);
     else if (deleteTarget.type === 'count') deleteCount(deleteTarget.id);
@@ -329,7 +329,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
 
   const tabs: { id: MasterTab; label: string; icon: any; count: number }[] = [
     { id: 'suppliers', label: 'Suppliers', icon: Truck, count: suppliers.length },
-    { id: 'species', label: 'Species / Product', icon: Fish, count: species.length },
+    { id: 'species', label: 'Species / Product', icon: Fish, count: purchaseSpecies.length },
     { id: 'grades', label: 'Grades', icon: Grid, count: grades.length },
     { id: 'sizes', label: 'Sizes', icon: Scale, count: sizes.length },
     { id: 'counts', label: 'Counts / Pcs', icon: Hash, count: counts.length },
@@ -358,7 +358,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       setSupCreditDays('');
       setSupOpeningBal('0');
     } else if (activeTab === 'species') {
-      setSpCode(`SPE-${String(species.length + 1).padStart(3, '0')}`);
+      setSpCode(`SPE-${String(purchaseSpecies.length + 1).padStart(3, '0')}`);
       setSpName('');
       setSpScientific('');
       setSpCategory('Shrimp / Prawns');
@@ -495,6 +495,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
       const payload = {
         code: spCode.trim(),
         name: spName.trim(),
+        rawSpeciesName: spName.trim(),
         scientificName: spScientific.trim(),
         category: spCategory.trim(),
         productForm: spProductForm.trim(),
@@ -502,8 +503,8 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         hsCode: spHsCode.trim(),
         active: true
       };
-      if (editingId) updateSpecies(editingId, payload);
-      else addSpecies(payload);
+      if (editingId) updatePurchaseSpecies(editingId, payload);
+      else addPurchaseSpecies(payload);
     } else if (activeTab === 'grades') {
       const payload = { code: grdCode, name: grdName, description: grdDesc, active: true };
       if (editingId) updateGrade(editingId, payload);
@@ -710,10 +711,10 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         {/* SPECIES TABLE */}
         {activeTab === 'species' && (
           <div className="overflow-x-auto">
-            {species.length === 0 ? (
+            {purchaseSpecies.length === 0 ? (
               <div className="py-16 text-center text-ink-500 space-y-3">
                 <Inbox className="w-10 h-10 mx-auto text-gray-300" />
-                <p className="font-semibold text-sm text-ink-700">No species added yet</p>
+                <p className="font-semibold text-sm text-ink-700">No purchase species added yet</p>
                 <p className="text-xs max-w-sm mx-auto">
                   Click <strong>Add New Species</strong> to register your raw seafood varieties (e.g. Vannamei, Tiger, Tuna).
                 </p>
@@ -735,7 +736,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                       />
                     </th>
                     <th className="py-2.5 px-3">Code</th>
-                    <th className="py-2.5 px-3">Commercial Name</th>
+                    <th className="py-2.5 px-3">Species Name</th>
                     <th className="py-2.5 px-3">Scientific Name</th>
                     <th className="py-2.5 px-3">Category</th>
                     <th className="py-2.5 px-3">Product Form</th>
@@ -746,7 +747,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {species.map((sp) => {
+                  {purchaseSpecies.map((sp) => {
                     const isSelected = selectedIds.includes(sp.id);
                     return (
                       <tr
@@ -780,7 +781,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                       </td>
                       <td className="py-3 px-3 text-center">
                         <button
-                          onClick={() => toggleSpeciesActive(sp.id)}
+                          onClick={() => togglePurchaseSpeciesActive(sp.id)}
                           className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
                             sp.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-300'
                           }`}

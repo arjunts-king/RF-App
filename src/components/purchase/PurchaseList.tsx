@@ -38,7 +38,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     purchases,
     purchaseReturns,
     suppliers,
-    species,
+    purchaseSpecies,
     grades,
     sizes,
     counts,
@@ -98,7 +98,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
 
   // Memoized Lookups
   const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
-  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+  const speciesMap = useMemo(() => new Map(purchaseSpecies.map((sp) => [sp.id, sp])), [purchaseSpecies]);
   const gradeMap = useMemo(() => new Map(grades.map((g) => [g.id, g])), [grades]);
   const sizeMap = useMemo(() => new Map(sizes.map((sz) => [sz.id, sz])), [sizes]);
   const countMap = useMemo(() => new Map(counts.map((c) => [c.id, c])), [counts]);
@@ -107,11 +107,11 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
 
   // Robust species resolver across ID, code, name, rawSpeciesName, scientificName
   const findSpecies = useMemo(() => {
-    const byId = new Map(species.map((sp) => [sp.id.toLowerCase(), sp]));
-    const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
-    const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
-    const byRaw = new Map<string, (typeof species)[0]>();
-    species.forEach((sp) => {
+    const byId = new Map(purchaseSpecies.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(purchaseSpecies.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(purchaseSpecies.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof purchaseSpecies)[0]>();
+    purchaseSpecies.forEach((sp) => {
       if (sp.rawSpeciesName) {
         byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
       }
@@ -126,7 +126,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         byCode.get(lower) ||
         byName.get(lower) ||
         byRaw.get(lower) ||
-        species.find(
+        purchaseSpecies.find(
           (sp) =>
             sp.id.toLowerCase() === lower ||
             sp.code.toLowerCase() === lower ||
@@ -136,7 +136,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         )
       );
     };
-  }, [species]);
+  }, [purchaseSpecies]);
 
   const isAutoString = (str?: string): boolean => {
     if (!str) return false;
@@ -209,10 +209,10 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         }
       });
     } else {
-      species.forEach((sp) => {
+      purchaseSpecies.forEach((sp) => {
         const rawName = sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)
           ? sp.rawSpeciesName.trim()
-          : sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+          : sp.name;
 
         const lowerLabel = rawName.toLowerCase();
         if (!seen.has(lowerLabel) && !isAutoString(rawName)) {
@@ -223,7 +223,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     }
 
     return options.sort((a, b) => a.label.localeCompare(b.label));
-  }, [species, purchases, findSpecies]);
+  }, [purchaseSpecies, purchases, findSpecies]);
 
   const resolveSpeciesName = (spId: string): string => {
     if (!spId) return 'Unspecified Species';
@@ -628,7 +628,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
   };
 
   const selectedSupplierObj = suppliers.find((s) => s.id === supplierFilter);
-  const selectedSpeciesObj = species.find((sp) => sp.id === speciesFilter) || findSpecies(speciesFilter);
+  const selectedSpeciesObj = purchaseSpecies.find((sp) => sp.id === speciesFilter) || findSpecies(speciesFilter);
   const hasActiveFilters = Boolean(searchTerm || supplierFilter || speciesFilter || statusFilter || showVoided);
 
   const clearAllFilters = () => {
@@ -1691,8 +1691,8 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
                 required
               >
-                {species.map((sp) => (
-                  <option key={sp.id} value={sp.id}>{sp.name} ({sp.scientificName})</option>
+                {purchaseSpecies.map((sp) => (
+                  <option key={sp.id} value={sp.id}>{sp.name} {sp.scientificName ? `(${sp.scientificName})` : ''}</option>
                 ))}
               </select>
             </div>

@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -5244,6 +5244,66 @@ test('Production Dashboard Species Isolation: zero sales products when unproduce
     'ProductionReportsHub matrix pivot must be keyed on distinct species from monthEntries, not sales catalog'
   );
 });
+
+// ============================================================================
+// SUITE 70: Purchase Module Master Data Species Decoupling & Sales Product Exclusion
+// ============================================================================
+test('Purchase Module Master Data Species Decoupling & Sales Product Exclusion', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify initialData.ts defines INITIAL_PURCHASE_SPECIES as an empty array, decoupled from VERIFIED_SPECIES
+  const initialDataCode = fs.readFileSync(path.resolve('src/data/initialData.ts'), 'utf8');
+  const exportSalesDataCode = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
+  assert.ok(
+    initialDataCode.includes('export const INITIAL_PURCHASE_SPECIES: Species[] = [];'),
+    'initialData.ts must export INITIAL_PURCHASE_SPECIES as empty array'
+  );
+  assert.ok(
+    exportSalesDataCode.includes('export const VERIFIED_SPECIES: Species[] = ['),
+    'exportSalesData.ts must retain VERIFIED_SPECIES for Sales Module'
+  );
+  assert.ok(
+    initialDataCode.includes('export const INITIAL_SPECIES: Species[] = VERIFIED_SPECIES;'),
+    'initialData.ts must retain INITIAL_SPECIES for Sales Module'
+  );
+
+  // 2. DataContext.tsx provides purchaseSpecies state, CRUD methods, and purgePurchaseModuleData resets purchaseSpecies to []
+  const dataContextCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataContextCode.includes('purchaseSpecies: Species[]'), 'DataContextType must include purchaseSpecies');
+  assert.ok(dataContextCode.includes('addPurchaseSpecies: (species: Omit<Species, \'id\'>) => void'), 'DataContextType must include addPurchaseSpecies');
+  assert.ok(dataContextCode.includes('updatePurchaseSpecies: (id: string, updates: Partial<Species>) => void'), 'DataContextType must include updatePurchaseSpecies');
+  assert.ok(dataContextCode.includes('deletePurchaseSpecies: (id: string) => { success: boolean; message?: string };'), 'DataContextType must include deletePurchaseSpecies');
+  assert.ok(dataContextCode.includes('togglePurchaseSpeciesActive: (id: string) => void'), 'DataContextType must include togglePurchaseSpeciesActive');
+  assert.ok(dataContextCode.includes('isSalesExportProduct'), 'DataContext must implement isSalesExportProduct filter');
+  assert.ok(dataContextCode.includes('setPurchaseSpecies([])'), 'purgePurchaseModuleData must reset purchaseSpecies to []');
+
+  // 3. MasterDataManager.tsx uses purchaseSpecies for species tab, not sales products
+  const masterManagerCode = fs.readFileSync(path.resolve('src/components/master/MasterDataManager.tsx'), 'utf8');
+  assert.ok(masterManagerCode.includes('purchaseSpecies'), 'MasterDataManager must destructure purchaseSpecies');
+  assert.ok(masterManagerCode.includes('deletePurchaseSpecies'), 'MasterDataManager must use deletePurchaseSpecies');
+  assert.ok(masterManagerCode.includes('togglePurchaseSpeciesActive'), 'MasterDataManager must use togglePurchaseSpeciesActive');
+  assert.ok(masterManagerCode.includes('No purchase species added yet'), 'MasterDataManager must display accurate empty state for purchase species');
+  assert.ok(!masterManagerCode.includes('item.commercialName'), 'MasterDataManager should not display commercialName header');
+
+  // 4. PurchaseEntryForm and PurchaseList use purchaseSpecies
+  const entryFormCode = fs.readFileSync(path.resolve('src/components/purchase/PurchaseEntryForm.tsx'), 'utf8');
+  assert.ok(entryFormCode.includes('purchaseSpecies'), 'PurchaseEntryForm must use purchaseSpecies');
+  assert.ok(!entryFormCode.includes('species.map(') && !entryFormCode.includes('useData();\n  const { species'), 'PurchaseEntryForm must not use sales species');
+
+  const listCode = fs.readFileSync(path.resolve('src/components/purchase/PurchaseList.tsx'), 'utf8');
+  assert.ok(listCode.includes('purchaseSpecies'), 'PurchaseList must use purchaseSpecies');
+
+  // 5. DashboardOverview uses purchaseSpecies
+  const dashboardCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf8');
+  assert.ok(dashboardCode.includes('purchaseSpecies'), 'DashboardOverview must use purchaseSpecies');
+
+  // 6. CommercialSpeciesManager preserves sales products while linking to purchaseSpecies
+  const commCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
+  assert.ok(commCode.includes('purchaseSpecies'), 'CommercialSpeciesManager must reference purchaseSpecies for distinct procurement origins');
+  assert.ok(commCode.includes('filteredSpecies = species.filter'), 'CommercialSpeciesManager must manage commercial export species');
+});
+
 
 
 

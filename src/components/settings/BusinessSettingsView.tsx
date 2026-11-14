@@ -461,7 +461,7 @@ export const BusinessSettingsView: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 space-y-1">
                 <span className="font-bold text-rose-800 uppercase text-[10px] tracking-wider block">Procurement Module Purge</span>
                 <p className="text-[11px] leading-relaxed">
-                  All <strong>purchase entries, voucher payments, purchase returns, suppliers, locations, grades, sizes, counts, expense types, and bank accounts</strong> in the purchase module will be deleted. Commercial Export Invoices and Sales Masters remain completely untouched.
+                  All <strong>purchase entries, voucher payments, purchase returns, purchase species, suppliers, locations, grades, sizes, counts, expense types, and bank accounts</strong> in the purchase module will be deleted. Commercial Export Invoices and Sales Masters remain completely untouched.
                 </p>
               </div>
             </>

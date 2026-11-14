@@ -26,7 +26,7 @@ interface DashboardOverviewProps {
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigateTab }) => {
-  const { purchases, suppliers, species, locations, expenseTypes } = useData();
+  const { purchases, suppliers, purchaseSpecies, locations, expenseTypes } = useData();
 
   // Dashboard Multiple Filters (all combinable)
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
@@ -34,15 +34,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState('');
 
-  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+  const speciesMap = useMemo(() => new Map(purchaseSpecies.map((sp) => [sp.id, sp])), [purchaseSpecies]);
 
   // Robust species resolver across ID, code, name, rawSpeciesName, scientificName
   const findSpecies = useMemo(() => {
-    const byId = new Map(species.map((sp) => [sp.id.toLowerCase(), sp]));
-    const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
-    const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
-    const byRaw = new Map<string, (typeof species)[0]>();
-    species.forEach((sp) => {
+    const byId = new Map(purchaseSpecies.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(purchaseSpecies.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(purchaseSpecies.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof purchaseSpecies)[0]>();
+    purchaseSpecies.forEach((sp) => {
       if (sp.rawSpeciesName) {
         byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
       }
@@ -57,7 +57,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         byCode.get(lower) ||
         byName.get(lower) ||
         byRaw.get(lower) ||
-        species.find(
+        purchaseSpecies.find(
           (sp) =>
             sp.id.toLowerCase() === lower ||
             sp.code.toLowerCase() === lower ||
@@ -67,7 +67,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         )
       );
     };
-  }, [species]);
+  }, [purchaseSpecies]);
 
   const isAutoString = (str?: string): boolean => {
     if (!str) return false;
@@ -154,8 +154,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         }
       });
     } else {
-      // In initial state before any purchases are recorded/uploaded, show registered raw species names (never sales products)
-      species.forEach((sp) => {
+      // In initial state before any purchases are recorded/uploaded, show registered raw purchase species (never sales products)
+      purchaseSpecies.forEach((sp) => {
         const rawName = sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)
           ? sp.rawSpeciesName.trim()
           : sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
@@ -173,7 +173,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     }
 
     return options.sort((a, b) => a.label.localeCompare(b.label));
-  }, [purchases, species, findSpecies]);
+  }, [purchases, purchaseSpecies, findSpecies]);
 
   const resolveSpeciesName = (spId: string): string => {
     if (!spId) return 'Unspecified Species';

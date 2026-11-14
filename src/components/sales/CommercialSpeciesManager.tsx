@@ -50,7 +50,7 @@ const PROCESSING_TYPES = [
 ];
 
 export const CommercialSpeciesManager: React.FC = () => {
-  const { species, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
+  const { species, purchaseSpecies, addSpecies, updateSpecies, deleteSpecies, toggleSpeciesActive } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
@@ -81,11 +81,14 @@ export const CommercialSpeciesManager: React.FC = () => {
   // Collect distinct raw catch species names from procurement
   const distinctPurchaseSpecies = useMemo(() => {
     const set = new Set<string>();
+    purchaseSpecies.forEach((s) => {
+      if (s.name && s.name.trim()) {
+        set.add(s.name.trim());
+      }
+    });
     species.forEach((s) => {
       if (s.rawSpeciesName && s.rawSpeciesName.trim()) {
         set.add(s.rawSpeciesName.trim());
-      } else if (s.name && s.name.trim()) {
-        set.add(s.name.trim());
       }
     });
     // Add default popular procurement raw species if list is empty
@@ -98,7 +101,7 @@ export const CommercialSpeciesManager: React.FC = () => {
       set.add('Ribbon Fish');
     }
     return Array.from(set).sort();
-  }, [species]);
+  }, [purchaseSpecies, species]);
 
   const filteredSpecies = species.filter((sp) => {
     if (categoryFilter && sp.category !== categoryFilter) return false;

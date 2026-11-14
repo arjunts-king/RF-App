@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { suppliers, species, grades, sizes, counts, locations, bankAccounts, expenseTypes, addPurchase } = useData();
+  const { suppliers, purchaseSpecies, grades, sizes, counts, locations, bankAccounts, expenseTypes, addPurchase } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
@@ -63,7 +63,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
   // Active master lists
   const activeSuppliers = suppliers.filter((s) => s.active);
-  const activeSpecies = species.filter((s) => s.active);
+  const activeSpecies = purchaseSpecies.filter((s) => s.active);
   const activeGrades = grades.filter((g) => g.active);
   const activeSizes = sizes.filter((s) => s.active);
   const activeCounts = counts.filter((c) => c.active);
@@ -93,7 +93,7 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
 
   const numWeight = parseFloat(weightKg) || 0;
   const numYield = parseFloat(yieldWeightKg) || 0;
-  const selectedSpecies = species.find((s) => s.id === speciesId);
+  const selectedSpecies = purchaseSpecies.find((s) => s.id === speciesId);
   const isYieldBasis = selectedSpecies?.inventoryQuantityBasis === 'yield' || selectedSpecies?.name?.toLowerCase().includes('vannamei');
   const liveYieldPct = numWeight > 0 && numYield > 0 ? Number(((numYield / numWeight) * 100).toFixed(2)) : undefined;
   const liveProcessingLoss = numWeight > 0 && numYield > 0 ? Number((numWeight - numYield).toFixed(2)) : undefined;
@@ -441,9 +441,11 @@ export const PurchaseEntryForm: React.FC<{ onSuccess?: () => void }> = ({ onSucc
                 required
                 className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
               >
-                <option value="">-- Select Species --</option>
+                <option value="">
+                  {activeSpecies.length === 0 ? '-- No purchase species registered (Add in Master Data) --' : '-- Select Species --'}
+                </option>
                 {activeSpecies.map((sp) => {
-                  const displayName = sp.rawSpeciesName || sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+                  const displayName = sp.rawSpeciesName || sp.name.replace(/^Frozen\s+/i, '');
                   return (
                     <option key={sp.id} value={sp.id}>
                       {displayName} ({sp.category})

@@ -86,6 +86,7 @@ interface DataContextType {
 
   suppliers: Supplier[];
   species: Species[];
+  purchaseSpecies: Species[];
   grades: Grade[];
   sizes: Size[];
   counts: Count[];
@@ -117,6 +118,11 @@ interface DataContextType {
   updateSpecies: (id: string, updates: Partial<Species>) => void;
   deleteSpecies: (id: string) => { success: boolean; message?: string };
   toggleSpeciesActive: (id: string) => void;
+
+  addPurchaseSpecies: (species: Omit<Species, 'id'>) => void;
+  updatePurchaseSpecies: (id: string, updates: Partial<Species>) => void;
+  deletePurchaseSpecies: (id: string) => { success: boolean; message?: string };
+  togglePurchaseSpeciesActive: (id: string) => void;
 
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   updateGrade: (id: string, updates: Partial<Grade>) => void;
@@ -245,6 +251,7 @@ interface DataContextType {
   // Bulk Excel Import Actions
   bulkImportSuppliers: (records: Record<string, any>[], updateExisting?: boolean) => { added: number; updated: number; errors: string[] };
   bulkImportSpecies: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  bulkImportPurchaseSpecies: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportGrades: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportSizes: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
   bulkImportCounts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
@@ -316,7 +323,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Fresh storage key version v2 to ensure clean empty slate on update
   const DB_PREFIX = 'seafood_v2_';
   const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
-  const PURCHASE_DATASET_VERSION = 'v27_purchase_module_purged_v1';
+  const PURCHASE_DATASET_VERSION = 'v29_purchase_species_isolated_v1';
+
+  // Helper to identify commercial export sales products (from VERIFIED_SPECIES)
+  const isSalesExportProduct = (sp: { id?: string; code?: string; name?: string }): boolean => {
+    if (!sp) return false;
+    const idLower = (sp.id || '').toLowerCase();
+    const codeLower = (sp.code || '').toLowerCase();
+    const nameLower = (sp.name || '').trim().toLowerCase();
+    if (codeLower.startsWith('prd-')) return true;
+    if (nameLower.startsWith('frozen ')) return true;
+    if (nameLower.includes('[whole fish') || nameLower.includes('master carton') || nameLower.includes('boat-landed') || nameLower.includes('b grade')) return true;
+    return VERIFIED_SPECIES.some(
+      (v) =>
+        v.id.toLowerCase() === idLower ||
+        v.code.toLowerCase() === codeLower ||
+        v.name.trim().toLowerCase() === nameLower
+    );
+  };
 
   // Synchronize clean slate purge for purchase module
   const currentPurchaseVersion = localStorage.getItem(`${DB_PREFIX}purchase_dataset_version`);
@@ -332,7 +356,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     safeSet(`${DB_PREFIX}counts`, []);
     safeSet(`${DB_PREFIX}expense_types`, []);
     safeSet(`${DB_PREFIX}bank_accounts`, []);
-    safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
+    safeSet(`${DB_PREFIX}purchase_species`, []);
   }
 
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(() => {
@@ -344,6 +368,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) return [];
     const saved = localStorage.getItem(`${DB_PREFIX}suppliers`);
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
+  });
+
+  // Dedicated Purchase Species State (strictly raw seafood varieties for procurement, 0 sales products)
+  const [purchaseSpecies, setPurchaseSpecies] = useState<Species[]>(() => {
+    if (currentPurchaseVersion !== PURCHASE_DATASET_VERSION) {
+      safeSet(`${DB_PREFIX}purchase_species`, []);
+      return [];
+    }
+    const saved = localStorage.getItem(`${DB_PREFIX}purchase_species`);
+    if (!saved) return [];
+    try {
+      const parsed: Species[] = JSON.parse(saved);
+      const filtered = Array.isArray(parsed) ? parsed.filter((sp) => !isSalesExportProduct(sp)) : [];
+      safeSet(`${DB_PREFIX}purchase_species`, filtered);
+      return filtered;
+    } catch {
+      return [];
+    }
   });
 
   const [species, setSpecies] = useState<Species[]>(() => {
@@ -955,6 +997,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           idbPayments,
           idbProcessing,
           idbSpecies,
+          idbPurchaseSpecies,
           idbSettings
         ] = await Promise.all([
           getNewerIdbSnapshot<SalesInvoice[]>(`${DB_PREFIX}sales_invoices`),
@@ -965,6 +1008,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           getNewerIdbSnapshot<PaymentRecord[]>(`${DB_PREFIX}payments`),
           getNewerIdbSnapshot<DailyProcessingEntry[]>(`${DB_PREFIX}processing_entries`),
           getNewerIdbSnapshot<Species[]>(`${DB_PREFIX}species`),
+          getNewerIdbSnapshot<Species[]>(`${DB_PREFIX}purchase_species`),
           getNewerIdbSnapshot<BusinessSettings>(`${DB_PREFIX}settings`)
         ]);
         if (cancelled) return;
@@ -1001,6 +1045,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!mutatedKeysRef.current.has('species') && Array.isArray(idbSpecies) && idbSpecies.length > 0) {
           setSpecies(idbSpecies);
         }
+        if (!mutatedKeysRef.current.has('purchase_species') && Array.isArray(idbPurchaseSpecies)) {
+          if (!isPurchasePurged) {
+            setPurchaseSpecies(idbPurchaseSpecies.filter((sp) => !isSalesExportProduct(sp)));
+          } else {
+            safeSet(`${DB_PREFIX}purchase_species`, []);
+          }
+        }
         if (!mutatedKeysRef.current.has('settings') && idbSettings && typeof idbSettings === 'object') {
           setBusinessSettings(idbSettings);
         }
@@ -1019,6 +1070,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}settings`, businessSettings); }, [businessSettings, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}suppliers`, suppliers); }, [suppliers, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}species`, species); }, [species, isIdbReady]);
+  useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}purchase_species`, purchaseSpecies); }, [purchaseSpecies, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}grades`, grades); }, [grades, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sizes`, sizes); }, [sizes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}counts`, counts); }, [counts, isIdbReady]);
@@ -1171,6 +1223,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const toggleSpeciesActive = (id: string) => {
     setSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
+  };
+
+  // PURCHASE SPECIES (Procurement raw seafood catch varieties, strictly separate from sales products)
+  const addPurchaseSpecies = (spData: Omit<Species, 'id'>) => {
+    const newSpecies: Species = { ...spData, id: `spe-pur-${Date.now()}` };
+    setPurchaseSpecies((prev) => [...prev, newSpecies]);
+    logAudit('CREATE', 'Purchase Species', newSpecies.code, { newValues: newSpecies });
+    showToast(`Purchase species "${newSpecies.name}" registered.`, 'success');
+  };
+
+  const updatePurchaseSpecies = (id: string, updates: Partial<Species>) => {
+    const old = purchaseSpecies.find((s) => s.id === id);
+    setPurchaseSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    logAudit('EDIT', 'Purchase Species', old?.code || id, { oldValues: old, newValues: updates });
+    showToast('Purchase species updated.', 'success');
+  };
+
+  const deletePurchaseSpecies = (id: string): { success: boolean; message?: string } => {
+    const hasTransactions = purchases.some((p) => p.speciesId === id);
+    if (hasTransactions) {
+      showToast('Referential Integrity: Cannot delete species with purchase transactions. Deactivate instead.', 'error');
+      return { success: false, message: 'Species referenced in transactions.' };
+    }
+    const old = purchaseSpecies.find((s) => s.id === id);
+    setPurchaseSpecies((prev) => prev.filter((s) => s.id !== id));
+    logAudit('DELETE', 'Purchase Species', old?.code || id, { oldValues: old });
+    showToast('Purchase species deleted.', 'info');
+    return { success: true };
+  };
+
+  const togglePurchaseSpeciesActive = (id: string) => {
+    setPurchaseSpecies((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
   };
 
   // GRADES
@@ -3620,7 +3704,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCounts([]);
     setExpenseTypes([]);
     setBankAccounts([]);
-    setSpecies(VERIFIED_SPECIES);
+    setPurchaseSpecies([]);
 
     safeSet(`${DB_PREFIX}purchases`, []);
     safeSet(`${DB_PREFIX}payments`, []);
@@ -3632,7 +3716,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     safeSet(`${DB_PREFIX}counts`, []);
     safeSet(`${DB_PREFIX}expense_types`, []);
     safeSet(`${DB_PREFIX}bank_accounts`, []);
-    safeSet(`${DB_PREFIX}species`, VERIFIED_SPECIES);
+    safeSet(`${DB_PREFIX}purchase_species`, []);
     safeSet(`${DB_PREFIX}purchase_dataset_version`, PURCHASE_DATASET_VERSION);
 
     logAudit('DELETE', 'Procurement', 'Purge', { changeReason: 'User purged all purchase transactions and purchase master reference data' });
@@ -4178,6 +4262,72 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { added, updated, errors };
   };
 
+  const bulkImportPurchaseSpecies = (records: Record<string, any>[]) => {
+    let added = 0;
+    let updated = 0;
+    const errors: string[] = [];
+    const currentList = [...purchaseSpecies];
+
+    records.forEach((row, idx) => {
+      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (!hasData) return;
+
+      const rawName = getFlexibleValue(row, [
+        'speciesname',
+        'species',
+        'rawspeciesname',
+        'rawspecies',
+        'catchname',
+        'fish',
+        'variety',
+        'name'
+      ]);
+      const name = String(rawName || '').trim();
+      if (!name) {
+        errors.push(`Row ${idx + 1}: Purchase species name is required.`);
+        return;
+      }
+      if (isSalesExportProduct({ name })) {
+        errors.push(`Row ${idx + 1}: Cannot import finished sales export product into purchase master data.`);
+        return;
+      }
+
+      const rawCode = getFlexibleValue(row, ['code', 'speciescode']);
+      const code = rawCode ? String(rawCode).trim() : `SPE-${String(currentList.length + 1).padStart(3, '0')}`;
+      const scientificName = String(getFlexibleValue(row, ['scientificname', 'scientific']) || '').trim();
+      const category = String(getFlexibleValue(row, ['category', 'group']) || 'Fish').trim();
+
+      const existingIdx = currentList.findIndex(
+        (s) =>
+          (code && normalizeKey(s.code) === normalizeKey(code)) ||
+          normalizeKey(s.name) === normalizeKey(name)
+      );
+
+      const spObj: Species = {
+        id: existingIdx >= 0 ? currentList[existingIdx].id : `spe-pur-${Date.now()}-${idx}`,
+        code,
+        name,
+        rawSpeciesName: name,
+        scientificName,
+        category,
+        active: true
+      };
+
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = spObj;
+        updated++;
+      } else {
+        currentList.push(spObj);
+        added++;
+      }
+    });
+
+    if (added > 0 || updated > 0) {
+      setPurchaseSpecies(currentList);
+    }
+    return { added, updated, errors };
+  };
+
   const bulkImportGrades = (records: Record<string, any>[]) => {
     let added = 0;
     let updated = 0;
@@ -4523,7 +4673,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newPurchases: Purchase[] = [];
 
     const mutableSuppliers = [...suppliers];
-    const mutableSpecies = [...species];
+    const mutableSpecies = [...purchaseSpecies];
     const mutableLocations = [...locations];
     const mutableGrades = [...grades];
     const mutableSizes = [...sizes];
@@ -5364,7 +5514,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (newPurchases.length > 0) {
       setPurchases((prev) => [...prev, ...newPurchases]);
       if (createdSuppliers > 0) setSuppliers([...mutableSuppliers]);
-      if (createdSpecies > 0) setSpecies([...mutableSpecies]);
+      if (createdSpecies > 0) setPurchaseSpecies([...mutableSpecies]);
       if (createdLocations > 0) setLocations([...mutableLocations]);
       if (mutableGrades.length > grades.length) setGrades([...mutableGrades]);
       if (mutableSizes.length > sizes.length) setSizes([...mutableSizes]);
@@ -6968,6 +7118,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateBusinessSettings,
     suppliers,
     species,
+    purchaseSpecies,
     grades,
     sizes,
     counts,
@@ -6998,6 +7149,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateSpecies,
     deleteSpecies,
     toggleSpeciesActive,
+
+    addPurchaseSpecies,
+    updatePurchaseSpecies,
+    deletePurchaseSpecies,
+    togglePurchaseSpeciesActive,
 
     addGrade,
     updateGrade,
@@ -7094,6 +7250,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     bulkImportSuppliers,
     bulkImportSpecies,
+    bulkImportPurchaseSpecies,
     bulkImportGrades,
     bulkImportSizes,
     bulkImportCounts,
@@ -7140,6 +7297,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     businessSettings,
     suppliers,
     species,
+    purchaseSpecies,
     grades,
     sizes,
     counts,

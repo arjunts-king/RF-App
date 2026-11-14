@@ -83,6 +83,7 @@ export const INITIAL_USERS: User[] = [
 
 // Base default states populated with verified commercial export masters
 export const INITIAL_SUPPLIERS: Supplier[] = [];
+export const INITIAL_PURCHASE_SPECIES: Species[] = [];
 export const INITIAL_SPECIES: Species[] = VERIFIED_SPECIES;
 export const INITIAL_GRADES: Grade[] = [];
 export const INITIAL_SIZES: Size[] = [];
