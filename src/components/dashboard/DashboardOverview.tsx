@@ -34,16 +34,201 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState('');
 
+  const speciesMap = useMemo(() => new Map(species.map((sp) => [sp.id, sp])), [species]);
+
+  // Robust species resolver across ID, code, name, rawSpeciesName, scientificName
+  const findSpecies = useMemo(() => {
+    const byId = new Map(species.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof species)[0]>();
+    species.forEach((sp) => {
+      if (sp.rawSpeciesName) {
+        byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+      }
+    });
+
+    return (idOrKey: string) => {
+      if (!idOrKey) return undefined;
+      const clean = idOrKey.trim();
+      const lower = clean.toLowerCase();
+      return (
+        byId.get(lower) ||
+        byCode.get(lower) ||
+        byName.get(lower) ||
+        byRaw.get(lower) ||
+        species.find(
+          (sp) =>
+            sp.id.toLowerCase() === lower ||
+            sp.code.toLowerCase() === lower ||
+            sp.name.toLowerCase() === lower ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+        )
+      );
+    };
+  }, [species]);
+
+  // Comprehensive Options for MultiSelectFilter (Registered Master + Distinct Historical Purchase Species)
+  const speciesOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string; subLabel?: string; badge?: string }[] = [];
+
+    // 1. Registered Master Species
+    species.forEach((sp) => {
+      seen.add(sp.id.toLowerCase());
+      seen.add(sp.name.trim().toLowerCase());
+      if (sp.code) seen.add(sp.code.trim().toLowerCase());
+      options.push({
+        id: sp.id,
+        label: sp.name,
+        subLabel: sp.scientificName || (sp.category ? sp.category : undefined),
+        badge: sp.code || (sp.rawSpeciesName ? sp.rawSpeciesName : undefined)
+      });
+    });
+
+    // 2. Any additional distinct species found in existing purchases
+    purchases.forEach((p) => {
+      const rawId = (p.speciesId || '').trim();
+      if (!rawId) return;
+      const lower = rawId.toLowerCase();
+      if (!seen.has(lower)) {
+        const matched = findSpecies(rawId);
+        if (matched) {
+          seen.add(matched.id.toLowerCase());
+          seen.add(matched.name.trim().toLowerCase());
+          if (!options.some((o) => o.id === matched.id)) {
+            options.push({
+              id: matched.id,
+              label: matched.name,
+              subLabel: matched.scientificName || undefined,
+              badge: matched.code || undefined
+            });
+          }
+        } else {
+          seen.add(lower);
+          options.push({
+            id: rawId,
+            label: rawId,
+            badge: 'Recorded'
+          });
+        }
+      }
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [species, purchases, findSpecies]);
+
+  const resolveSpeciesName = (spId: string): string => {
+    if (!spId) return 'Unspecified Species';
+    const direct = speciesMap.get(spId);
+    if (direct) return direct.name;
+    const found = findSpecies(spId);
+    if (found) return found.name;
+    const opt = speciesOptions.find((o) => o.id === spId);
+    if (opt) return opt.label;
+    return spId;
+  };
+
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
       if (p.isVoided) return false;
-      if (selectedSupplierIds.length > 0 && !selectedSupplierIds.includes(p.supplierId)) return false;
-      if (selectedSpeciesIds.length > 0 && !selectedSpeciesIds.includes(p.speciesId)) return false;
-      if (selectedLocationIds.length > 0 && !selectedLocationIds.includes(p.locationId)) return false;
-      if (dateFilter && p.purchaseDate !== dateFilter) return false;
+
+      // Robust Supplier Filter
+      if (selectedSupplierIds.length > 0) {
+        const rawSuppId = (p.supplierId || '').trim().toLowerCase();
+        const matchesSupplier = selectedSupplierIds.some((selId) => {
+          if (rawSuppId === selId.toLowerCase()) return true;
+          const supp = suppliers.find((s) => s.id === selId || s.code === selId);
+          if (supp) {
+            if (rawSuppId === supp.id.toLowerCase()) return true;
+            if (rawSuppId === supp.code.toLowerCase()) return true;
+            if (rawSuppId === supp.name.trim().toLowerCase()) return true;
+          }
+          return false;
+        });
+        if (!matchesSupplier) return false;
+      }
+
+      // Robust Species Filter: Multi-key matching supporting direct ID, code, name, rawSpeciesName, scientificName
+      if (selectedSpeciesIds.length > 0) {
+        const rawEntrySpId = (p.speciesId || '').trim();
+        const entrySp = findSpecies(rawEntrySpId);
+        const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+        const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+        const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+        const entrySpSci = (entrySp?.scientificName || '').trim().toLowerCase();
+
+        const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
+          // Direct ID match
+          if (rawEntrySpId === selectedId) return true;
+          if (rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+
+          // Match by resolved species objects
+          const selSp = findSpecies(selectedId);
+          if (entrySp && selSp && entrySp.id === selSp.id) return true;
+
+          // Match entry raw ID against selected species object properties
+          if (selSp) {
+            if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase()) return true;
+            if (rawEntrySpId.toLowerCase() === selSp.code.toLowerCase()) return true;
+            if (rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+            if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+            if (selSp.scientificName && rawEntrySpId.toLowerCase() === selSp.scientificName.trim().toLowerCase()) return true;
+
+            if (entrySpName && entrySpName === selSp.name.trim().toLowerCase()) return true;
+            if (entrySpCode && entrySpCode === selSp.code.toLowerCase()) return true;
+            if (entrySpRaw && selSp.rawSpeciesName && entrySpRaw === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+          }
+
+          // Match selected ID against entry species object properties
+          if (entrySp) {
+            const selLower = selectedId.trim().toLowerCase();
+            if (selLower === entrySp.id.toLowerCase()) return true;
+            if (selLower === entrySpCode) return true;
+            if (selLower === entrySpName) return true;
+            if (entrySpRaw && selLower === entrySpRaw) return true;
+            if (entrySpSci && selLower === entrySpSci) return true;
+          }
+
+          // Check selected option label
+          const selOpt = speciesOptions.find((o) => o.id === selectedId);
+          if (selOpt) {
+            const optLabel = selOpt.label.trim().toLowerCase();
+            if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+            if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
+          }
+
+          return false;
+        });
+
+        if (!matchesSpecies) return false;
+      }
+
+      // Robust Location Filter
+      if (selectedLocationIds.length > 0) {
+        const rawLocId = (p.locationId || '').trim().toLowerCase();
+        const matchesLoc = selectedLocationIds.some((selId) => {
+          if (rawLocId === selId.toLowerCase()) return true;
+          const loc = locations.find((l) => l.id === selId || l.code === selId);
+          if (loc) {
+            if (rawLocId === loc.id.toLowerCase()) return true;
+            if (rawLocId === loc.code.toLowerCase()) return true;
+            if (rawLocId === loc.name.trim().toLowerCase()) return true;
+          }
+          return false;
+        });
+        if (!matchesLoc) return false;
+      }
+
+      // Date / Month Filter
+      if (dateFilter) {
+        if (p.purchaseDate !== dateFilter && !p.purchaseDate.startsWith(dateFilter)) return false;
+      }
+
       return true;
     });
-  }, [purchases, selectedSupplierIds, selectedSpeciesIds, selectedLocationIds, dateFilter]);
+  }, [purchases, selectedSupplierIds, selectedSpeciesIds, selectedLocationIds, dateFilter, findSpecies, speciesOptions, suppliers, locations]);
 
   // Memoized KPI Calculations
   const kpis = useMemo(() => {
@@ -82,16 +267,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
   // Charts 1, 2, 3: Single-pass O(P) grouping accumulator instead of repeated O(N * M) filtering
   const { speciesData, expenseBreakdownData, supplierOutstandingData } = useMemo(() => {
-    const spMap = new Map<string, { weight: number; cost: number }>();
+    const spAccumulator = new Map<string, { name: string; weight: number; cost: number }>();
     const expMap = new Map<string, number>();
     const suppMap = new Map<string, number>();
 
     for (const p of filteredPurchases) {
       if (p.speciesId) {
-        const cur = spMap.get(p.speciesId) || { weight: 0, cost: 0 };
+        const resolvedName = resolveSpeciesName(p.speciesId);
+        const cur = spAccumulator.get(resolvedName) || { name: resolvedName, weight: 0, cost: 0 };
         cur.weight += p.weightKg || 0;
         cur.cost += p.totalCost || 0;
-        spMap.set(p.speciesId, cur);
+        spAccumulator.set(resolvedName, cur);
       }
       if (p.expenseBreakdown) {
         for (const [expId, amt] of Object.entries(p.expenseBreakdown)) {
@@ -105,12 +291,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       }
     }
 
-    const speciesList = species
-      .map((sp) => {
-        const data = spMap.get(sp.id);
-        return { name: sp.name, weight: data?.weight || 0, cost: data?.cost || 0 };
-      })
-      .filter((d) => d.weight > 0);
+    const speciesList = Array.from(spAccumulator.values())
+      .filter((d) => d.weight > 0)
+      .sort((a, b) => b.weight - a.weight);
 
     const expenseList = expenseTypes
       .map((exp) => ({ name: exp.name, total: expMap.get(exp.id) || 0 }))
@@ -125,7 +308,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       expenseBreakdownData: expenseList,
       supplierOutstandingData: supplierList
     };
-  }, [species, expenseTypes, suppliers, filteredPurchases]);
+  }, [filteredPurchases, expenseTypes, suppliers, speciesMap, findSpecies, speciesOptions]);
 
   const hasActiveFilters = Boolean(
     dateFilter ||
@@ -145,11 +328,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
   const supplierOptions = useMemo(
     () => suppliers.map((s) => ({ id: s.id, label: s.name, subLabel: s.district ? `${s.district}, ${s.state}` : s.state || s.code || undefined })),
     [suppliers]
-  );
-
-  const speciesOptions = useMemo(
-    () => species.map((sp) => ({ id: sp.id, label: sp.name, subLabel: sp.scientificName || undefined })),
-    [species]
   );
 
   const locationOptions = useMemo(
@@ -194,13 +372,25 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600 transition"
-              title="Filter by Purchase Date"
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:border-rose-600 transition text-xs"
+                title="Filter by Purchase Date"
+              />
+              {dateFilter && (
+                <button
+                  type="button"
+                  onClick={() => setDateFilter('')}
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-ink-700 transition"
+                  title="View all dates"
+                >
+                  All Dates
+                </button>
+              )}
+            </div>
 
             <MultiSelectFilter
               label="Suppliers"
@@ -278,17 +468,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             })}
 
             {selectedSpeciesIds.map((id) => {
-              const sp = species.find((s) => s.id === id);
-              if (!sp) return null;
+              const displayName = resolveSpeciesName(id);
               return (
                 <span
                   key={id}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200"
                 >
-                  <span>Species: {sp.name}</span>
+                  <span>Species: {displayName}</span>
                   <button
                     onClick={() => setSelectedSpeciesIds(selectedSpeciesIds.filter((item) => item !== id))}
                     className="hover:text-blue-950"
+                    title="Remove species filter"
                   >
                     <X className="w-3 h-3" />
                   </button>

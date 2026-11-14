@@ -105,6 +105,72 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
   const locationMap = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
   const expenseTypeMap = useMemo(() => new Map(expenseTypes.map((e) => [e.id, e])), [expenseTypes]);
 
+  // Robust species resolver across ID, code, name, rawSpeciesName, scientificName
+  const findSpecies = useMemo(() => {
+    const byId = new Map(species.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof species)[0]>();
+    species.forEach((sp) => {
+      if (sp.rawSpeciesName) {
+        byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+      }
+    });
+
+    return (idOrKey: string) => {
+      if (!idOrKey) return undefined;
+      const clean = idOrKey.trim();
+      const lower = clean.toLowerCase();
+      return (
+        byId.get(lower) ||
+        byCode.get(lower) ||
+        byName.get(lower) ||
+        byRaw.get(lower) ||
+        species.find(
+          (sp) =>
+            sp.id.toLowerCase() === lower ||
+            sp.code.toLowerCase() === lower ||
+            sp.name.toLowerCase() === lower ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+        )
+      );
+    };
+  }, [species]);
+
+  const speciesOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string }[] = [];
+
+    species.forEach((sp) => {
+      seen.add(sp.id.toLowerCase());
+      seen.add(sp.name.trim().toLowerCase());
+      if (sp.code) seen.add(sp.code.trim().toLowerCase());
+      options.push({ id: sp.id, label: sp.name });
+    });
+
+    purchases.forEach((p) => {
+      const rawId = (p.speciesId || '').trim();
+      if (!rawId) return;
+      const lower = rawId.toLowerCase();
+      if (!seen.has(lower)) {
+        const matched = findSpecies(rawId);
+        if (matched) {
+          seen.add(matched.id.toLowerCase());
+          seen.add(matched.name.trim().toLowerCase());
+          if (!options.some((o) => o.id === matched.id)) {
+            options.push({ id: matched.id, label: matched.name });
+          }
+        } else {
+          seen.add(lower);
+          options.push({ id: rawId, label: rawId });
+        }
+      }
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [species, purchases, findSpecies]);
+
   // Precomputed returns by purchaseId Map to eliminate O(N*M) scans during rendering
   const returnsByPurchaseId = useMemo(() => {
     const map = new Map<string, number>();
@@ -122,7 +188,30 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     if (showVoided && !p.isVoided) return false;
 
     if (supplierFilter && p.supplierId !== supplierFilter) return false;
-    if (speciesFilter && p.speciesId !== speciesFilter) return false;
+    if (speciesFilter) {
+      const rawEntrySpId = (p.speciesId || '').trim();
+      const entrySp = findSpecies(rawEntrySpId);
+      const selSp = findSpecies(speciesFilter);
+
+      const matches =
+        rawEntrySpId === speciesFilter ||
+        rawEntrySpId.toLowerCase() === speciesFilter.toLowerCase() ||
+        (entrySp && selSp && entrySp.id === selSp.id) ||
+        (selSp && (
+          rawEntrySpId.toLowerCase() === selSp.id.toLowerCase() ||
+          rawEntrySpId.toLowerCase() === selSp.code.toLowerCase() ||
+          rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase() ||
+          (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase())
+        )) ||
+        (entrySp && (
+          speciesFilter.toLowerCase() === entrySp.id.toLowerCase() ||
+          speciesFilter.toLowerCase() === entrySp.code.toLowerCase() ||
+          speciesFilter.toLowerCase() === entrySp.name.trim().toLowerCase() ||
+          (entrySp.rawSpeciesName && speciesFilter.toLowerCase() === entrySp.rawSpeciesName.trim().toLowerCase())
+        ));
+
+      if (!matches) return false;
+    }
     if (statusFilter && p.paymentStatus !== statusFilter) return false;
 
     if (searchTerm) {
@@ -461,7 +550,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
   };
 
   const selectedSupplierObj = suppliers.find((s) => s.id === supplierFilter);
-  const selectedSpeciesObj = species.find((sp) => sp.id === speciesFilter);
+  const selectedSpeciesObj = species.find((sp) => sp.id === speciesFilter) || findSpecies(speciesFilter);
   const hasActiveFilters = Boolean(searchTerm || supplierFilter || speciesFilter || statusFilter || showVoided);
 
   const clearAllFilters = () => {
@@ -545,9 +634,9 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
               className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none transition"
             >
               <option value="">All Species</option>
-              {species.map((sp) => (
+              {speciesOptions.map((sp) => (
                 <option key={sp.id} value={sp.id}>
-                  {sp.name}
+                  {sp.label}
                 </option>
               ))}
             </select>

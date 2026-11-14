@@ -4678,8 +4678,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let resolvedSpecies: Species | undefined;
       if (speciesVal) {
         const spNorm = normalizeKey(String(speciesVal));
+        const rawTrim = String(speciesVal).trim().toLowerCase();
         resolvedSpecies = mutableSpecies.find(
-          (sp) => normalizeKey(sp.code) === spNorm || normalizeKey(sp.name) === spNorm
+          (sp) =>
+            normalizeKey(sp.code) === spNorm ||
+            normalizeKey(sp.name) === spNorm ||
+            (sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === spNorm) ||
+            (sp.scientificName && normalizeKey(sp.scientificName) === spNorm) ||
+            sp.code.toLowerCase() === rawTrim ||
+            sp.name.toLowerCase() === rawTrim ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === rawTrim) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === rawTrim)
         );
       }
       if (!resolvedSpecies) {

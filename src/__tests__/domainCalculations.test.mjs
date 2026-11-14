@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version to v24');
-  assert.ok(mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register sw.js?v=24');
+  assert.ok(swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -4541,6 +4541,201 @@ test('Production Dashboard Species Filter: multi-key matching, non-nil KPI aggre
     recordListCode.includes('rawSpeciesName'),
     'ProcessingRecordList must also check rawSpeciesName for speciesFilter resolution'
   );
+});
+
+// ============================================================================
+// SUITE 66: Purchase Dashboard Species Filter: multi-key matching, non-nil KPI aggregation, and grouping
+// ============================================================================
+test('Purchase Dashboard Species Filter: multi-key matching, non-nil KPI aggregation, and grouping', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  const mockSpeciesList = [
+    {
+      id: 'prd-001',
+      code: 'PRD-001',
+      name: 'Frozen RibbonFish B Grade',
+      rawSpeciesName: 'Ribbonfish Net',
+      scientificName: 'Lepturacanthus Savala',
+      category: 'Fish',
+      active: true
+    },
+    {
+      id: 'prd-003',
+      code: 'PRD-003',
+      name: 'Frozen Indian Mackerel',
+      rawSpeciesName: 'Mackerel',
+      scientificName: 'Rastrelliger kanagurta',
+      category: 'Fish',
+      active: true
+    },
+    {
+      id: 'prd-009',
+      code: 'PRD-009',
+      name: 'Vannamei White Shrimp HLSO',
+      rawSpeciesName: 'Vannamei',
+      scientificName: 'Litopenaeus vannamei',
+      category: 'Shrimp',
+      active: true
+    }
+  ];
+
+  const findSpeciesMock = (idOrKey) => {
+    if (!idOrKey) return undefined;
+    const clean = idOrKey.trim();
+    const lower = clean.toLowerCase();
+    return mockSpeciesList.find(
+      (sp) =>
+        sp.id.toLowerCase() === lower ||
+        sp.code.toLowerCase() === lower ||
+        sp.name.toLowerCase() === lower ||
+        (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+        (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+    );
+  };
+
+  const samplePurchases = [
+    // Lot 1: Stored by canonical ID 'prd-003'
+    {
+      id: 'pur-1',
+      purchaseId: 'PUR-00001',
+      purchaseDate: '2026-11-01',
+      speciesId: 'prd-003',
+      weightKg: 4000,
+      purchaseValue: 800000,
+      totalCost: 850000,
+      totalExpenses: 50000,
+      balancePayable: 200000,
+      isVoided: false
+    },
+    // Lot 2: Stored by raw species name 'Mackerel' (from harbour landing / Excel)
+    {
+      id: 'pur-2',
+      purchaseId: 'PUR-00002',
+      purchaseDate: '2026-11-03',
+      speciesId: 'Mackerel',
+      weightKg: 3500,
+      purchaseValue: 700000,
+      totalCost: 740000,
+      totalExpenses: 40000,
+      balancePayable: 150000,
+      isVoided: false
+    },
+    // Lot 3: Stored by code / uppercase 'PRD-003'
+    {
+      id: 'pur-3',
+      purchaseId: 'PUR-00003',
+      purchaseDate: '2026-11-05',
+      speciesId: 'PRD-003',
+      weightKg: 2500,
+      purchaseValue: 500000,
+      totalCost: 530000,
+      totalExpenses: 30000,
+      balancePayable: 100000,
+      isVoided: false
+    },
+    // Lot 4: Ribbonfish
+    {
+      id: 'pur-4',
+      purchaseId: 'PUR-00004',
+      purchaseDate: '2026-11-07',
+      speciesId: 'prd-001',
+      weightKg: 5000,
+      purchaseValue: 1200000,
+      totalCost: 1260000,
+      totalExpenses: 60000,
+      balancePayable: 300000,
+      isVoided: false
+    }
+  ];
+
+  const filterPurchasesBySpecies = (purchases, selectedSpeciesIds) => {
+    return purchases.filter((p) => {
+      if (p.isVoided) return false;
+      if (selectedSpeciesIds.length === 0) return true;
+
+      const rawEntrySpId = (p.speciesId || '').trim();
+      const entrySp = findSpeciesMock(rawEntrySpId);
+      const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+      const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+      const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+
+      return selectedSpeciesIds.some((selectedId) => {
+        if (rawEntrySpId === selectedId) return true;
+        if (rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+
+        const selSp = findSpeciesMock(selectedId);
+        if (entrySp && selSp && entrySp.id === selSp.id) return true;
+
+        if (selSp) {
+          if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase()) return true;
+          if (rawEntrySpId.toLowerCase() === selSp.code.toLowerCase()) return true;
+          if (rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+          if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+        }
+
+        if (entrySp) {
+          if (selectedId.toLowerCase() === entrySp.id.toLowerCase()) return true;
+          if (selectedId.toLowerCase() === entrySpCode) return true;
+          if (selectedId.toLowerCase() === entrySpName) return true;
+          if (entrySpRaw && selectedId.toLowerCase() === entrySpRaw) return true;
+        }
+
+        return false;
+      });
+    });
+  };
+
+  // TEST 1: User selects 'prd-003' (Frozen Indian Mackerel)
+  // Must match pur-1 ('prd-003'), pur-2 ('Mackerel'), and pur-3 ('PRD-003')
+  const mackerelPurchases = filterPurchasesBySpecies(samplePurchases, ['prd-003']);
+  assert.equal(mackerelPurchases.length, 3, 'Must match all 3 Mackerel purchases regardless of whether stored by ID, raw name, or code');
+  assert.deepEqual(mackerelPurchases.map((p) => p.id), ['pur-1', 'pur-2', 'pur-3']);
+
+  // Verify KPIs are NOT nil
+  const totalVolume = mackerelPurchases.reduce((s, p) => s + p.weightKg, 0);
+  const totalValue = mackerelPurchases.reduce((s, p) => s + p.purchaseValue, 0);
+  const totalCost = mackerelPurchases.reduce((s, p) => s + p.totalCost, 0);
+  const totalExpenses = mackerelPurchases.reduce((s, p) => s + p.totalExpenses, 0);
+  const totalOutstanding = mackerelPurchases.reduce((s, p) => s + p.balancePayable, 0);
+  const avgRate = totalVolume > 0 ? totalValue / totalVolume : 0;
+  const effectiveCost = totalVolume > 0 ? totalCost / totalVolume : 0;
+
+  assert.equal(totalVolume, 10000, 'Total Volume must be 10,000 Kg (not nil)');
+  assert.equal(totalValue, 2000000, 'Raw Purchase Value must be ₹20,00,000 (not nil)');
+  assert.equal(totalCost, 2120000, 'Final Landed Cost must be ₹21,20,000 (not nil)');
+  assert.equal(totalExpenses, 120000, 'Direct Expenses must be ₹1,20,000 (not nil)');
+  assert.equal(totalOutstanding, 450000, 'Outstanding Payables must be ₹4,50,000 (not nil)');
+  assert.equal(avgRate, 200, 'Average Buy Rate must be ₹200.00 / Kg (not nil)');
+  assert.equal(effectiveCost, 212, 'Effective Landed Rate must be ₹212.00 / Kg (not nil)');
+
+  // TEST 2: Accumulator groupings in speciesData
+  const spAccumulator = new Map();
+  for (const p of mackerelPurchases) {
+    const sp = findSpeciesMock(p.speciesId);
+    const resolvedName = sp?.name || p.speciesId;
+    const cur = spAccumulator.get(resolvedName) || { name: resolvedName, weight: 0, cost: 0 };
+    cur.weight += p.weightKg;
+    cur.cost += p.totalCost;
+    spAccumulator.set(resolvedName, cur);
+  }
+  const speciesList = Array.from(spAccumulator.values());
+  assert.equal(speciesList.length, 1);
+  assert.equal(speciesList[0].name, 'Frozen Indian Mackerel');
+  assert.equal(speciesList[0].weight, 10000, 'Grouped species weight must be 10,000 Kg (not nil)');
+
+  // TEST 3: Inspection of source files
+  const dashCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf8');
+  assert.ok(dashCode.includes('findSpecies'), 'DashboardOverview.tsx must implement findSpecies resolver');
+  assert.ok(dashCode.includes('rawSpeciesName'), 'DashboardOverview.tsx must check rawSpeciesName');
+  assert.ok(dashCode.includes('resolveSpeciesName'), 'DashboardOverview.tsx must use resolveSpeciesName for chips and chart');
+
+  const purListCode = fs.readFileSync(path.resolve('src/components/purchase/PurchaseList.tsx'), 'utf8');
+  assert.ok(purListCode.includes('findSpecies'), 'PurchaseList.tsx must implement findSpecies resolver');
+  assert.ok(purListCode.includes('rawSpeciesName'), 'PurchaseList.tsx must check rawSpeciesName');
+
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataCtxCode.includes('sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === spNorm'), 'DataContext bulkImportPurchases must resolve rawSpeciesName');
 });
 
 
