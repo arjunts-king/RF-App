@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -5019,6 +5019,230 @@ test('Delete All Purchase Transactions & Master Reference Data from Purchase Mod
   assert.equal(mockStorage.get('counts').length, 0, 'Counts must be 0');
   assert.equal(mockStorage.get('expense_types').length, 0, 'Expense types must be 0');
   assert.equal(mockStorage.get('bank_accounts').length, 0, 'Bank accounts must be 0');
+});
+
+// ============================================================================
+// SUITE 69: Production Dashboard Species Isolation from Sales Export Catalog
+// ============================================================================
+test('Production Dashboard Species Isolation: zero sales products when unproduced and authentic production naming', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Mock the 32 sales export master products
+  const salesExportSpecies = [
+    {
+      id: 'prd-001',
+      code: 'RF-HO',
+      name: 'Frozen RibbonFish [Whole fish, H&O]',
+      rawSpeciesName: 'Ribbonfish',
+      scientificName: 'Trichiurus lepturus',
+      category: 'Pelagic Finfish',
+      active: true
+    },
+    {
+      id: 'prd-002',
+      code: 'RF-B',
+      name: 'Frozen RibbonFish B Grade',
+      rawSpeciesName: 'Ribbonfish',
+      scientificName: 'Trichiurus lepturus',
+      category: 'Pelagic Finfish',
+      active: true
+    },
+    {
+      id: 'prd-003',
+      code: 'IM-WHOLE',
+      name: 'Frozen Indian Mackerel [Whole fish, boat-landed]',
+      rawSpeciesName: 'Indian Mackerel',
+      scientificName: 'Rastrelliger kanagurta',
+      category: 'Pelagic Finfish',
+      active: true
+    },
+    {
+      id: 'prd-004',
+      code: 'SQ-WHOLE',
+      name: 'Frozen Squid Whole [Boat landing / Trapped]',
+      rawSpeciesName: 'Squid',
+      scientificName: 'Loligo duvauceli',
+      category: 'Squid / Cuttlefish',
+      active: true
+    },
+    {
+      id: 'prd-032',
+      code: 'UNPRODUCED-SALES',
+      name: 'Frozen Unproduced Sales Product 10kg Master Carton [Export Ready]',
+      rawSpeciesName: 'Unproduced Fish',
+      scientificName: 'Pisces unproduced',
+      category: 'Pelagic Finfish',
+      active: true
+    }
+  ];
+
+  const findSpeciesMock = (term) => {
+    if (!term) return undefined;
+    const clean = String(term).trim().toLowerCase();
+    return salesExportSpecies.find(
+      (s) =>
+        s.id.toLowerCase() === clean ||
+        s.code.toLowerCase() === clean ||
+        s.name.trim().toLowerCase() === clean ||
+        (s.rawSpeciesName && s.rawSpeciesName.trim().toLowerCase() === clean)
+    );
+  };
+
+  const getProductionSpeciesLabelMock = (rawId) => {
+    const sp = findSpeciesMock(rawId);
+    let label = '';
+    let subLabel = sp?.scientificName || undefined;
+
+    if (sp) {
+      if (sp.rawSpeciesName) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name) {
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code) {
+        label = sp.code.trim();
+      }
+    }
+
+    if (!label) {
+      label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+
+    return {
+      id: sp ? sp.id : rawId,
+      label,
+      subLabel
+    };
+  };
+
+  const buildProductionSpeciesOptions = (entries) => {
+    const seen = new Set();
+    const options = [];
+
+    entries.forEach((p) => {
+      if (p.isVoided) return;
+      const rawId = (p.speciesId || '').trim();
+      if (!rawId) return;
+
+      const info = getProductionSpeciesLabelMock(rawId);
+      const lowerLabel = info.label.toLowerCase();
+
+      if (!seen.has(lowerLabel)) {
+        seen.add(lowerLabel);
+        seen.add(info.id.toLowerCase());
+        seen.add(rawId.toLowerCase());
+        options.push({
+          id: info.id,
+          label: info.label,
+          subLabel: info.subLabel
+        });
+      }
+    });
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  };
+
+  // TEST 1: When processingEntries is empty, options must be 0 (no sales products injected)
+  const emptyOptions = buildProductionSpeciesOptions([]);
+  assert.equal(emptyOptions.length, 0, 'Production species dropdown must be empty when no processing entries exist');
+  assert.equal(
+    emptyOptions.some((o) => o.label.includes('Frozen')),
+    false,
+    'No sales export products should appear when processing entries are empty'
+  );
+
+  // TEST 2: When processingEntries contains actual lots, only produced species appear with authentic names
+  const sampleProcessingEntries = [
+    {
+      id: 'pe-1',
+      entryNo: 'PE-001',
+      processingDate: '2026-11-05',
+      speciesId: 'prd-003', // Linked to Indian Mackerel
+      processedWeightKg: 5000,
+      rejectionWeightKg: 100,
+      slabsCount: 500,
+      isVoided: false
+    },
+    {
+      id: 'pe-2',
+      entryNo: 'PE-002',
+      processingDate: '2026-11-06',
+      speciesId: 'prd-004', // Linked to Squid
+      processedWeightKg: 3000,
+      rejectionWeightKg: 50,
+      slabsCount: 300,
+      isVoided: false
+    }
+  ];
+
+  const populatedOptions = buildProductionSpeciesOptions(sampleProcessingEntries);
+  assert.equal(populatedOptions.length, 2, 'Options must strictly match the 2 distinct produced species');
+
+  const optionLabels = populatedOptions.map((o) => o.label);
+  assert.ok(optionLabels.includes('Indian Mackerel'), 'Must contain authentic production name "Indian Mackerel"');
+  assert.ok(optionLabels.includes('Squid'), 'Must contain authentic production name "Squid"');
+
+  // Verify that sales-only unproduced items and export descriptors are completely absent
+  assert.equal(
+    optionLabels.some((l) => l.includes('Unproduced') || l.includes('Master Carton')),
+    false,
+    'Unproduced sales catalog products must NEVER appear in production dashboard'
+  );
+  assert.equal(
+    optionLabels.some((l) => l.startsWith('Frozen ')),
+    false,
+    'Production labels must not contain sales "Frozen " prefixes'
+  );
+  assert.equal(
+    optionLabels.some((l) => l.includes('[') || l.includes(']')),
+    false,
+    'Production labels must not contain sales bracketed export packaging specs'
+  );
+
+  // TEST 3: Static Source Code Analysis of Production Components
+  const prodDashboardCode = fs.readFileSync(path.resolve('src/components/production/ProductionDashboard.tsx'), 'utf8');
+  assert.ok(
+    prodDashboardCode.includes('processingEntries.forEach((p) => {'),
+    'ProductionDashboard must derive speciesOptions strictly from processingEntries'
+  );
+  assert.ok(
+    !prodDashboardCode.includes('species.forEach((sp) => {'),
+    'ProductionDashboard must NOT loop over species (sales export catalog) to populate production filter'
+  );
+  assert.ok(
+    prodDashboardCode.includes('getProductionSpeciesLabel'),
+    'ProductionDashboard must use getProductionSpeciesLabel helper'
+  );
+  assert.ok(
+    prodDashboardCode.includes('placeholder="Search production species..."'),
+    'ProductionDashboard must specify production-specific search placeholder'
+  );
+
+  const procListCode = fs.readFileSync(path.resolve('src/components/production/ProcessingRecordList.tsx'), 'utf8');
+  assert.ok(
+    procListCode.includes('productionSpeciesOptions'),
+    'ProcessingRecordList must use productionSpeciesOptions derived from processingEntries'
+  );
+  assert.ok(
+    procListCode.includes('resolveProductionSpeciesName'),
+    'ProcessingRecordList must define resolveProductionSpeciesName'
+  );
+
+  const dailyFormCode = fs.readFileSync(path.resolve('src/components/production/DailyProcessingEntryForm.tsx'), 'utf8');
+  assert.ok(
+    dailyFormCode.includes('sp.rawSpeciesName || sp.name.replace(/^Frozen\\s+/i'),
+    'DailyProcessingEntryForm must strip sales export prefixes from product dropdown'
+  );
+
+  const reportsCode = fs.readFileSync(path.resolve('src/components/production/ProductionReportsHub.tsx'), 'utf8');
+  assert.ok(
+    reportsCode.includes('resolveProductionSpeciesName'),
+    'ProductionReportsHub must use resolveProductionSpeciesName for reports'
+  );
+  assert.ok(
+    reportsCode.includes('distinctMonthSpeciesIds'),
+    'ProductionReportsHub matrix pivot must be keyed on distinct species from monthEntries, not sales catalog'
+  );
 });
 
 

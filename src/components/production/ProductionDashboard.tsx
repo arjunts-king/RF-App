@@ -36,11 +36,11 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
     const byCode = new Map(species.map((sp) => [sp.code.toLowerCase(), sp]));
     const byName = new Map(species.map((sp) => [sp.name.trim().toLowerCase(), sp]));
     const byRaw = new Map<string, (typeof species)[0]>();
-    species.forEach((sp) => {
+    for (const sp of species) {
       if (sp.rawSpeciesName) {
         byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
       }
-    });
+    }
 
     return (idOrKey: string) => {
       if (!idOrKey) return undefined;
@@ -63,65 +63,79 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
     };
   }, [species]);
 
-  // Comprehensive Options for MultiSelectFilter (Registered Master + Distinct Historical Entry Species)
+  // Helper to obtain clean production species name (isolated from sales export products)
+  const getProductionSpeciesLabel = (rawId: string): { id: string; label: string; subLabel?: string } => {
+    const sp = findSpecies(rawId);
+    let label = '';
+    let subLabel = sp?.scientificName || undefined;
+
+    if (sp) {
+      if (sp.rawSpeciesName) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name) {
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code) {
+        label = sp.code.trim();
+      }
+    }
+
+    if (!label) {
+      label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+
+    return {
+      id: sp ? sp.id : rawId,
+      label,
+      subLabel
+    };
+  };
+
+  // Production-Only Species Options for MultiSelectFilter:
+  // Strictly includes ONLY products/species that have been recorded in processingEntries.
+  // Completely isolated from Sales Dashboard export products.
   const speciesOptions = useMemo(() => {
     const seen = new Set<string>();
-    const options: { id: string; label: string; subLabel?: string; badge?: string }[] = [];
+    const options: { id: string; label: string; subLabel?: string }[] = [];
 
-    // 1. Registered Master Species
-    species.forEach((sp) => {
-      seen.add(sp.id.toLowerCase());
-      seen.add(sp.name.trim().toLowerCase());
-      if (sp.code) seen.add(sp.code.trim().toLowerCase());
-      options.push({
-        id: sp.id,
-        label: sp.name,
-        subLabel: sp.scientificName || (sp.category ? sp.category : undefined),
-        badge: sp.code || (sp.rawSpeciesName ? sp.rawSpeciesName : undefined)
-      });
-    });
-
-    // 2. Any additional distinct species found in existing processingEntries
+    // Derive strictly from factory processingEntries (never from sales export catalog)
     processingEntries.forEach((p) => {
+      if (p.isVoided) return;
       const rawId = (p.speciesId || '').trim();
       if (!rawId) return;
-      const lower = rawId.toLowerCase();
-      if (!seen.has(lower)) {
-        const matched = findSpecies(rawId);
-        if (matched) {
-          seen.add(matched.id.toLowerCase());
-          seen.add(matched.name.trim().toLowerCase());
-          if (!options.some((o) => o.id === matched.id)) {
-            options.push({
-              id: matched.id,
-              label: matched.name,
-              subLabel: matched.scientificName || undefined,
-              badge: matched.code || undefined
-            });
-          }
-        } else {
-          seen.add(lower);
-          options.push({
-            id: rawId,
-            label: rawId,
-            badge: 'Recorded'
-          });
-        }
+
+      const info = getProductionSpeciesLabel(rawId);
+      const lowerLabel = info.label.toLowerCase();
+
+      if (!seen.has(lowerLabel)) {
+        seen.add(lowerLabel);
+        seen.add(info.id.toLowerCase());
+        seen.add(rawId.toLowerCase());
+        options.push({
+          id: info.id,
+          label: info.label,
+          subLabel: info.subLabel
+        });
       }
     });
 
     return options.sort((a, b) => a.label.localeCompare(b.label));
-  }, [species, processingEntries, findSpecies]);
+  }, [processingEntries, findSpecies]);
 
   const resolveSpeciesName = (spId: string): string => {
     if (!spId) return 'Unspecified Product';
-    const direct = speciesMap.get(spId);
-    if (direct) return direct.name;
-    const found = findSpecies(spId);
-    if (found) return found.name;
-    const opt = speciesOptions.find((o) => o.id === spId);
+    const opt = speciesOptions.find((o) => o.id === spId || o.label.toLowerCase() === spId.toLowerCase());
     if (opt) return opt.label;
-    return spId;
+    const direct = speciesMap.get(spId);
+    if (direct) {
+      if (direct.rawSpeciesName) return direct.rawSpeciesName;
+      return direct.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+    const found = findSpecies(spId);
+    if (found) {
+      if (found.rawSpeciesName) return found.rawSpeciesName;
+      return found.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+    return spId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
   };
 
   const supplierOptions = useMemo(
@@ -159,11 +173,15 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
         const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
         const entrySpSci = (entrySp?.scientificName || '').trim().toLowerCase();
+        const entryProdLabel = getProductionSpeciesLabel(rawEntrySpId).label.trim().toLowerCase();
 
         const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
           // Direct ID match
           if (rawEntrySpId === selectedId) return true;
           if (rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+
+          // Match by production label
+          if (entryProdLabel === selectedId.toLowerCase()) return true;
 
           // Match by resolved species objects
           const selSp = findSpecies(selectedId);
@@ -189,7 +207,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           const selOpt = speciesOptions.find((o) => o.id === selectedId);
           if (selOpt) {
             const optLabel = selOpt.label.trim().toLowerCase();
-            if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+            if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase() || optLabel === entryProdLabel) return true;
             if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
             if (entrySpName && optLabel.includes(entrySpName)) return true;
             if (entrySpName && entrySpName.includes(optLabel)) return true;
@@ -268,8 +286,10 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
         const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
         const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
         const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+        const entryProdLabel = getProductionSpeciesLabel(rawEntrySpId).label.trim().toLowerCase();
         const matchesSpecies = selectedSpeciesIds.some((selectedId) => {
           if (rawEntrySpId === selectedId || rawEntrySpId.toLowerCase() === selectedId.toLowerCase()) return true;
+          if (entryProdLabel === selectedId.toLowerCase()) return true;
           const selSp = findSpecies(selectedId);
           if (entrySp && selSp && entrySp.id === selSp.id) return true;
           if (selSp) {
@@ -279,6 +299,11 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           if (entrySp) {
             if (selectedId.toLowerCase() === entrySp.id.toLowerCase() || selectedId.toLowerCase() === entrySpCode || selectedId.toLowerCase() === entrySpName) return true;
             if (entrySpRaw && selectedId.toLowerCase() === entrySpRaw) return true;
+          }
+          const selOpt = speciesOptions.find((o) => o.id === selectedId);
+          if (selOpt) {
+            const optLabel = selOpt.label.trim().toLowerCase();
+            if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase() || optLabel === entryProdLabel) return true;
           }
           return false;
         });
@@ -440,7 +465,7 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
               onChange={setSelectedSpeciesIds}
               icon={Fish}
               badgeColor="blue"
-              placeholder="Search species..."
+              placeholder="Search production species..."
             />
 
             <MultiSelectFilter

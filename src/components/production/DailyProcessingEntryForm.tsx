@@ -260,11 +260,14 @@ export const DailyProcessingEntryForm: React.FC<{ onSuccess?: () => void }> = ({
                 className="w-full text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition"
               >
                 <option value="">-- Select Product --</option>
-                {activeSpecies.map((sp) => (
-                  <option key={sp.id} value={sp.id}>
-                    {sp.name} {sp.productForm ? `[${sp.productForm}]` : ''}
-                  </option>
-                ))}
+                {activeSpecies.map((sp) => {
+                  const prodName = sp.rawSpeciesName || sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+                  return (
+                    <option key={sp.id} value={sp.id}>
+                      {prodName}{sp.category ? ` (${sp.category})` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

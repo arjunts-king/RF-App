@@ -63,6 +63,15 @@ export const ProductionReportsHub: React.FC = () => {
   const countMap = new Map(counts.map((c) => [c.id, c]));
   const slabTypeMap = new Map(slabTypes.map((st) => [st.id, st]));
 
+  // Helper to obtain clean production species name (isolated from sales export products)
+  const resolveProductionSpeciesName = (rawId: string): string => {
+    if (!rawId) return 'Unknown';
+    const sp = speciesMap.get(rawId) || species.find((s) => s.id === rawId || s.code.toLowerCase() === rawId.toLowerCase() || s.name.toLowerCase() === rawId.toLowerCase());
+    if (sp?.rawSpeciesName) return sp.rawSpeciesName.trim();
+    if (sp?.name) return sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    return rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+  };
+
   const activeEntries = processingEntries.filter((p) => !p.isVoided);
 
   // --------------------------------------------------------------------------
@@ -108,7 +117,7 @@ export const ProductionReportsHub: React.FC = () => {
       return map;
     }, new Map<string, { slabs: number; processed: number; rejection: number; count: number }>())
   ).map(([id, data]) => ({
-    name: speciesMap.get(id)?.name || 'Unknown',
+    name: resolveProductionSpeciesName(id),
     ...data
   }));
 
@@ -272,10 +281,12 @@ export const ProductionReportsHub: React.FC = () => {
   // 5. PRODUCTION MATRIX (Product x Grade & Grade x Size/Count Pivot Views)
   // --------------------------------------------------------------------------
   // Pivot 1: Product (rows) x Grade (columns)
-  const productGradeMatrix = species.map((sp) => {
-    const rowObj: Record<string, any> = { speciesName: sp.name, total: 0 };
+  const distinctMonthSpeciesIds = Array.from(new Set(monthEntries.map((p) => p.speciesId).filter(Boolean)));
+  const productGradeMatrix = distinctMonthSpeciesIds.map((spId) => {
+    const spName = resolveProductionSpeciesName(spId);
+    const rowObj: Record<string, any> = { speciesName: spName, total: 0 };
     grades.forEach((g) => {
-      const matchingEntries = monthEntries.filter((p) => p.speciesId === sp.id && p.gradeId === g.id);
+      const matchingEntries = monthEntries.filter((p) => p.speciesId === spId && p.gradeId === g.id);
       const wt = matchingEntries.reduce((s, p) => s + p.processedWeightKg, 0);
       rowObj[g.id] = wt;
       rowObj.total += wt;
@@ -371,7 +382,7 @@ export const ProductionReportsHub: React.FC = () => {
           entryNo: p.entryNo,
           date: p.processingDate,
           description: `Duplicate Box ID detected (${list.length} matches): ${p.supplierBoxId}`,
-          details: `Supplier: ${supplierMap.get(p.supplierId)?.name || 'N/A'}, Product: ${speciesMap.get(p.speciesId)?.name || 'N/A'}, Shift: ${p.shift}`
+          details: `Supplier: ${supplierMap.get(p.supplierId)?.name || 'N/A'}, Product: ${resolveProductionSpeciesName(p.speciesId)}, Shift: ${p.shift}`
         });
       });
     }
@@ -468,7 +479,7 @@ export const ProductionReportsHub: React.FC = () => {
   const yieldRows: YieldReconciliationRow[] = Array.from(yieldDataMap.values())
     .map((item) => {
       const suppName = supplierMap.get(item.supplierId)?.name || 'Unknown';
-      const specName = speciesMap.get(item.speciesId)?.name || 'Unknown';
+      const specName = resolveProductionSpeciesName(item.speciesId);
       const weightLossKg = Number((item.purchaseKg - item.productionKg).toFixed(2));
       const yieldPct = item.purchaseKg > 0 ? Number(((item.productionKg / item.purchaseKg) * 100).toFixed(1)) : 0;
       const lossPct = Number((100 - yieldPct).toFixed(1));
@@ -520,7 +531,7 @@ export const ProductionReportsHub: React.FC = () => {
         Shift: p.shift,
         Supplier: supplierMap.get(p.supplierId)?.name,
         BoxID: p.supplierBoxId,
-        Product: speciesMap.get(p.speciesId)?.name,
+        Product: resolveProductionSpeciesName(p.speciesId),
         Grade: gradeMap.get(p.gradeId)?.name,
         SlabType: slabTypeMap.get(p.slabTypeId)?.name,
         Slabs: p.slabsCount,
@@ -567,7 +578,7 @@ export const ProductionReportsHub: React.FC = () => {
         EntryNo: p.entryNo,
         Date: p.processingDate,
         Supplier: supplierMap.get(p.supplierId)?.name,
-        Product: speciesMap.get(p.speciesId)?.name,
+        Product: resolveProductionSpeciesName(p.speciesId),
         ProcessedKg: p.processedWeightKg
       }));
       cols = [
@@ -702,7 +713,7 @@ export const ProductionReportsHub: React.FC = () => {
                         <div className="text-[10px] text-ink-500">Box: {p.supplierBoxId || 'None'}</div>
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="font-semibold">{speciesMap.get(p.speciesId)?.name}</div>
+                        <div className="font-semibold">{resolveProductionSpeciesName(p.speciesId)}</div>
                         <div className="text-[10px] text-ink-500">{gradeMap.get(p.gradeId)?.name}</div>
                       </td>
                       <td className="py-2.5 px-3 text-ink-700">{slabTypeMap.get(p.slabTypeId)?.name}</td>

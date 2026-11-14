@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V27 - Purchase Module Purge Clean Slate)
-const CACHE_VERSION = 'seafood-pwa-v27';
+// Seafood Purchase App - Offline PWA Service Worker (V28 - Production Dashboard Species Isolation)
+const CACHE_VERSION = 'seafood-pwa-v28';
 const STATIC_ASSETS = [
   './',
   './index.html',

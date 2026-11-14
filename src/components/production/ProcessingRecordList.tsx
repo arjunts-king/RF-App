@@ -83,6 +83,32 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
   const countMap = new Map(counts.map((c) => [c.id, c]));
   const slabTypeMap = new Map(slabTypes.map((st) => [st.id, st]));
 
+  // Production-only species resolver (isolated from sales export catalog names)
+  const resolveProductionSpeciesName = (rawId: string): string => {
+    if (!rawId) return 'N/A';
+    const sp = speciesMap.get(rawId) || species.find((s) => s.id === rawId || s.code.toLowerCase() === rawId.toLowerCase() || s.name.toLowerCase() === rawId.toLowerCase());
+    if (sp?.rawSpeciesName) return sp.rawSpeciesName.trim();
+    if (sp?.name) return sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    return rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+  };
+
+  // Strictly production-present species options for the filter dropdown
+  const productionSpeciesOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; name: string }[] = [];
+    processingEntries.forEach((p) => {
+      const rawId = (p.speciesId || '').trim();
+      if (!rawId) return;
+      const cleanName = resolveProductionSpeciesName(rawId);
+      const lower = cleanName.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        options.push({ id: rawId, name: cleanName });
+      }
+    });
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  }, [processingEntries, speciesMap, species]);
+
   // Filtered List
   const filteredEntries = processingEntries.filter((p) => {
     if (!showVoided && p.isVoided) return false;
@@ -92,6 +118,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
     if (speciesFilter) {
       const matchSpecies =
         p.speciesId === speciesFilter ||
+        resolveProductionSpeciesName(p.speciesId).toLowerCase() === speciesFilter.toLowerCase() ||
         speciesMap.get(p.speciesId)?.id === speciesFilter ||
         species.find((s) => s.id === speciesFilter)?.code.toLowerCase() === p.speciesId.toLowerCase() ||
         species.find((s) => s.id === speciesFilter)?.name.toLowerCase() === p.speciesId.toLowerCase() ||
@@ -106,7 +133,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
       const matchNo = p.entryNo.toLowerCase().includes(q);
       const matchBox = p.supplierBoxId?.toLowerCase().includes(q);
       const matchSupplier = supplierMap.get(p.supplierId)?.name.toLowerCase().includes(q);
-      const matchSpecies = speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
+      const matchSpecies = resolveProductionSpeciesName(p.speciesId).toLowerCase().includes(q) || speciesMap.get(p.speciesId)?.name.toLowerCase().includes(q);
       const matchRemarks = p.remarks?.toLowerCase().includes(q);
       return matchNo || matchBox || matchSupplier || matchSpecies || matchRemarks;
     }
@@ -222,7 +249,6 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
     if (selectedEntries.length === 0) return;
     const exportData = selectedEntries.map((p) => {
       const supp = supplierMap.get(p.supplierId);
-      const spec = speciesMap.get(p.speciesId);
       const grd = gradeMap.get(p.gradeId);
       const sz = sizeMap.get(p.sizeId);
       const cnt = countMap.get(p.countId || '');
@@ -234,7 +260,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
         Shift: p.shift,
         Supplier: supp?.name || 'N/A',
         BoxID: p.supplierBoxId || 'None',
-        Species: spec?.name || 'N/A',
+        Species: resolveProductionSpeciesName(p.speciesId),
         Grade: grd?.name || 'N/A',
         Size: sz?.name || 'N/A',
         Count: cnt?.name || 'N/A',
@@ -310,7 +336,6 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
   const handleExportCSV = () => {
     const exportData = filteredEntries.map((p) => {
       const supp = supplierMap.get(p.supplierId);
-      const spec = speciesMap.get(p.speciesId);
       const grd = gradeMap.get(p.gradeId);
       const sz = sizeMap.get(p.sizeId);
       const cnt = countMap.get(p.countId || '');
@@ -322,7 +347,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
         Shift: p.shift,
         Supplier: supp?.name || 'N/A',
         BoxID: p.supplierBoxId || 'None',
-        Species: spec?.name || 'N/A',
+        Species: resolveProductionSpeciesName(p.speciesId),
         Grade: grd?.name || 'N/A',
         Size: sz?.name || 'N/A',
         Count: cnt?.name || 'N/A',
@@ -432,7 +457,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
             className="text-xs font-medium px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-400 outline-none transition"
           >
             <option value="">All Products</option>
-            {species.map((sp) => (
+            {productionSpeciesOptions.map((sp) => (
               <option key={sp.id} value={sp.id}>
                 {sp.name}
               </option>
@@ -537,7 +562,6 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
               ) : (
                 paginatedEntries.map((p) => {
                   const supp = supplierMap.get(p.supplierId);
-                  const spec = speciesMap.get(p.speciesId);
                   const grd = gradeMap.get(p.gradeId);
                   const sz = sizeMap.get(p.sizeId);
                   const cnt = countMap.get(p.countId || '');
@@ -582,7 +606,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                       </td>
 
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-ink-900 line-clamp-1">{spec?.name || 'Product'}</div>
+                        <div className="font-semibold text-ink-900 line-clamp-1">{resolveProductionSpeciesName(p.speciesId)}</div>
                         <div className="text-[10px] text-ink-500">
                           {grd?.name ? `Grade: ${grd.name}` : ''}
                           {[sz?.name ? `Size: ${sz.name}` : '', cnt?.name ? `Count: ${cnt.name}` : ''].filter(Boolean).length > 0
@@ -778,7 +802,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
 
               <div className="space-y-2">
                 <div>
-                  <strong>Product / Species:</strong> {speciesMap.get(selectedEntry.speciesId)?.name || 'N/A'}
+                  <strong>Product / Species:</strong> {resolveProductionSpeciesName(selectedEntry.speciesId)}
                 </div>
                 <div>
                   <strong>Quality Grade:</strong> {gradeMap.get(selectedEntry.gradeId)?.name || 'N/A'}
@@ -918,7 +942,7 @@ export const ProcessingRecordList: React.FC<{ onNavigate?: (tab: string) => void
                 required
               >
                 {species.map((sp) => (
-                  <option key={sp.id} value={sp.id}>{sp.name}</option>
+                  <option key={sp.id} value={sp.id}>{resolveProductionSpeciesName(sp.id)}</option>
                 ))}
               </select>
             </div>
