@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================

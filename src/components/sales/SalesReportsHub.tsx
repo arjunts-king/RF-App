@@ -28,8 +28,15 @@ import {
   Table,
   LayoutGrid,
   Receipt,
-  ShieldCheck
+  ShieldCheck,
+  BarChart3,
+  EyeOff
 } from 'lucide-react';
+import {
+  BarChartVisual,
+  DonutChartVisual,
+  ComparisonBarVisual
+} from '../common/charts';
 import { SalesInvoice } from '../../types';
 
 export type SalesReportTab =
@@ -87,6 +94,7 @@ export const SalesReportsHub: React.FC = () => {
   } = useData();
 
   const [activeReport, setActiveReport] = useState<SalesReportTab>('invoice-register');
+  const [showVisuals, setShowVisuals] = useState<boolean>(true);
 
   // Executive Top Banner Filter
   const today = new Date().toISOString().split('T')[0];
@@ -249,6 +257,33 @@ export const SalesReportsHub: React.FC = () => {
   const regTotalUSD = registerInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
   const regTotalINR = registerInvoices.reduce((s, inv) => s + inv.totalRealizedINR, 0);
   const regTotalBalance = registerInvoices.reduce((s, inv) => s + inv.balanceRealizationCurrency, 0);
+
+  const regMonthlyTrend = useMemo(() => {
+    const map = new Map<string, number>();
+    registerInvoices.forEach((inv) => {
+      const m = inv.invoiceDate.slice(0, 7);
+      map.set(m, (map.get(m) || 0) + inv.totalAmountCurrency);
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, value]) => ({ label, value }));
+  }, [registerInvoices]);
+
+  const regStatusSplit = useMemo(() => {
+    const map = new Map<string, { value: number; color: string }>();
+    map.set('Fully Realized', { value: 0, color: '#10b981' });
+    map.set('Partially Realized', { value: 0, color: '#f59e0b' });
+    map.set('Not Realized', { value: 0, color: '#ef4444' });
+    registerInvoices.forEach((inv) => {
+      const st = inv.realizationStatus || 'Not Realized';
+      const cur = map.get(st) || { value: 0, color: '#94a3b8' };
+      cur.value += inv.totalAmountCurrency;
+      map.set(st, cur);
+    });
+    return Array.from(map.entries())
+      .filter(([_, d]) => d.value > 0)
+      .map(([label, d]) => ({ label, value: d.value, color: d.color }));
+  }, [registerInvoices]);
 
   const isRegFiltered = Boolean(
     regStartDate !== '2026-04-01' ||
@@ -1386,6 +1421,11 @@ export const SalesReportsHub: React.FC = () => {
         }}
         secondaryActions={[
           {
+            label: showVisuals ? 'Hide Graphs' : 'Show Graphs',
+            onClick: () => setShowVisuals(!showVisuals),
+            icon: showVisuals ? EyeOff : BarChart3
+          },
+          {
             label: 'Print Report',
             onClick: triggerPrint,
             icon: Printer
@@ -1667,6 +1707,36 @@ export const SalesReportsHub: React.FC = () => {
               <span className="text-lg font-black text-amber-800 mt-0.5 block">${regTotalBalance.toLocaleString()}</span>
             </div>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && registerInvoices.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Monthly Export Sales Turnover ($ USD)"
+                subtitle="Total export billing value generated per calendar month"
+                data={regMonthlyTrend.map((t) => ({
+                  label: t.label,
+                  value: t.value,
+                  formattedValue: `$${t.value.toLocaleString()}`
+                }))}
+                orientation="vertical"
+                unit="$"
+              />
+              <DonutChartVisual
+                title="Export Realization Status Share"
+                subtitle="Turnover distribution across payment realization states"
+                data={regStatusSplit.map((s) => ({
+                  label: s.label,
+                  value: s.value,
+                  color: s.color,
+                  formattedValue: `$${s.value.toLocaleString()}`
+                }))}
+                unit="$"
+                centerLabel="Invoiced"
+                centerValue={`$${regTotalUSD.toLocaleString()}`}
+              />
+            </div>
+          )}
 
           {/* Table */}
           <div className="overflow-x-auto">
@@ -1970,6 +2040,36 @@ export const SalesReportsHub: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && productMatrixMap.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Top Export Commodities by Revenue ($ USD)"
+                subtitle="Leading products ranked by total invoiced sales value"
+                data={productMatrixMap.slice(0, 6).map((p) => ({
+                  label: p.productName,
+                  value: p.totalUSD,
+                  formattedValue: `$${p.totalUSD.toLocaleString()}`,
+                  secondaryValue: `${p.lines.length} lines`
+                }))}
+                orientation="horizontal"
+                unit="$"
+              />
+              <BarChartVisual
+                title="Top Export Commodities by Volume (Kg)"
+                subtitle="Volume throughput across key commercial seafood items"
+                data={[...productMatrixMap].sort((a, b) => b.totalWeight - a.totalWeight).slice(0, 6).map((p) => ({
+                  label: p.productName,
+                  value: p.totalWeight,
+                  formattedValue: formatKg(p.totalWeight),
+                  secondaryValue: `${p.totalCartons.toLocaleString()} ctn`
+                }))}
+                orientation="horizontal"
+                unit="Kg"
+              />
+            </div>
+          )}
 
           {/* VIEW 1: HIERARCHY VIEW (INVOICE WITH NESTED LINE ITEMS) */}
           {invProdViewMode === 'hierarchy' && (
@@ -2441,6 +2541,51 @@ export const SalesReportsHub: React.FC = () => {
             </div>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && customerBreakdown.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Top Overseas Buyers by Turnover ($ USD)"
+                subtitle="Ranked by commercial export sales value"
+                data={customerBreakdown.slice(0, 6).map((c) => ({
+                  label: c.name,
+                  value: c.usd,
+                  formattedValue: `$${c.usd.toLocaleString()}`,
+                  secondaryValue: c.country
+                }))}
+                orientation="horizontal"
+                unit="$"
+              />
+              <DonutChartVisual
+                title="Buyer Concentration Share"
+                subtitle="Percentage export turnover distribution among top clients"
+                data={(() => {
+                  const top5 = customerBreakdown.slice(0, 5);
+                  const othersVal = customerBreakdown.slice(5).reduce((s, c) => s + c.usd, 0);
+                  const palette = ['#2563eb', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#cbd5e1'];
+                  const list = top5.map((c, i) => ({
+                    label: c.name,
+                    value: c.usd,
+                    color: palette[i],
+                    formattedValue: `$${c.usd.toLocaleString()}`
+                  }));
+                  if (othersVal > 0) {
+                    list.push({
+                      label: 'Other Buyers',
+                      value: othersVal,
+                      color: palette[5],
+                      formattedValue: `$${othersVal.toLocaleString()}`
+                    });
+                  }
+                  return list;
+                })()}
+                unit="$"
+                centerLabel="Total Turnover"
+                centerValue={`$${totalFilteredCustUSD.toLocaleString()}`}
+              />
+            </div>
+          )}
+
           {/* Breakdown Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -2557,6 +2702,35 @@ export const SalesReportsHub: React.FC = () => {
                 <option value="rate">Sort by: Weighted Avg Rate</option>
               </select>
             </div>
+
+            {/* Graphical Analysis */}
+            {showVisuals && productBreakdown.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+                <BarChartVisual
+                  title="Product Export Revenue Distribution ($ USD)"
+                  subtitle="Top export species contributing to period turnover"
+                  data={productBreakdown.slice(0, 6).map((p) => ({
+                    label: p.name,
+                    value: p.usd,
+                    formattedValue: `$${p.usd.toLocaleString()}`,
+                    secondaryValue: `${p.pct.toFixed(1)}%`
+                  }))}
+                  orientation="horizontal"
+                  unit="$"
+                />
+                <BarChartVisual
+                  title="Realized Export Price ($/Kg)"
+                  subtitle="Weighted average dollar realization rate per kilogram"
+                  data={productBreakdown.slice(0, 6).map((p) => ({
+                    label: p.name,
+                    value: Number(p.weightedAvgUSD.toFixed(2)),
+                    formattedValue: `$${p.weightedAvgUSD.toFixed(2)}/kg`
+                  }))}
+                  orientation="horizontal"
+                  unit="$/Kg"
+                />
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -2738,6 +2912,47 @@ export const SalesReportsHub: React.FC = () => {
             </select>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && podBreakdown.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Discharge Port Volume Ranking (Kg)"
+                subtitle="Net metric weight landed across overseas destination ports"
+                data={podBreakdown.slice(0, 6).map((p) => ({
+                  label: p.name,
+                  value: p.weight,
+                  formattedValue: formatKg(p.weight),
+                  secondaryValue: p.country
+                }))}
+                orientation="horizontal"
+                unit="Kg"
+              />
+              <DonutChartVisual
+                title="Destination Country Share"
+                subtitle="Commercial export value distribution by market nation"
+                data={(() => {
+                  const countryMap = new Map<string, number>();
+                  podBreakdown.forEach((p) => {
+                    countryMap.set(p.country, (countryMap.get(p.country) || 0) + p.usd);
+                  });
+                  const colors = ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+                  return Array.from(countryMap.entries())
+                    .sort(([_, a], [__, b]) => b - a)
+                    .slice(0, 6)
+                    .map(([label, value], i) => ({
+                      label,
+                      value,
+                      color: colors[i % colors.length],
+                      formattedValue: `$${value.toLocaleString()}`
+                    }));
+                })()}
+                unit="$"
+                centerLabel="Export Market"
+                centerValue={`$${podBreakdown.reduce((s, p) => s + p.usd, 0).toLocaleString()}`}
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -2902,6 +3117,72 @@ export const SalesReportsHub: React.FC = () => {
             </div>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Overdue Ageing Risk Profile ($ USD)"
+                subtitle="Pending export receivable balance across chronological ageing brackets"
+                data={[
+                  {
+                    label: '0–30 Days',
+                    value: ageingBuckets['0-30'].balanceUSD,
+                    formattedValue: `$${ageingBuckets['0-30'].balanceUSD.toLocaleString()}`,
+                    color: '#10b981',
+                    secondaryValue: `${ageingBuckets['0-30'].count} inv`
+                  },
+                  {
+                    label: '31–60 Days',
+                    value: ageingBuckets['31-60'].balanceUSD,
+                    formattedValue: `$${ageingBuckets['31-60'].balanceUSD.toLocaleString()}`,
+                    color: '#3b82f6',
+                    secondaryValue: `${ageingBuckets['31-60'].count} inv`
+                  },
+                  {
+                    label: '61–90 Days',
+                    value: ageingBuckets['61-90'].balanceUSD,
+                    formattedValue: `$${ageingBuckets['61-90'].balanceUSD.toLocaleString()}`,
+                    color: '#f59e0b',
+                    secondaryValue: `${ageingBuckets['61-90'].count} inv`
+                  },
+                  {
+                    label: '91–180 Days',
+                    value: ageingBuckets['91-180'].balanceUSD,
+                    formattedValue: `$${ageingBuckets['91-180'].balanceUSD.toLocaleString()}`,
+                    color: '#f97316',
+                    secondaryValue: `${ageingBuckets['91-180'].count} inv`
+                  },
+                  {
+                    label: '180+ Days Overdue',
+                    value: ageingBuckets['180+'].balanceUSD,
+                    formattedValue: `$${ageingBuckets['180+'].balanceUSD.toLocaleString()}`,
+                    color: '#ef4444',
+                    secondaryValue: `${ageingBuckets['180+'].count} inv`
+                  }
+                ]}
+                orientation="horizontal"
+                unit="$"
+              />
+              <DonutChartVisual
+                title="Ageing Exposure Distribution"
+                subtitle="Percentage concentration of outstanding export debt"
+                data={[
+                  { label: '0–30 Days', value: ageingBuckets['0-30'].balanceUSD, color: '#10b981' },
+                  { label: '31–60 Days', value: ageingBuckets['31-60'].balanceUSD, color: '#3b82f6' },
+                  { label: '61–90 Days', value: ageingBuckets['61-90'].balanceUSD, color: '#f59e0b' },
+                  { label: '91–180 Days', value: ageingBuckets['91-180'].balanceUSD, color: '#f97316' },
+                  { label: '180+ Days', value: ageingBuckets['180+'].balanceUSD, color: '#ef4444' }
+                ].filter((b) => b.value > 0).map((b) => ({
+                  ...b,
+                  formattedValue: `$${b.value.toLocaleString()}`
+                }))}
+                unit="$"
+                centerLabel="Total Overdue"
+                centerValue={`$${totalOutstandingUSD.toLocaleString()}`}
+              />
+            </div>
+          )}
+
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -3052,6 +3333,37 @@ export const SalesReportsHub: React.FC = () => {
             </select>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && hsCodeBreakdown.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <DonutChartVisual
+                title="Customs Tariff Valuation Share by HS Code"
+                subtitle="Declared export valuation split across 8-digit tariff classifications"
+                data={hsCodeBreakdown.slice(0, 6).map((h, i) => ({
+                  label: `HS ${h.code}`,
+                  value: h.usd,
+                  formattedValue: `$${h.usd.toLocaleString()}`,
+                  color: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'][i % 6]
+                }))}
+                unit="$"
+                centerLabel="HS Declared"
+                centerValue={`$${hsCodeBreakdown.reduce((s, h) => s + h.usd, 0).toLocaleString()}`}
+              />
+              <BarChartVisual
+                title="HS Code Export Weight (Kg)"
+                subtitle="Net cargo volume cleared under each customs tariff heading"
+                data={hsCodeBreakdown.slice(0, 6).map((h) => ({
+                  label: `HS ${h.code}`,
+                  value: h.weight,
+                  formattedValue: formatKg(h.weight),
+                  secondaryValue: `${h.invoicesCount} inv`
+                }))}
+                orientation="horizontal"
+                unit="Kg"
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -3160,6 +3472,30 @@ export const SalesReportsHub: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && exceptionItems.length > 0 && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <BarChartVisual
+                title="Commercial Audit Discrepancies by Category"
+                subtitle="Active compliance flags, missing customer master records, and overdue balances"
+                data={(() => {
+                  const map = new Map<string, number>();
+                  exceptionItems.forEach((exc) => {
+                    map.set(exc.type, (map.get(exc.type) || 0) + 1);
+                  });
+                  return Array.from(map.entries()).map(([label, value]) => ({
+                    label,
+                    value,
+                    formattedValue: `${value}`,
+                    color: label.includes('Overdue') || label.includes('Zero') ? '#ef4444' : '#f59e0b'
+                  }));
+                })()}
+                orientation="horizontal"
+                unit=" issues"
+              />
+            </div>
+          )}
 
           <div className="space-y-3">
             {exceptionItems.length === 0 ? (
@@ -3291,6 +3627,50 @@ export const SalesReportsHub: React.FC = () => {
               <option value="negative">Negative Margin (&lt; 0%)</option>
             </select>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && productMarginAnalysis.length > 0 && (
+            <div className="space-y-4 p-4 rounded-2xl bg-gradient-to-br from-rose-50/40 via-white to-pink-50/30 border border-rose-100">
+              <ComparisonBarVisual
+                title="Commercial Gross Margin Waterfall"
+                subtitle="Aggregate procurement landed cost vs. period sales realization gross profit"
+                metrics={[
+                  {
+                    label: 'Total Purchase / Raw Cost',
+                    value: productMarginAnalysis.reduce((s, m) => s + m.purchaseCost, 0),
+                    formattedValue: formatINR(productMarginAnalysis.reduce((s, m) => s + m.purchaseCost, 0)),
+                    color: '#f43f5e',
+                    subtext: 'Raw material procurement'
+                  },
+                  {
+                    label: 'Gross Profit Margin (INR)',
+                    value: Math.max(0, productMarginAnalysis.reduce((s, m) => s + (m.salesWeight * m.grossMarginINRPerKg), 0)),
+                    formattedValue: formatINR(Math.max(0, productMarginAnalysis.reduce((s, m) => s + (m.salesWeight * m.grossMarginINRPerKg), 0))),
+                    color: '#10b981',
+                    subtext: 'Factory margin generation'
+                  }
+                ]}
+                totalLabel="Total Period Realization"
+                totalFormatted={formatINR(
+                  productMarginAnalysis.reduce((s, m) => s + m.purchaseCost, 0) +
+                  Math.max(0, productMarginAnalysis.reduce((s, m) => s + (m.salesWeight * m.grossMarginINRPerKg), 0))
+                )}
+              />
+              <BarChartVisual
+                title="Species Gross Margin % Ranking"
+                subtitle="Operating profitability per commodity"
+                data={productMarginAnalysis.slice(0, 8).map((m) => ({
+                  label: m.name,
+                  value: Number(m.grossMarginPct.toFixed(1)),
+                  formattedValue: `${m.grossMarginPct.toFixed(1)}%`,
+                  secondaryValue: `₹${m.grossMarginINRPerKg.toFixed(1)}/kg`,
+                  color: m.grossMarginPct >= 20 ? '#10b981' : m.grossMarginPct >= 10 ? '#3b82f6' : m.grossMarginPct >= 0 ? '#f59e0b' : '#ef4444'
+                }))}
+                orientation="horizontal"
+                unit="%"
+              />
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -3459,6 +3839,54 @@ export const SalesReportsHub: React.FC = () => {
               {filteredShortfallRows.length} shortfall entries
             </span>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && filteredShortfallRows.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50/40 via-white to-blue-50/30 border border-amber-200">
+              <ComparisonBarVisual
+                title="Settled Shortfall Deductions Breakdown"
+                subtitle="Itemized advance wire deductions vs balance actual payment deductions"
+                metrics={[
+                  {
+                    label: 'Advance Shortfall',
+                    value: filteredShortfallRows.reduce((s, i) => s + i.advShortfall, 0),
+                    formattedValue: `-$${filteredShortfallRows.reduce((s, i) => s + i.advShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    color: '#3b82f6',
+                    subtext: 'Advance leg wire fees & FX adjustment'
+                  },
+                  {
+                    label: 'Balance Shortfall',
+                    value: filteredShortfallRows.reduce((s, i) => s + i.balShortfall, 0),
+                    formattedValue: `-$${filteredShortfallRows.reduce((s, i) => s + i.balShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    color: '#10b981',
+                    subtext: 'Balance leg wire fees & deductions'
+                  }
+                ]}
+                totalLabel="Total Shortfall Deductions"
+                totalFormatted={`-$${filteredShortfallRows.reduce((s, i) => s + i.totalShortfall, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              />
+              <BarChartVisual
+                title="Top Buyers by Settled Shortfall ($ USD)"
+                subtitle="Overseas clients with highest cumulative wire fee / FX deductions"
+                data={(() => {
+                  const map = new Map<string, number>();
+                  filteredShortfallRows.forEach((row) => {
+                    map.set(row.customerName, (map.get(row.customerName) || 0) + row.totalShortfall);
+                  });
+                  return Array.from(map.entries())
+                    .sort(([_, a], [__, b]) => b - a)
+                    .slice(0, 6)
+                    .map(([label, value]) => ({
+                      label,
+                      value,
+                      formattedValue: `-$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    }));
+                })()}
+                orientation="horizontal"
+                unit="$"
+              />
+            </div>
+          )}
 
           {/* Itemized Table */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-2xs overflow-hidden">

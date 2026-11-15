@@ -1,13 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, getAgeingBucket } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
-import { Download, Info } from 'lucide-react';
+import { Download, Info, BarChart3, EyeOff } from 'lucide-react';
+import { BarChartVisual } from '../common/charts';
 
 export const OutstandingReport: React.FC = () => {
   const { suppliers, purchases, payments, purchaseReturns } = useData();
+  const [showVisuals, setShowVisuals] = useState<boolean>(true);
 
   interface SupplierAgeing {
     supplierId: string;
@@ -166,6 +168,13 @@ export const OutstandingReport: React.FC = () => {
           onClick: handleExportCSV,
           icon: Download
         }}
+        secondaryActions={[
+          {
+            label: showVisuals ? 'Hide Graphs' : 'Show Graphs',
+            onClick: () => setShowVisuals(!showVisuals),
+            icon: showVisuals ? EyeOff : BarChart3
+          }
+        ]}
       />
 
       {/* Bento Ageing Summary Tiles */}
@@ -207,6 +216,62 @@ export const OutstandingReport: React.FC = () => {
           variant="highlight"
         />
       </div>
+
+      {/* Graphical Ageing Distribution */}
+      {showVisuals && (
+        <div className="p-4 rounded-2xl bg-white shadow-xs border border-gray-100">
+          <BarChartVisual
+            title="Procurement Payables Ageing Schedule (INR)"
+            subtitle="Chronological distribution of supplier balance payables and overdue exposure"
+            data={[
+              {
+                label: 'Not Due',
+                value: totalNotDue,
+                formattedValue: formatINR(totalNotDue),
+                color: '#10b981',
+                secondaryValue: 'Within terms'
+              },
+              {
+                label: '0–30d Overdue',
+                value: total0_30,
+                formattedValue: formatINR(total0_30),
+                color: '#3b82f6',
+                secondaryValue: 'Grace period'
+              },
+              {
+                label: '31–60d Overdue',
+                value: total31_60,
+                formattedValue: formatINR(total31_60),
+                color: '#f59e0b',
+                secondaryValue: 'Attention'
+              },
+              {
+                label: '61–90d Overdue',
+                value: total61_90,
+                formattedValue: formatINR(total61_90),
+                color: '#f97316',
+                secondaryValue: 'Substantial'
+              },
+              {
+                label: '91–180d Overdue',
+                value: total91_180,
+                formattedValue: formatINR(total91_180),
+                color: '#ef4444',
+                secondaryValue: 'High risk'
+              },
+              {
+                label: '180+d Critical',
+                value: total180Plus,
+                formattedValue: formatINR(total180Plus),
+                color: '#be123c',
+                secondaryValue: 'Critical audit'
+              }
+            ]}
+            orientation="horizontal"
+            unit="INR"
+          />
+        </div>
+      )}
 
       {/* Ageing Table */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
@@ -6,6 +6,8 @@ import { PageHeader } from '../common/PageHeader';
 import {
   Calendar,
   BarChart,
+  BarChart3,
+  PieChart,
   Grid,
   MapPin,
   TrendingUp,
@@ -15,8 +17,15 @@ import {
   Sparkles,
   Percent,
   Award,
-  AlertCircle
+  AlertCircle,
+  EyeOff
 } from 'lucide-react';
+import {
+  BarChartVisual,
+  DonutChartVisual,
+  TrendLineVisual,
+  ComparisonBarVisual
+} from '../common/charts';
 
 type ReportTab =
   | 'daily'
@@ -32,6 +41,7 @@ export const OperationalReportsHub: React.FC = () => {
   const { purchases, suppliers, species, grades, sizes, counts, locations, businessSettings } = useData();
 
   const [activeReport, setActiveReport] = useState<ReportTab>('daily');
+  const [showVisuals, setShowVisuals] = useState<boolean>(true);
 
   // Filter states
   const today = new Date().toISOString().split('T')[0];
@@ -369,6 +379,122 @@ export const OperationalReportsHub: React.FC = () => {
     };
   }).sort((a, b) => b.rawWeight - a.rawWeight);
 
+  // Visual Chart Data Memos
+  const dailySpeciesChartData = useMemo(() => {
+    const map = new Map<string, number>();
+    dailyPurchases.forEach((p) => {
+      const name = speciesMap.get(p.speciesId)?.name || 'Unknown Species';
+      map.set(name, (map.get(name) || 0) + p.weightKg);
+    });
+    return Array.from(map.entries())
+      .map(([label, value]) => ({
+        label,
+        value,
+        formattedValue: formatKg(value)
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [dailyPurchases, speciesMap]);
+
+  const monthlyDailyTrendData = useMemo(() => {
+    const map = new Map<string, number>();
+    currentMonthPurchases.forEach((p) => {
+      const day = p.purchaseDate.split('-')[2] || p.purchaseDate;
+      map.set(day, (map.get(day) || 0) + p.weightKg);
+    });
+    return Array.from(map.entries())
+      .map(([day, weight]) => ({
+        label: `Day ${parseInt(day, 10)}`,
+        value: weight,
+        formattedValue: formatKg(weight)
+      }))
+      .sort((a, b) => {
+        const da = parseInt(a.label.replace('Day ', ''), 10);
+        const db = parseInt(b.label.replace('Day ', ''), 10);
+        return da - db;
+      });
+  }, [currentMonthPurchases]);
+
+  const speciesVolumeChartData = useMemo(() => {
+    return speciesAnalysis.map((sp) => ({
+      label: sp.name,
+      value: sp.weight,
+      formattedValue: formatKg(sp.weight),
+      secondaryLabel: 'Eff Rate',
+      secondaryValue: `₹${sp.effRate.toFixed(1)}/Kg`
+    })).sort((a, b) => b.value - a.value);
+  }, [speciesAnalysis]);
+
+  const speciesRateChartData = useMemo(() => {
+    return speciesAnalysis.map((sp) => ({
+      label: sp.name,
+      value: sp.effRate,
+      formattedValue: `₹${sp.effRate.toFixed(2)}/Kg`,
+      secondaryLabel: 'Base Rate',
+      secondaryValue: `₹${sp.avgRate.toFixed(2)}`
+    })).sort((a, b) => b.value - a.value);
+  }, [speciesAnalysis]);
+
+  const gradeDistributionData = useMemo(() => {
+    const map = new Map<string, number>();
+    matrixCells.forEach((c) => {
+      map.set(c.gradeName, (map.get(c.gradeName) || 0) + c.weight);
+    });
+    return Array.from(map.entries()).map(([label, value]) => ({
+      label,
+      value,
+      formattedValue: formatKg(value)
+    })).sort((a, b) => b.value - a.value);
+  }, [matrixCells]);
+
+  const sizeDistributionData = useMemo(() => {
+    return matrixCells.map((c) => ({
+      label: `${c.specName} (${c.gradeName})`,
+      value: c.weight,
+      formattedValue: formatKg(c.weight),
+      secondaryLabel: 'Avg Rate',
+      secondaryValue: `₹${c.weightedAvgRate.toFixed(1)}`
+    })).sort((a, b) => b.value - a.value).slice(0, 8);
+  }, [matrixCells]);
+
+  const locationShareData = useMemo(() => {
+    return locationAnalysis.map((loc) => ({
+      label: loc.name,
+      value: loc.weight,
+      formattedValue: formatKg(loc.weight),
+      subtext: `${loc.district}, ${loc.state}`
+    })).sort((a, b) => b.value - a.value);
+  }, [locationAnalysis]);
+
+  const locationRateData = useMemo(() => {
+    return locationAnalysis.map((loc) => ({
+      label: loc.name,
+      value: loc.avgRate,
+      formattedValue: `₹${loc.avgRate.toFixed(2)}/Kg`,
+      secondaryLabel: 'Batches',
+      secondaryValue: loc.lotsCount
+    })).sort((a, b) => b.value - a.value);
+  }, [locationAnalysis]);
+
+  const supplierVolumeData = useMemo(() => {
+    return supplierRanking.map((s) => ({
+      label: s.name,
+      value: s.weight,
+      formattedValue: formatKg(s.weight),
+      secondaryLabel: 'Cost',
+      secondaryValue: formatINR(s.cost)
+    })).slice(0, 8);
+  }, [supplierRanking]);
+
+  const supplierCostData = useMemo(() => {
+    return supplierRanking.map((s) => ({
+      label: s.name,
+      value: s.cost,
+      formattedValue: formatINR(s.cost),
+      secondaryLabel: 'Payable',
+      secondaryValue: formatINR(s.outstanding)
+    })).slice(0, 8);
+  }, [supplierRanking]);
+
   // Report Tabs Definition
   const tabs: { id: ReportTab; label: string; icon: any }[] = [
     { id: 'daily', label: '1. Daily Purchase', icon: Calendar },
@@ -547,6 +673,11 @@ export const OperationalReportsHub: React.FC = () => {
         }}
         secondaryActions={[
           {
+            label: showVisuals ? 'Hide Graphs' : 'Show Graphs',
+            onClick: () => setShowVisuals(!showVisuals),
+            icon: showVisuals ? EyeOff : BarChart3
+          },
+          {
             label: 'Print Report',
             onClick: triggerPrint,
             icon: Printer
@@ -618,6 +749,33 @@ export const OperationalReportsHub: React.FC = () => {
               <span className="text-sm font-black text-rose-700 mt-0.5 block">{formatINR(dailyTotalCost)}</span>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1 pb-2">
+              <DonutChartVisual
+                title="Daily Sourcing Volume Split"
+                subtitle={`Catch volume breakdown for ${selectedDate}`}
+                icon={PieChart}
+                data={dailySpeciesChartData}
+                centerLabel="Landed Weight"
+                centerValue={formatKg(dailyTotalWeight)}
+                unit="Kg"
+                emptyMessage="No purchases recorded on this date."
+              />
+              <ComparisonBarVisual
+                title="Cost & Expense Breakdown"
+                subtitle="Raw Purchase Value vs Direct Landing Expenses"
+                metrics={[
+                  { label: 'Raw Catch Value', value: dailyTotalValue, formattedValue: formatINR(dailyTotalValue), color: '#0284c7' },
+                  { label: 'Landing Expenses', value: dailyTotalExpenses, formattedValue: formatINR(dailyTotalExpenses), color: '#f59e0b' },
+                  { label: 'Total Landed Cost', value: dailyTotalCost, formattedValue: formatINR(dailyTotalCost), color: '#f43f5e' }
+                ]}
+                totalLabel="Total Expenditure"
+                totalFormatted={formatINR(dailyTotalCost)}
+              />
+            </div>
+          )}
 
           {/* Table */}
           <div className="overflow-x-auto">
@@ -709,6 +867,37 @@ export const OperationalReportsHub: React.FC = () => {
               <div className="text-[11px] text-ink-700 mt-2">Active Indian FY: {businessSettings?.financialYear || 'FY 2026-27'}</div>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
+              <div className="lg:col-span-2">
+                <BarChartVisual
+                  title="Daily Procurement Velocity"
+                  subtitle={`Daily raw catch landings (Kg) in ${selectedMonth}`}
+                  icon={BarChart3}
+                  orientation="vertical"
+                  data={monthlyDailyTrendData}
+                  unit="Kg"
+                  emptyMessage="No purchases recorded for this month."
+                />
+              </div>
+              <ComparisonBarVisual
+                title="MoM Procurement Shift"
+                subtitle="Current Month vs Prior Month"
+                metrics={[
+                  { label: `Current (${selectedMonth})`, value: currentMonthCost, formattedValue: formatINR(currentMonthCost), color: '#f43f5e', subtext: `${formatKg(currentMonthWeight)} landed` },
+                  { label: 'Prior Month', value: priorMonthCost, formattedValue: formatINR(priorMonthCost), color: '#64748b', subtext: `${formatKg(priorMonthWeight)} landed` }
+                ]}
+                badge={{
+                  label: momCostChangePct >= 0 ? `+${momCostChangePct.toFixed(1)}% MoM` : `${momCostChangePct.toFixed(1)}% MoM`,
+                  variant: momCostChangePct <= 0 ? 'success' : 'warning'
+                }}
+                totalLabel="Current Landed"
+                totalFormatted={formatINR(currentMonthCost)}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -716,6 +905,30 @@ export const OperationalReportsHub: React.FC = () => {
       {activeReport === 'species' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
           <h3 className="text-sm font-bold text-ink-900">Species-wise Volume, Expenditure &amp; Landed Margin</h3>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-2">
+              <BarChartVisual
+                title="Procurement Volume by Species"
+                subtitle="Total landed weight (Kg) and percentage share across raw catch"
+                icon={BarChart3}
+                data={speciesVolumeChartData}
+                unit="Kg"
+                maxItems={8}
+                emptyMessage="No species transactions recorded."
+              />
+              <BarChartVisual
+                title="Landed Rate Comparison (₹/Kg)"
+                subtitle="Effective landed rate (with landing expenses) vs base purchase rate"
+                icon={TrendingUp}
+                data={speciesRateChartData}
+                maxItems={8}
+                emptyMessage="No rate records available."
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -764,6 +977,32 @@ export const OperationalReportsHub: React.FC = () => {
               Min, max, and weighted-average rates across physical sizes, piece counts, and quality gradings.
             </p>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-2">
+              <DonutChartVisual
+                title="Quality Grade Distribution"
+                subtitle="Catch share across quality gradings (A, B, C Grade)"
+                icon={PieChart}
+                data={gradeDistributionData}
+                centerLabel="Grades"
+                centerValue={`${gradeDistributionData.length} Grades`}
+                unit="Kg"
+                emptyMessage="No grade records available."
+              />
+              <BarChartVisual
+                title="Top Size & Piece Count Slices"
+                subtitle="Procurement volume by physical size or count specification"
+                icon={BarChart3}
+                data={sizeDistributionData}
+                unit="Kg"
+                maxItems={8}
+                emptyMessage="No size or count records available."
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -815,6 +1054,30 @@ export const OperationalReportsHub: React.FC = () => {
       {activeReport === 'location' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
           <h3 className="text-sm font-bold text-ink-900">Landing Location &amp; Harbour Centre Analysis</h3>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-2">
+              <DonutChartVisual
+                title="Harbour Procurement Share"
+                subtitle="Proportion of raw catch sourced per coastal landing wharf"
+                icon={MapPin}
+                data={locationShareData}
+                centerLabel="Harbours"
+                centerValue={`${locationAnalysis.length} Ports`}
+                unit="Kg"
+                emptyMessage="No harbour transactions recorded."
+              />
+              <BarChartVisual
+                title="Average Landed Rate by Harbour"
+                subtitle="Cost efficiency comparison per landing wharf (₹/Kg)"
+                icon={TrendingUp}
+                data={locationRateData}
+                emptyMessage="No rate records available."
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -859,6 +1122,30 @@ export const OperationalReportsHub: React.FC = () => {
             <h3 className="text-sm font-bold text-ink-900">Supplier Procurement Ranking (Numeric Only)</h3>
             <p className="text-xs text-ink-500">Purely numeric volume, cost, and outstanding metrics — zero subjective scoring.</p>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-2">
+              <BarChartVisual
+                title="Top Suppliers by Procurement Volume"
+                subtitle="Ranked raw landing volume in Kilograms"
+                icon={Users}
+                data={supplierVolumeData}
+                unit="Kg"
+                maxItems={8}
+                emptyMessage="No supplier transactions found."
+              />
+              <BarChartVisual
+                title="Supplier Sourcing Expenditure"
+                subtitle="Total purchase expenditure vs current outstanding payables"
+                icon={BarChart3}
+                data={supplierCostData}
+                maxItems={8}
+                emptyMessage="No cost records found."
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -1013,6 +1300,34 @@ export const OperationalReportsHub: React.FC = () => {
               <span className="text-base font-black text-rose-700 mt-1 block">₹{paWeightedAvg.toFixed(2)} / Kg</span>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="pt-1">
+              <TrendLineVisual
+                title={`Price Movement Trend: ${speciesMap.get(paSpeciesId)?.name || 'All Sourced Species'}`}
+                subtitle="Daily weighted average rate per Kg over time across procurement dates"
+                icon={TrendingUp}
+                points={dailyTrend.map((d) => ({
+                  label: d.date,
+                  value: d.avgRate,
+                  formattedValue: `₹${d.avgRate.toFixed(2)}/Kg`,
+                  secondaryLabel: 'Landed',
+                  secondaryValue: formatKg(d.weight)
+                }))}
+                unit="₹/Kg"
+                benchmark={{
+                  value: paWeightedAvg,
+                  label: 'Weighted Avg'
+                }}
+                badge={{
+                  label: `Spread: ₹${(paMaxRate - paMinRate).toFixed(2)}/Kg`,
+                  variant: 'info'
+                }}
+                emptyMessage="No historical price points match the current filter selection."
+              />
+            </div>
+          )}
 
           {/* Daily Trend Table */}
           <div>
@@ -1178,6 +1493,41 @@ export const OperationalReportsHub: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1 pb-2">
+              <ComparisonBarVisual
+                title="Sourcing vs Output Recovery Split"
+                subtitle="Raw Material Inflow vs Finished Recovery vs Processing Loss"
+                metrics={[
+                  { label: 'Finished Yield Output', value: totalFinishedYieldWeight, formattedValue: formatKg(totalFinishedYieldWeight), color: '#10b981', subtext: `${overallYieldPct.toFixed(1)}% recovery` },
+                  { label: 'Processing Loss / Peeling', value: totalProcessingLossKg, formattedValue: formatKg(totalProcessingLossKg), color: '#f43f5e', subtext: `${overallLossPct.toFixed(1)}% weight loss` }
+                ]}
+                totalLabel="Total Raw Weight"
+                totalFormatted={formatKg(totalYieldRawWeight)}
+                badge={{
+                  label: `${overallYieldPct.toFixed(1)}% Yield`,
+                  variant: overallYieldPct >= 50 ? 'success' : 'warning'
+                }}
+              />
+              <BarChartVisual
+                title="Species Recovery Percentage"
+                subtitle="Finished recovery % per species (Target benchmark: 50%+)"
+                icon={Percent}
+                data={speciesYieldAnalysis.map((s) => ({
+                  label: s.name,
+                  value: s.yieldPct,
+                  formattedValue: `${s.yieldPct.toFixed(1)}%`,
+                  percentage: s.yieldPct,
+                  color: s.yieldPct >= 50 ? '#10b981' : s.yieldPct >= 40 ? '#f59e0b' : '#f43f5e',
+                  secondaryLabel: 'Finished Cost',
+                  secondaryValue: `₹${s.finishedCost.toFixed(1)}/Kg`
+                }))}
+                emptyMessage="No species yield records available."
+              />
+            </div>
+          )}
 
           {/* SECTION 1: SPECIES-WISE YIELD BREAKDOWN */}
           <div className="space-y-2">

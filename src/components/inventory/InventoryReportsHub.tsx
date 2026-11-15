@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import {
   FileSpreadsheet,
   Download,
   Printer,
-          CheckCircle2,
-        ArrowRight
+  CheckCircle2,
+  ArrowRight,
+  BarChart3,
+  EyeOff
 } from 'lucide-react';
+import {
+  BarChartVisual,
+  ComparisonBarVisual
+} from '../common/charts';
 import { InventoryNavTab } from './InventorySidebar';
 
 interface InventoryReportsHubProps {
@@ -34,6 +40,32 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
   } = inventoryCalculation;
 
   const [activeReportTab, setActiveReportTab] = useState<ReportSubTab>('cogs_margin');
+  const [showVisuals, setShowVisuals] = useState<boolean>(true);
+
+  const topProductsMargin = useMemo(() => {
+    const map = new Map<string, { weight: number; cogs: number; sales: number; profit: number }>();
+    cogsReport.forEach((c) => {
+      const key = c.productName;
+      const cur = map.get(key) || { weight: 0, cogs: 0, sales: 0, profit: 0 };
+      cur.weight += c.quantityKg;
+      cur.cogs += c.totalCogsINR;
+      cur.sales += c.saleValueINR;
+      cur.profit += c.grossProfitINR;
+      map.set(key, cur);
+    });
+    return Array.from(map.entries())
+      .map(([label, d]) => {
+        const marginPct = d.sales > 0 ? (d.profit / d.sales) * 100 : 0;
+        return {
+          label,
+          value: Number(marginPct.toFixed(1)),
+          formattedValue: `${marginPct.toFixed(1)}%`,
+          secondaryValue: `₹${d.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+        };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [cogsReport]);
 
   // Formatters
   const formatCurrency = (val: number) => {
@@ -185,6 +217,13 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowVisuals(!showVisuals)}
+            className="px-3.5 py-2 bg-white hover:bg-gray-50 text-ink-700 border border-gray-200 rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
+          >
+            {showVisuals ? <EyeOff className="w-4 h-4 text-ink-500" /> : <BarChart3 className="w-4 h-4 text-rose-600" />}
+            <span>{showVisuals ? 'Hide Graphs' : 'Show Graphs'}</span>
+          </button>
+          <button
             onClick={handleExportActiveReport}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
           >
@@ -285,6 +324,43 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
             </div>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && cogsReport.length > 0 && (
+            <div className="space-y-4 p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-white/80 shadow-xs">
+              <ComparisonBarVisual
+                title="Commercial Sales Realization vs. Inventory COGS"
+                subtitle="Perpetual inventory cost recognized against outward sales receipts"
+                metrics={[
+                  {
+                    label: 'Total COGS (Inventory Cost)',
+                    value: totalCogsValue,
+                    formattedValue: formatCurrency(totalCogsValue),
+                    color: '#f43f5e',
+                    subtext: 'Depleted inventory carrying value'
+                  },
+                  {
+                    label: 'Realized Gross Profit (INR)',
+                    value: Math.max(0, totalSalesValueINR - totalCogsValue),
+                    formattedValue: formatCurrency(Math.max(0, totalSalesValueINR - totalCogsValue)),
+                    color: '#10b981',
+                    subtext: `Portfolio Margin: ${overallGrossMarginPct.toFixed(1)}%`
+                  }
+                ]}
+                totalLabel="Total Sales Realization"
+                totalFormatted={formatCurrency(totalSalesValueINR)}
+              />
+              {topProductsMargin.length > 0 && (
+                <BarChartVisual
+                  title="Top Products by Gross Margin %"
+                  subtitle="Operational margin generated per commercial product heading"
+                  data={topProductsMargin}
+                  orientation="horizontal"
+                  unit="%"
+                />
+              )}
+            </div>
+          )}
+
           <div className="bg-white/90 backdrop-blur-md rounded-2xl border border-white/80 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -371,6 +447,58 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
             </p>
           </div>
 
+          {/* Graphical Analysis */}
+          {showVisuals && movementSummary.length > 0 && (
+            <div className="p-4 space-y-4 border-b border-gray-100 bg-gray-50/30">
+              <ComparisonBarVisual
+                title="Perpetual Inventory Inflow vs Outflow Balance"
+                subtitle="Total value movement through the seafood inventory pipeline"
+                metrics={[
+                  {
+                    label: 'Opening Valuation',
+                    value: movementSummary.reduce((s, m) => s + m.openingValue, 0),
+                    formattedValue: formatCurrency(movementSummary.reduce((s, m) => s + m.openingValue, 0)),
+                    color: '#3b82f6',
+                    subtext: 'Starting stock value'
+                  },
+                  {
+                    label: 'Receipts & Production Inflow',
+                    value: movementSummary.reduce((s, m) => s + m.receiptsValue, 0),
+                    formattedValue: formatCurrency(movementSummary.reduce((s, m) => s + m.receiptsValue, 0)),
+                    color: '#10b981',
+                    subtext: 'Factory output & procurement'
+                  },
+                  {
+                    label: 'Issues (COGS Outflow)',
+                    value: movementSummary.reduce((s, m) => s + m.issuesValue, 0),
+                    formattedValue: formatCurrency(movementSummary.reduce((s, m) => s + m.issuesValue, 0)),
+                    color: '#f43f5e',
+                    subtext: 'Sales shipments deducted'
+                  }
+                ]}
+                totalLabel="Gross Movement Volume"
+                totalFormatted={formatCurrency(
+                  movementSummary.reduce((s, m) => s + m.openingValue + m.receiptsValue + m.issuesValue, 0)
+                )}
+              />
+              <BarChartVisual
+                title="Top Inventory Items by Closing Valuation (INR)"
+                subtitle="Highest value stock items currently on hand in cold storage"
+                data={[...movementSummary]
+                  .sort((a, b) => b.closingValue - a.closingValue)
+                  .slice(0, 6)
+                  .map((m) => ({
+                    label: m.itemName,
+                    value: m.closingValue,
+                    formattedValue: formatCurrency(m.closingValue),
+                    secondaryValue: `${formatKg(m.closingQty)}`
+                  }))}
+                orientation="horizontal"
+                unit="INR"
+              />
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -426,6 +554,25 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
               Compares weighted average inventory carrying cost with realized commercial sales export prices per Kg.
             </p>
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && nrvChecks.length > 0 && (
+            <div className="p-4 border-b border-gray-100 bg-gray-50/30">
+              <BarChartVisual
+                title="Inventory Carrying Cost vs. Realized Sales NRV (₹/Kg)"
+                subtitle="Compares inventory cost against latest commercial sales price to detect impairment"
+                data={nrvChecks.slice(0, 8).map((n) => ({
+                  label: n.itemName,
+                  value: Number(n.latestSalePricePerKgINR > 0 ? n.latestSalePricePerKgINR.toFixed(2) : n.averageCostPerKg.toFixed(2)),
+                  formattedValue: n.latestSalePricePerKgINR > 0 ? `₹${n.latestSalePricePerKgINR.toFixed(2)}/kg` : `₹${n.averageCostPerKg.toFixed(2)}/kg`,
+                  secondaryValue: `Cost: ₹${n.averageCostPerKg.toFixed(2)}/kg`,
+                  color: n.nrvImpaired ? '#ef4444' : '#10b981'
+                }))}
+                orientation="horizontal"
+                unit="₹/Kg"
+              />
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -489,6 +636,56 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
             <p className="text-xs text-ink-500">
               Verifies that inventory stock receipts reconcile with Purchase Total Costs, and stock issues reconcile with Sales exported weights.
             </p>
+
+            {/* Graphical Analysis */}
+            {showVisuals && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <ComparisonBarVisual
+                  title="Procurement Cost Tieout"
+                  subtitle="Purchase Bills Total vs Inventory Receipts Recorded"
+                  metrics={[
+                    {
+                      label: 'Purchase Cost',
+                      value: reconciliation.purchaseModuleTotalCost,
+                      formattedValue: formatCurrency(reconciliation.purchaseModuleTotalCost),
+                      color: '#3b82f6',
+                      subtext: 'Procurement bills'
+                    },
+                    {
+                      label: 'Inventory Receipts',
+                      value: reconciliation.receiptsValue,
+                      formattedValue: formatCurrency(reconciliation.receiptsValue),
+                      color: '#10b981',
+                      subtext: 'Recorded stock receipts'
+                    }
+                  ]}
+                  totalLabel="Procurement Total"
+                  totalFormatted={formatCurrency(reconciliation.purchaseModuleTotalCost)}
+                />
+                <ComparisonBarVisual
+                  title="Sales Export Weight Tieout"
+                  subtitle="Commercial Invoice Weight vs Inventory Outflow Issues"
+                  metrics={[
+                    {
+                      label: 'Sales Invoices',
+                      value: reconciliation.salesModuleTotalWeightKg,
+                      formattedValue: formatKg(reconciliation.salesModuleTotalWeightKg),
+                      color: '#e11d48',
+                      subtext: 'Commercial export lines'
+                    },
+                    {
+                      label: 'Inventory Issues',
+                      value: movementSummary.reduce((s, m) => s + m.issuesQty, 0),
+                      formattedValue: formatKg(movementSummary.reduce((s, m) => s + m.issuesQty, 0)),
+                      color: '#06b6d4',
+                      subtext: 'Depleted stock weight'
+                    }
+                  ]}
+                  totalLabel="Volume Total"
+                  totalFormatted={formatKg(reconciliation.salesModuleTotalWeightKg)}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               {/* Purchase Tieout */}
@@ -565,6 +762,30 @@ export const InventoryReportsHub: React.FC<InventoryReportsHubProps> = ({ onNavi
               </button>
             )}
           </div>
+
+          {/* Graphical Analysis */}
+          {showVisuals && exceptions.length > 0 && (
+            <div className="p-4 border-b border-gray-100 bg-gray-50/30">
+              <BarChartVisual
+                title="Inventory Exceptions by Category"
+                subtitle="Frequency of data quality divergences and audit attention alerts"
+                data={(() => {
+                  const map = new Map<string, number>();
+                  exceptions.forEach((exc) => {
+                    map.set(exc.type, (map.get(exc.type) || 0) + 1);
+                  });
+                  return Array.from(map.entries()).map(([label, value]) => ({
+                    label,
+                    value,
+                    formattedValue: `${value} issues`,
+                    color: label.toLowerCase().includes('negative') || label.toLowerCase().includes('critical') ? '#ef4444' : '#f59e0b'
+                  }));
+                })()}
+                orientation="horizontal"
+                unit=" issues"
+              />
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">

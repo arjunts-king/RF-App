@@ -15,8 +15,13 @@ import {
   Printer,
   CheckCircle2,
   Percent,
-  ShieldAlert
+  ShieldAlert,
+  EyeOff
 } from 'lucide-react';
+import {
+  BarChartVisual,
+  ComparisonBarVisual
+} from '../common/charts';
 
 type ProductionReportTab =
   | 'daily-processing'
@@ -40,6 +45,7 @@ export const ProductionReportsHub: React.FC = () => {
   } = useData();
 
   const [activeReport, setActiveReport] = useState<ProductionReportTab>('daily-processing');
+  const [showVisuals, setShowVisuals] = useState<boolean>(true);
 
   // Filter States
   const today = new Date().toISOString().split('T')[0];
@@ -608,6 +614,11 @@ export const ProductionReportsHub: React.FC = () => {
         }}
         secondaryActions={[
           {
+            label: showVisuals ? 'Hide Graphs' : 'Show Graphs',
+            onClick: () => setShowVisuals(!showVisuals),
+            icon: showVisuals ? EyeOff : BarChart3
+          },
+          {
             label: 'Print Document',
             onClick: triggerPrint,
             icon: Printer
@@ -679,6 +690,40 @@ export const ProductionReportsHub: React.FC = () => {
               <span className="text-lg font-black text-emerald-700 mt-0.5 block">{dailyYieldPct.toFixed(1)}%</span>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1 pb-2">
+              <ComparisonBarVisual
+                title="Daily Recovery vs Rejection Split"
+                subtitle={`Factory line output efficiency for ${selectedDate}`}
+                metrics={[
+                  { label: 'Finished Processed', value: dailyTotalProcessedKg, formattedValue: formatKg(dailyTotalProcessedKg), color: '#10b981', subtext: `${dailyYieldPct.toFixed(1)}% recovery` },
+                  { label: 'Rejection Weight', value: dailyTotalRejectionKg, formattedValue: formatKg(dailyTotalRejectionKg), color: '#f43f5e', subtext: `${(100 - dailyYieldPct).toFixed(1)}% loss` }
+                ]}
+                totalLabel="Total Input"
+                totalFormatted={formatKg(dailyVolume)}
+                badge={{
+                  label: `${dailyYieldPct.toFixed(1)}% Yield`,
+                  variant: dailyYieldPct >= 90 ? 'success' : dailyYieldPct >= 80 ? 'info' : 'warning'
+                }}
+              />
+              <BarChartVisual
+                title="Species Processed Output"
+                subtitle="Net finished weight processed per product grade"
+                icon={BarChart3}
+                data={consolidatedByProduct.map((p) => ({
+                  label: p.name,
+                  value: p.processed,
+                  formattedValue: formatKg(p.processed),
+                  secondaryLabel: 'Slabs',
+                  secondaryValue: `${p.slabs} slabs`
+                }))}
+                unit="Kg"
+                emptyMessage="No product processing recorded on this date."
+              />
+            </div>
+          )}
 
           {/* Table */}
           <div className="overflow-x-auto">
@@ -777,6 +822,40 @@ export const ProductionReportsHub: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
+              <BarChartVisual
+                title="Consolidated Volume by Product"
+                subtitle="Daily subtotal processed weight (Kg) per product"
+                icon={BarChart3}
+                data={consolidatedByProduct.map((p) => ({
+                  label: p.name,
+                  value: p.processed,
+                  formattedValue: formatKg(p.processed),
+                  secondaryLabel: 'Slabs',
+                  secondaryValue: `${p.slabs} slabs`
+                }))}
+                unit="Kg"
+                emptyMessage="No product entries recorded on this date."
+              />
+              <BarChartVisual
+                title="Consolidated Output by Raw Supplier"
+                subtitle="Finished factory output originating from raw catch suppliers"
+                icon={Users}
+                data={consolidatedBySupplier.map((s) => ({
+                  label: s.name,
+                  value: s.processed,
+                  formattedValue: formatKg(s.processed),
+                  secondaryLabel: 'Rejection',
+                  secondaryValue: formatKg(s.rejection)
+                }))}
+                unit="Kg"
+                emptyMessage="No supplier entries recorded on this date."
+              />
+            </div>
+          )}
 
           {/* Four Subtotal Grids */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -961,6 +1040,43 @@ export const ProductionReportsHub: React.FC = () => {
             </div>
           </div>
 
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-1 pb-2">
+              <div className="lg:col-span-2">
+                <BarChartVisual
+                  title="Daily Production Volume Trend"
+                  subtitle={`Finished factory output (Kg) across all operating dates in ${selectedMonth}`}
+                  icon={BarChart3}
+                  orientation="vertical"
+                  data={monthDailyBreakdown.map((d) => ({
+                    label: d.date.split('-')[2] ? `D${parseInt(d.date.split('-')[2], 10)}` : d.date,
+                    value: d.processed,
+                    formattedValue: formatKg(d.processed),
+                    secondaryLabel: 'Slabs',
+                    secondaryValue: `${d.slabs} pcs`
+                  }))}
+                  unit="Kg"
+                  emptyMessage="No processing entries recorded for this month."
+                />
+              </div>
+              <ComparisonBarVisual
+                title="Monthly Output vs Rejection"
+                subtitle="Factory line recovery efficiency"
+                metrics={[
+                  { label: 'Finished Output', value: monthTotalProcessedKg, formattedValue: formatKg(monthTotalProcessedKg), color: '#10b981', subtext: `${(monthTotalProcessedKg + monthTotalRejectionKg > 0 ? (monthTotalProcessedKg / (monthTotalProcessedKg + monthTotalRejectionKg)) * 100 : 0).toFixed(1)}% recovery` },
+                  { label: 'Rejection Loss', value: monthTotalRejectionKg, formattedValue: formatKg(monthTotalRejectionKg), color: '#f43f5e', subtext: `${(monthTotalProcessedKg + monthTotalRejectionKg > 0 ? (monthTotalRejectionKg / (monthTotalProcessedKg + monthTotalRejectionKg)) * 100 : 0).toFixed(1)}% scrap` }
+                ]}
+                totalLabel="Monthly Handled"
+                totalFormatted={formatKg(monthTotalProcessedKg + monthTotalRejectionKg)}
+                badge={{
+                  label: `${(monthTotalProcessedKg + monthTotalRejectionKg > 0 ? (monthTotalProcessedKg / (monthTotalProcessedKg + monthTotalRejectionKg)) * 100 : 0).toFixed(1)}% Yield`,
+                  variant: (monthTotalProcessedKg + monthTotalRejectionKg > 0 ? (monthTotalProcessedKg / (monthTotalProcessedKg + monthTotalRejectionKg)) * 100 : 0) >= 80 ? 'success' : 'warning'
+                }}
+              />
+            </div>
+          )}
+
           {/* Date-wise Table for every day */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -1101,6 +1217,47 @@ export const ProductionReportsHub: React.FC = () => {
             </div>
           </div>
 
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="pt-1 pb-2">
+              <BarChartVisual
+                title={`${itemAnalysisTab === 'supplier' ? 'Supplier' : itemAnalysisTab === 'grade' ? 'Quality Grade' : 'Size / Count'} Output Share`}
+                subtitle={`Distribution of factory processed output for ${selectedMonth}`}
+                icon={BarChart3}
+                data={
+                  itemAnalysisTab === 'supplier'
+                    ? supplierAnalysisData.map((s) => ({
+                        label: s.name,
+                        value: s.processed,
+                        formattedValue: formatKg(s.processed),
+                        percentage: s.pctTotal,
+                        secondaryLabel: 'Rejection',
+                        secondaryValue: `${s.rejectionRate.toFixed(1)}%`
+                      })).slice(0, 8)
+                    : itemAnalysisTab === 'grade'
+                    ? gradeAnalysisData.map((g) => ({
+                        label: g.name,
+                        value: g.processed,
+                        formattedValue: formatKg(g.processed),
+                        percentage: g.pctTotal,
+                        secondaryLabel: 'Slabs',
+                        secondaryValue: `${g.slabs} pcs`
+                      }))
+                    : sizeAnalysisData.map((sz) => ({
+                        label: sz.name,
+                        value: sz.processed,
+                        formattedValue: formatKg(sz.processed),
+                        percentage: sz.pctTotal,
+                        secondaryLabel: 'Lots',
+                        secondaryValue: sz.batches
+                      })).slice(0, 8)
+                }
+                unit="Kg"
+                emptyMessage="No item transactions recorded for this month."
+              />
+            </div>
+          )}
+
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -1200,6 +1357,32 @@ export const ProductionReportsHub: React.FC = () => {
               Pivot B: Grade × Size/Count
             </button>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="pt-1 pb-2">
+              <BarChartVisual
+                title={matrixView === 'product-grade' ? 'Leading Production Commodities' : 'Output by Quality Grade'}
+                subtitle="Concentration of factory line output for the active matrix pivot"
+                icon={Grid}
+                data={
+                  matrixView === 'product-grade'
+                    ? productGradeMatrix.map((r) => ({
+                        label: r.speciesName,
+                        value: r.total,
+                        formattedValue: formatKg(r.total)
+                      })).slice(0, 8)
+                    : gradeSizeMatrix.map((r) => ({
+                        label: r.gradeName,
+                        value: r.total,
+                        formattedValue: formatKg(r.total)
+                      }))
+                }
+                unit="Kg"
+                emptyMessage="No matrix transactions recorded for this month."
+              />
+            </div>
+          )}
 
           {/* Pivot A: Product x Grade */}
           {matrixView === 'product-grade' && (
@@ -1359,6 +1542,28 @@ export const ProductionReportsHub: React.FC = () => {
             ))}
           </div>
 
+          {/* Graphical Representation */}
+          {showVisuals && exceptionItems.length > 0 && (
+            <div className="pt-1 pb-2">
+              <BarChartVisual
+                title="Exception Severity & Categorization"
+                subtitle="Frequency of data quality divergences and audit flags"
+                icon={AlertTriangle}
+                data={['Missing Data', 'Duplicate Entry', 'Slab Variance', 'Negative Value'].map((cat) => {
+                  const count = exceptionItems.filter((e) => e.type === cat).length;
+                  return {
+                    label: cat,
+                    value: count,
+                    formattedValue: `${count} items`,
+                    color: cat === 'Missing Data' ? '#f43f5e' : cat === 'Duplicate Entry' ? '#f59e0b' : '#3b82f6'
+                  };
+                }).filter((d) => d.value > 0)}
+                unit="Items"
+                emptyMessage="Zero exceptions recorded across all production entries."
+              />
+            </div>
+          )}
+
           {/* Exceptions Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -1479,6 +1684,41 @@ export const ProductionReportsHub: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Graphical Representation */}
+          {showVisuals && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1 pb-2">
+              <ComparisonBarVisual
+                title="Procurement vs Production Reconciliation"
+                subtitle={`Raw material intake vs finished factory recovery in ${selectedMonth}`}
+                metrics={[
+                  { label: 'Factory Processed', value: totalProductionYieldKg, formattedValue: formatKg(totalProductionYieldKg), color: '#10b981', subtext: `${overallYieldPct.toFixed(1)}% recovery` },
+                  { label: 'Weight Shrinkage / Peeling', value: Math.max(0, totalRawPurchasedKg - totalProductionYieldKg), formattedValue: formatKg(Math.max(0, totalRawPurchasedKg - totalProductionYieldKg)), color: '#f43f5e', subtext: `${(100 - overallYieldPct).toFixed(1)}% weight loss` }
+                ]}
+                totalLabel="Raw Received"
+                totalFormatted={formatKg(totalRawPurchasedKg)}
+                badge={{
+                  label: `${overallYieldPct.toFixed(1)}% Yield`,
+                  variant: overallYieldPct >= 80 ? 'success' : overallYieldPct >= 70 ? 'info' : 'warning'
+                }}
+              />
+              <BarChartVisual
+                title="Lot Yield Recovery Ranking"
+                subtitle="Recovery % across active supplier & species processing batches"
+                icon={Percent}
+                data={yieldRows.map((r) => ({
+                  label: `${r.speciesName} (${r.supplierName})`,
+                  value: r.yieldPct,
+                  formattedValue: `${r.yieldPct.toFixed(1)}%`,
+                  percentage: r.yieldPct,
+                  color: r.yieldPct >= 80 ? '#10b981' : r.yieldPct >= 70 ? '#f59e0b' : '#f43f5e',
+                  secondaryLabel: 'Raw Kg',
+                  secondaryValue: formatKg(r.purchaseWeightKg)
+                })).slice(0, 8)}
+                emptyMessage="No reconciliation matches between purchase intake and factory processing."
+              />
+            </div>
+          )}
 
           {/* Yield Table */}
           <div className="overflow-x-auto">
