@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { DailyProcessingEntry } from '../../types';
+import { DailyProcessingEntry, Species } from '../../types';
 import { formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
@@ -37,6 +37,7 @@ export const ProductionReportsHub: React.FC = () => {
     processingEntries,
     purchases,
     suppliers,
+    purchaseSpecies,
     species,
     grades,
     sizes,
@@ -63,7 +64,8 @@ export const ProductionReportsHub: React.FC = () => {
 
   // Lookups
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
+  const allKnownSpecies: Species[] = useMemo(() => [...(purchaseSpecies || []), ...(species || [])], [purchaseSpecies, species]);
+  const speciesMap = new Map(allKnownSpecies.map((sp: Species) => [sp.id, sp]));
   const gradeMap = new Map(grades.map((g) => [g.id, g]));
   const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
   const countMap = new Map(counts.map((c) => [c.id, c]));
@@ -72,10 +74,20 @@ export const ProductionReportsHub: React.FC = () => {
   // Helper to obtain clean production species name (isolated from sales export products)
   const resolveProductionSpeciesName = (rawId: string): string => {
     if (!rawId) return 'Unknown';
-    const sp = speciesMap.get(rawId) || species.find((s) => s.id === rawId || s.code.toLowerCase() === rawId.toLowerCase() || s.name.toLowerCase() === rawId.toLowerCase());
+    const clean = rawId.trim();
+    const lower = clean.toLowerCase();
+    const sp =
+      speciesMap.get(rawId) ||
+      allKnownSpecies.find(
+        (s: Species) =>
+          s.id.toLowerCase() === lower ||
+          s.code.toLowerCase() === lower ||
+          s.name.toLowerCase() === lower ||
+          (s.rawSpeciesName && s.rawSpeciesName.toLowerCase() === lower)
+      );
     if (sp?.rawSpeciesName) return sp.rawSpeciesName.trim();
     if (sp?.name) return sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
-    return rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    return clean.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
   };
 
   const activeEntries = processingEntries.filter((p) => !p.isVoided);

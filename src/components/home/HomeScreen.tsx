@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { Species } from '../../types';
 import { RoleSwitcher } from '../common/RoleSwitcher';
 import { Carousel } from '../common/Carousel';
 import { formatINR, formatKg } from '../../utils/calculations';
@@ -33,15 +34,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     processingEntries,
     salesInvoices,
     suppliers,
+    purchaseSpecies,
     species,
     customers,
     businessSettings,
     inventoryCalculation
   } = useData();
 
+  // Robust species name resolver combining purchaseSpecies and species
+  const allSpecies: Species[] = useMemo(() => [...(purchaseSpecies || []), ...(species || [])], [purchaseSpecies, species]);
+
+  const resolveSpeciesName = (spId?: string, fallback = 'Raw Material'): string => {
+    if (!spId) return fallback;
+    const clean = spId.trim();
+    const lower = clean.toLowerCase();
+    const found = allSpecies.find(
+      (s: Species) =>
+        s.id.toLowerCase() === lower ||
+        s.code.toLowerCase() === lower ||
+        s.name.trim().toLowerCase() === lower ||
+        (s.rawSpeciesName && s.rawSpeciesName.trim().toLowerCase() === lower)
+    );
+    if (found) {
+      if (found.rawSpeciesName && !found.rawSpeciesName.toLowerCase().startsWith('sp-auto')) {
+        return found.rawSpeciesName.trim();
+      }
+      if (found.name && !found.name.toLowerCase().startsWith('sp-auto')) {
+        return found.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    if (!clean.startsWith('sp-auto') && !clean.startsWith('auto-') && !clean.startsWith('prd-') && !clean.startsWith('sp-')) {
+      return clean.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+    return fallback;
+  };
+
   // Lookups
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
   const customerMap = new Map(customers.map((c) => [c.id, c]));
 
   // Metrics for tiles
@@ -76,7 +105,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const combinedRecentEntries = [
     ...recentPurchases.map((p) => {
       const supp = supplierMap.get(p.supplierId);
-      const sp = speciesMap.get(p.speciesId);
+      const spName = resolveSpeciesName(p.speciesId, 'Raw Catch');
       return {
         id: `p-${p.id}`,
         type: 'purchase' as const,
@@ -84,7 +113,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         targetTab: 'purchases',
         code: p.purchaseId,
         party: supp?.name || 'Unknown Supplier',
-        detail: `${sp?.name || 'Raw Seafood'} · ${formatKg(p.weightKg)}`,
+        detail: `${spName} · ${formatKg(p.weightKg)}`,
         metric: formatINR(p.totalCost),
         date: p.purchaseDate,
         badgeText: p.paymentStatus,
@@ -100,7 +129,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }),
     ...recentProcessing.map((proc) => {
       const supp = supplierMap.get(proc.supplierId);
-      const sp = speciesMap.get(proc.speciesId);
+      const spName = resolveSpeciesName(proc.speciesId, 'Seafood');
       return {
         id: `pr-${proc.id}`,
         type: 'production' as const,
@@ -108,7 +137,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         targetTab: 'processing-log',
         code: proc.entryNo,
         party: supp?.name || 'Plant Raw Lot',
-        detail: `${sp?.name || 'Fish'} · ${proc.slabsCount} Slabs`,
+        detail: `${spName} · ${proc.slabsCount} Slabs`,
         metric: formatKg(proc.processedWeightKg),
         date: proc.processingDate,
         badgeText: `${proc.slabsCount} Slabs`,
@@ -690,7 +719,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="space-y-2.5">
               {recentPurchases.map((p) => {
                 const supp = supplierMap.get(p.supplierId);
-                const sp = speciesMap.get(p.speciesId);
+                const spName = resolveSpeciesName(p.speciesId, 'Raw Catch');
                 return (
                   <div
                     key={p.id}
@@ -702,7 +731,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div className="text-ink-900 font-semibold mt-0.5 truncate max-w-[140px]">
                         {supp?.name || 'Unknown Supplier'}
                       </div>
-                      <div className="text-[11px] text-ink-500">{sp?.name} · {formatKg(p.weightKg)}</div>
+                      <div className="text-[11px] text-ink-500">{spName} · {formatKg(p.weightKg)}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-extrabold text-ink-900">{formatINR(p.totalCost)}</div>
@@ -737,7 +766,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="space-y-2.5">
               {recentProcessing.map((proc) => {
                 const supp = supplierMap.get(proc.supplierId);
-                const sp = speciesMap.get(proc.speciesId);
+                const spName = resolveSpeciesName(proc.speciesId, 'Seafood');
                 return (
                   <div
                     key={proc.id}
@@ -749,7 +778,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       <div className="text-ink-900 font-semibold mt-0.5 truncate max-w-[140px]">
                         {supp?.name || 'Raw Lot'}
                       </div>
-                      <div className="text-[11px] text-ink-500">{sp?.name}</div>
+                      <div className="text-[11px] text-ink-500">{spName}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-extrabold text-amber-900">{formatKg(proc.processedWeightKg)}</div>

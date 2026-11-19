@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const DataQualityPanel: React.FC = () => {
-  const { purchases, species, suppliers } = useData();
+  const { purchases, suppliers } = useData();
 
   const activePurchases = purchases.filter((p) => !p.isVoided);
   const today = new Date();
@@ -59,13 +59,18 @@ export const DataQualityPanel: React.FC = () => {
   const sumEntryCost = activePurchases.reduce((s, p) => s + p.totalCost, 0);
 
   // Re-sum via species grouping
-  const speciesSumWeight = species.reduce((s, sp) => {
-    return s + activePurchases.filter((p) => p.speciesId === sp.id).reduce((w, p) => w + p.weightKg, 0);
-  }, 0);
+  const speciesGroupMap = new Map<string, { weight: number; cost: number }>();
+  activePurchases.forEach((p) => {
+    const spKey = p.speciesId?.trim() || 'unspecified';
+    const curr = speciesGroupMap.get(spKey) || { weight: 0, cost: 0 };
+    speciesGroupMap.set(spKey, {
+      weight: curr.weight + p.weightKg,
+      cost: curr.cost + p.totalCost
+    });
+  });
 
-  const speciesSumCost = species.reduce((s, sp) => {
-    return s + activePurchases.filter((p) => p.speciesId === sp.id).reduce((c, p) => c + p.totalCost, 0);
-  }, 0);
+  const speciesSumWeight = Array.from(speciesGroupMap.values()).reduce((s, g) => s + g.weight, 0);
+  const speciesSumCost = Array.from(speciesGroupMap.values()).reduce((s, g) => s + g.cost, 0);
 
   const weightVariance = Math.abs(sumEntryWeight - speciesSumWeight);
   const costVariance = Math.abs(sumEntryCost - speciesSumCost);

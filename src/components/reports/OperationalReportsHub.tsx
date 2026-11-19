@@ -38,7 +38,7 @@ type ReportTab =
   | 'yield-analysis';
 
 export const OperationalReportsHub: React.FC = () => {
-  const { purchases, suppliers, species, grades, sizes, counts, locations, businessSettings } = useData();
+  const { purchases, suppliers, purchaseSpecies, species, grades, sizes, counts, locations, businessSettings } = useData();
 
   const [activeReport, setActiveReport] = useState<ReportTab>('daily');
   const [showVisuals, setShowVisuals] = useState<boolean>(true);
@@ -49,7 +49,7 @@ export const OperationalReportsHub: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
 
   // Price analysis filter states
-  const [paSpeciesId, setPaSpeciesId] = useState<string>(species[0]?.id || '');
+  const [paSpeciesId, setPaSpeciesId] = useState<string>('');
   const [paGradeId, setPaGradeId] = useState<string>('');
   const [paSizeId, setPaSizeId] = useState<string>('');
   const [paCountId, setPaCountId] = useState<string>('');
@@ -61,11 +61,218 @@ export const OperationalReportsHub: React.FC = () => {
 
   // Lookup maps
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
   const locationMap = new Map(locations.map((l) => [l.id, l]));
   const gradeMap = new Map(grades.map((g) => [g.id, g]));
   const sizeMap = new Map(sizes.map((s) => [s.id, s]));
   const countMap = new Map(counts.map((c) => [c.id, c]));
+
+  // Robust purchase species resolver across ID, code, name, rawSpeciesName, scientificName
+  const findSpecies = useMemo(() => {
+    const combined = [...(purchaseSpecies || []), ...(species || [])];
+    const byId = new Map(combined.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(combined.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(combined.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof combined)[0]>();
+    combined.forEach((sp) => {
+      if (sp.rawSpeciesName) {
+        byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+      }
+    });
+
+    return (idOrKey: string) => {
+      if (!idOrKey) return undefined;
+      const clean = idOrKey.trim();
+      const lower = clean.toLowerCase();
+      return (
+        byId.get(lower) ||
+        byCode.get(lower) ||
+        byName.get(lower) ||
+        byRaw.get(lower) ||
+        combined.find(
+          (sp) =>
+            sp.id.toLowerCase() === lower ||
+            sp.code.toLowerCase() === lower ||
+            sp.name.toLowerCase() === lower ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === lower)
+        )
+      );
+    };
+  }, [purchaseSpecies, species]);
+
+  const isAutoString = (str?: string): boolean => {
+    if (!str) return false;
+    const s = str.trim().toLowerCase();
+    return (
+      s.startsWith('sp-auto') ||
+      s.startsWith('auto-') ||
+      s.includes('auto uploaded') ||
+      s.includes('autouploaded') ||
+      s.includes('auto-uploaded') ||
+      s.includes('auto-created') ||
+      s.includes('autocreated') ||
+      s === 'auto' ||
+      s === 'recorded'
+    );
+  };
+
+  // Helper to obtain clean authentic purchase/raw species name (never sales export names)
+  const getRawPurchaseSpeciesName = (rawId: string, p?: (typeof purchases)[0]): { id: string; label: string; subLabel?: string } => {
+    const sp = findSpecies(rawId);
+    let label = '';
+    let subLabel = sp?.scientificName || undefined;
+
+    if (sp) {
+      if (sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name && !isAutoString(sp.name)) {
+        // Strip export sales prefixes/suffixes (e.g. "Frozen Indian Mackerel" -> "Indian Mackerel")
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code && !isAutoString(sp.code)) {
+        label = sp.code.trim();
+      }
+    }
+
+    // Fallback: If label is empty or still an auto string, check purchase remarks or rawId
+    if (!label || isAutoString(label)) {
+      if (p?.remarks && !isAutoString(p.remarks)) {
+        label = p.remarks.trim();
+      } else if (!isAutoString(rawId)) {
+        label = rawId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else {
+        const extracted = rawId.replace(/^(sp-)?auto[-_]?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = extracted ? extracted.charAt(0).toUpperCase() + extracted.slice(1) : (sp?.rawSpeciesName || sp?.name || 'Raw Material');
+      }
+    }
+
+    const resolvedSp = sp || findSpecies(label);
+    const resolvedId = resolvedSp ? resolvedSp.id : (isAutoString(rawId) ? label : rawId);
+
+    return {
+      id: resolvedId,
+      label,
+      subLabel: subLabel || resolvedSp?.scientificName
+    };
+  };
+
+  // Purchase species options strictly isolated from sales export products
+  const speciesOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string; subLabel?: string }[] = [];
+
+    if (purchases.length > 0) {
+      purchases.forEach((p) => {
+        if (p.isVoided) return;
+        const rawId = (p.speciesId || '').trim();
+        if (!rawId) return;
+
+        const info = getRawPurchaseSpeciesName(rawId, p);
+        const lowerLabel = info.label.toLowerCase();
+
+        if (!seen.has(lowerLabel) && !isAutoString(info.label)) {
+          seen.add(lowerLabel);
+          seen.add(info.id.toLowerCase());
+          seen.add(rawId.toLowerCase());
+          options.push({
+            id: info.id,
+            label: info.label,
+            subLabel: info.subLabel
+          });
+        }
+      });
+    } else {
+      (purchaseSpecies || []).forEach((sp) => {
+        const rawName = sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)
+          ? sp.rawSpeciesName.trim()
+          : sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+
+        const lowerLabel = rawName.toLowerCase();
+        if (!seen.has(lowerLabel) && !isAutoString(rawName)) {
+          seen.add(lowerLabel);
+          options.push({
+            id: sp.id,
+            label: rawName,
+            subLabel: sp.scientificName || undefined
+          });
+        }
+      });
+    }
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [purchases, purchaseSpecies, findSpecies]);
+
+  const resolveSpeciesName = (spId?: string, p?: (typeof purchases)[0]): string => {
+    if (!spId) return 'Unspecified Species';
+    const opt = speciesOptions.find((o) => o.id === spId || o.label.toLowerCase() === spId.toLowerCase());
+    if (opt) return opt.label;
+    const direct = (purchaseSpecies || []).find((s) => s.id === spId);
+    if (direct) {
+      if (direct.rawSpeciesName && !isAutoString(direct.rawSpeciesName)) return direct.rawSpeciesName;
+      if (direct.name && !isAutoString(direct.name)) {
+        return direct.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    const found = findSpecies(spId);
+    if (found) {
+      if (found.rawSpeciesName && !isAutoString(found.rawSpeciesName)) return found.rawSpeciesName;
+      if (found.name && !isAutoString(found.name)) {
+        return found.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      }
+    }
+    if (p?.remarks && !isAutoString(p.remarks)) return p.remarks.trim();
+    if (!isAutoString(spId) && !spId.startsWith('prd-') && !spId.startsWith('sp-')) {
+      return spId.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+    }
+    return 'Raw Material';
+  };
+
+  const matchesSpecies = (p: (typeof purchases)[0], targetSpId: string): boolean => {
+    if (!targetSpId) return true;
+    const rawEntrySpId = (p.speciesId || '').trim();
+    if (rawEntrySpId === targetSpId || rawEntrySpId.toLowerCase() === targetSpId.toLowerCase()) return true;
+
+    const entrySp = findSpecies(rawEntrySpId);
+    const entrySpName = (entrySp?.name || rawEntrySpId).trim().toLowerCase();
+    const entrySpCode = (entrySp?.code || '').trim().toLowerCase();
+    const entrySpRaw = (entrySp?.rawSpeciesName || '').trim().toLowerCase();
+    const entryRawName = getRawPurchaseSpeciesName(rawEntrySpId, p).label.trim().toLowerCase();
+
+    const selSp = findSpecies(targetSpId);
+    if (entrySp && selSp && entrySp.id === selSp.id) return true;
+
+    if (selSp) {
+      if (rawEntrySpId.toLowerCase() === selSp.id.toLowerCase()) return true;
+      if (rawEntrySpId.toLowerCase() === selSp.code.toLowerCase()) return true;
+      if (rawEntrySpId.toLowerCase() === selSp.name.trim().toLowerCase()) return true;
+      if (selSp.rawSpeciesName && rawEntrySpId.toLowerCase() === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+      if (selSp.scientificName && rawEntrySpId.toLowerCase() === selSp.scientificName.trim().toLowerCase()) return true;
+
+      if (entrySpName && entrySpName === selSp.name.trim().toLowerCase()) return true;
+      if (entrySpCode && entrySpCode === selSp.code.toLowerCase()) return true;
+      if (entrySpRaw && selSp.rawSpeciesName && entrySpRaw === selSp.rawSpeciesName.trim().toLowerCase()) return true;
+
+      const selRawName = (selSp.rawSpeciesName || selSp.name).replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+      if (entryRawName && entryRawName === selRawName) return true;
+    }
+
+    if (entrySp) {
+      const selLower = targetSpId.trim().toLowerCase();
+      if (selLower === entrySp.id.toLowerCase()) return true;
+      if (selLower === entrySpCode) return true;
+      if (selLower === entrySpName) return true;
+      if (entrySpRaw && selLower === entrySpRaw) return true;
+    }
+
+    const selOpt = speciesOptions.find((o) => o.id === targetSpId || o.label.toLowerCase() === targetSpId.toLowerCase());
+    if (selOpt) {
+      const optLabel = selOpt.label.trim().toLowerCase();
+      if (optLabel === entrySpName || optLabel === rawEntrySpId.toLowerCase()) return true;
+      if (optLabel === entryRawName) return true;
+      if (entrySpRaw && optLabel.includes(entrySpRaw)) return true;
+    }
+
+    return false;
+  };
 
   const activePurchases = purchases.filter((p) => !p.isVoided);
 
@@ -98,26 +305,29 @@ export const OperationalReportsHub: React.FC = () => {
   // --------------------------------------------------------------------------
   // 3. SPECIES-WISE ANALYSIS
   // --------------------------------------------------------------------------
-  const speciesAnalysis = species.map((sp) => {
-    const list = activePurchases.filter((p) => p.speciesId === sp.id);
-    const weight = list.reduce((s, p) => s + p.weightKg, 0);
-    const value = list.reduce((s, p) => s + p.purchaseValue, 0);
-    const cost = list.reduce((s, p) => s + p.totalCost, 0);
-    const avgRate = weight > 0 ? value / weight : 0;
-    const effRate = weight > 0 ? cost / weight : 0;
+  const speciesAnalysis = useMemo(() => {
+    return speciesOptions.map((sp) => {
+      const list = activePurchases.filter((p) => matchesSpecies(p, sp.id));
+      const weight = list.reduce((s, p) => s + p.weightKg, 0);
+      const value = list.reduce((s, p) => s + p.purchaseValue, 0);
+      const cost = list.reduce((s, p) => s + p.totalCost, 0);
+      const avgRate = weight > 0 ? value / weight : 0;
+      const effRate = weight > 0 ? cost / weight : 0;
+      const directSp = findSpecies(sp.id);
 
-    return {
-      id: sp.id,
-      name: sp.name,
-      category: sp.category,
-      lotsCount: list.length,
-      weight,
-      value,
-      cost,
-      avgRate,
-      effRate
-    };
-  }).filter((sp) => sp.lotsCount > 0);
+      return {
+        id: sp.id,
+        name: sp.label,
+        category: directSp?.category || 'Raw Catch',
+        lotsCount: list.length,
+        weight,
+        value,
+        cost,
+        avgRate,
+        effRate
+      };
+    }).filter((sp) => sp.lotsCount > 0);
+  }, [speciesOptions, activePurchases, matchesSpecies, findSpecies]);
 
   // --------------------------------------------------------------------------
   // 4. GRADE, SIZE & COUNT MATRIX ANALYSIS
@@ -242,7 +452,7 @@ export const OperationalReportsHub: React.FC = () => {
   // 7. PURCHASE PRICE ANALYSIS & DAILY TREND
   // --------------------------------------------------------------------------
   const paFiltered = activePurchases.filter((p) => {
-    if (paSpeciesId && p.speciesId !== paSpeciesId) return false;
+    if (paSpeciesId && !matchesSpecies(p, paSpeciesId)) return false;
     if (paGradeId && p.gradeId !== paGradeId) return false;
     if (paSizeId && p.sizeId !== paSizeId && (!p.isDualSize || p.secondarySizeId !== paSizeId)) return false;
     if (paCountId && p.countId !== paCountId) return false;
@@ -281,7 +491,7 @@ export const OperationalReportsHub: React.FC = () => {
   // 8. YIELD & RECOVERY ANALYSIS
   // --------------------------------------------------------------------------
   const yieldPurchases = activePurchases.filter((p) => {
-    if (yieldSpeciesId && p.speciesId !== yieldSpeciesId) return false;
+    if (yieldSpeciesId && !matchesSpecies(p, yieldSpeciesId)) return false;
     if (yieldSupplierId && p.supplierId !== yieldSupplierId) return false;
     return true;
   });
@@ -297,30 +507,33 @@ export const OperationalReportsHub: React.FC = () => {
   const overallRawRatePerKg = totalYieldRawWeight > 0 ? totalYieldCost / totalYieldRawWeight : 0;
 
   // Species-wise yield breakdown
-  const speciesYieldAnalysis = species.map((sp) => {
-    const list = yieldRecordedPurchases.filter((p) => p.speciesId === sp.id);
-    const rawWeight = list.reduce((s, p) => s + p.weightKg, 0);
-    const yieldWeight = list.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
-    const cost = list.reduce((s, p) => s + p.totalCost, 0);
-    const yieldPct = rawWeight > 0 ? (yieldWeight / rawWeight) * 100 : 0;
-    const lossKg = Math.max(0, rawWeight - yieldWeight);
-    const rawRate = rawWeight > 0 ? cost / rawWeight : 0;
-    const finishedCost = yieldWeight > 0 ? cost / yieldWeight : 0;
+  const speciesYieldAnalysis = useMemo(() => {
+    return speciesOptions.map((sp) => {
+      const list = yieldRecordedPurchases.filter((p) => matchesSpecies(p, sp.id));
+      const rawWeight = list.reduce((s, p) => s + p.weightKg, 0);
+      const yieldWeight = list.reduce((s, p) => s + (p.yieldWeightKg || 0), 0);
+      const cost = list.reduce((s, p) => s + p.totalCost, 0);
+      const yieldPct = rawWeight > 0 ? (yieldWeight / rawWeight) * 100 : 0;
+      const lossKg = Math.max(0, rawWeight - yieldWeight);
+      const rawRate = rawWeight > 0 ? cost / rawWeight : 0;
+      const finishedCost = yieldWeight > 0 ? cost / yieldWeight : 0;
+      const directSp = findSpecies(sp.id);
 
-    return {
-      id: sp.id,
-      name: sp.name,
-      category: sp.category,
-      lotsCount: list.length,
-      rawWeight,
-      yieldWeight,
-      yieldPct,
-      lossKg,
-      cost,
-      rawRate,
-      finishedCost
-    };
-  }).filter((s) => s.lotsCount > 0).sort((a, b) => b.yieldWeight - a.yieldWeight);
+      return {
+        id: sp.id,
+        name: sp.label,
+        category: directSp?.category || 'Raw Catch',
+        lotsCount: list.length,
+        rawWeight,
+        yieldWeight,
+        yieldPct,
+        lossKg,
+        cost,
+        rawRate,
+        finishedCost
+      };
+    }).filter((s) => s.lotsCount > 0).sort((a, b) => b.yieldWeight - a.yieldWeight);
+  }, [speciesOptions, yieldRecordedPurchases, matchesSpecies, findSpecies]);
 
   // Supplier-wise yield performance
   const supplierYieldAnalysis = suppliers.map((sup) => {
@@ -383,7 +596,7 @@ export const OperationalReportsHub: React.FC = () => {
   const dailySpeciesChartData = useMemo(() => {
     const map = new Map<string, number>();
     dailyPurchases.forEach((p) => {
-      const name = speciesMap.get(p.speciesId)?.name || 'Unknown Species';
+      const name = resolveSpeciesName(p.speciesId, p);
       map.set(name, (map.get(name) || 0) + p.weightKg);
     });
     return Array.from(map.entries())
@@ -393,7 +606,7 @@ export const OperationalReportsHub: React.FC = () => {
         formattedValue: formatKg(value)
       }))
       .sort((a, b) => b.value - a.value);
-  }, [dailyPurchases, speciesMap]);
+  }, [dailyPurchases, speciesOptions]);
 
   const monthlyDailyTrendData = useMemo(() => {
     const map = new Map<string, number>();
@@ -517,7 +730,7 @@ export const OperationalReportsHub: React.FC = () => {
         ID: p.purchaseId,
         Date: p.purchaseDate,
         Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        Species: resolveSpeciesName(p.speciesId, p),
         Weight: p.weightKg,
         Rate: p.ratePerKg,
         Expenses: p.totalExpenses,
@@ -540,7 +753,7 @@ export const OperationalReportsHub: React.FC = () => {
         ID: p.purchaseId,
         Date: p.purchaseDate,
         Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        Species: resolveSpeciesName(p.speciesId, p),
         Weight: p.weightKg,
         Rate: p.ratePerKg,
         Expenses: p.totalExpenses,
@@ -616,7 +829,7 @@ export const OperationalReportsHub: React.FC = () => {
         ID: p.purchaseId,
         Date: p.purchaseDate,
         Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
-        Species: speciesMap.get(p.speciesId)?.name || 'N/A',
+        Species: resolveSpeciesName(p.speciesId, p),
         RawWeightKg: p.weightKg,
         YieldWeightKg: p.yieldWeightKg || 0,
         YieldPct: p.yieldPct ? `${p.yieldPct}%` : `${(((p.yieldWeightKg || 0) / p.weightKg) * 100).toFixed(2)}%`,
@@ -642,7 +855,7 @@ export const OperationalReportsHub: React.FC = () => {
       exportData = activePurchases.map((p) => ({
         ID: p.purchaseId,
         Date: p.purchaseDate,
-        Species: speciesMap.get(p.speciesId)?.name,
+        Species: resolveSpeciesName(p.speciesId, p),
         Weight: p.weightKg,
         TotalCost: p.totalCost
       }));
@@ -805,7 +1018,7 @@ export const OperationalReportsHub: React.FC = () => {
                     <tr key={p.id} className="hover:bg-rose-50/30">
                       <td className="py-2.5 px-3 font-bold text-rose-700">{p.purchaseId}</td>
                       <td className="py-2.5 px-3">{supplierMap.get(p.supplierId)?.name}</td>
-                      <td className="py-2.5 px-3 font-semibold">{speciesMap.get(p.speciesId)?.name}</td>
+                      <td className="py-2.5 px-3 font-semibold">{resolveSpeciesName(p.speciesId, p)}</td>
                       <td className="py-2.5 px-3 text-ink-500">{locationMap.get(p.locationId)?.name}</td>
                       <td className="py-2.5 px-3 text-right font-bold">{p.weightKg.toLocaleString('en-IN')}</td>
                       <td className="py-2.5 px-3 text-right">₹{p.ratePerKg.toFixed(2)}</td>
@@ -1208,9 +1421,9 @@ export const OperationalReportsHub: React.FC = () => {
                 className="w-full p-2 bg-white border border-gray-300 rounded-lg outline-none"
               >
                 <option value="">All Species</option>
-                {species.map((sp) => (
+                {speciesOptions.map((sp) => (
                   <option key={sp.id} value={sp.id}>
-                    {sp.name}
+                    {sp.label}
                   </option>
                 ))}
               </select>
@@ -1305,7 +1518,7 @@ export const OperationalReportsHub: React.FC = () => {
           {showVisuals && (
             <div className="pt-1">
               <TrendLineVisual
-                title={`Price Movement Trend: ${speciesMap.get(paSpeciesId)?.name || 'All Sourced Species'}`}
+                title={`Price Movement Trend: ${resolveSpeciesName(paSpeciesId) !== 'Unspecified Species' && paSpeciesId ? resolveSpeciesName(paSpeciesId) : 'All Sourced Species'}`}
                 subtitle="Daily weighted average rate per Kg over time across procurement dates"
                 icon={TrendingUp}
                 points={dailyTrend.map((d) => ({
@@ -1389,9 +1602,9 @@ export const OperationalReportsHub: React.FC = () => {
                   className="text-xs font-medium px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-rose-600 outline-none"
                 >
                   <option value="">All Species</option>
-                  {species.map((sp) => (
+                  {speciesOptions.map((sp) => (
                     <option key={sp.id} value={sp.id}>
-                      {sp.name}
+                      {sp.label}
                     </option>
                   ))}
                 </select>
@@ -1808,7 +2021,7 @@ export const OperationalReportsHub: React.FC = () => {
                           <td className="py-2.5 px-3 whitespace-nowrap text-gray-700">{p.purchaseDate}</td>
                           <td className="py-2.5 px-3 font-semibold text-ink-900">{supplierMap.get(p.supplierId)?.name || 'Unknown'}</td>
                           <td className="py-2.5 px-3">
-                            <span className="font-semibold text-ink-900">{speciesMap.get(p.speciesId)?.name}</span>
+                            <span className="font-semibold text-ink-900">{resolveSpeciesName(p.speciesId, p)}</span>
                             <div className="text-[10px] text-gray-500">
                               {p.isDualSize && p.secondarySizeId ? (
                                 `Dual Size: ${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'}`
