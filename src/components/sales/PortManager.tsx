@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
 import { StatusBadge } from '../common/StatusBadge';
+import { Carousel } from '../common/Carousel';
 import { PortMaster } from '../../types';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -25,6 +26,7 @@ export const PortManager: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PortMaster | null>(null);
@@ -264,9 +266,127 @@ export const PortManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Ports Table */}
+      {/* Mobile Presentation Switcher */}
+      <div className="sm:hidden flex items-center justify-between px-1">
+        <span className="text-xs font-bold text-ink-600">Mobile Presentation</span>
+        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('cards')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'cards' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Swipe Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('table')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'table' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Full Table
+          </button>
+        </div>
+      </div>
+
+      {/* Ports Table Container */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile Port Cards Carousel */}
+        {mobileViewMode === 'cards' && (
+          <div className="sm:hidden p-4">
+            <Carousel
+              ariaLabel="Port Master Cards"
+              style="peeking"
+              depthEffect="subtle"
+              cardWidthClass="w-[85%]"
+              showIndicators={true}
+              showArrows={true}
+              showCount={true}
+              emptyStateMessage="No ports matching your criteria."
+              viewAllLink={{
+                label: 'View full table',
+                onClick: () => setMobileViewMode('table'),
+                showEndCard: true,
+                endCardTitle: 'Ports Directory Table',
+                endCardDescription: 'Switch to full table view with multi-selection and export.'
+              }}
+            >
+              {filteredPorts.map((p) => {
+                const isSelected = selectedIds.includes(p.id);
+                return (
+                  <div
+                    key={`mobile-${p.id}`}
+                    className={`p-4 rounded-2xl border transition-all h-full flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-rose-50/40 border-rose-400 ring-2 ring-rose-400/50 shadow-sm'
+                        : p.active
+                        ? 'bg-white border-gray-100 shadow-xs hover:border-rose-300'
+                        : 'bg-gray-50/70 border-gray-200 opacity-60'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(p.id)}
+                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
+                          />
+                          <div>
+                            <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              {p.code}
+                            </span>
+                            <h4 className="font-bold text-ink-900 text-sm mt-1">{p.name}</h4>
+                            <span className="text-[11px] text-ink-500 flex items-center gap-1 mt-0.5">
+                              <Globe className="w-3 h-3 text-ink-400" />
+                              {p.country}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => togglePortActive(p.id)}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition shrink-0 ${
+                            p.active
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-gray-100 text-gray-500 border-gray-300'
+                          }`}
+                        >
+                          {p.active ? 'Active' : 'Archived'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {permissions.canManageSalesMasterData && (
+                      <div className="pt-2 mt-3 border-t border-gray-100 flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleOpenEdit(p)}
+                          title="Edit Port"
+                          className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(p)}
+                          title="Delete Port"
+                          className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </Carousel>
+          </div>
+        )}
+
+        {/* Ports Table */}
+        <div className={`${mobileViewMode === 'cards' ? 'hidden sm:block' : 'block'} overflow-x-auto`}>
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">

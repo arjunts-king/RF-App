@@ -10,6 +10,8 @@ import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import { StatusBadge } from '../common/StatusBadge';
 import { PaginationControls } from '../common/PaginationControls';
 import { RealizationModal } from './RealizationModal';
+import { Carousel } from '../common/Carousel';
+import { ChartSlideCard } from '../common/ChartSlideCard';
 import {
   TrendingUp,
   Anchor,
@@ -50,6 +52,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [kpiViewMode, setKpiViewMode] = useState<'carousel' | 'grid'>('carousel');
 
   // Product Share Matrix State
   const [matrixSearch, setMatrixSearch] = useState('');
@@ -571,6 +574,59 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     };
   }, [pendingOutstandingInvoices]);
 
+  // Recent Invoices (Strict Requirement 2: invoice number, customer, destination, amount, realization status badge)
+  const recentInvoices = useMemo(() => {
+    return [...filteredInvoices]
+      .sort((a, b) => (b.createdAt || b.invoiceDate).localeCompare(a.createdAt || a.invoiceDate))
+      .slice(0, 8);
+  }, [filteredInvoices]);
+
+  // Combined top customers and top destinations for carousel (Strict Requirement 3)
+  const topDestinationsAndCustomers = useMemo(() => {
+    return [
+      ...topCustomers.map((c) => ({
+        id: `c-${c.name}`,
+        type: 'Overseas Importer' as const,
+        name: c.name,
+        badge: `${c.pct.toFixed(1)}% Share`,
+        metric: `$${c.val.toLocaleString()}`,
+        metricLabel: 'Invoiced USD',
+        subtext: 'Verified overseas buyer account',
+        linkTab: 'customers',
+        icon: Users,
+        color: 'text-rose-600',
+        barColor: 'bg-rose-600',
+        pct: c.pct
+      })),
+      ...topPorts.map((p) => ({
+        id: `p-${p.code}`,
+        type: 'Destination Port' as const,
+        name: p.name,
+        badge: `${p.pct.toFixed(1)}% Cargo`,
+        metric: formatKg(p.wt),
+        metricLabel: 'Export Volume',
+        subtext: `Port of Discharge (${p.code})`,
+        linkTab: 'sales-reports',
+        icon: Anchor,
+        color: 'text-emerald-600',
+        barColor: 'bg-emerald-600',
+        pct: p.pct
+      }))
+    ];
+  }, [topCustomers, topPorts]);
+
+  // Active filter tags for display inside chart cards
+  const activeFilterTags = useMemo(() => {
+    const tags: { label: string; value: string; color?: 'rose' | 'blue' | 'emerald' | 'amber' | 'purple' | 'gray' }[] = [];
+    if (startDate) tags.push({ label: 'From', value: startDate, color: 'gray' });
+    if (endDate) tags.push({ label: 'To', value: endDate, color: 'gray' });
+    if (selectedCustomerIds.length > 0) tags.push({ label: 'Clients', value: `${selectedCustomerIds.length} active`, color: 'rose' });
+    if (selectedProductIds.length > 0) tags.push({ label: 'Products', value: `${selectedProductIds.length} active`, color: 'blue' });
+    if (selectedPodIds.length > 0) tags.push({ label: 'Ports', value: `${selectedPodIds.length} active`, color: 'emerald' });
+    if (selectedStatuses.length > 0) tags.push({ label: 'Status', value: `${selectedStatuses.length} active`, color: 'purple' });
+    return tags;
+  }, [startDate, endDate, selectedCustomerIds, selectedProductIds, selectedPodIds, selectedStatuses]);
+
   // CSV Export for Pending Outstanding Invoices
   const handleExportOutstandingCSV = () => {
     const data = filteredOutstandingInvoices.map((inv) => ({
@@ -963,72 +1019,508 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       </div>
 
       {/* 8 Primary Bento KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 relative z-10">
-        <BentoCard
-          label="Total Invoices"
-          value={totalInvoices}
-          caption="Commercial export bills"
-          linkText="Browse invoices"
-          onLinkClick={() => onNavigate && onNavigate('invoices')}
-        />
-        <BentoCard
-          label="Total Export Weight"
-          value={formatKg(totalWeightKg)}
-          caption="Net seafood cargo"
-          linkText="Weight analysis"
-          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
-        />
-        <BentoCard
-          label="Gross Invoiced (USD)"
-          value={`$${totalUSD.toLocaleString()}`}
-          caption="Overseas gross value"
-          variant="highlight"
-          linkText="Turnover ledger"
-          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
-        />
-        <BentoCard
-          label="Total FOB Value"
-          value={`$${totalFOB.toLocaleString()}`}
-          caption="Port departure valuation"
-          variant="highlight"
-          linkText="FOB breakdown"
-          onLinkClick={() => onNavigate && onNavigate('fob-dashboard')}
-        />
-        <BentoCard
-          label="Average USD / Kg"
-          value={`$${avgUSDPerKg.toFixed(2)}`}
-          caption="Realization rate per kg"
-          variant="success"
-          linkText="Yield analysis"
-          onLinkClick={() => onNavigate && onNavigate('sales-reports')}
-        />
-        <BentoCard
-          label="Realized (INR)"
-          value={formatINR(totalRealizedINR)}
-          caption="Bank settlements settled"
-          variant="success"
-          linkText="Realization log"
-          onLinkClick={() => onNavigate && onNavigate('realizations')}
-        />
-        <BentoCard
-          label="Pending Outstanding"
-          value={`$${totalOutstandingUSD.toLocaleString()}`}
-          caption={`${pendingOutstandingInvoices.length} invoices awaiting remittance`}
-          variant={totalOutstandingUSD > 0 ? 'warning' : 'default'}
-          linkText="View unrealized invoices"
-          onLinkClick={() => {
-            const el = document.getElementById('pending-outstanding-invoices');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-        />
-        <BentoCard
-          label="Active Overseas Buyers"
-          value={uniqueCustomerCount}
-          caption="Verified client importers"
-          linkText="Manage clients"
-          onLinkClick={() => onNavigate && onNavigate('customers')}
-        />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-rose-700" />
+            <h3 className="text-sm font-bold text-ink-900 uppercase tracking-wide">Commercial Export Key Metrics</h3>
+            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              {totalInvoices} Invoices
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setKpiViewMode('carousel')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  kpiViewMode === 'carousel' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600 hover:text-ink-900'
+                }`}
+              >
+                Carousel
+              </button>
+              <button
+                type="button"
+                onClick={() => setKpiViewMode('grid')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  kpiViewMode === 'grid' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600 hover:text-ink-900'
+                }`}
+              >
+                Grid
+              </button>
+            </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('sales-reports')}
+                className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline flex items-center gap-1"
+              >
+                <span>Reports hub</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {kpiViewMode === 'carousel' ? (
+          <Carousel
+            ariaLabel="Commercial Export Key Metrics"
+            style="peeking"
+            depthEffect="subtle"
+            cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+            showIndicators={true}
+            showArrows={true}
+            showCount={true}
+            className="relative z-10"
+            viewAllLink={{
+              label: 'Turnover ledger',
+              onClick: () => onNavigate && onNavigate('sales-reports'),
+              showEndCard: true,
+              endCardTitle: 'Commercial Reports Hub',
+              endCardDescription: 'Inspect global buyer orders, currency exchange forward rates, and container bills.'
+            }}
+          >
+            <BentoCard
+              label="Total Invoices"
+              value={totalInvoices}
+              caption="Commercial export bills"
+              linkText="Browse invoices"
+              onLinkClick={() => onNavigate && onNavigate('invoices')}
+            />
+            <BentoCard
+              label="Total Export Weight"
+              value={formatKg(totalWeightKg)}
+              caption="Net seafood cargo"
+              linkText="Weight analysis"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Gross Invoiced (USD)"
+              value={`$${totalUSD.toLocaleString()}`}
+              caption="Overseas gross value"
+              variant="highlight"
+              linkText="Turnover ledger"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Total FOB Value"
+              value={`$${totalFOB.toLocaleString()}`}
+              caption="Port departure valuation"
+              variant="highlight"
+              linkText="FOB breakdown"
+              onLinkClick={() => onNavigate && onNavigate('fob-dashboard')}
+            />
+            <BentoCard
+              label="Average USD / Kg"
+              value={`$${avgUSDPerKg.toFixed(2)}`}
+              caption="Realization rate per kg"
+              variant="success"
+              linkText="Yield analysis"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Realized (INR)"
+              value={formatINR(totalRealizedINR)}
+              caption="Bank settlements settled"
+              variant="success"
+              linkText="Realization log"
+              onLinkClick={() => onNavigate && onNavigate('realizations')}
+            />
+            <BentoCard
+              label="Pending Outstanding"
+              value={`$${totalOutstandingUSD.toLocaleString()}`}
+              caption={`${pendingOutstandingInvoices.length} invoices awaiting remittance`}
+              variant={totalOutstandingUSD > 0 ? 'warning' : 'default'}
+              linkText="View unrealized invoices"
+              onLinkClick={() => {
+                const el = document.getElementById('pending-outstanding-invoices');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+            <BentoCard
+              label="Active Overseas Buyers"
+              value={uniqueCustomerCount}
+              caption="Verified client importers"
+              linkText="Manage clients"
+              onLinkClick={() => onNavigate && onNavigate('customers')}
+            />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 relative z-10">
+            <BentoCard
+              label="Total Invoices"
+              value={totalInvoices}
+              caption="Commercial export bills"
+              linkText="Browse invoices"
+              onLinkClick={() => onNavigate && onNavigate('invoices')}
+            />
+            <BentoCard
+              label="Total Export Weight"
+              value={formatKg(totalWeightKg)}
+              caption="Net seafood cargo"
+              linkText="Weight analysis"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Gross Invoiced (USD)"
+              value={`$${totalUSD.toLocaleString()}`}
+              caption="Overseas gross value"
+              variant="highlight"
+              linkText="Turnover ledger"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Total FOB Value"
+              value={`$${totalFOB.toLocaleString()}`}
+              caption="Port departure valuation"
+              variant="highlight"
+              linkText="FOB breakdown"
+              onLinkClick={() => onNavigate && onNavigate('fob-dashboard')}
+            />
+            <BentoCard
+              label="Average USD / Kg"
+              value={`$${avgUSDPerKg.toFixed(2)}`}
+              caption="Realization rate per kg"
+              variant="success"
+              linkText="Yield analysis"
+              onLinkClick={() => onNavigate && onNavigate('sales-reports')}
+            />
+            <BentoCard
+              label="Realized (INR)"
+              value={formatINR(totalRealizedINR)}
+              caption="Bank settlements settled"
+              variant="success"
+              linkText="Realization log"
+              onLinkClick={() => onNavigate && onNavigate('realizations')}
+            />
+            <BentoCard
+              label="Pending Outstanding"
+              value={`$${totalOutstandingUSD.toLocaleString()}`}
+              caption={`${pendingOutstandingInvoices.length} invoices awaiting remittance`}
+              variant={totalOutstandingUSD > 0 ? 'warning' : 'default'}
+              linkText="View unrealized invoices"
+              onLinkClick={() => {
+                const el = document.getElementById('pending-outstanding-invoices');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+            <BentoCard
+              label="Active Overseas Buyers"
+              value={uniqueCustomerCount}
+              caption="Verified client importers"
+              linkText="Manage clients"
+              onLinkClick={() => onNavigate && onNavigate('customers')}
+            />
+          </div>
+        )}
       </div>
+
+      {/* 2. RECENT INVOICES CAROUSEL (Strict Requirement 2: invoice number, customer, destination, amount, realization status badge) */}
+      <Carousel
+        title="Recent Export Invoices"
+        subtitle="Recent commercial shipping bills with foreign buyer, port of discharge, cargo volume, and realization status."
+        icon={FileText}
+        badge={
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+            {recentInvoices.length} Recent Shipments
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        emptyMessage="No commercial invoices match the active filter criteria."
+        viewAllLink={{
+          label: 'View all invoices',
+          onClick: () => onNavigate && onNavigate('invoices'),
+          showEndCard: true,
+          endCardTitle: 'Commercial Invoice Register',
+          endCardDescription: 'Audit, search, edit, and export complete commercial shipping invoices.'
+        }}
+        items={recentInvoices}
+        renderItem={(inv) => {
+          const consignee = customerMap.get(inv.consigneeId);
+          const podMatch = portMap.get(inv.portOfDischargeId);
+          const podName = podMatch?.name || inv.portOfDischarge || 'Discharge Port';
+          return (
+            <div
+              onClick={() => onNavigate && onNavigate('invoices')}
+              className="h-full min-h-[160px] p-4 sm:p-5 rounded-2xl glass-surface-regular hover:bg-white border border-gray-100 hover:border-rose-200 cursor-pointer transition flex flex-col justify-between group shadow-2xs"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-xs text-rose-700">{inv.invoiceNo}</span>
+                  <span className="text-[10px] text-ink-400 font-mono">{inv.invoiceDate}</span>
+                </div>
+                <div>
+                  <h5 className="font-extrabold text-sm text-ink-900 group-hover:text-rose-700 transition truncate">
+                    {consignee?.name || inv.consigneeName || 'Foreign Importer'}
+                  </h5>
+                  <p className="text-xs text-ink-500 mt-0.5 truncate flex items-center gap-1">
+                    <Anchor className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>{podName}</span>
+                  </p>
+                  <p className="text-[11px] text-ink-500 mt-0.5">
+                    Net cargo: <strong className="text-ink-800">{formatKg(inv.totalWeightKg)}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+                <div className="font-black text-sm text-ink-900 font-mono">
+                  ${inv.totalAmountCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <StatusBadge status={inv.realizationStatus} />
+              </div>
+            </div>
+          );
+        }}
+      />
+
+      {/* 3. TOP CUSTOMERS AND TOP DESTINATIONS CAROUSEL (Strict Requirement 3) */}
+      <Carousel
+        title="Top Overseas Buyers &amp; Destination Ports"
+        subtitle="Key international purchasing accounts and highest-volume discharge terminals."
+        icon={Globe}
+        badge={
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+            {topDestinationsAndCustomers.length} Trade Channels
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        emptyMessage="No customer or destination records available."
+        viewAllLink={{
+          label: 'Manage clients',
+          onClick: () => onNavigate && onNavigate('customers'),
+          showEndCard: true,
+          endCardTitle: 'Client Importers & Ports',
+          endCardDescription: 'Review overseas buyers, consignee master directories, and container discharge ports.'
+        }}
+        items={topDestinationsAndCustomers}
+        renderItem={(item) => (
+          <div
+            onClick={() => onNavigate && onNavigate(item.linkTab)}
+            className="h-full min-h-[160px] p-4 sm:p-5 rounded-2xl glass-surface-regular hover:bg-white border border-gray-100 hover:border-rose-200 cursor-pointer transition flex flex-col justify-between group shadow-2xs"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-ink-700">
+                  <item.icon className={`w-3 h-3 ${item.color}`} />
+                  {item.type}
+                </span>
+                <span className="font-bold text-xs text-rose-700 font-mono">
+                  {item.badge}
+                </span>
+              </div>
+              <div>
+                <h5 className="font-extrabold text-sm text-ink-900 group-hover:text-rose-700 transition truncate">
+                  {item.name}
+                </h5>
+                <p className="text-[11px] text-ink-500 mt-0.5 truncate">{item.subtext}</p>
+              </div>
+            </div>
+
+            <div className="pt-3 mt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-ink-400 block">{item.metricLabel}</span>
+                <span className="font-black text-sm text-ink-900 font-mono">{item.metric}</span>
+              </div>
+              <div className="w-16 bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div className={`h-full ${item.barColor} rounded-full`} style={{ width: `${Math.min(100, item.pct)}%` }} />
+              </div>
+            </div>
+          </div>
+        )}
+      />
+
+      {/* 4. DASHBOARD CHARTS AS SLIDES (Strict Requirement 4: dashboard charts as slides) */}
+      <Carousel
+        title="Commercial Export Analytics &amp; Receivables Intelligence"
+        subtitle="Swipe through graphical monthly export trends, realization balances, receivables ageing, and product market shares."
+        icon={BarChart3}
+        badge={
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+            4 Interactive Slides
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[96%] sm:w-[78%] lg:w-[48.5%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        viewAllLink={{
+          label: 'Open sales reports hub',
+          onClick: () => onNavigate && onNavigate('sales-reports'),
+          showEndCard: true,
+          endCardTitle: 'Sales Reports Hub',
+          endCardDescription: 'Access itemized invoice registers, overseas collection period analysis, and product spreads.'
+        }}
+      >
+        {/* Slide 1: Monthly Sales Value Trend */}
+        <ChartSlideCard
+          title="Monthly Sales Value Trend (USD)"
+          subtitle="Trailing 6-month commercial invoiced export totals"
+          icon={TrendingUp}
+          activeFilters={activeFilterTags}
+          badge={
+            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+              Peak: ${(maxTrendUSD / 1000).toFixed(0)}k
+            </span>
+          }
+          viewAllLink={{
+            label: 'View monthly turnover ledger',
+            onClick: () => onNavigate && onNavigate('sales-reports')
+          }}
+        >
+          <div className="h-44 flex items-end gap-3 pt-4 border-b border-gray-100 px-2">
+            {trendData.map((d) => {
+              const heightPct = maxTrendUSD > 0 ? (d.val / maxTrendUSD) * 85 : 0;
+              return (
+                <div key={d.month} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
+                  <div className="text-[10px] font-bold text-rose-800 opacity-0 group-hover:opacity-100 transition tabular-nums font-mono">
+                    ${(d.val / 1000).toFixed(0)}k
+                  </div>
+                  <div
+                    className="w-full bg-rose-600 hover:bg-rose-700 rounded-t-xl transition-all duration-300 relative group-hover:shadow-md"
+                    style={{ height: `${Math.max(heightPct, 6)}%` }}
+                  />
+                  <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">
+                    {d.month.slice(5)}/{d.month.slice(2, 4)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </ChartSlideCard>
+
+        {/* Slide 2: Realization Status Balance */}
+        <ChartSlideCard
+          title="Realization Status Balance"
+          subtitle="Realized remittances received vs outstanding wire balance"
+          icon={BadgeDollarSign}
+          activeFilters={activeFilterTags}
+          badge={
+            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              {totalUSD > 0 ? ((totalRealizedUSD / totalUSD) * 100).toFixed(1) : 0}% Realized
+            </span>
+          }
+          viewAllLink={{
+            label: 'View realization statement',
+            onClick: () => onNavigate && onNavigate('realizations')
+          }}
+        >
+          <div className="space-y-4 py-2">
+            <div className="flex flex-wrap items-center justify-between text-xs font-bold gap-1">
+              <span className="text-emerald-700">Realized: ${totalRealizedUSD.toLocaleString()}</span>
+              {totalShortfallUSD > 0 && (
+                <span className="text-amber-700">Shortfall: ${totalShortfallUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              )}
+              <span className="text-rose-700">Outstanding: ${totalOutstandingUSD.toLocaleString()}</span>
+            </div>
+
+            <div className="h-4 w-full bg-rose-100 rounded-full overflow-hidden flex">
+              <div
+                className="bg-emerald-500 transition-all duration-500"
+                style={{ width: `${totalUSD > 0 ? (totalRealizedUSD / totalUSD) * 100 : 0}%` }}
+                title={`Realized Remittances: $${totalRealizedUSD.toLocaleString()}`}
+              />
+              {totalShortfallUSD > 0 && (
+                <div
+                  className="bg-amber-400 transition-all duration-500"
+                  style={{ width: `${totalUSD > 0 ? (totalShortfallUSD / totalUSD) * 100 : 0}%` }}
+                  title={`Accounted Shortfall / Deductions: $${totalShortfallUSD.toLocaleString()}`}
+                />
+              )}
+              <div
+                className="bg-rose-600 transition-all duration-500"
+                style={{ width: `${totalUSD > 0 ? (totalOutstandingUSD / totalUSD) * 100 : 100}%` }}
+                title={`Pending Outstanding: $${totalOutstandingUSD.toLocaleString()}`}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs font-semibold text-ink-600 pt-2 border-t border-gray-100">
+              <span>Total Invoiced: <strong className="text-ink-900">${totalUSD.toLocaleString()}</strong></span>
+              <span>Pending Invoices: <strong className="text-rose-700">{pendingOutstandingInvoices.length}</strong></span>
+            </div>
+          </div>
+        </ChartSlideCard>
+
+        {/* Slide 3: Receivables Ageing Breakdown */}
+        <ChartSlideCard
+          title="Receivables Ageing Breakdown"
+          subtitle="Pending balance exposure grouped by overdue maturity buckets"
+          icon={Clock}
+          activeFilters={activeFilterTags}
+          badge={
+            <span className="text-[11px] font-bold text-rose-800 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+              90+d: ${ageingStats['90+'].toLocaleString()}
+            </span>
+          }
+          viewAllLink={{
+            label: 'View receivables ageing register',
+            onClick: () => {
+              const el = document.getElementById('pending-outstanding-invoices');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        >
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/60 text-xs">
+              <span className="font-semibold text-emerald-950">0–30 Days (Current)</span>
+              <span className="font-bold text-emerald-900 font-mono">${ageingStats['0-30'].toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-xl bg-blue-50/60 text-xs">
+              <span className="font-semibold text-blue-950">31–60 Days</span>
+              <span className="font-bold text-blue-900 font-mono">${ageingStats['31-60'].toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/60 text-xs">
+              <span className="font-semibold text-amber-950">61–90 Days</span>
+              <span className="font-bold text-amber-900 font-mono">${ageingStats['61-90'].toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/80 text-xs font-bold border border-rose-200">
+              <span className="text-rose-950">90+ Days Overdue</span>
+              <span className="text-rose-700 font-mono">${ageingStats['90+'].toLocaleString()}</span>
+            </div>
+          </div>
+        </ChartSlideCard>
+
+        {/* Slide 4: Customer Export Value Split */}
+        <ChartSlideCard
+          title="Customer Export Value Split"
+          subtitle="Top foreign buyers by total invoiced sales turnover"
+          icon={Users}
+          activeFilters={activeFilterTags}
+          viewAllLink={{
+            label: 'View all customers',
+            onClick: () => onNavigate && onNavigate('customers')
+          }}
+        >
+          {topCustomers.length === 0 ? (
+            <p className="text-xs text-ink-500 py-12 text-center italic">No customer export data recorded.</p>
+          ) : (
+            <div className="space-y-3">
+              {topCustomers.slice(0, 5).map((c) => (
+                <div key={c.name} className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="truncate max-w-[200px] text-ink-900">{c.name}</span>
+                    <span className="text-ink-700 tabular-nums font-mono">${c.val.toLocaleString()} ({c.pct.toFixed(1)}%)</span>
+                  </div>
+                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-rose-600 rounded-full" style={{ width: `${c.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ChartSlideCard>
+      </Carousel>
 
       {/* Row 1: Monthly Sales Trend & Realization vs Outstanding Split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
 import { StatusBadge } from '../common/StatusBadge';
+import { Carousel } from '../common/Carousel';
 import { Customer, CustomerType } from '../../types';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -33,6 +34,7 @@ export const CustomerManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | 'Overseas' | 'Domestic'>('All');
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'grid'>('cards');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
@@ -385,8 +387,157 @@ export const CustomerManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Presentation Switcher */}
+      <div className="sm:hidden flex items-center justify-between px-1">
+        <span className="text-xs font-bold text-ink-600">Mobile Presentation</span>
+        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('cards')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'cards' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Swipe Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('grid')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'grid' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Full Grid
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Customer Cards Carousel */}
+      {mobileViewMode === 'cards' && (
+        <div className="sm:hidden">
+          <Carousel
+            ariaLabel="Customer Master Cards"
+            style="peeking"
+            depthEffect="subtle"
+            cardWidthClass="w-[88%]"
+            showIndicators={true}
+            showArrows={true}
+            showCount={true}
+            emptyStateMessage="No customers match your filter criteria."
+            viewAllLink={{
+              label: 'View full grid',
+              onClick: () => setMobileViewMode('grid'),
+              showEndCard: true,
+              endCardTitle: 'Customers Directory',
+              endCardDescription: 'Switch to multi-column grid layout for desktop comparisons.'
+            }}
+          >
+            {filteredCustomers.map((c) => {
+              const isSelected = selectedIds.includes(c.id);
+              return (
+                <div
+                  key={`mobile-${c.id}`}
+                  className={`p-5 rounded-2xl border transition-all h-full flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-rose-50/40 border-rose-400 ring-2 ring-rose-400/50 shadow-sm'
+                      : c.active
+                      ? 'bg-white border-gray-100 shadow-xs hover:border-rose-300'
+                      : 'bg-gray-50/70 border-gray-200 opacity-60'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(c.id)}
+                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer mt-0.5"
+                        />
+                        <div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              {c.code}
+                            </span>
+                            <span className="text-[11px] font-semibold text-ink-500 flex items-center gap-1">
+                              <Globe className="w-3 h-3 text-ink-400" />
+                              {c.country}
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-bold text-ink-900 mt-1 leading-snug">{c.name}</h3>
+                        </div>
+                      </div>
+
+                      {permissions.canManageSalesMasterData && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleOpenEdit(c)}
+                            title="Edit Customer"
+                            className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          {permissions.canPermanentlyDelete && (
+                            <button
+                              onClick={() => setDeleteTarget(c)}
+                              title="Delete Customer"
+                              className="p-1.5 text-ink-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-ink-700 pt-2.5 border-t border-gray-100">
+                      <div className="text-[11px] text-ink-600 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{c.gstTreatment || (c.customerType === 'Domestic' ? 'Domestic Regular GST' : 'Overseas (GST Exempt Export Supply)')}</span>
+                      </div>
+                      {c.contactPerson && (
+                        <div className="text-[11px] text-ink-600 flex items-center gap-1">
+                          <Building className="w-3.5 h-3.5 text-ink-400 shrink-0" />
+                          <span className="truncate">Attn: {c.contactPerson}</span>
+                        </div>
+                      )}
+                      {c.phone && (
+                        <div className="text-[11px] text-ink-600 flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5 text-ink-400 shrink-0" />
+                          <span className="truncate">{c.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        c.customerType === 'Domestic'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      }`}
+                    >
+                      {c.customerType === 'Domestic' ? 'Domestic' : 'Overseas (Exempt)'}
+                    </span>
+                    <button
+                      onClick={() => toggleCustomerActive(c.id)}
+                      className={`px-2 py-0.5 rounded-full font-bold text-[10px] border transition ${
+                        c.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {c.active ? 'Active' : 'Archived'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </Carousel>
+        </div>
+      )}
+
       {/* Customer Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className={`${mobileViewMode === 'cards' ? 'hidden sm:grid' : 'grid'} grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5`}>
         {filteredCustomers.map((c) => {
           const isSelected = selectedIds.includes(c.id);
           return (

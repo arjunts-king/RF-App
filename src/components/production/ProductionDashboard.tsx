@@ -4,6 +4,8 @@ import { formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
 import { MultiSelectFilter } from '../common/MultiSelectFilter';
+import { Carousel } from '../common/Carousel';
+import { ChartSlideCard } from '../common/ChartSlideCard';
 import {
   Calendar,
   AlertTriangle,
@@ -13,17 +15,22 @@ import {
   Layers,
   Filter,
   X,
-  ArrowUpRight
+  ArrowUpRight,
+  ArrowRight,
+  TrendingUp,
+  BarChart3,
+  Factory
 } from 'lucide-react';
 
 export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
-  const { processingEntries, suppliers, species, grades } = useData();
+  const { processingEntries, suppliers, species, grades, sizes } = useData();
 
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
   const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<string[]>([]);
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
   const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>([]);
+  const [kpiViewMode, setKpiViewMode] = useState<'carousel' | 'grid'>('carousel');
 
   // Master Lookups
   const supplierMap = useMemo(() => new Map(suppliers.map((s) => [s.id, s])), [suppliers]);
@@ -383,6 +390,40 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
     }))
     .sort((a, b) => b.weight - a.weight);
 
+  // Size Breakdown
+  const sizeBreakdownMap = new Map<string, number>();
+  activeEntries.forEach((p) => {
+    if (p.sizeId) {
+      sizeBreakdownMap.set(p.sizeId, (sizeBreakdownMap.get(p.sizeId) || 0) + p.processedWeightKg);
+    }
+  });
+  const topSizes = Array.from(sizeBreakdownMap.entries())
+    .map(([szId, wt]) => {
+      const matchSize = sizes.find((s) => s.id === szId);
+      return {
+        id: szId,
+        name: matchSize?.code || matchSize?.name || szId,
+        weight: wt,
+        pct: totalProcessedKg > 0 ? (wt / totalProcessedKg) * 100 : 0
+      };
+    })
+    .sort((a, b) => b.weight - a.weight);
+
+  // Recent operating processing days (reversed chronological)
+  const recentDaysList = useMemo(() => {
+    return [...daysInMonth].reverse().slice(0, 10);
+  }, [daysInMonth]);
+
+  // Active filter tags for display inside chart cards
+  const activeFilterTags = useMemo(() => {
+    const tags: { label: string; value: string; color?: 'rose' | 'blue' | 'emerald' | 'amber' | 'purple' | 'gray' }[] = [];
+    if (selectedMonth) tags.push({ label: 'Month', value: selectedMonth, color: 'gray' });
+    if (selectedSpeciesIds.length > 0) tags.push({ label: 'Species', value: `${selectedSpeciesIds.length} selected`, color: 'blue' });
+    if (selectedSupplierIds.length > 0) tags.push({ label: 'Suppliers', value: `${selectedSupplierIds.length} selected`, color: 'rose' });
+    if (selectedGradeIds.length > 0) tags.push({ label: 'Grades', value: `${selectedGradeIds.length} selected`, color: 'emerald' });
+    return tags;
+  }, [selectedMonth, selectedSpeciesIds, selectedSupplierIds, selectedGradeIds]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* FIGMA-STYLE HEADLINE-FIRST HEADER */}
@@ -565,64 +606,185 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
       </div>
 
       {/* BENTO-STYLE KPI CARDS WITH CAPTIONS & LINKS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10">
-        <BentoCard
-          label="Total Production"
-          value={formatKg(totalProcessedKg)}
-          caption="Finished packed output"
-          linkText="View lot details"
-          onLinkClick={() => onNavigate && onNavigate('processing-log')}
-          variant="highlight"
-          trend={
-            selectedMonth
-              ? {
-                  value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
-                  isPositive: momChangePct >= 0
-                }
-              : undefined
-          }
-        />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Factory className="w-4 h-4 text-amber-700" />
+            <h3 className="text-sm font-bold text-ink-900 uppercase tracking-wide">Production Floor Key Metrics</h3>
+            <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              {activeEntries.length} Lots
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setKpiViewMode('carousel')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  kpiViewMode === 'carousel' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600 hover:text-ink-900'
+                }`}
+              >
+                Carousel
+              </button>
+              <button
+                type="button"
+                onClick={() => setKpiViewMode('grid')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  kpiViewMode === 'grid' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600 hover:text-ink-900'
+                }`}
+              >
+                Grid
+              </button>
+            </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('prod-reports')}
+                className="text-xs font-bold text-rose-700 hover:text-rose-900 hover:underline flex items-center gap-1"
+              >
+                <span>Reports hub</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
 
-        <BentoCard
-          label="Slabs Packed"
-          value={totalSlabs.toLocaleString('en-IN')}
-          caption={`${activeEntries.length} lots processed`}
-          linkText="View slab standards"
-          onLinkClick={() => onNavigate && onNavigate('slab-types')}
-        />
+        {kpiViewMode === 'carousel' ? (
+          <Carousel
+            ariaLabel="Production Floor Key Metrics"
+            style="peeking"
+            depthEffect="subtle"
+            cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+            showIndicators={true}
+            showArrows={true}
+            showCount={true}
+            className="relative z-10"
+            viewAllLink={{
+              label: 'View shift performance',
+              onClick: () => onNavigate && onNavigate('prod-reports'),
+              showEndCard: true,
+              endCardTitle: 'Production Reports Hub',
+              endCardDescription: 'Inspect daily shift outputs, standard slab freezing variance, and yield recovery.'
+            }}
+          >
+            <BentoCard
+              label="Total Production"
+              value={formatKg(totalProcessedKg)}
+              caption="Finished packed output"
+              linkText="View lot details"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+              variant="highlight"
+              trend={
+                selectedMonth
+                  ? {
+                      value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
+                      isPositive: momChangePct >= 0
+                    }
+                  : undefined
+              }
+            />
 
-        <BentoCard
-          label="Raw Suppliers"
-          value={uniqueSuppliers}
-          caption={selectedMonth ? `Active in ${selectedMonth}` : 'All active suppliers'}
-          linkText="View supplier lots"
-          onLinkClick={() => onNavigate && onNavigate('processing-log')}
-        />
+            <BentoCard
+              label="Slabs Packed"
+              value={totalSlabs.toLocaleString('en-IN')}
+              caption={`${activeEntries.length} lots processed`}
+              linkText="View slab standards"
+              onLinkClick={() => onNavigate && onNavigate('slab-types')}
+            />
 
-        <BentoCard
-          label="Active Days"
-          value={`${uniqueDays} Days`}
-          caption="Factory operating days"
-          linkText="View daily trend"
-          onLinkClick={() => onNavigate && onNavigate('prod-reports')}
-        />
+            <BentoCard
+              label="Raw Suppliers"
+              value={uniqueSuppliers}
+              caption={selectedMonth ? `Active in ${selectedMonth}` : 'All active suppliers'}
+              linkText="View supplier lots"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+            />
 
-        <BentoCard
-          label="Avg Daily Output"
-          value={formatKg(avgDailyProductionKg)}
-          caption="Per operating day"
-          linkText="View shift performance"
-          onLinkClick={() => onNavigate && onNavigate('prod-reports')}
-        />
+            <BentoCard
+              label="Active Days"
+              value={`${uniqueDays} Days`}
+              caption="Factory operating days"
+              linkText="View daily trend"
+              onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+            />
 
-        <BentoCard
-          label="Total Rejection"
-          value={formatKg(totalRejectionKg)}
-          caption={`${rejectionRatePct.toFixed(1)}% rejection rate`}
-          linkText="Audit exceptions"
-          onLinkClick={() => onNavigate && onNavigate('processing-log')}
-          variant={rejectionRatePct > 5 ? 'warning' : 'default'}
-        />
+            <BentoCard
+              label="Avg Daily Output"
+              value={formatKg(avgDailyProductionKg)}
+              caption="Per operating day"
+              linkText="View shift performance"
+              onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+            />
+
+            <BentoCard
+              label="Total Rejection"
+              value={formatKg(totalRejectionKg)}
+              caption={`${rejectionRatePct.toFixed(1)}% rejection rate`}
+              linkText="Audit exceptions"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+              variant={rejectionRatePct > 5 ? 'warning' : 'default'}
+            />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10">
+            <BentoCard
+              label="Total Production"
+              value={formatKg(totalProcessedKg)}
+              caption="Finished packed output"
+              linkText="View lot details"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+              variant="highlight"
+              trend={
+                selectedMonth
+                  ? {
+                      value: `${momChangePct >= 0 ? '+' : ''}${momChangePct.toFixed(1)}% MoM`,
+                      isPositive: momChangePct >= 0
+                    }
+                  : undefined
+              }
+            />
+
+            <BentoCard
+              label="Slabs Packed"
+              value={totalSlabs.toLocaleString('en-IN')}
+              caption={`${activeEntries.length} lots processed`}
+              linkText="View slab standards"
+              onLinkClick={() => onNavigate && onNavigate('slab-types')}
+            />
+
+            <BentoCard
+              label="Raw Suppliers"
+              value={uniqueSuppliers}
+              caption={selectedMonth ? `Active in ${selectedMonth}` : 'All active suppliers'}
+              linkText="View supplier lots"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+            />
+
+            <BentoCard
+              label="Active Days"
+              value={`${uniqueDays} Days`}
+              caption="Factory operating days"
+              linkText="View daily trend"
+              onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+            />
+
+            <BentoCard
+              label="Avg Daily Output"
+              value={formatKg(avgDailyProductionKg)}
+              caption="Per operating day"
+              linkText="View shift performance"
+              onLinkClick={() => onNavigate && onNavigate('prod-reports')}
+            />
+
+            <BentoCard
+              label="Total Rejection"
+              value={formatKg(totalRejectionKg)}
+              caption={`${rejectionRatePct.toFixed(1)}% rejection rate`}
+              linkText="Audit exceptions"
+              onLinkClick={() => onNavigate && onNavigate('processing-log')}
+              variant={rejectionRatePct > 5 ? 'warning' : 'default'}
+            />
+          </div>
+        )}
       </div>
 
       {/* Variance Alert Banner if any */}
@@ -644,6 +806,305 @@ export const ProductionDashboard: React.FC<{ onNavigate?: (tab: string) => void 
           )}
         </div>
       )}
+
+      {/* 2. RECENT PROCESSING DAYS CAROUSEL (Strict Requirement 2: recent processing days) */}
+      <Carousel
+        title="Recent Processing Days"
+        subtitle="Daily factory operations with processed weights, slab packaging numbers, and rejection rates."
+        icon={Calendar}
+        badge={
+          <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+            {recentDaysList.length} Operating Days
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        emptyMessage="No processing days recorded for the selected period."
+        viewAllLink={{
+          label: 'View processing log',
+          onClick: () => onNavigate && onNavigate('processing-log'),
+          showEndCard: true,
+          endCardTitle: 'Full Processing Log',
+          endCardDescription: 'Search and audit all daily shifts, raw supplier batches, and finished frozen slabs.'
+        }}
+        items={recentDaysList}
+        renderItem={(d) => {
+          const dayTotal = d.weight + d.rejection;
+          const rejRate = dayTotal > 0 ? (d.rejection / dayTotal) * 100 : 0;
+          return (
+            <div
+              onClick={() => onNavigate && onNavigate('processing-log')}
+              className="h-full min-h-[160px] p-4 sm:p-5 rounded-2xl glass-surface-regular hover:bg-white border border-gray-100 hover:border-amber-300 cursor-pointer transition flex flex-col justify-between group shadow-2xs"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-ink-900 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                    <Calendar className="w-3 h-3 text-amber-700" />
+                    {d.date}
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                    Day {d.day}
+                  </span>
+                </div>
+                <div>
+                  <h5 className="font-extrabold text-sm text-ink-900 group-hover:text-amber-800 transition">
+                    {formatKg(d.weight)}
+                  </h5>
+                  <p className="text-xs text-ink-500 mt-0.5">
+                    Finished packed: <strong className="text-ink-800">{d.slabs.toLocaleString()} Slabs</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-2 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
+                <span className="text-ink-500 text-[11px]">Rejection: {formatKg(d.rejection)}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    rejRate > 5
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}
+                >
+                  {rejRate.toFixed(1)}% Rej
+                </span>
+              </div>
+            </div>
+          );
+        }}
+      />
+
+      {/* 3. GRADE AND SIZE SUMMARY CARDS CAROUSEL (Strict Requirement 3: Grade and Size summary cards) */}
+      <Carousel
+        title="Grade &amp; Commercial Size Summary"
+        subtitle="Proportional output split across quality sorting grades and size classifications."
+        icon={Layers}
+        badge={
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+            {topGrades.length + topSizes.length} Classes
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[85%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        emptyMessage="No grade or size output recorded for this selection."
+        viewAllLink={{
+          label: 'View grade breakdown in reports',
+          onClick: () => onNavigate && onNavigate('prod-reports'),
+          showEndCard: true,
+          endCardTitle: 'Grade & Size Analysis',
+          endCardDescription: 'Inspect quality classifications, slab count tolerances, and recovery yields.'
+        }}
+        items={[
+          ...topGrades.map((g) => ({ ...g, type: 'Quality Grade' as const })),
+          ...topSizes.map((s) => ({ ...s, type: 'Commercial Size' as const }))
+        ]}
+        renderItem={(item) => (
+          <div
+            onClick={() => onNavigate && onNavigate('prod-reports')}
+            className="h-full min-h-[160px] p-4 sm:p-5 rounded-2xl glass-surface-regular hover:bg-white border border-gray-100 hover:border-rose-200 cursor-pointer transition flex flex-col justify-between group shadow-2xs"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                    item.type === 'Quality Grade'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}
+                >
+                  {item.type}
+                </span>
+                <span className="font-extrabold text-xs text-rose-700 font-mono">
+                  {item.pct.toFixed(1)}%
+                </span>
+              </div>
+              <div>
+                <h5 className="font-extrabold text-sm text-ink-900 group-hover:text-rose-700 transition truncate">
+                  {item.name}
+                </h5>
+                <p className="text-xs text-ink-500 mt-0.5">
+                  Processed output: <strong className="text-ink-800">{formatKg(item.weight)}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 mt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+              <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    item.type === 'Quality Grade' ? 'bg-rose-600' : 'bg-blue-600'
+                  }`}
+                  style={{ width: `${Math.min(100, item.pct)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      />
+
+      {/* 4. DASHBOARD CHARTS AS SLIDES (Strict Requirement 4: dashboard charts as slides) */}
+      <Carousel
+        title="Production Analytics &amp; Yield Intelligence"
+        subtitle="Swipe through graphical throughput trends, supplier shares, species recovery, and grade spreads."
+        icon={BarChart3}
+        badge={
+          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+            4 Interactive Slides
+          </span>
+        }
+        style="peeking"
+        depthEffect="subtle"
+        cardWidthClass="w-[96%] sm:w-[78%] lg:w-[48.5%]"
+        showIndicators={true}
+        showArrows={true}
+        showCount={true}
+        viewAllLink={{
+          label: 'Open production reports hub',
+          onClick: () => onNavigate && onNavigate('prod-reports'),
+          showEndCard: true,
+          endCardTitle: 'Production Reports Hub',
+          endCardDescription: 'Dive into all factory floor logs, yield recovery percentages, and exception tracking.'
+        }}
+      >
+        {/* Slide 1: Daily Production Volume Trend */}
+        <ChartSlideCard
+          title="Daily Output Trend (Kg)"
+          subtitle={selectedMonth ? `Kilograms processed per day in ${selectedMonth}` : 'Kilograms processed across all operating days'}
+          icon={TrendingUp}
+          activeFilters={activeFilterTags}
+          badge={
+            <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+              Peak: {formatKg(maxDailyWeight)}
+            </span>
+          }
+          viewAllLink={{
+            label: 'View shift performance',
+            onClick: () => onNavigate && onNavigate('prod-reports')
+          }}
+        >
+          {daysInMonth.length === 0 ? (
+            <div className="py-12 text-center text-ink-500 text-xs">No records available for this selection.</div>
+          ) : (
+            <div className="h-44 flex items-end gap-2 pt-4 border-b border-gray-100 overflow-x-auto">
+              {daysInMonth.map((d) => {
+                const heightPct = Math.max(8, (d.weight / maxDailyWeight) * 100);
+                return (
+                  <div key={d.date} className="flex-1 min-w-[24px] flex flex-col items-center gap-1 group relative">
+                    <div className="absolute -top-7 opacity-0 group-hover:opacity-100 bg-ink-900 text-white text-[10px] py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap transition-opacity z-10 font-mono">
+                      {d.date}: {formatKg(d.weight)}
+                    </div>
+                    <div
+                      style={{ height: `${heightPct}%` }}
+                      className="w-full bg-gradient-to-t from-rose-600 to-rose-400 rounded-t-md hover:brightness-110 transition cursor-pointer"
+                    />
+                    <span className="text-[10px] text-ink-500 font-semibold">{d.day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ChartSlideCard>
+
+        {/* Slide 2: Top Raw Suppliers */}
+        <ChartSlideCard
+          title="Top Raw Material Suppliers"
+          subtitle="Processed volume distribution across suppliers"
+          icon={Users}
+          activeFilters={activeFilterTags}
+          viewAllLink={{
+            label: 'View supplier processing log',
+            onClick: () => onNavigate && onNavigate('processing-log')
+          }}
+        >
+          {topSuppliers.length === 0 ? (
+            <div className="py-12 text-center text-ink-500 text-xs">No supplier records available.</div>
+          ) : (
+            <div className="space-y-3">
+              {topSuppliers.slice(0, 5).map((supp, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold text-ink-900">
+                    <span className="truncate max-w-[220px]">{supp.name}</span>
+                    <span className="text-rose-700 font-mono font-bold">{supp.pct.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div className="bg-rose-600 h-full rounded-full" style={{ width: `${supp.pct}%` }} />
+                  </div>
+                  <div className="text-[10px] text-ink-500 text-right">{formatKg(supp.weight)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ChartSlideCard>
+
+        {/* Slide 3: Product / Species Output Share */}
+        <ChartSlideCard
+          title="Product / Species Output Share"
+          subtitle="Variety breakdown of finished packed seafood"
+          icon={Fish}
+          activeFilters={activeFilterTags}
+          badge={<span className="text-[11px] font-semibold text-ink-500">{topSpecies.length} varieties</span>}
+          viewAllLink={{
+            label: 'View product reports',
+            onClick: () => onNavigate && onNavigate('prod-reports')
+          }}
+        >
+          {topSpecies.length === 0 ? (
+            <div className="py-12 text-center text-ink-500 text-xs">No varieties recorded.</div>
+          ) : (
+            <div className="space-y-2.5">
+              {topSpecies.slice(0, 5).map((sp, idx) => (
+                <div key={idx} className="p-2.5 bg-gray-50 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-ink-900 block truncate max-w-[220px]">{sp.name}</span>
+                    <span className="text-[10px] text-ink-500">{formatKg(sp.weight)}</span>
+                  </div>
+                  <span className="font-extrabold text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+                    {sp.pct.toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </ChartSlideCard>
+
+        {/* Slide 4: Quality Grade Distribution */}
+        <ChartSlideCard
+          title="Quality Grade Distribution"
+          subtitle="Factory output grouped by quality standards"
+          icon={Layers}
+          activeFilters={activeFilterTags}
+          badge={<span className="text-[11px] font-semibold text-ink-500">{topGrades.length} grades</span>}
+          viewAllLink={{
+            label: 'View grade reports',
+            onClick: () => onNavigate && onNavigate('prod-reports')
+          }}
+        >
+          {topGrades.length === 0 ? (
+            <div className="py-12 text-center text-ink-500 text-xs">No grades recorded.</div>
+          ) : (
+            <div className="space-y-2.5">
+              {topGrades.slice(0, 5).map((g, idx) => (
+                <div key={idx} className="p-2.5 bg-gray-50 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-ink-900 block truncate max-w-[220px]">{g.name}</span>
+                    <span className="text-[10px] text-ink-500">{formatKg(g.weight)}</span>
+                  </div>
+                  <span className="font-extrabold text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+                    {g.pct.toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </ChartSlideCard>
+      </Carousel>
 
       {/* INTERACTIVE VISUAL CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

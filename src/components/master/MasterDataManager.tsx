@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { Modal } from '../common/Modal';
 import { PageHeader } from '../common/PageHeader';
+import { Carousel } from '../common/Carousel';
 import { formatINR } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import {
@@ -73,6 +74,7 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
   } = useData();
 
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -595,11 +597,113 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
         </div>
       </div>
 
+      {/* Mobile Presentation Switcher */}
+      <div className="sm:hidden flex items-center justify-between px-1">
+        <span className="text-xs font-bold text-ink-600">Mobile Presentation</span>
+        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('cards')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'cards' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Swipe Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileViewMode('table')}
+            className={`px-3 py-1 rounded-lg transition ${
+              mobileViewMode === 'table' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+            }`}
+          >
+            Full Table
+          </button>
+        </div>
+      </div>
+
       {/* MASTER DATA TABLES */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+        {/* MOBILE CAROUSEL FOR SUPPLIERS */}
+        {activeTab === 'suppliers' && mobileViewMode === 'cards' && (
+          <div className="sm:hidden p-4">
+            <Carousel
+              ariaLabel="Suppliers Record Cards"
+              style="peeking"
+              depthEffect="subtle"
+              cardWidthClass="w-[85%]"
+              showIndicators={true}
+              showArrows={true}
+              showCount={true}
+              emptyStateMessage="No suppliers registered yet."
+              viewAllLink={{
+                label: 'View full table',
+                onClick: () => setMobileViewMode('table'),
+                showEndCard: true,
+                endCardTitle: 'Suppliers Directory Table',
+                endCardDescription: 'Switch to full table view with multi-selection and export.'
+              }}
+            >
+              {suppliers.map((s) => (
+                <div key={s.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between h-full">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          {s.code}
+                        </span>
+                        <h4 className="font-bold text-ink-900 text-sm mt-1">{s.name}</h4>
+                        <span className="text-[10px] text-ink-500 capitalize">{s.type.replace('_', ' ')}</span>
+                      </div>
+                      <button
+                        onClick={() => toggleSupplierActive(s.id)}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition shrink-0 ${
+                          s.active
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-gray-100 text-gray-500 border-gray-300'
+                        }`}
+                      >
+                        {s.active ? 'Active' : 'Archived'}
+                      </button>
+                    </div>
+
+                    <div className="pt-2 mt-2 border-t border-gray-100 space-y-1 text-xs">
+                      {s.contactPerson && (
+                        <div className="text-ink-600"><span className="text-ink-400 font-medium">Contact:</span> {s.contactPerson} ({s.phone})</div>
+                      )}
+                      <div className="text-ink-600"><span className="text-ink-400 font-medium">Credit:</span> {s.creditDays > 0 ? `${s.creditDays} Days` : 'Cash'}</div>
+                      <div className="text-ink-600"><span className="text-ink-400 font-medium">Opening Bal:</span> {formatINR(s.openingBalance)}</div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-[10px] text-ink-400 font-mono truncate max-w-[130px]">{s.bankName || 'No bank'}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(s)}
+                        className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                        title="Edit Supplier"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget({ type: 'supplier', id: s.id, name: s.name })}
+                        className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"
+                        title="Delete Supplier"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </Carousel>
+          </div>
+        )}
+
         {/* SUPPLIERS TABLE */}
         {activeTab === 'suppliers' && (
-          <div className="overflow-x-auto">
+          <div className={`${mobileViewMode === 'cards' ? 'hidden sm:block' : 'block'} overflow-x-auto`}>
             {suppliers.length === 0 ? (
               <div className="py-16 text-center text-ink-500 space-y-3">
                 <Inbox className="w-10 h-10 mx-auto text-gray-300" />
@@ -708,9 +812,82 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
           </div>
         )}
 
+        {/* MOBILE CAROUSEL FOR SPECIES */}
+        {activeTab === 'species' && mobileViewMode === 'cards' && (
+          <div className="sm:hidden p-4">
+            <Carousel
+              ariaLabel="Species Record Cards"
+              style="peeking"
+              depthEffect="subtle"
+              cardWidthClass="w-[85%]"
+              showIndicators={true}
+              showArrows={true}
+              showCount={true}
+              emptyStateMessage="No purchase species added yet."
+              viewAllLink={{
+                label: 'View full table',
+                onClick: () => setMobileViewMode('table'),
+                showEndCard: true,
+                endCardTitle: 'Species Register Table',
+                endCardDescription: 'Switch to full table view.'
+              }}
+            >
+              {purchaseSpecies.map((sp) => (
+                <div key={sp.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between h-full">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          {sp.code}
+                        </span>
+                        <h4 className="font-bold text-ink-900 text-sm mt-1">{sp.name}</h4>
+                        {sp.scientificName && <p className="text-[10px] italic text-ink-400">{sp.scientificName}</p>}
+                      </div>
+                      <button
+                        onClick={() => togglePurchaseSpeciesActive(sp.id)}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition shrink-0 ${
+                          sp.active
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-gray-100 text-gray-500 border-gray-300'
+                        }`}
+                      >
+                        {sp.active ? 'Active' : 'Archived'}
+                      </button>
+                    </div>
+
+                    <div className="pt-2 mt-2 border-t border-gray-100 space-y-1 text-xs">
+                      <div className="text-ink-600"><span className="text-ink-400 font-medium">Category:</span> {sp.category}</div>
+                      <div className="text-ink-600"><span className="text-ink-400 font-medium">Form:</span> {sp.productForm || 'N/A'}</div>
+                      <div className="text-ink-600"><span className="text-ink-400 font-medium">Processing:</span> {sp.processingType || 'N/A'}</div>
+                      {sp.hsCode && <div className="text-ink-600"><span className="text-ink-400 font-medium">HSN:</span> {sp.hsCode}</div>}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => handleOpenEdit(sp)}
+                      className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                      title="Edit Species"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget({ type: 'species', id: sp.id, name: sp.name })}
+                      className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"
+                      title="Delete Species"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </Carousel>
+          </div>
+        )}
+
         {/* SPECIES TABLE */}
         {activeTab === 'species' && (
-          <div className="overflow-x-auto">
+          <div className={`${mobileViewMode === 'cards' ? 'hidden sm:block' : 'block'} overflow-x-auto`}>
             {purchaseSpecies.length === 0 ? (
               <div className="py-16 text-center text-ink-500 space-y-3">
                 <Inbox className="w-10 h-10 mx-auto text-gray-300" />
@@ -924,44 +1101,98 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               grades.length === 0 ? (
                 <div className="py-12 text-center text-ink-500">No grades registered yet. Add Grade A, B, Live, or Rejects.</div>
               ) : (
-                <ul className="divide-y divide-gray-100">
-                  {grades.map((g) => {
-                    const isSelected = selectedIds.includes(g.id);
-                    return (
-                      <li
-                        key={g.id}
-                        className={`py-2.5 px-2 rounded-xl flex justify-between items-center transition ${
-                          isSelected ? 'bg-rose-50/70 font-medium' : ''
-                        }`}
+                <>
+                  {mobileViewMode === 'cards' && (
+                    <div className="sm:hidden mb-4">
+                      <Carousel
+                        ariaLabel="Grades Record Cards"
+                        style="peeking"
+                        depthEffect="subtle"
+                        cardWidthClass="w-[85%]"
+                        showIndicators={true}
+                        showArrows={true}
+                        showCount={true}
+                        emptyStateMessage="No grades registered yet."
+                        viewAllLink={{
+                          label: 'View full list',
+                          onClick: () => setMobileViewMode('table'),
+                          showEndCard: true,
+                          endCardTitle: 'Grades Register',
+                          endCardDescription: 'Switch to full list view.'
+                        }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRow(g.id)}
-                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
-                          />
-                          <div>
-                            <strong className="text-ink-900">{g.name}</strong> ({g.code})
-                            <p className="text-[11px] text-ink-500">{g.description}</p>
+                        {grades.map((g) => (
+                          <div key={g.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between h-full">
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                                    {g.code}
+                                  </span>
+                                  <h4 className="font-bold text-ink-900 text-sm mt-1">{g.name}</h4>
+                                </div>
+                                <button
+                                  onClick={() => toggleGradeActive(g.id)}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition shrink-0 ${
+                                    g.active
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-gray-100 text-gray-500 border-gray-300'
+                                  }`}
+                                >
+                                  {g.active ? 'Active' : 'Archived'}
+                                </button>
+                              </div>
+                              {g.description && <p className="text-xs text-ink-500 mt-2">{g.description}</p>}
+                            </div>
+                            <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-1">
+                              <button onClick={() => handleOpenEdit(g)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setDeleteTarget({ type: 'grade', id: g.id, name: g.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleOpenEdit(g)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => setDeleteTarget({ type: 'grade', id: g.id, name: g.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
-                          <button
-                            onClick={() => toggleGradeActive(g.id)}
-                            className={`px-2.5 py-0.5 rounded-full font-semibold border ${
-                              g.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
-                            }`}
-                          >
-                            {g.active ? 'Active' : 'Inactive'}
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        ))}
+                      </Carousel>
+                    </div>
+                  )}
+
+                  <ul className={`${mobileViewMode === 'cards' ? 'hidden sm:block' : 'block'} divide-y divide-gray-100`}>
+                    {grades.map((g) => {
+                      const isSelected = selectedIds.includes(g.id);
+                      return (
+                        <li
+                          key={g.id}
+                          className={`py-2.5 px-2 rounded-xl flex justify-between items-center transition ${
+                            isSelected ? 'bg-rose-50/70 font-medium' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRow(g.id)}
+                              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                            />
+                            <div>
+                              <strong className="text-ink-900">{g.name}</strong> ({g.code})
+                              <p className="text-[11px] text-ink-500">{g.description}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => handleOpenEdit(g)} className="p-1.5 text-ink-500 hover:text-rose-600"><Pencil className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => setDeleteTarget({ type: 'grade', id: g.id, name: g.name })} className="p-1.5 text-rose-600 hover:text-rose-800"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <button
+                              onClick={() => toggleGradeActive(g.id)}
+                              className={`px-2.5 py-0.5 rounded-full font-semibold border ${
+                                g.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'
+                              }`}
+                            >
+                              {g.active ? 'Active' : 'Inactive'}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               )
             )}
 
@@ -969,36 +1200,76 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
               sizes.length === 0 ? (
                 <div className="py-12 text-center text-ink-500">No physical sizes configured yet. Add Small, Medium, Large, Extra Large, etc.</div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {sizes.map((sz) => {
-                    const isSelected = selectedIds.includes(sz.id);
-                    return (
-                      <div
-                        key={sz.id}
-                        className={`p-3 rounded-xl border flex justify-between items-center transition ${
-                          isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
-                        }`}
+                <>
+                  {mobileViewMode === 'cards' && (
+                    <div className="sm:hidden mb-4">
+                      <Carousel
+                        ariaLabel="Sizes Record Cards"
+                        style="peeking"
+                        depthEffect="subtle"
+                        cardWidthClass="w-[85%]"
+                        showIndicators={true}
+                        showArrows={true}
+                        showCount={true}
+                        emptyStateMessage="No sizes configured yet."
+                        viewAllLink={{
+                          label: 'View full grid',
+                          onClick: () => setMobileViewMode('table'),
+                          showEndCard: true,
+                          endCardTitle: 'Sizes Register',
+                          endCardDescription: 'Switch to full grid view.'
+                        }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRow(sz.id)}
-                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
-                          />
-                          <div>
-                            <span className="font-bold text-ink-900 block">{sz.name}</span>
-                            <span className="text-[10px] text-ink-500 block">{sz.description || sz.code}</span>
+                        {sizes.map((sz) => (
+                          <div key={sz.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between h-full">
+                            <div>
+                              <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                                {sz.code}
+                              </span>
+                              <h4 className="font-bold text-ink-900 text-sm mt-1">{sz.name}</h4>
+                              {sz.description && <p className="text-xs text-ink-500 mt-1">{sz.description}</p>}
+                            </div>
+                            <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-1">
+                              <button onClick={() => handleOpenEdit(sz)} className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </Carousel>
+                    </div>
+                  )}
+
+                  <div className={`${mobileViewMode === 'cards' ? 'hidden sm:grid' : 'grid'} grid-cols-2 sm:grid-cols-4 gap-3`}>
+                    {sizes.map((sz) => {
+                      const isSelected = selectedIds.includes(sz.id);
+                      return (
+                        <div
+                          key={sz.id}
+                          className={`p-3 rounded-xl border flex justify-between items-center transition ${
+                            isSelected ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-400' : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRow(sz.id)}
+                              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 cursor-pointer"
+                            />
+                            <div>
+                              <span className="font-bold text-ink-900 block">{sz.name}</span>
+                              <span className="text-[10px] text-ink-500 block">{sz.description || sz.code}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleOpenEdit(sz)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
+                            <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleOpenEdit(sz)} className="p-1 text-ink-500 hover:text-rose-600"><Pencil className="w-3 h-3" /></button>
-                          <button onClick={() => setDeleteTarget({ type: 'size', id: sz.id, name: sz.name })} className="p-1 text-rose-600 hover:text-rose-800"><Trash2 className="w-3 h-3" /></button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </>
               )
             )}
 

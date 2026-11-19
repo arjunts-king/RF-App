@@ -9,10 +9,11 @@ import {
   CheckCircle2,
   XCircle,
   Link,
-      DollarSign,
-      } from 'lucide-react';
+  DollarSign
+} from 'lucide-react';
 import { InventoryItem, InventoryQuantityBasis } from '../../types';
 import { Modal } from '../common/Modal';
+import { Carousel } from '../common/Carousel';
 
 export const InventoryItemManager: React.FC = () => {
   const {
@@ -35,6 +36,7 @@ export const InventoryItemManager: React.FC = () => {
   const { permissions } = useAuth();
 
   const [activeSubTab, setActiveSubTab] = useState<'items' | 'mappings'>('items');
+  const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
 
   // Modals
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -281,10 +283,155 @@ export const InventoryItemManager: React.FC = () => {
         </button>
       </div>
 
+      {/* Mobile Presentation Switcher for Items */}
+      {activeSubTab === 'items' && (
+        <div className="sm:hidden flex items-center justify-between px-1">
+          <span className="text-xs font-bold text-ink-600">Mobile Presentation</span>
+          <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-xl text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setMobileViewMode('cards')}
+              className={`px-3 py-1 rounded-lg transition ${
+                mobileViewMode === 'cards' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+              }`}
+            >
+              Swipe Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileViewMode('table')}
+              className={`px-3 py-1 rounded-lg transition ${
+                mobileViewMode === 'table' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-ink-600'
+              }`}
+            >
+              Full Table
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* TAB 1: INVENTORY ITEMS MASTER */}
       {activeSubTab === 'items' && (
         <div className="bg-white/90 backdrop-blur-md rounded-2xl border border-white/80 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Inventory Item Cards Carousel */}
+          {mobileViewMode === 'cards' && (
+            <div className="sm:hidden p-4">
+              <Carousel
+                ariaLabel="Inventory Master Record Cards"
+                style="peeking"
+                depthEffect="subtle"
+                cardWidthClass="w-[85%]"
+                showIndicators={true}
+                showArrows={true}
+                showCount={true}
+                emptyStateMessage="No inventory items defined yet."
+                viewAllLink={{
+                  label: 'View full table',
+                  onClick: () => setMobileViewMode('table'),
+                  showEndCard: true,
+                  endCardTitle: 'Inventory Directory Table',
+                  endCardDescription: 'Switch to full table view.'
+                }}
+              >
+                {inventoryItems.map((item) => {
+                  const opening = openingStocks.find((o) => o.inventoryItemId === item.id);
+                  const isYield = item.quantityBasis === 'yield';
+
+                  return (
+                    <div
+                      key={`mobile-${item.id}`}
+                      className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs space-y-3 flex flex-col justify-between h-full"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="font-mono text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              {item.code}
+                            </span>
+                            <h4 className="font-bold text-ink-900 text-sm mt-1">{item.name}</h4>
+                            <span className="text-[10px] text-ink-500 font-semibold">{item.category}</span>
+                          </div>
+                          <button
+                            onClick={() => toggleInventoryItemActive(item.id)}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition shrink-0 ${
+                              item.active
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-gray-100 text-gray-500 border-gray-300'
+                            }`}
+                          >
+                            {item.active ? 'Active' : 'Archived'}
+                          </button>
+                        </div>
+
+                        {item.description && (
+                          <p className="text-xs text-ink-500 mt-1 line-clamp-2">{item.description}</p>
+                        )}
+
+                        <div className="pt-2 mt-2 border-t border-gray-100 space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-ink-500">Basis:</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                              isYield ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {isYield ? 'Yield Weight' : 'Purchase Weight'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-ink-500">Min Stock:</span>
+                            <span className="font-bold font-mono text-ink-800">{item.minimumStockQuantity} Kg</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-ink-500">Opening:</span>
+                            {opening ? (
+                              <span className="font-bold text-emerald-700 font-mono text-[11px]">
+                                {opening.quantityKg} Kg @ ₹{(opening.ratePerKg || 0).toFixed(2)}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => openOpeningStockModal(item)}
+                                className="text-[10px] font-bold text-rose-600 hover:underline"
+                              >
+                                Set Opening
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                        <button
+                          onClick={() => openOpeningStockModal(item)}
+                          className="text-[10px] font-bold text-ink-600 hover:text-rose-600 flex items-center gap-1"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          <span>{opening ? 'Edit Stock' : 'Set Stock'}</span>
+                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEditItemModal(item)}
+                            className="p-1.5 text-ink-500 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                            title="Edit Item"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteInventoryItem(item.id)}
+                            className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg hover:bg-rose-50"
+                            title="Delete Item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </Carousel>
+            </div>
+          )}
+
+          {/* Desktop Table View */}
+          <div className={`${mobileViewMode === 'cards' ? 'hidden sm:block' : 'block'} overflow-x-auto`}>
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-black text-ink-500 uppercase tracking-wider">
