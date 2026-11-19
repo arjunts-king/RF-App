@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
@@ -7,6 +7,7 @@ import { RefreshCw, AlertTriangle, Info, Sparkles, Percent, Scale, Trash2, Check
 export const BatchExpenseView: React.FC = () => {
   const {
     purchases,
+    purchaseSpecies,
     species,
     expenseTypes,
     recalculateExpenseBatch,
@@ -56,8 +57,94 @@ export const BatchExpenseView: React.FC = () => {
     }
   }, [yieldBatches, selectedYieldBatch]);
 
-  const speciesMap = new Map(species.map((s) => [s.id, s]));
   const expenseTypeMap = new Map(expenseTypes.map((e) => [e.id, e]));
+
+  // Robust species resolver across purchaseSpecies (procurement catch) and export products
+  const findSpecies = useMemo(() => {
+    const combined = [...(purchaseSpecies || []), ...(species || [])];
+    const byId = new Map(combined.map((sp) => [sp.id.toLowerCase(), sp]));
+    const byCode = new Map(combined.map((sp) => [sp.code.toLowerCase(), sp]));
+    const byName = new Map(combined.map((sp) => [sp.name.trim().toLowerCase(), sp]));
+    const byRaw = new Map<string, (typeof combined)[0]>();
+    combined.forEach((sp) => {
+      if (sp.rawSpeciesName) {
+        byRaw.set(sp.rawSpeciesName.trim().toLowerCase(), sp);
+      }
+    });
+
+    const norm = (s?: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    return (idOrKey?: string) => {
+      if (!idOrKey) return undefined;
+      const clean = idOrKey.trim();
+      const lower = clean.toLowerCase();
+      const strippedNorm = norm(clean.replace(/^(sp-)?(spe-)?(pur-)?/i, ''));
+
+      return (
+        byId.get(lower) ||
+        byCode.get(lower) ||
+        byName.get(lower) ||
+        byRaw.get(lower) ||
+        combined.find(
+          (sp) =>
+            sp.id.toLowerCase() === lower ||
+            sp.code.toLowerCase() === lower ||
+            sp.name.toLowerCase() === lower ||
+            (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === lower) ||
+            (sp.scientificName && sp.scientificName.toLowerCase() === lower) ||
+            norm(sp.code) === strippedNorm ||
+            norm(sp.name) === strippedNorm ||
+            (sp.rawSpeciesName && norm(sp.rawSpeciesName) === strippedNorm)
+        )
+      );
+    };
+  }, [purchaseSpecies, species]);
+
+  const isAutoString = (str?: string): boolean => {
+    if (!str) return false;
+    const s = str.trim().toLowerCase();
+    return (
+      s.startsWith('sp-auto') ||
+      s.startsWith('auto-') ||
+      s.includes('auto uploaded') ||
+      s.includes('autouploaded') ||
+      s.includes('auto-uploaded') ||
+      s.includes('auto-created') ||
+      s.includes('autocreated') ||
+      s === 'auto' ||
+      s === 'recorded'
+    );
+  };
+
+  const resolveSpeciesName = (rawId?: string, p?: (typeof purchases)[0]): string => {
+    if (!rawId) {
+      if (p?.remarks && !isAutoString(p.remarks)) return p.remarks.trim();
+      return 'Raw Catch';
+    }
+    const sp = findSpecies(rawId);
+    let label = '';
+    if (sp) {
+      if (sp.rawSpeciesName && !isAutoString(sp.rawSpeciesName)) {
+        label = sp.rawSpeciesName.trim();
+      } else if (sp.name && !isAutoString(sp.name)) {
+        label = sp.name.replace(/^Frozen\s+/i, '').replace(/\s*\[.*?\]/g, '').replace(/\s*\(.*?\)/g, '').trim();
+      } else if (sp.code && !isAutoString(sp.code)) {
+        label = sp.code.trim();
+      }
+    }
+    if (!label || isAutoString(label)) {
+      if (p?.remarks && !isAutoString(p.remarks)) {
+        label = p.remarks.trim();
+      } else if (!isAutoString(rawId)) {
+        const stripped = rawId.replace(/^(sp-)?(spe-)?(pur-)?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = stripped ? stripped.charAt(0).toUpperCase() + stripped.slice(1) : rawId;
+      } else {
+        const extracted = rawId.replace(/^(sp-)?auto[-_]?/i, '').replace(/[-_]\d+.*$/, '').trim();
+        label = extracted ? extracted.charAt(0).toUpperCase() + extracted.slice(1) : (sp?.rawSpeciesName || sp?.name || 'Raw Catch');
+      }
+    }
+    return label || rawId || 'Raw Catch';
+  };
 
   // --------------------------------------------------------------------------
   // 1. EXPENSE BATCH DATA & METRICS
@@ -375,7 +462,7 @@ export const BatchExpenseView: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-ink-900 font-medium">
                       {expBatchPurchases.map((p, index) => {
-                        const spec = speciesMap.get(p.speciesId);
+                        const specName = resolveSpeciesName(p.speciesId, p);
                         const sharePct = totalExpBatchWeight > 0 ? (p.weightKg / totalExpBatchWeight) * 100 : 0;
 
                         return (
@@ -389,7 +476,7 @@ export const BatchExpenseView: React.FC = () => {
                               )}
                             </td>
                             <td className="py-3 px-4 font-semibold text-ink-900">
-                              {spec?.name || 'Seafood'}
+                              {specName}
                             </td>
                             <td className="py-3 px-4 text-right font-bold tabular-nums">
                               {formatKg(p.weightKg)}
@@ -683,7 +770,7 @@ export const BatchExpenseView: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-ink-900 font-medium">
                       {yldBatchPurchases.map((p, index) => {
-                        const spec = speciesMap.get(p.speciesId);
+                        const specName = resolveSpeciesName(p.speciesId, p);
                         const sharePct = totalYldBatchWeight > 0 ? (p.weightKg / totalYldBatchWeight) * 100 : 0;
                         const itemYieldKg = p.yieldWeightKg || 0;
                         const itemYieldPct =
@@ -707,7 +794,7 @@ export const BatchExpenseView: React.FC = () => {
                               )}
                             </td>
                             <td className="py-3 px-4 font-semibold text-ink-900">
-                              {spec?.name || 'Seafood'}
+                              {specName}
                             </td>
                             <td className="py-3 px-4 text-right font-bold tabular-nums">
                               {formatKg(p.weightKg)}

@@ -38,6 +38,7 @@ import {
 import {
   DEFAULT_BUSINESS_SETTINGS,
   INITIAL_SUPPLIERS,
+  INITIAL_PURCHASE_SPECIES,
   INITIAL_SPECIES,
   INITIAL_GRADES,
   INITIAL_SIZES,
@@ -414,6 +415,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch {}
+
+    // Ensure standard procurement varieties from INITIAL_PURCHASE_SPECIES are present
+    const existingNames = new Set(parsed.map((p) => p.name.trim().toLowerCase()));
+    INITIAL_PURCHASE_SPECIES.forEach((initSp) => {
+      if (!existingNames.has(initSp.name.trim().toLowerCase()) && !isSalesExportProduct(initSp)) {
+        parsed.push(initSp);
+        existingNames.add(initSp.name.trim().toLowerCase());
+      }
+    });
 
     const filtered = parsed.filter((sp) => !isSalesExportProduct(sp));
     safeSet(`${DB_PREFIX}purchase_species`, filtered);
@@ -5131,12 +5141,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const speciesVal = getFlexibleValue(row, [
         'speciescodeorname',
-        'species',
         'speciesname',
+        'species',
+        'rawspeciesname',
+        'rawspecies',
+        'fishname',
         'fish',
-        'product',
+        'itemname',
         'item',
-        'variety'
+        'productname',
+        'product',
+        'variety',
+        'commodity',
+        'rawmaterial',
+        'catch',
+        'speciescode'
       ]);
 
       const gradeVal = getFlexibleValue(row, ['gradecodeorname', 'grade', 'gradename', 'quality']);
@@ -5223,9 +5242,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 2. Resolve Species
       let resolvedSpecies: Species | undefined;
-      if (speciesVal) {
-        const spNorm = normalizeKey(String(speciesVal));
-        const rawTrim = String(speciesVal).trim().toLowerCase();
+      let effectiveSpeciesVal = speciesVal;
+      if (!effectiveSpeciesVal && row.remarks && !String(row.remarks).toLowerCase().includes('auto')) {
+        effectiveSpeciesVal = String(row.remarks).trim();
+      }
+
+      if (effectiveSpeciesVal) {
+        const spNorm = normalizeKey(String(effectiveSpeciesVal));
+        const rawTrim = String(effectiveSpeciesVal).trim().toLowerCase();
+        const strippedNorm = spNorm.replace(/^(sp|spe|pur)/g, '');
+
         resolvedSpecies = mutableSpecies.find(
           (sp) =>
             normalizeKey(sp.code) === spNorm ||
@@ -5235,12 +5261,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             sp.code.toLowerCase() === rawTrim ||
             sp.name.toLowerCase() === rawTrim ||
             (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === rawTrim) ||
-            (sp.scientificName && sp.scientificName.toLowerCase() === rawTrim)
+            (sp.scientificName && sp.scientificName.toLowerCase() === rawTrim) ||
+            (strippedNorm.length >= 3 && (normalizeKey(sp.code) === strippedNorm || normalizeKey(sp.name) === strippedNorm || (sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === strippedNorm)))
         );
+
+        // Check fallback against INITIAL_PURCHASE_SPECIES or sales export species if not yet in mutableSpecies
+        if (!resolvedSpecies) {
+          const knownMatch = [...INITIAL_PURCHASE_SPECIES, ...species].find(
+            (sp) =>
+              normalizeKey(sp.code) === spNorm ||
+              normalizeKey(sp.name) === spNorm ||
+              (sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === spNorm) ||
+              sp.code.toLowerCase() === rawTrim ||
+              sp.name.toLowerCase() === rawTrim ||
+              (sp.rawSpeciesName && sp.rawSpeciesName.toLowerCase() === rawTrim) ||
+              (strippedNorm.length >= 3 && (normalizeKey(sp.code) === strippedNorm || normalizeKey(sp.name) === strippedNorm || (sp.rawSpeciesName && normalizeKey(sp.rawSpeciesName) === strippedNorm)))
+          );
+          if (knownMatch) {
+            const cleanName = knownMatch.rawSpeciesName || knownMatch.name;
+            resolvedSpecies = {
+              id: knownMatch.id.startsWith('spe-pur-') ? knownMatch.id : `spe-pur-${normalizeKey(cleanName)}`,
+              code: knownMatch.code,
+              name: cleanName,
+              rawSpeciesName: cleanName,
+              scientificName: knownMatch.scientificName || '',
+              category: knownMatch.category || 'Fish',
+              active: true
+            };
+            mutableSpecies.push(resolvedSpecies);
+            createdSpecies++;
+          }
+        }
       }
+
       if (!resolvedSpecies) {
-        if (autoCreateMaster && speciesVal) {
-          const rawSpName = String(speciesVal).trim();
+        if (autoCreateMaster && effectiveSpeciesVal) {
+          const rawSpName = String(effectiveSpeciesVal).trim();
           const cleanName =
             (rawSpName.toLowerCase().includes('auto uploaded') || rawSpName.toLowerCase() === 'auto') && row.remarks
               ? String(row.remarks).trim()
@@ -5260,7 +5316,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (mutableSpecies.length > 0) {
             resolvedSpecies = mutableSpecies[0];
           } else {
-            errors.push(`Row ${rowNum}: Species "${speciesVal || 'Unknown'}" not found in database.`);
+            errors.push(`Row ${rowNum}: Species "${effectiveSpeciesVal || 'Unknown'}" not found in database.`);
             return;
           }
         }

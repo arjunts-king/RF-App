@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { PurchaseReturn, PurchaseReturnReason, Purchase } from '../../types';
+import { PurchaseReturn, PurchaseReturnReason, Purchase, Species } from '../../types';
 import { formatINR, formatKg } from '../../utils/calculations';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { Modal } from '../common/Modal';
@@ -48,6 +48,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
     purchaseReturns,
     purchases,
     suppliers,
+    purchaseSpecies,
     species,
     grades,
     sizes,
@@ -121,7 +122,8 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
 
   // Lookup maps for fast names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
-  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
+  const allSpecies: Species[] = useMemo(() => [...(purchaseSpecies || []), ...(species || [])], [purchaseSpecies, species]);
+  const speciesMap = useMemo(() => new Map<string, Species>(allSpecies.map((sp: Species) => [sp.id, sp])), [allSpecies]);
   const gradeMap = new Map(grades.map((g) => [g.id, g]));
   const sizeMap = new Map(sizes.map((sz) => [sz.id, sz]));
   const countMap = new Map(counts.map((c) => [c.id, c]));
@@ -1026,7 +1028,7 @@ export const PurchaseReturnsView: React.FC<PurchaseReturnsViewProps> = ({
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-rose-600 outline-none"
               >
                 <option value="">None / Unspecified (Optional)</option>
-                {species.map((sp) => (
+                {allSpecies.map((sp: Species) => (
                   <option key={sp.id} value={sp.id}>
                     {sp.name}
                   </option>

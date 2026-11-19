@@ -86,6 +86,19 @@ export function buildSupplierLedgerStatement(
 
   const supplierId = supplier?.id || '';
   const speciesMap = new Map(species.map((s) => [s.id, s]));
+  const findSpeciesInStatement = (idOrKey?: string) => {
+    if (!idOrKey) return undefined;
+    const clean = idOrKey.trim().toLowerCase();
+    const stripped = clean.replace(/^(sp|spe|pur)[-_]?/g, '');
+    return species.find(
+      (s) =>
+        s.id.toLowerCase() === clean ||
+        s.code.toLowerCase() === clean ||
+        s.name.trim().toLowerCase() === clean ||
+        (s.rawSpeciesName && s.rawSpeciesName.trim().toLowerCase() === clean) ||
+        (stripped.length >= 3 && (s.name.toLowerCase().replace(/[^a-z0-9]/g, '') === stripped || (s.rawSpeciesName && s.rawSpeciesName.toLowerCase().replace(/[^a-z0-9]/g, '') === stripped)))
+    );
+  };
   const bankMap = new Map(bankAccounts.map((b) => [b.id, b]));
 
   const supplierPurchases = supplierId
@@ -149,7 +162,8 @@ export function buildSupplierLedgerStatement(
         ? Number(p.totalCost)
         : Number((netPurchaseValue + expenseValNum).toFixed(2));
 
-    const specName = speciesMap.get(p.speciesId)?.name;
+    const spec = speciesMap.get(p.speciesId) || findSpeciesInStatement(p.speciesId);
+    const specName = spec?.rawSpeciesName || spec?.name || (p.remarks && !p.remarks.toLowerCase().includes('auto') ? p.remarks : undefined);
     const detailParts: string[] = [];
     if (specName) detailParts.push(specName);
     if (p.invoiceNo) detailParts.push(`Inv: ${p.invoiceNo}`);
@@ -210,8 +224,8 @@ export function buildSupplierLedgerStatement(
   });
 
   supplierReturns.forEach((ret) => {
-    const spec = ret.speciesId ? speciesMap.get(ret.speciesId) : undefined;
-    const specName = spec?.name || 'Seafood';
+    const spec = ret.speciesId ? (speciesMap.get(ret.speciesId) || findSpeciesInStatement(ret.speciesId)) : undefined;
+    const specName = spec?.rawSpeciesName || spec?.name || (ret.detailedReason || 'Raw Catch');
     const linkedInfo = ret.purchaseRefNo ? ` (Ref: ${ret.purchaseRefNo})` : '';
     rawEvents.push({
       date: ret.returnDate,

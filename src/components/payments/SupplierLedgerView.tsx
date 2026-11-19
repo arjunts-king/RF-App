@@ -14,7 +14,7 @@ import { PaymentModal } from './PaymentModal';
 import { Printer, PlusCircle, FileText, FileSpreadsheet } from 'lucide-react';
 
 export const SupplierLedgerView: React.FC = () => {
-  const { suppliers, purchases, payments, purchaseReturns, species, bankAccounts, businessSettings } = useData();
+  const { suppliers, purchases, payments, purchaseReturns, purchaseSpecies, species, bankAccounts, businessSettings } = useData();
   const { permissions } = useAuth();
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>(suppliers[0]?.id || '');
@@ -24,6 +24,8 @@ export const SupplierLedgerView: React.FC = () => {
 
   const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId);
 
+  const allSpecies = useMemo(() => [...(purchaseSpecies || []), ...(species || [])], [purchaseSpecies, species]);
+
   const statement = useMemo(
     () =>
       buildSupplierLedgerStatement({
@@ -31,12 +33,12 @@ export const SupplierLedgerView: React.FC = () => {
         purchases,
         payments,
         purchaseReturns,
-        species,
+        species: allSpecies,
         bankAccounts,
         startDate,
         endDate
       }),
-    [selectedSupplier, purchases, payments, purchaseReturns, species, bankAccounts, startDate, endDate]
+    [selectedSupplier, purchases, payments, purchaseReturns, allSpecies, bankAccounts, startDate, endDate]
   );
 
   const {
