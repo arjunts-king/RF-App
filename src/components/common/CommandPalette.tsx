@@ -212,6 +212,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Purchase Module'
     },
     {
+      id: 'pur-fish-ledger',
+      title: 'Fish-wise Ledger & Statement',
+      subtitle: 'Running volume, landed cost & printable A4 statement with Excel/PDF export',
+      module: 'purchase',
+      tab: 'fish-ledger',
+      icon: Fish,
+      category: 'Purchase Module'
+    },
+    {
       id: 'pur-outstanding',
       title: 'Outstanding Payables & Ageing (180+d)',
       subtitle: 'Ageing buckets, credit risk alerts & overdue dues',

@@ -16,7 +16,8 @@ import {
   Settings,
   FileSpreadsheet,
   RotateCcw,
-  CreditCard
+  CreditCard,
+  Fish
 } from 'lucide-react';
 
 export type NavTab =
@@ -27,6 +28,7 @@ export type NavTab =
   | 'purchase-payments'
   | 'batch-expenses'
   | 'payments'
+  | 'fish-ledger'
   | 'outstanding'
   | 'reports'
   | 'data-quality'
@@ -106,6 +108,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           label: 'Supplier Ledger & Statement',
           icon: BookOpen,
           desc: 'Running debits/credits & printable A4 statement'
+        },
+        {
+          id: 'fish-ledger',
+          label: 'Fish-wise Ledger & Statement',
+          icon: Fish,
+          badge: 'Catch Ledger',
+          desc: 'Species running volume, landed cost & printable statement'
         },
         {
           id: 'outstanding',

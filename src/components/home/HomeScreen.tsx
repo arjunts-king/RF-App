@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Clock,
   Sparkles,
-  Command
+  Command,
+  Fish
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -302,7 +303,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onClick={() => onNavigate('purchase', 'payments')}
                 className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
               >
-                Ledgers
+                Supplier Ledger
+              </button>
+              <span className="text-gray-300">·</span>
+              <button
+                onClick={() => onNavigate('purchase', 'fish-ledger')}
+                className="font-medium text-ink-600 hover:text-rose-700 hover:underline"
+              >
+                Fish Statement
               </button>
             </div>
           </div>
@@ -605,6 +613,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 Supplier Ledger
               </span>
               <span className="text-[11px] text-ink-500 mt-0.5 block">A4 Statement</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigate('purchase', 'fish-ledger')}
+            className="p-4 rounded-2xl glass-surface-thin hover:border-gray-300 text-left card-liquid-hover flex flex-col justify-between group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-sky-700 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+              <Fish className="w-4 h-4" />
+            </div>
+            <div className="mt-3">
+              <span className="text-xs font-bold text-ink-900 block leading-tight">
+                Fish-wise Ledger
+              </span>
+              <span className="text-[11px] text-ink-500 mt-0.5 block">Species Statement</span>
             </div>
           </button>
 

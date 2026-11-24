@@ -18,7 +18,8 @@ import {
   Percent,
   Award,
   AlertCircle,
-  EyeOff
+  EyeOff,
+  Fish
 } from 'lucide-react';
 import {
   BarChartVisual,
@@ -37,7 +38,11 @@ type ReportTab =
   | 'price-analysis'
   | 'yield-analysis';
 
-export const OperationalReportsHub: React.FC = () => {
+interface OperationalReportsHubProps {
+  onNavigateTab?: (tab: string) => void;
+}
+
+export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ onNavigateTab }) => {
   const { purchases, suppliers, purchaseSpecies, species, grades, sizes, counts, locations, businessSettings } = useData();
 
   const [activeReport, setActiveReport] = useState<ReportTab>('daily');
@@ -1117,7 +1122,19 @@ export const OperationalReportsHub: React.FC = () => {
       {/* 3. SPECIES-WISE ANALYSIS */}
       {activeReport === 'species' && (
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 space-y-4">
-          <h3 className="text-sm font-bold text-ink-900">Species-wise Volume, Expenditure &amp; Landed Margin</h3>
+          <div className="flex flex-wrap justify-between items-center gap-3">
+            <h3 className="text-sm font-bold text-ink-900">Species-wise Volume, Expenditure &amp; Landed Margin</h3>
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('fish-ledger')}
+                className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border border-sky-200 shadow-2xs"
+                title="Open comprehensive Fish-wise Ledger Statement"
+              >
+                <Fish className="w-3.5 h-3.5 text-sky-600" />
+                <span>Open Fish-wise Statement &amp; Ledger &rarr;</span>
+              </button>
+            )}
+          </div>
 
           {/* Graphical Representation */}
           {showVisuals && (
@@ -1153,12 +1170,13 @@ export const OperationalReportsHub: React.FC = () => {
                   <th className="py-2.5 px-3 text-right">Avg Purchase Rate</th>
                   <th className="py-2.5 px-3 text-right">Effective Landed Rate</th>
                   <th className="py-2.5 px-3 text-right">Total Landed Cost</th>
+                  <th className="py-2.5 px-3 text-center">Statement</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 font-medium">
                 {speciesAnalysis.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-ink-500">
+                    <td colSpan={8} className="py-8 text-center text-ink-500">
                       No purchase transactions recorded for any species yet.
                     </td>
                   </tr>
@@ -1172,6 +1190,19 @@ export const OperationalReportsHub: React.FC = () => {
                       <td className="py-3 px-3 text-right">₹{sp.avgRate.toFixed(2)} / Kg</td>
                       <td className="py-3 px-3 text-right font-bold text-rose-700">₹{sp.effRate.toFixed(2)} / Kg</td>
                       <td className="py-3 px-3 text-right font-extrabold text-ink-900">{formatINR(sp.cost)}</td>
+                      <td className="py-3 px-3 text-center">
+                        {onNavigateTab ? (
+                          <button
+                            onClick={() => onNavigateTab('fish-ledger')}
+                            className="px-2 py-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition"
+                            title={`Open Fish-wise Ledger Statement for ${sp.name}`}
+                          >
+                            Ledger &rarr;
+                          </button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

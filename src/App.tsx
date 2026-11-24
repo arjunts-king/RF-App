@@ -17,6 +17,7 @@ const PurchaseReturnsView = lazy(() => import('./components/purchase/PurchaseRet
 const PurchasePaymentView = lazy(() => import('./components/purchase/PurchasePaymentView').then(m => ({ default: m.PurchasePaymentView })));
 const BatchExpenseView = lazy(() => import('./components/purchase/BatchExpenseView').then(m => ({ default: m.BatchExpenseView })));
 const SupplierLedgerView = lazy(() => import('./components/payments/SupplierLedgerView').then(m => ({ default: m.SupplierLedgerView })));
+const FishwiseLedgerView = lazy(() => import('./components/payments/FishwiseLedgerView').then(m => ({ default: m.FishwiseLedgerView })));
 const OutstandingReport = lazy(() => import('./components/payments/OutstandingReport').then(m => ({ default: m.OutstandingReport })));
 const OperationalReportsHub = lazy(() => import('./components/reports/OperationalReportsHub').then(m => ({ default: m.OperationalReportsHub })));
 const DataQualityPanel = lazy(() => import('./components/dashboard/DataQualityPanel').then(m => ({ default: m.DataQualityPanel })));
@@ -373,8 +374,9 @@ const MainLayout: React.FC = () => {
               )}
               {activeTab === 'batch-expenses' && <BatchExpenseView />}
               {activeTab === 'payments' && <SupplierLedgerView />}
+              {activeTab === 'fish-ledger' && <FishwiseLedgerView />}
               {activeTab === 'outstanding' && <OutstandingReport />}
-              {activeTab === 'reports' && <OperationalReportsHub />}
+              {activeTab === 'reports' && <OperationalReportsHub onNavigateTab={(tab) => setActiveTab(tab as NavTab)} />}
               {activeTab === 'data-quality' && <DataQualityPanel />}
               {activeTab === 'master-data' && <MasterDataManager onNavigate={setActiveTab} />}
               {activeTab === 'audit-log' && <AuditLogView />}

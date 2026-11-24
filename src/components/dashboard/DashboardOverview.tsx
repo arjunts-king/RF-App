@@ -1548,8 +1548,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           icon={PieChart}
           activeFilters={activeFilterTags}
           viewAllLink={{
-            label: 'View species price analysis',
-            onClick: () => onNavigateTab && onNavigateTab('reports')
+            label: 'Open fish-wise ledger statement',
+            onClick: () => onNavigateTab && onNavigateTab('fish-ledger')
           }}
         >
           {speciesData.length === 0 ? (

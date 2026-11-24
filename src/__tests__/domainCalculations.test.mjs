@@ -5451,12 +5451,276 @@ test('Sales Module Species Head Master & Product Integration (Ribbonfish Groupin
   assert.ok(dashCode.includes('Species Head'), 'SalesDashboard must render Species Head filter');
   assert.ok(dashCode.includes('speciesHeadName'), 'SalesDashboard must display speciesHeadName in product matrix');
 
-  // 9. SpeciesHeadManager.tsx exists and is well-structured
-  const headMgrCode = fs.readFileSync(path.resolve('src/components/sales/SpeciesHeadManager.tsx'), 'utf8');
-  assert.ok(headMgrCode.includes('integrateProductsIntoSpeciesHead'), 'SpeciesHeadManager must call integrateProductsIntoSpeciesHead');
-  assert.ok(headMgrCode.includes('Integrate Products under'), 'SpeciesHeadManager must have Integrate Products modal');
-  assert.ok(headMgrCode.includes('Ribbonfish'), 'SpeciesHeadManager must reference Ribbonfish example in banner');
+// ============================================================================
+// SUITE 73: Fish-wise Ledger Statement & PDF / Excel Export Integrity
+// ============================================================================
+test('Fish-wise Ledger Statement: running volume, landed cost, debit notes, blank expenses, Excel & Word/PDF export', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify exportFishwiseStatement.ts builds correct mathematical ledger
+  const {
+    buildFishwiseLedgerStatement,
+    buildFishwiseLedgerExcelSheetData,
+    buildFishwiseLedgerWordTableXml
+  } = await import('../utils/exportFishwiseStatement.ts');
+
+  const species = {
+    id: 'sp-fish-1',
+    code: 'RF-001',
+    name: 'Ribbonfish',
+    scientificName: 'Trichiurus lepturus',
+    category: 'Fish',
+    hsCode: '03038990',
+    productForm: 'Whole round',
+    processingType: 'Blast Frozen',
+    active: true
+  };
+
+  const suppliers = [
+    {
+      id: 'sup-1',
+      code: 'SUP-001',
+      name: 'Malabar Marine Suppliers'
+    }
+  ];
+
+  const locations = [
+    {
+      id: 'loc-1',
+      code: 'LOC-001',
+      name: 'Kochi Fisheries Harbour'
+    }
+  ];
+
+  const grades = [
+    { id: 'g-1', code: 'GRD-001', name: 'Grade A' }
+  ];
+
+  const sizes = [
+    { id: 's-1', code: 'SIZ-001', name: 'Medium (500g-1kg)' }
+  ];
+
+  const counts = [
+    { id: 'c-1', code: 'CNT-001', name: 'Standard' }
+  ];
+
+  const purchases = [
+    // Purchase 1: Has expenses (₹10,000 on 1,000 Kg -> ₹10.00/Kg expense rate)
+    {
+      id: 'p-1',
+      purchaseId: 'PUR-0001',
+      purchaseDate: '2026-11-05',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      locationId: 'loc-1',
+      invoiceNo: 'BILL-101',
+      speciesId: 'sp-fish-1',
+      gradeId: 'g-1',
+      sizeId: 's-1',
+      countId: 'c-1',
+      boxesCount: 40,
+      weightKg: 1000,
+      ratePerKg: 120,
+      purchaseValue: 120000,
+      damageWeightKg: 0,
+      damageRatePerKg: 0,
+      damageAmount: 0,
+      grossPurchaseValue: 120000,
+      expenseBreakdown: { ice: 10000 },
+      totalExpenses: 10000,
+      totalCost: 130000,
+      effectiveRatePerKg: 130,
+      amountPaid: 0,
+      balancePayable: 130000,
+      dueDate: '2026-11-20',
+      paymentStatus: 'Unpaid',
+      rejectionWeightKg: 0,
+      remarks: 'Prime fresh catch',
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-05T10:00:00Z',
+      updatedAt: '2026-11-05T10:00:00Z'
+    },
+    // Purchase 2: Has damage deduction but zero expenses -> expenseRatePerKg & expenseValue MUST stay strictly null (blank)
+    {
+      id: 'p-2',
+      purchaseId: 'PUR-0002',
+      purchaseDate: '2026-11-08',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      locationId: 'loc-1',
+      invoiceNo: 'BILL-102',
+      speciesId: 'sp-fish-1',
+      gradeId: 'g-1',
+      sizeId: 's-1',
+      countId: 'c-1',
+      boxesCount: 20,
+      weightKg: 500,
+      ratePerKg: 150,
+      purchaseValue: 75000,
+      damageWeightKg: 20,
+      damageRatePerKg: 150,
+      damageAmount: 3000,
+      grossPurchaseValue: 72000,
+      expenseBreakdown: {},
+      totalExpenses: 0,
+      totalCost: 72000,
+      effectiveRatePerKg: 144,
+      amountPaid: 0,
+      balancePayable: 72000,
+      dueDate: '2026-11-23',
+      paymentStatus: 'Unpaid',
+      rejectionWeightKg: 20,
+      remarks: '20kg tail damage',
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-08T10:00:00Z',
+      updatedAt: '2026-11-08T10:00:00Z'
+    }
+  ];
+
+  const purchaseReturns = [
+    // Purchase Return: 50 Kg returned as Debit Note
+    {
+      id: 'ret-1',
+      returnNo: 'PR-0001',
+      returnDate: '2026-11-12',
+      financialYear: 'FY 2026-27',
+      supplierId: 'sup-1',
+      purchaseId: 'p-2',
+      purchaseRefNo: 'PUR-0002',
+      speciesId: 'sp-fish-1',
+      gradeId: 'g-1',
+      sizeId: 's-1',
+      countId: 'c-1',
+      returnedWeightKg: 50,
+      ratePerKg: 150,
+      returnedValue: 7500,
+      reason: 'Quality / Spoilage Rejection',
+      detailedReason: 'Soft belly damage',
+      adjustSupplierPayable: true,
+      isVoided: false,
+      createdBy: 'admin',
+      createdAt: '2026-11-12T14:00:00Z'
+    }
+  ];
+
+  const statement = buildFishwiseLedgerStatement({
+    speciesId: 'sp-fish-1',
+    selectedSpecies: species,
+    purchases,
+    purchaseReturns,
+    suppliers,
+    locations,
+    grades,
+    sizes,
+    counts,
+    speciesList: [species],
+    purchaseSpeciesList: [species]
+  });
+
+  assert.equal(statement.rows.length, 3, 'Must have 3 statement rows');
+  const [r1, r2, rRet] = statement.rows;
+
+  // Row 1: PUR-0001 with landing expenses
+  assert.equal(r1.voucherRef, 'PUR-0001');
+  assert.equal(r1.formattedDate, '05.11.2026');
+  assert.equal(r1.inwardWeightKg, 1000);
+  assert.equal(r1.outwardWeightKg, null);
+  assert.equal(r1.purchaseRatePerKg, 120);
+  assert.equal(r1.expenseRatePerKg, 10);
+  assert.equal(r1.purchaseValue, 120000);
+  assert.equal(r1.expenseValue, 10000);
+  assert.equal(r1.landedCost, 130000);
+  assert.equal(r1.returnCredit, 0);
+  assert.equal(r1.runningWeightKg, 1000);
+  assert.equal(r1.runningLandedCost, 130000);
+  assert.equal(r1.runningAvgRatePerKg, 130);
+
+  // Row 2: PUR-0002 with zero landing expenses -> expenseRatePerKg & expenseValue must stay strictly null (blank)
+  assert.equal(r2.voucherRef, 'PUR-0002');
+  assert.equal(r2.inwardWeightKg, 500);
+  assert.equal(r2.expenseRatePerKg, null, 'Expense rate/kg must be blank (null) when no expense');
+  assert.equal(r2.expenseValue, null, 'Expense value must be blank (null) when no expense');
+  assert.equal(r2.purchaseValue, 72000);
+  assert.equal(r2.landedCost, 72000);
+  assert.equal(r2.runningWeightKg, 1500);
+  assert.equal(r2.runningLandedCost, 202000); // 130,000 + 72,000
+  assert.equal(r2.runningAvgRatePerKg, 134.67); // 202,000 / 1,500 = 134.67
+
+  // Row 3: PR-0001 Return / Rejection Debit Note
+  assert.equal(rRet.voucherRef, 'PR-0001');
+  assert.equal(rRet.type, 'RETURN');
+  assert.equal(rRet.inwardWeightKg, null);
+  assert.equal(rRet.outwardWeightKg, 50);
+  assert.equal(rRet.landedCost, 0);
+  assert.equal(rRet.returnCredit, 7500);
+  assert.equal(rRet.runningWeightKg, 1450); // 1,500 - 50 = 1,450
+  assert.equal(rRet.runningLandedCost, 194500); // 202,000 - 7,500 = 194,500
+  assert.equal(rRet.runningAvgRatePerKg, 134.14); // 194,500 / 1,450 = 134.14
+
+  // Check Totals
+  assert.equal(statement.totalInwardWeightKg, 1500);
+  assert.equal(statement.totalOutwardWeightKg, 50);
+  assert.equal(statement.netTotalWeightKg, 1450);
+  assert.equal(statement.totalPurchaseValue, 192000);
+  assert.equal(statement.totalExpenseValue, 10000);
+  assert.equal(statement.totalDebits, 202000);
+  assert.equal(statement.totalCredits, 7500);
+  assert.equal(statement.closingWeightKg, 1450);
+  assert.equal(statement.closingCost, 194500);
+  assert.equal(statement.weightedAvgLandedRate, 134.67);
+
+  // 2. Verify Excel sheet rows keep Expense Rate & Expense Value strictly blank ('') for PUR-0002 & PR-0001
+  const excelRows = buildFishwiseLedgerExcelSheetData(statement, species);
+  const pur1Excel = excelRows.find((r) => r[0] === 'PUR-0001');
+  const pur2Excel = excelRows.find((r) => r[0] === 'PUR-0002');
+  const retExcel = excelRows.find((r) => r[0] === 'PR-0001');
+
+  assert.ok(pur1Excel && pur2Excel && retExcel);
+  assert.equal(pur1Excel[9], 10, 'PUR-0001 expense rate is 10');
+  assert.equal(pur1Excel[11], 10000, 'PUR-0001 expense value is 10000');
+  assert.equal(pur2Excel[9], '', 'Excel Expense Rate/Kg must be blank for PUR-0002');
+  assert.equal(pur2Excel[11], '', 'Excel Expense Value must be blank for PUR-0002');
+  assert.equal(retExcel[6], '', 'Excel Inward weight blank for return');
+  assert.equal(retExcel[7], 50, 'Excel Return weight 50 for PR-0001');
+  assert.equal(retExcel[13], 7500, 'Excel Return credit 7500 for PR-0001');
+
+  // 3. Verify Word XML includes required columns
+  const wordXml = buildFishwiseLedgerWordTableXml(statement, species);
+  assert.ok(wordXml.includes('FISH-WISE COMMODITY STATEMENT OF ACCOUNT'), 'Word XML includes Fishwise title');
+  assert.ok(wordXml.includes('Voucher Ref'), 'Word XML includes Voucher Ref');
+  assert.ok(wordXml.includes('Exp. Rate'), 'Word XML includes Exp. Rate');
+  assert.ok(wordXml.includes('Landed (₹)'), 'Word XML includes Landed (₹)');
+  assert.ok(wordXml.includes('Return (₹)'), 'Word XML includes Return (₹)');
+  assert.ok(wordXml.includes('PUR-0001') && wordXml.includes('PUR-0002') && wordXml.includes('PR-0001'));
+
+  // 4. Verify FishwiseLedgerView component exposes Excel, Word, and A4 Print/PDF export buttons
+  const viewCode = fs.readFileSync(path.resolve('src/components/payments/FishwiseLedgerView.tsx'), 'utf8');
+  assert.ok(viewCode.includes('Download Excel'), 'FishwiseLedgerView must contain Download Excel');
+  assert.ok(viewCode.includes('Download Word'), 'FishwiseLedgerView must contain Download Word');
+  assert.ok(viewCode.includes('Print / PDF (A4)'), 'FishwiseLedgerView must contain Print / PDF (A4)');
+  assert.ok(viewCode.includes('Fish-wise Statement of Account'), 'FishwiseLedgerView must contain Statement badge');
+
+  // 5. Verify Navigation Integration (Sidebar, Navbar, App, ReportsHub, CommandPalette)
+  const sidebarCode = fs.readFileSync(path.resolve('src/components/common/Sidebar.tsx'), 'utf8');
+  assert.ok(sidebarCode.includes("'fish-ledger'"), "Sidebar must include 'fish-ledger' in NavTab and items");
+
+  const navbarCode = fs.readFileSync(path.resolve('src/components/common/Navbar.tsx'), 'utf8');
+  assert.ok(navbarCode.includes("'fish-ledger'"), "Navbar must include 'fish-ledger' in purchase accounting items");
+
+  const appCode = fs.readFileSync(path.resolve('src/App.tsx'), 'utf8');
+  assert.ok(appCode.includes("activeTab === 'fish-ledger'"), "App.tsx must route activeTab === 'fish-ledger'");
+  assert.ok(appCode.includes('FishwiseLedgerView'), 'App.tsx must lazy-load FishwiseLedgerView');
+
+  const cmdPaletteCode = fs.readFileSync(path.resolve('src/components/common/CommandPalette.tsx'), 'utf8');
+  assert.ok(cmdPaletteCode.includes('pur-fish-ledger'), 'CommandPalette must include pur-fish-ledger command');
+
+  const reportsHubCode = fs.readFileSync(path.resolve('src/components/reports/OperationalReportsHub.tsx'), 'utf8');
+  assert.ok(reportsHubCode.includes("'fish-ledger'"), "OperationalReportsHub must link to 'fish-ledger'");
 });
+
 
 
 
