@@ -89,15 +89,33 @@ export const CommercialSpeciesManager: React.FC<CommercialSpeciesManagerProps> =
         return false;
       }
     }
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      const matchName = sp.name.toLowerCase().includes(q);
-      const matchCode = sp.code.toLowerCase().includes(q);
-      const matchHead = sp.speciesHeadName?.toLowerCase().includes(q);
-      const matchSci = sp.scientificName?.toLowerCase().includes(q);
-      const matchHs = sp.hsCode?.toLowerCase().includes(q);
-      const matchForm = sp.productForm?.toLowerCase().includes(q);
-      return matchName || matchCode || matchHead || matchSci || matchHs || matchForm;
+    if (searchTerm.trim()) {
+      const rawQ = searchTerm.trim().toLowerCase();
+      const tokens = rawQ.split(/\s+/).filter(Boolean);
+      const normQ = rawQ.replace(/[^a-z0-9]/g, '');
+
+      const searchCorpus = [
+        sp.name,
+        sp.code,
+        sp.speciesHeadName,
+        sp.rawSpeciesName,
+        sp.scientificName,
+        sp.category,
+        sp.productForm,
+        sp.processingType,
+        sp.hsCode,
+        (sp as any).description
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const normCorpus = searchCorpus.replace(/[^a-z0-9]/g, '');
+
+      const allTokensMatch = tokens.every((token) => searchCorpus.includes(token));
+      const normMatch = normQ.length >= 2 && normCorpus.includes(normQ);
+
+      return allTokensMatch || normMatch;
     }
     return true;
   });

@@ -78,6 +78,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   const editReasonRef = useRef<HTMLInputElement>(null);
   const consigneeInputRef = useRef<HTMLInputElement>(null);
   const linesSectionRef = useRef<HTMLDivElement>(null);
+  const descInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   // --- Section 1: Exporter & Document Identification ---
   const [exporterName, setExporterName] = useState(businessSettings.businessName || '');
@@ -358,6 +359,88 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     }
   };
 
+  // Line completion check: line is considered complete when product description/species, weight (>0), and rate (>0) are filled
+  const isLineCompleted = (line: LineItemDraft): boolean => {
+    const hasProduct = Boolean((line.productDescription && line.productDescription.trim()) || line.speciesId);
+    const w = parseFloat(String(line.weightKg)) || 0;
+    const r = parseFloat(String(line.ratePerKg)) || 0;
+    return hasProduct && w > 0 && r > 0;
+  };
+
+  // Check if line is completely empty
+  const isLineEmpty = (line: LineItemDraft): boolean => {
+    return (
+      !line.productDescription.trim() &&
+      !line.speciesId &&
+      !line.gradeSize.trim() &&
+      !line.sizeId &&
+      (line.cartonsCount === '' || line.cartonsCount === 0) &&
+      (line.weightKg === '' || line.weightKg === 0) &&
+      (line.ratePerKg === '' || line.ratePerKg === 0)
+    );
+  };
+
+  // Automatically append the next product line when one product line is completed
+  const autoAppendNextLineIfCompleted = (lineId: string, currentLines?: LineItemDraft[], shouldFocus = false) => {
+    const targetLines = currentLines || lines;
+    const lineIndex = targetLines.findIndex((l) => l.id === lineId);
+    if (lineIndex === -1) return;
+
+    if (lineIndex === targetLines.length - 1) {
+      const line = targetLines[lineIndex];
+      if (isLineCompleted(line)) {
+        setLines((prev) => {
+          const lastPrev = prev[prev.length - 1];
+          if (lastPrev && isLineEmpty(lastPrev)) {
+            if (shouldFocus) {
+              setTimeout(() => {
+                const el = descInputRefs.current.get(lastPrev.id);
+                el?.focus();
+                el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }, 50);
+            }
+            return prev;
+          }
+          const newLine = createBlankLine(prev.length);
+          if (shouldFocus) {
+            setTimeout(() => {
+              const el = descInputRefs.current.get(newLine.id);
+              if (el) {
+                el.focus();
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            }, 80);
+          }
+          return [...prev, newLine];
+        });
+      }
+    }
+  };
+
+  const handleRateKeyDown = (e: React.KeyboardEvent, idx: number, line: LineItemDraft) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (idx === lines.length - 1) {
+        if (isLineCompleted(line)) {
+          autoAppendNextLineIfCompleted(line.id, undefined, true);
+        }
+      } else {
+        const nextLine = lines[idx + 1];
+        if (nextLine) {
+          const el = descInputRefs.current.get(nextLine.id);
+          el?.focus();
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }
+  };
+
+  const handleLineBlur = (idx: number, line: LineItemDraft) => {
+    if (idx === lines.length - 1 && isLineCompleted(line)) {
+      autoAppendNextLineIfCompleted(line.id, undefined, false);
+    }
+  };
+
   // Handle Species selection for a line - auto-fills HS Code, trade name, commodity title & scientific name
   const handleSpeciesChange = (lineId: string, sp: Species | null) => {
     let nextLines: LineItemDraft[] = [];
@@ -386,6 +469,12 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     }
 
     setLines(nextLines);
+
+    // If this line is completed on the last row, auto-append next line
+    const updatedLine = nextLines.find((l) => l.id === lineId);
+    if (updatedLine && isLineCompleted(updatedLine) && nextLines[nextLines.length - 1]?.id === lineId) {
+      autoAppendNextLineIfCompleted(lineId, nextLines, false);
+    }
 
     // Automatically derive commodity title, scientific name & HSN code
     if (!isCommodityManual || !commodityDescription.trim()) {
@@ -450,6 +539,14 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
         setHsnCode(deriveHsnCode(nextLines, species));
       }
     }
+
+    // Auto-append next line if ratePerKg or weightKg completes the last line
+    if (field === 'ratePerKg' || field === 'weightKg') {
+      const targetLine = nextLines.find((l) => l.id === lineId);
+      if (targetLine && isLineCompleted(targetLine) && nextLines[nextLines.length - 1]?.id === lineId) {
+        autoAppendNextLineIfCompleted(lineId, nextLines, false);
+      }
+    }
   };
 
   // Live Server-Style Totals Calculation
@@ -486,6 +583,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
 
   // Construct current full invoice state for Word export or submission
   const getCurrentInvoiceDraft = () => {
+    const activeLines = lines.filter((l) => !isLineEmpty(l));
+    const linesToProcess = activeLines.length > 0 ? activeLines : lines.slice(0, 1);
+
     return {
       invoiceNo: invoiceNo.trim(),
       invoiceDate,
@@ -543,11 +643,11 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       totalFobValueCurrency: finalFobUSD,
       totalFobValueINR: finalFobINR,
       estimatedAmountINR,
-      lineItems: lines.map((l, idx) => {
+      lineItems: linesToProcess.map((l, idx) => {
         const w = parseFloat(String(l.weightKg)) || 0;
         const r = parseFloat(String(l.ratePerKg)) || 0;
         const lineAmt = Number((w * r).toFixed(2));
-        const ratio = totalAmountCurrency > 0 ? (lineAmt / totalAmountCurrency) : (lines.length > 0 ? 1 / lines.length : 1);
+        const ratio = totalAmountCurrency > 0 ? (lineAmt / totalAmountCurrency) : (linesToProcess.length > 0 ? 1 / linesToProcess.length : 1);
 
         let resolvedSpeciesId = l.speciesId;
         if (!resolvedSpeciesId) {
@@ -636,13 +736,14 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       return;
     }
 
-    if (lines.length === 0) {
+    const activeLines = lines.filter((l) => !isLineEmpty(l));
+    if (activeLines.length === 0) {
       failValidation('Validation Error: At least one product line item is required.', linesSectionRef);
       return;
     }
 
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
+    for (let i = 0; i < activeLines.length; i++) {
+      const l = activeLines[i];
       const w = parseFloat(String(l.weightKg)) || 0;
       const r = parseFloat(String(l.ratePerKg)) || 0;
       if (w <= 0) {
@@ -1554,9 +1655,16 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                   <td className="py-2 px-3">
                     <div className="space-y-1.5">
                       <input
+                        ref={(el) => {
+                          if (el) descInputRefs.current.set(l.id, el);
+                          else descInputRefs.current.delete(l.id);
+                        }}
                         type="text"
                         value={l.productDescription}
                         onChange={(e) => updateLine(l.id, 'productDescription', e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.preventDefault();
+                        }}
                         placeholder="e.g. FROZEN RIBBONFISH B GRADE"
                         required
                         className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
@@ -1574,6 +1682,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                             type="text"
                             value={l.hsCode}
                             onChange={(e) => updateLine(l.id, 'hsCode', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') e.preventDefault();
+                            }}
                             placeholder="03038930"
                             maxLength={12}
                             className="w-20 bg-transparent text-[11px] font-mono font-bold text-ink-800 outline-none"
@@ -1590,6 +1701,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                         type="text"
                         value={l.gradeSize}
                         onChange={(e) => updateLine(l.id, 'gradeSize', e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.preventDefault();
+                        }}
                         placeholder="e.g. 6/8"
                         required
                         className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
@@ -1610,6 +1724,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                       min="0"
                       value={l.cartonsCount}
                       onChange={(e) => updateLine(l.id, 'cartonsCount', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.preventDefault();
+                      }}
                       placeholder="0"
                       className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-semibold text-xs outline-none focus:border-rose-400"
                     />
@@ -1623,6 +1740,9 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                       min="0.001"
                       value={l.weightKg}
                       onChange={(e) => updateLine(l.id, 'weightKg', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.preventDefault();
+                      }}
                       placeholder="0.000"
                       required
                       className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-400"
@@ -1637,6 +1757,8 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                       min="0"
                       value={l.ratePerKg}
                       onChange={(e) => updateLine(l.id, 'ratePerKg', e.target.value)}
+                      onKeyDown={(e) => handleRateKeyDown(e, idx, l)}
+                      onBlur={() => handleLineBlur(idx, l)}
                       placeholder="0.00"
                       required
                       className="w-24 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-right font-bold text-xs outline-none focus:border-rose-400"

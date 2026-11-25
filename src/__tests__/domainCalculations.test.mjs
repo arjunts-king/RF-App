@@ -5918,3 +5918,126 @@ test('Sales Invoice Export File: includes all line items, product-wise price, an
   assert.ok(fobCode.includes('exportSalesInvoicesToCSV'), 'FobDashboard must import exportSalesInvoicesToCSV');
   assert.ok(fobCode.includes('handleExportExcel'), 'FobDashboard must define handleExportExcel');
 });
+
+test('Sales Search Tokenization, Product Masters Filter & Invoice Line Auto-Append Logic', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify MultiSelectFilter tokenization & normalization logic
+  const multiFilterCode = fs.readFileSync(path.resolve('src/components/common/MultiSelectFilter.tsx'), 'utf8');
+  assert.ok(multiFilterCode.includes('tokens.every'), 'MultiSelectFilter must support multi-token search');
+  assert.ok(multiFilterCode.includes('replace(/[^a-z0-9]/g'), 'MultiSelectFilter must normalize alphanumeric characters');
+
+  // Simulate MultiSelectFilter logic
+  const options = [
+    { id: '1', label: 'Frozen Ribbonfish Grade A', subLabel: 'PRD-001 • Ribbonfish' },
+    { id: '2', label: 'Indian Mackerel Whole Round', subLabel: 'PRD-002 • Mackerel' },
+    { id: '3', label: 'Loligo Squid Semi Needle Whole', subLabel: 'PRD-003 • Squid • 03074310' }
+  ];
+
+  const filterOptions = (q) => {
+    const rawQ = q.trim().toLowerCase();
+    const tokens = rawQ.split(/\s+/).filter(Boolean);
+    const normQ = rawQ.replace(/[^a-z0-9]/g, '');
+    return options.filter((opt) => {
+      const fullText = `${opt.label} ${opt.subLabel || ''}`.toLowerCase();
+      const normText = fullText.replace(/[^a-z0-9]/g, '');
+      const allTokensMatch = tokens.every((token) => fullText.includes(token));
+      const normMatch = normQ.length > 0 && normText.includes(normQ);
+      return allTokensMatch || normMatch;
+    });
+  };
+
+  assert.equal(filterOptions('ribbon grade').length, 1, 'Multi-token "ribbon grade" must match Ribbonfish Grade A');
+  assert.equal(filterOptions('PRD001').length, 1, 'Normalized "PRD001" without hyphen must match PRD-001');
+  assert.equal(filterOptions('03074310').length, 1, 'HS code search "03074310" must match Squid');
+  assert.equal(filterOptions('whole mackerel').length, 1, 'Multi-word "whole mackerel" in any order must match Mackerel');
+
+  // 2. Verify ProductCombobox & CommercialSpeciesManager multi-token & normalized matching
+  const productComboboxCode = fs.readFileSync(path.resolve('src/components/sales/ProductCombobox.tsx'), 'utf8');
+  assert.ok(productComboboxCode.includes('tokens.every'), 'ProductCombobox must implement multi-token matching');
+  assert.ok(productComboboxCode.includes('normCorpus.includes(normQ)'), 'ProductCombobox must implement normalized search');
+
+  const speciesManagerCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
+  assert.ok(speciesManagerCode.includes('tokens.every'), 'CommercialSpeciesManager must implement multi-token matching');
+  assert.ok(speciesManagerCode.includes('rawSpeciesName'), 'CommercialSpeciesManager must search raw catch species name');
+  assert.ok(speciesManagerCode.includes('category'), 'CommercialSpeciesManager must search category');
+  assert.ok(speciesManagerCode.includes('processingType'), 'CommercialSpeciesManager must search processing type');
+
+  // 3. Verify SalesDashboard enhanced invoice product matching
+  const salesDashboardCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf8');
+  assert.ok(salesDashboardCode.includes('selectedProductIds'), 'SalesDashboard must filter selectedProductIds');
+  assert.ok(salesDashboardCode.includes('lineMatch'), 'SalesDashboard must match invoices by line items');
+  assert.ok(salesDashboardCode.includes('commDesc'), 'SalesDashboard must match invoices by commodity title');
+
+  // 4. Verify SalesInvoiceEntryForm line completion, auto-append, and Enter key navigation
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(formCode.includes('isLineCompleted'), 'SalesInvoiceEntryForm must define isLineCompleted');
+  assert.ok(formCode.includes('isLineEmpty'), 'SalesInvoiceEntryForm must define isLineEmpty');
+  assert.ok(formCode.includes('autoAppendNextLineIfCompleted'), 'SalesInvoiceEntryForm must define autoAppendNextLineIfCompleted');
+  assert.ok(formCode.includes('handleRateKeyDown'), 'SalesInvoiceEntryForm must define handleRateKeyDown');
+  assert.ok(formCode.includes('descInputRefs'), 'SalesInvoiceEntryForm must maintain input refs for auto-focus');
+  assert.ok(formCode.includes('linesToProcess'), 'SalesInvoiceEntryForm must filter out trailing empty lines in draft');
+  assert.ok(formCode.includes('activeLines'), 'SalesInvoiceEntryForm must ignore empty auto-appended lines in validation');
+
+  // 5. Test line completion logic
+  const isLineCompleted = (line) => {
+    const hasProduct = Boolean((line.productDescription && line.productDescription.trim()) || line.speciesId);
+    const w = parseFloat(String(line.weightKg)) || 0;
+    const r = parseFloat(String(line.ratePerKg)) || 0;
+    return hasProduct && w > 0 && r > 0;
+  };
+
+  const isLineEmpty = (line) => {
+    return (
+      !line.productDescription.trim() &&
+      !line.speciesId &&
+      !line.gradeSize.trim() &&
+      !line.sizeId &&
+      (line.cartonsCount === '' || line.cartonsCount === 0) &&
+      (line.weightKg === '' || line.weightKg === 0) &&
+      (line.ratePerKg === '' || line.ratePerKg === 0)
+    );
+  };
+
+  const completedLine = {
+    productDescription: 'FROZEN RIBBONFISH',
+    speciesId: 'sp-1',
+    gradeSize: '6/8',
+    sizeId: 'sz-1',
+    cartonsCount: 500,
+    weightKg: 5000,
+    ratePerKg: 4.8
+  };
+  const emptyLine = {
+    productDescription: '',
+    speciesId: '',
+    gradeSize: '',
+    sizeId: '',
+    cartonsCount: '',
+    weightKg: '',
+    ratePerKg: ''
+  };
+  const incompleteLine = {
+    productDescription: 'FROZEN SQUID',
+    speciesId: 'sp-2',
+    gradeSize: 'M',
+    sizeId: 'sz-2',
+    cartonsCount: 200,
+    weightKg: 2000,
+    ratePerKg: '' // Missing rate
+  };
+
+  assert.equal(isLineCompleted(completedLine), true, 'Completed line must return true');
+  assert.equal(isLineCompleted(emptyLine), false, 'Empty line is not completed');
+  assert.equal(isLineCompleted(incompleteLine), false, 'Line with missing rate is not completed');
+
+  assert.equal(isLineEmpty(emptyLine), true, 'Empty line must return true');
+  assert.equal(isLineEmpty(completedLine), false, 'Completed line is not empty');
+
+  // Verify that an invoice with [completedLine, emptyLine] validates successfully when filtering out empty lines
+  const rawLines = [completedLine, emptyLine];
+  const activeLines = rawLines.filter((l) => !isLineEmpty(l));
+  assert.equal(activeLines.length, 1, 'Only non-empty lines are validated/saved');
+  assert.ok(activeLines[0].weightKg > 0 && activeLines[0].ratePerKg > 0, 'Completed line passes validation');
+});

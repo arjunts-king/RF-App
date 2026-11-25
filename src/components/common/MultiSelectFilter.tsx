@@ -63,14 +63,20 @@ export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
   }, [isOpen]);
 
   const filteredOptions = useMemo(() => {
-    if (!searchQuery.trim()) return options;
-    const q = searchQuery.toLowerCase().trim();
-    return options.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(q) ||
-        (opt.subLabel && opt.subLabel.toLowerCase().includes(q)) ||
-        (opt.badge && opt.badge.toLowerCase().includes(q))
-    );
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) return options;
+    const tokens = trimmed.split(/\s+/).filter(Boolean);
+    const normQ = trimmed.replace(/[^a-z0-9]/g, '');
+
+    return options.filter((opt) => {
+      const fullText = `${opt.label} ${opt.subLabel || ''} ${opt.badge || ''}`.toLowerCase();
+      const normFull = fullText.replace(/[^a-z0-9]/g, '');
+
+      const allTokensMatch = tokens.every((token) => fullText.includes(token));
+      const normMatch = normQ.length >= 2 && normFull.includes(normQ);
+
+      return allTokensMatch || normMatch;
+    });
   }, [options, searchQuery]);
 
   const toggleOption = (id: string) => {

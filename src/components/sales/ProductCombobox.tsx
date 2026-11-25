@@ -53,33 +53,40 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     }
   }, [isOpen]);
 
-  // Strict real-time filter: ONLY results matching the typed query
+  // Intelligent multi-token & normalized real-time filter across all product attributes
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return speciesList;
 
-    return speciesList.filter((sp) => {
-      const matchName = (sp.name || '').toLowerCase().includes(q);
-      const matchCode = (sp.code || '').toLowerCase().includes(q);
-      const matchHead = (sp.speciesHeadName || '').toLowerCase().includes(q);
-      const matchRaw = (sp.rawSpeciesName || '').toLowerCase().includes(q);
-      const matchSci = (sp.scientificName || '').toLowerCase().includes(q);
-      const matchCat = (sp.category || '').toLowerCase().includes(q);
-      const matchForm = (sp.productForm || '').toLowerCase().includes(q);
-      const matchProc = (sp.processingType || '').toLowerCase().includes(q);
-      const matchHs = (sp.hsCode || '').toLowerCase().includes(q);
+    const tokens = q.split(/\s+/).filter(Boolean);
+    const normQ = q.replace(/[^a-z0-9]/g, '');
 
-      return (
-        matchName ||
-        matchCode ||
-        matchHead ||
-        matchRaw ||
-        matchSci ||
-        matchCat ||
-        matchForm ||
-        matchProc ||
-        matchHs
-      );
+    return speciesList.filter((sp) => {
+      const searchCorpus = [
+        sp.name,
+        sp.code,
+        sp.speciesHeadName,
+        sp.rawSpeciesName,
+        sp.scientificName,
+        sp.category,
+        sp.productForm,
+        sp.processingType,
+        sp.hsCode,
+        (sp as any).description
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const normCorpus = searchCorpus.replace(/[^a-z0-9]/g, '');
+
+      // 1. All tokens match anywhere across all product fields
+      const allTokensMatch = tokens.every((token) => searchCorpus.includes(token));
+
+      // 2. Normalized match (handles spaces/hyphens differences like "ribbon-fish" vs "ribbonfish", "PRD 001" vs "PRD-001")
+      const normMatch = normQ.length >= 2 && normCorpus.includes(normQ);
+
+      return allTokensMatch || normMatch;
     });
   }, [speciesList, query]);
 

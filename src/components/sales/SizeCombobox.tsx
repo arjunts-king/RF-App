@@ -53,16 +53,22 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
     }
   }, [isOpen]);
 
-  // Strict real-time filter: ONLY results matching the typed query
+  // Intelligent multi-token & normalized real-time filter across sizes
   const filteredSizes = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return sizeList;
 
+    const tokens = q.split(/\s+/).filter(Boolean);
+    const normQ = q.replace(/[^a-z0-9]/g, '');
+
     return sizeList.filter((sz) => {
-      const matchName = (sz.name || '').toLowerCase().includes(q);
-      const matchCode = (sz.code || '').toLowerCase().includes(q);
-      const matchDesc = (sz.description || '').toLowerCase().includes(q);
-      return matchName || matchCode || matchDesc;
+      const searchCorpus = [sz.name, sz.code, sz.description].filter(Boolean).join(' ').toLowerCase();
+      const normCorpus = searchCorpus.replace(/[^a-z0-9]/g, '');
+
+      const allTokensMatch = tokens.every((token) => searchCorpus.includes(token));
+      const normMatch = normQ.length >= 2 && normCorpus.includes(normQ);
+
+      return allTokensMatch || normMatch;
     });
   }, [sizeList, query]);
 

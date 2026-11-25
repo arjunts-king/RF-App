@@ -177,35 +177,93 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(inv.realizationStatus)) return false;
 
       if (selectedProductIds.length > 0) {
-        const hasProduct = inv.lineItems.some((l) => {
-          if (selectedProductIds.includes(l.speciesId)) return true;
-          if (l.productDescription && selectedProductIds.includes(l.productDescription.trim())) return true;
-          const sp = speciesMap.get(l.speciesId);
-          const lineName = (sp?.name || l.productDescription || '').trim().toLowerCase();
-          return selectedProductIds.some((pId) => {
-            const opt = productOptions.find((o) => o.id === pId);
-            return opt && opt.label.trim().toLowerCase() === lineName;
-          });
+        const hasProduct = selectedProductIds.some((pId) => {
+          const opt = productOptions.find((o) => o.id === pId);
+          const targetLabel = (opt?.label || pId).trim().toLowerCase();
+          const targetCode = (opt?.badge || '').replace(/^HS\s*/i, '').trim().toLowerCase();
+          const normTarget = targetLabel.replace(/[^a-z0-9]/g, '');
+
+          // Check invoice line items
+          if (inv.lineItems && inv.lineItems.length > 0) {
+            const lineMatch = inv.lineItems.some((l) => {
+              if (l.speciesId === pId) return true;
+              const sp = speciesMap.get(l.speciesId);
+              if (sp?.id === pId) return true;
+              if (sp?.code && sp.code.toLowerCase() === pId.toLowerCase()) return true;
+
+              const lineDesc = (l.productDescription || '').trim().toLowerCase();
+              const spName = (sp?.name || '').trim().toLowerCase();
+              const spRaw = (sp?.rawSpeciesName || '').trim().toLowerCase();
+              const spHead = (sp?.speciesHeadName || '').trim().toLowerCase();
+
+              if (lineDesc === targetLabel || spName === targetLabel) return true;
+              if (lineDesc && targetLabel && (lineDesc.includes(targetLabel) || targetLabel.includes(lineDesc))) return true;
+              if (spName && targetLabel && (spName.includes(targetLabel) || targetLabel.includes(spName))) return true;
+              if (spRaw && targetLabel && (spRaw.includes(targetLabel) || targetLabel.includes(spRaw))) return true;
+              if (spHead && targetLabel && (spHead.includes(targetLabel) || targetLabel.includes(spHead))) return true;
+
+              if (normTarget.length >= 3) {
+                const normDesc = lineDesc.replace(/[^a-z0-9]/g, '');
+                const normSp = spName.replace(/[^a-z0-9]/g, '');
+                if (normDesc.includes(normTarget) || normTarget.includes(normDesc)) return true;
+                if (normSp.includes(normTarget) || normTarget.includes(normSp)) return true;
+              }
+
+              if (targetCode && targetCode.length >= 4) {
+                const lineHs = (l.hsCode || sp?.hsCode || '').toLowerCase();
+                if (lineHs.includes(targetCode)) return true;
+              }
+
+              return false;
+            });
+            if (lineMatch) return true;
+          }
+
+          // Fallback to invoice-level commodity and HSN
+          const commDesc = (inv.commodityDescription || '').trim().toLowerCase();
+          if (commDesc) {
+            if (commDesc === targetLabel || commDesc.includes(targetLabel) || targetLabel.includes(commDesc)) return true;
+            if (normTarget.length >= 3) {
+              const normComm = commDesc.replace(/[^a-z0-9]/g, '');
+              if (normComm.includes(normTarget) || normTarget.includes(normComm)) return true;
+            }
+          }
+          if (targetCode && targetCode.length >= 4 && (inv.hsnCode || '').toLowerCase().includes(targetCode)) {
+            return true;
+          }
+
+          return false;
         });
+
         if (!hasProduct) return false;
       }
 
       if (selectedSpeciesHeadIds.length > 0) {
-        const hasHead = inv.lineItems.some((l) => {
-          const sp = speciesMap.get(l.speciesId);
-          const headId = sp?.speciesHeadId;
-          const headName = (sp?.speciesHeadName || '').toLowerCase();
-          const descLower = (l.productDescription || '').toLowerCase();
-          return selectedSpeciesHeadIds.some((selectedHeadId) => {
-            const headObj = speciesHeads.find((h) => h.id === selectedHeadId);
-            const headNameLower = headObj ? headObj.name.toLowerCase() : '';
+        const hasHead = selectedSpeciesHeadIds.some((selectedHeadId) => {
+          const headObj = speciesHeads.find((h) => h.id === selectedHeadId);
+          const headNameLower = headObj ? headObj.name.toLowerCase() : '';
+
+          const lineMatch = inv.lineItems?.some((l) => {
+            const sp = speciesMap.get(l.speciesId);
+            const headId = sp?.speciesHeadId;
+            const headName = (sp?.speciesHeadName || '').toLowerCase();
+            const descLower = (l.productDescription || '').toLowerCase();
+
             return (
               headId === selectedHeadId ||
               (headName && headNameLower && headName === headNameLower) ||
               (headNameLower && descLower.includes(headNameLower))
             );
           });
+
+          if (lineMatch) return true;
+
+          const commLower = (inv.commodityDescription || '').toLowerCase();
+          if (headNameLower && commLower.includes(headNameLower)) return true;
+
+          return false;
         });
+
         if (!hasHead) return false;
       }
 
@@ -375,13 +433,18 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   // Filtered and sorted product share matrix
   const displayProductMatrix = useMemo(() => {
     let list = fullProductShareMatrix;
-    if (matrixSearch) {
-      const q = matrixSearch.toLowerCase();
-      list = list.filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.hsCode.toLowerCase().includes(q) ||
-        (p.scientificName || '').toLowerCase().includes(q)
-      );
+    if (matrixSearch.trim()) {
+      const q = matrixSearch.trim().toLowerCase();
+      const tokens = q.split(/\s+/).filter(Boolean);
+      const normQ = q.replace(/[^a-z0-9]/g, '');
+
+      list = list.filter((p) => {
+        const full = `${p.name} ${p.speciesHeadName || ''} ${p.hsCode} ${p.scientificName || ''}`.toLowerCase();
+        const normFull = full.replace(/[^a-z0-9]/g, '');
+        const allTokens = tokens.every((t) => full.includes(t));
+        const normMatch = normQ.length >= 2 && normFull.includes(normQ);
+        return allTokens || normMatch;
+      });
     }
 
     list = [...list].sort((a, b) => {
@@ -522,16 +585,27 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
 
         if (outstandingSearch.trim()) {
           const q = outstandingSearch.toLowerCase().trim();
-          const matchNo = inv.invoiceNo.toLowerCase().includes(q);
-          const matchCust = inv.consigneeNameDisplay.toLowerCase().includes(q) || inv.buyerNameDisplay.toLowerCase().includes(q);
-          const matchCountry = inv.countryDisplay.toLowerCase().includes(q);
-          const matchSO = inv.salesOrderNo?.toLowerCase().includes(q);
-          const matchPO = inv.orderNo?.toLowerCase().includes(q);
-          const matchProduct = inv.lineItems?.some((l) => {
-            const sp = speciesMap.get(l.speciesId);
-            return (sp?.name || l.productDescription || '').toLowerCase().includes(q);
+          const tokens = q.split(/\s+/).filter(Boolean);
+
+          const matchesAllTokens = tokens.every((t) => {
+            const matchNo = inv.invoiceNo.toLowerCase().includes(t);
+            const matchCust = inv.consigneeNameDisplay.toLowerCase().includes(t) || inv.buyerNameDisplay.toLowerCase().includes(t);
+            const matchCountry = inv.countryDisplay.toLowerCase().includes(t);
+            const matchSO = (inv.salesOrderNo || '').toLowerCase().includes(t);
+            const matchPO = (inv.orderNo || '').toLowerCase().includes(t);
+            const matchContainer = (inv.containerNo || '').toLowerCase().includes(t);
+            const matchSeal = (inv.sealNo || '').toLowerCase().includes(t);
+            const matchComm = (inv.commodityDescription || '').toLowerCase().includes(t);
+            const matchProduct = inv.lineItems?.some((l) => {
+              const sp = speciesMap.get(l.speciesId);
+              const pName = (sp?.name || '').toLowerCase();
+              const pDesc = (l.productDescription || '').toLowerCase();
+              return pName.includes(t) || pDesc.includes(t);
+            });
+            return matchNo || matchCust || matchCountry || matchSO || matchPO || matchContainer || matchSeal || matchComm || matchProduct;
           });
-          if (!matchNo && !matchCust && !matchCountry && !matchSO && !matchPO && !matchProduct) return false;
+
+          if (!matchesAllTokens) return false;
         }
 
         return true;
