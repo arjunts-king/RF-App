@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -6040,4 +6040,172 @@ test('Sales Search Tokenization, Product Masters Filter & Invoice Line Auto-Appe
   const activeLines = rawLines.filter((l) => !isLineEmpty(l));
   assert.equal(activeLines.length, 1, 'Only non-empty lines are validated/saved');
   assert.ok(activeLines[0].weightKg > 0 && activeLines[0].ratePerKg > 0, 'Completed line passes validation');
+});
+
+test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfish and Vannamei false positives', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify CommercialSpeciesManager and ProductCombobox include species boundary guards
+  const mgrCode = fs.readFileSync(path.resolve('src/components/sales/CommercialSpeciesManager.tsx'), 'utf8');
+  assert.ok(mgrCode.includes('isMackerelSearch'), 'CommercialSpeciesManager must define isMackerelSearch guard');
+  assert.ok(mgrCode.includes('isMackerelProduct'), 'CommercialSpeciesManager must define isMackerelProduct guard');
+  assert.ok(mgrCode.includes('isRibbonSearch'), 'CommercialSpeciesManager must define isRibbonSearch guard');
+  assert.ok(mgrCode.includes('isVannameiSearch'), 'CommercialSpeciesManager must define isVannameiSearch guard');
+
+  const comboCode = fs.readFileSync(path.resolve('src/components/sales/ProductCombobox.tsx'), 'utf8');
+  assert.ok(comboCode.includes('isMackerelSearch'), 'ProductCombobox must define isMackerelSearch guard');
+  assert.ok(comboCode.includes('isMackerelProduct'), 'ProductCombobox must define isMackerelProduct guard');
+
+  // 2. Verify Service Worker cache version is bumped to v34 for fresh asset delivery
+  const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
+  assert.ok(swCode.includes('seafood-pwa-v34'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v34');
+
+  const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
+  assert.ok(mainCode.includes('sw.js?v=34'), 'main.tsx must register sw.js with v=34 query parameter');
+
+  // 3. Test search filter simulation across 32 catalog products
+  const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
+  const spPrefix = 'export const VERIFIED_SPECIES: Species[] = ';
+  const spStart = content.indexOf(spPrefix);
+  const spEnd = content.indexOf('export const VERIFIED_SIZES');
+  const allSpecies = JSON.parse(content.slice(spStart + spPrefix.length, spEnd).trim().replace(/;$/, ''));
+
+  assert.equal(allSpecies.length, 32, 'Must load all 32 catalog products');
+
+  const filterSpecies = (searchTerm, speciesList) => {
+    if (!searchTerm.trim()) return speciesList;
+    const rawQ = searchTerm.trim().toLowerCase();
+    const tokens = rawQ.split(/\s+/).filter(Boolean);
+    const normQ = rawQ.replace(/[^a-z0-9]/g, '');
+
+    return speciesList.filter((sp) => {
+      const isMackerelSearch = tokens.some((t) => t.includes('mackerel') || t.includes('kanagurta'));
+      if (isMackerelSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('ribbon') ||
+          nameLower.includes('van') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('poovalan') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isMackerelProduct =
+          nameLower.includes('mackerel') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('mackerel') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('mackerel') ||
+          (sp.scientificName || '').toLowerCase().includes('kanagurta');
+        if (!isMackerelProduct) return false;
+      }
+
+      const isRibbonSearch = tokens.some((t) => t.includes('ribbon') || t.includes('savala') || t.includes('hairtail'));
+      if (isRibbonSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('mackerel') ||
+          nameLower.includes('van') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('poovalan') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isRibbonProduct =
+          nameLower.includes('ribbon') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('ribbon') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('ribbon') ||
+          (sp.scientificName || '').toLowerCase().includes('savala');
+        if (!isRibbonProduct) return false;
+      }
+
+      const isVannameiSearch = tokens.some((t) => t.includes('vannamei') || t.includes('vanamei'));
+      if (isVannameiSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('mackerel') ||
+          nameLower.includes('ribbon') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isVannameiProduct =
+          nameLower.includes('van') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('van') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('van') ||
+          (sp.scientificName || '').toLowerCase().includes('vannamei');
+        if (!isVannameiProduct) return false;
+      }
+
+      const searchCorpus = [
+        sp.name,
+        sp.code,
+        sp.speciesHeadName,
+        sp.rawSpeciesName,
+        sp.scientificName,
+        sp.category,
+        sp.productForm,
+        sp.processingType,
+        sp.hsCode,
+        sp.description
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const normCorpus = searchCorpus.replace(/[^a-z0-9]/g, '');
+      const allTokensMatch = tokens.every((token) => searchCorpus.includes(token));
+      const normMatch = normQ.length >= 2 && normCorpus.includes(normQ);
+
+      return allTokensMatch || normMatch;
+    });
+  };
+
+  // Test Case A: Searching for "mackerel"
+  const mackerelMatches = filterSpecies('mackerel', allSpecies);
+  assert.equal(mackerelMatches.length, 6, 'Must match exactly the 6 Indian Mackerel products');
+  for (const m of mackerelMatches) {
+    assert.ok(m.name.toLowerCase().includes('mackerel'), `Product ${m.code} must be Mackerel`);
+    assert.ok(!m.name.toLowerCase().includes('ribbon'), `Mackerel product ${m.code} must NOT be Ribbonfish`);
+    assert.ok(!m.name.toLowerCase().includes('vannamei'), `Mackerel product ${m.code} must NOT be Vannamei`);
+  }
+
+  // Test Case B: Searching for "ribbonfish"
+  const ribbonMatches = filterSpecies('ribbonfish', allSpecies);
+  assert.equal(ribbonMatches.length, 8, 'Must match exactly the 8 Ribbonfish products');
+  for (const r of ribbonMatches) {
+    assert.ok(r.name.toLowerCase().includes('ribbon'), `Product ${r.code} must be Ribbonfish`);
+    assert.ok(!r.name.toLowerCase().includes('mackerel'), `Ribbonfish product ${r.code} must NOT be Mackerel`);
+  }
+
+  // Test Case C: Searching for "vannamei"
+  const vannameiMatches = filterSpecies('vannamei', allSpecies);
+  assert.equal(vannameiMatches.length, 4, 'Must match exactly the 4 Vannamei products');
+  for (const v of vannameiMatches) {
+    assert.ok(v.name.toLowerCase().includes('van'), `Product ${v.code} must be Vannamei`);
+    assert.ok(!v.name.toLowerCase().includes('mackerel'), `Vannamei product ${v.code} must NOT be Mackerel`);
+  }
+
+  // Test Case D: Even if a Ribbonfish product mistakenly has speciesHeadName: "Indian Mackerel", it must NOT match "mackerel"
+  const corruptedRibbonfish = [
+    {
+      id: 'prd-001',
+      code: 'PRD-001',
+      name: 'Frozen RibbonFish B Grade',
+      rawSpeciesName: 'Ribbonfish Net',
+      scientificName: 'Lepturacanthus Savala',
+      speciesHeadName: 'Indian Mackerel', // Simulated corrupted head
+      category: 'Fish'
+    }
+  ];
+  const corruptedMatch = filterSpecies('mackerel', corruptedRibbonfish);
+  assert.equal(corruptedMatch.length, 0, 'Corrupted Ribbonfish record must NEVER match "mackerel" search query');
 });

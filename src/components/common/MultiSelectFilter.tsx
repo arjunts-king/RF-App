@@ -72,6 +72,20 @@ export const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
       const fullText = `${opt.label} ${opt.subLabel || ''} ${opt.badge || ''}`.toLowerCase();
       const normFull = fullText.replace(/[^a-z0-9]/g, '');
 
+      // Guard against cross-species false positives when searching for specific fish species
+      const isMackerelSearch = tokens.some((t) => t.includes('mackerel') || t.includes('kanagurta'));
+      if (isMackerelSearch && !fullText.includes('mackerel') && !fullText.includes('kanagurta')) {
+        return false;
+      }
+      const isRibbonSearch = tokens.some((t) => t.includes('ribbon') || t.includes('savala') || t.includes('hairtail'));
+      if (isRibbonSearch && !fullText.includes('ribbon') && !fullText.includes('savala') && !fullText.includes('hairtail')) {
+        return false;
+      }
+      const isVannameiSearch = tokens.some((t) => t.includes('vannamei') || t.includes('vanamei'));
+      if (isVannameiSearch && !fullText.includes('van')) {
+        return false;
+      }
+
       const allTokensMatch = tokens.every((token) => fullText.includes(token));
       const normMatch = normQ.length >= 2 && normFull.includes(normQ);
 

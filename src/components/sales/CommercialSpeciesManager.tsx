@@ -94,6 +94,95 @@ export const CommercialSpeciesManager: React.FC<CommercialSpeciesManagerProps> =
       const tokens = rawQ.split(/\s+/).filter(Boolean);
       const normQ = rawQ.replace(/[^a-z0-9]/g, '');
 
+      // Guard against cross-species false positives:
+      // If user is searching for a specific species like "mackerel", products of a distinctly
+      // different biological species (e.g. Ribbonfish, Vannamei, Squid, Octopus) must not match.
+      const isMackerelSearch = tokens.some((t) => t.includes('mackerel') || t.includes('kanagurta'));
+      if (isMackerelSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('ribbon') ||
+          nameLower.includes('van') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('poovalan') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isMackerelProduct =
+          nameLower.includes('mackerel') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('mackerel') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('mackerel') ||
+          (sp.scientificName || '').toLowerCase().includes('kanagurta');
+        if (!isMackerelProduct) return false;
+      }
+
+      const isRibbonSearch = tokens.some((t) => t.includes('ribbon') || t.includes('savala') || t.includes('hairtail'));
+      if (isRibbonSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('mackerel') ||
+          nameLower.includes('van') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('poovalan') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isRibbonProduct =
+          nameLower.includes('ribbon') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('ribbon') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('ribbon') ||
+          (sp.scientificName || '').toLowerCase().includes('savala');
+        if (!isRibbonProduct) return false;
+      }
+
+      const isVannameiSearch = tokens.some((t) => t.includes('vannamei') || t.includes('vanamei'));
+      if (isVannameiSearch) {
+        const nameLower = (sp.name || '').toLowerCase();
+        const isOtherSpecies =
+          nameLower.includes('mackerel') ||
+          nameLower.includes('ribbon') ||
+          nameLower.includes('squid') ||
+          nameLower.includes('octopus') ||
+          nameLower.includes('leather jacket') ||
+          nameLower.includes('cuttlefish') ||
+          nameLower.includes('tuna');
+        if (isOtherSpecies) return false;
+
+        const isVannameiProduct =
+          nameLower.includes('van') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('van') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('van') ||
+          (sp.scientificName || '').toLowerCase().includes('vannamei');
+        if (!isVannameiProduct) return false;
+      }
+
+      const isSquidSearch = tokens.some((t) => t.includes('squid') || t.includes('loligo') || t.includes('duvaucelii'));
+      if (isSquidSearch) {
+        const isSquidProduct =
+          (sp.name || '').toLowerCase().includes('squid') ||
+          (sp.name || '').toLowerCase().includes('loligo') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('squid') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('squid') ||
+          (sp.scientificName || '').toLowerCase().includes('duvaucelii');
+        if (!isSquidProduct) return false;
+      }
+
+      const isOctopusSearch = tokens.some((t) => t.includes('octopus'));
+      if (isOctopusSearch) {
+        const isOctopusProduct =
+          (sp.name || '').toLowerCase().includes('octopus') ||
+          (sp.speciesHeadName || '').toLowerCase().includes('octopus') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('octopus') ||
+          (sp.scientificName || '').toLowerCase().includes('octopus');
+        if (!isOctopusProduct) return false;
+      }
+
       const searchCorpus = [
         sp.name,
         sp.code,

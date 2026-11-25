@@ -197,16 +197,16 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
               const spHead = (sp?.speciesHeadName || '').trim().toLowerCase();
 
               if (lineDesc === targetLabel || spName === targetLabel) return true;
-              if (lineDesc && targetLabel && (lineDesc.includes(targetLabel) || targetLabel.includes(lineDesc))) return true;
-              if (spName && targetLabel && (spName.includes(targetLabel) || targetLabel.includes(spName))) return true;
-              if (spRaw && targetLabel && (spRaw.includes(targetLabel) || targetLabel.includes(spRaw))) return true;
-              if (spHead && targetLabel && (spHead.includes(targetLabel) || targetLabel.includes(spHead))) return true;
+              if (lineDesc && targetLabel && (lineDesc.includes(targetLabel) || (lineDesc.length >= 8 && targetLabel.includes(lineDesc)))) return true;
+              if (spName && targetLabel && (spName.includes(targetLabel) || (spName.length >= 8 && targetLabel.includes(spName)))) return true;
+              if (spRaw && targetLabel && (spRaw.includes(targetLabel) || (spRaw.length >= 6 && targetLabel.includes(spRaw)))) return true;
+              if (spHead && targetLabel && (spHead.includes(targetLabel) || (spHead.length >= 6 && targetLabel.includes(spHead)))) return true;
 
-              if (normTarget.length >= 3) {
+              if (normTarget.length >= 4) {
                 const normDesc = lineDesc.replace(/[^a-z0-9]/g, '');
                 const normSp = spName.replace(/[^a-z0-9]/g, '');
-                if (normDesc.includes(normTarget) || normTarget.includes(normDesc)) return true;
-                if (normSp.includes(normTarget) || normTarget.includes(normSp)) return true;
+                if (normDesc.length >= 4 && (normDesc.includes(normTarget) || (normDesc.length >= 8 && normTarget.includes(normDesc)))) return true;
+                if (normSp.length >= 4 && (normSp.includes(normTarget) || (normSp.length >= 8 && normTarget.includes(normSp)))) return true;
               }
 
               if (targetCode && targetCode.length >= 4) {
@@ -222,10 +222,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
           // Fallback to invoice-level commodity and HSN
           const commDesc = (inv.commodityDescription || '').trim().toLowerCase();
           if (commDesc) {
-            if (commDesc === targetLabel || commDesc.includes(targetLabel) || targetLabel.includes(commDesc)) return true;
-            if (normTarget.length >= 3) {
+            if (commDesc === targetLabel || commDesc.includes(targetLabel) || (commDesc.length >= 8 && targetLabel.includes(commDesc))) return true;
+            if (normTarget.length >= 4) {
               const normComm = commDesc.replace(/[^a-z0-9]/g, '');
-              if (normComm.includes(normTarget) || normTarget.includes(normComm)) return true;
+              if (normComm.length >= 4 && (normComm.includes(normTarget) || (normComm.length >= 8 && normTarget.includes(normComm)))) return true;
             }
           }
           if (targetCode && targetCode.length >= 4 && (inv.hsnCode || '').toLowerCase().includes(targetCode)) {

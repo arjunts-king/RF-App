@@ -338,7 +338,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fresh storage key version v2 to ensure clean empty slate on update
   const DB_PREFIX = 'seafood_v2_';
-  const SALES_DATASET_VERSION = 'v71_authentic_realizations_fob_5628701_v8';
+  const SALES_DATASET_VERSION = 'v73_authentic_commercial_species_heads_v10';
   const PURCHASE_DATASET_VERSION = 'v29_purchase_species_isolated_v1';
 
   // Helper to identify commercial export sales products (from VERIFIED_SPECIES)
@@ -440,10 +440,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
     const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
     const reconciled = salesOnlyList.map((sp) => {
-      const v = verifiedMap.get(sp.code.toLowerCase()) || verifiedNameMap.get(sp.name.trim().toLowerCase());
-      const defaultMapping = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || inferSpeciesHeadFromName(sp.name);
-      const headId = sp.speciesHeadId || defaultMapping?.speciesHeadId;
-      const headName = sp.speciesHeadName || defaultMapping?.speciesHeadName;
+      const v = verifiedMap.get((sp.code || '').toLowerCase()) || verifiedNameMap.get((sp.name || '').trim().toLowerCase());
+      const inferred = inferSpeciesHeadFromName(sp.name);
+      const canonical = (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferred;
+      const headId = (v && canonical) ? canonical.speciesHeadId : (canonical?.speciesHeadId || sp.speciesHeadId);
+      const headName = (v && canonical) ? canonical.speciesHeadName : (canonical?.speciesHeadName || sp.speciesHeadName);
       if (v) {
         return {
           ...sp,
@@ -468,11 +469,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     const existingNames = new Set(reconciled.map((sp) => sp.name.trim().toLowerCase()));
     const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase())).map((sp) => {
-      const defaultMapping = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
+      const canonical = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
       return {
         ...sp,
-        speciesHeadId: sp.speciesHeadId || defaultMapping?.speciesHeadId,
-        speciesHeadName: sp.speciesHeadName || defaultMapping?.speciesHeadName
+        speciesHeadId: canonical?.speciesHeadId,
+        speciesHeadName: canonical?.speciesHeadName
       };
     });
     const result = [...reconciled, ...missing];
@@ -1114,7 +1115,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         if (!mutatedKeysRef.current.has('species') && Array.isArray(idbSpecies) && idbSpecies.length > 0) {
           const salesOnlyIdb = idbSpecies.filter((sp) => isSalesExportProduct(sp));
-          setSpecies(salesOnlyIdb);
+          const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
+          const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
+          const reconciledIdb = salesOnlyIdb.map((sp) => {
+            const v = verifiedMap.get((sp.code || '').toLowerCase()) || verifiedNameMap.get((sp.name || '').trim().toLowerCase());
+            const inferred = inferSpeciesHeadFromName(sp.name);
+            const canonical = (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferred;
+            const headId = (v && canonical) ? canonical.speciesHeadId : (canonical?.speciesHeadId || sp.speciesHeadId);
+            const headName = (v && canonical) ? canonical.speciesHeadName : (canonical?.speciesHeadName || sp.speciesHeadName);
+            if (v) {
+              return {
+                ...sp,
+                code: v.code,
+                name: v.name,
+                speciesHeadId: headId,
+                speciesHeadName: headName,
+                rawSpeciesName: v.rawSpeciesName || sp.rawSpeciesName,
+                scientificName: v.scientificName || sp.scientificName,
+                category: v.category || sp.category,
+                productForm: v.productForm || sp.productForm,
+                processingType: v.processingType || sp.processingType,
+                hsCode: v.hsCode || sp.hsCode,
+                active: v.active !== undefined ? v.active : sp.active
+              };
+            }
+            return {
+              ...sp,
+              speciesHeadId: headId,
+              speciesHeadName: headName
+            };
+          });
+          const existingNames = new Set(reconciledIdb.map((sp) => sp.name.trim().toLowerCase()));
+          const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase())).map((sp) => {
+            const canonical = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
+            return {
+              ...sp,
+              speciesHeadId: canonical?.speciesHeadId,
+              speciesHeadName: canonical?.speciesHeadName
+            };
+          });
+          const fullIdbList = [...reconciledIdb, ...missing];
+          setSpecies(fullIdbList);
+          safeSet(`${DB_PREFIX}species`, fullIdbList);
           const misplacedIdb = idbSpecies.filter((sp) => !isSalesExportProduct(sp));
           if (misplacedIdb.length > 0) {
             setPurchaseSpecies((prev) => {
