@@ -172,6 +172,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   );
   const [factoryApprovalNumber, setFactoryApprovalNumber] = useState('');
   const [billOfLadingNo, setBillOfLadingNo] = useState('');
+  const [eSealNo, setESealNo] = useState('');
   const [declarationText, setDeclarationText] = useState(
     'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct'
   );
@@ -284,6 +285,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     );
     setFactoryApprovalNumber(invoiceToEdit.factoryApprovalNumber || '');
     setBillOfLadingNo(invoiceToEdit.billOfLadingNo || '');
+    setESealNo(invoiceToEdit.eSealNo || '');
     setDeclarationText(
       invoiceToEdit.declarationText ||
         'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct'
@@ -633,6 +635,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
       factoryNameAndAddress: factoryNameAndAddress.trim(),
       factoryApprovalNumber: factoryApprovalNumber.trim(),
       billOfLadingNo: billOfLadingNo.trim(),
+      eSealNo: eSealNo.trim() || undefined,
       declarationText: declarationText.trim(),
       signatoryCompany: signatoryCompany.trim(),
       signatoryDesignation: signatoryDesignation.trim(),
@@ -818,6 +821,8 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
     setIsScientificManual(false);
     setHsnCode('');
     setIsHsnManual(false);
+    setBillOfLadingNo('');
+    setESealNo('');
     setTotalFobValueINR('');
     setTotalFobValueCurrencyInput('');
     setLines([createBlankLine(0)]);
@@ -1943,7 +1948,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               <ShieldCheck className="w-4 h-4 text-rose-700" />
               7. Words, Factory Details &amp; Signatory Block (Rows 16 - 18)
             </h3>
-            <p className="text-[11px] text-ink-500 mt-0.5">Amount chargeable in words, factory approval number, B/L number, statutory declaration and official stamp</p>
+            <p className="text-[11px] text-ink-500 mt-0.5">Amount chargeable in words, factory approval number, B/L number, E-Seal number, statutory declaration and official stamp</p>
           </div>
           <span className="px-2.5 py-1 bg-rose-50 text-rose-700 text-[11px] font-bold rounded-lg border border-rose-200">
             Rows 16 - 18 Particulars
@@ -1999,7 +2004,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-1">
           <div>
             <label className="block text-[11px] font-bold text-ink-700 mb-1">BILL OF LADING NUMBER</label>
             <input
@@ -2011,7 +2016,18 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
             />
           </div>
 
-          <div className="lg:col-span-2">
+          <div>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">E-SEAL NUMBER (Row 17)</label>
+            <input
+              type="text"
+              value={eSealNo}
+              onChange={(e) => setESealNo(e.target.value.toUpperCase())}
+              placeholder="e.g. ES12345678"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold font-mono text-xs outline-none focus:bg-white focus:border-rose-400"
+            />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
             <label className="block text-[11px] font-bold text-ink-700 mb-1">Declaration Statement (Row 18)</label>
             <input
               type="text"

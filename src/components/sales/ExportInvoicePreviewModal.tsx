@@ -93,6 +93,7 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
   const factoryNameAndAddress = invoice.factoryNameAndAddress || (exporterName ? `${exporterName}${exporterAddress ? ', ' + exporterAddress.replace(/\n/g, ', ') : ''}` : '');
   const factoryApprovalNumber = invoice.factoryApprovalNumber || '';
   const billOfLadingNo = invoice.billOfLadingNo || '';
+  const eSealNo = invoice.eSealNo || '';
   const declarationText = invoice.declarationText || (invoice.id ? 'We certify that this invoice shows the actual price of the goods described and that all particulars are true and correct' : '');
   const signatoryCompany = invoice.signatoryCompany || (settings?.businessName ? `For ${settings.businessName}` : '');
   const signatoryDesignation = invoice.signatoryDesignation || '';
@@ -436,13 +437,14 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
                   <td></td>
                 </tr>
 
-                {/* ROW 17: Processed & Packed by, Approval number, BL number */}
+                {/* ROW 17: Processed & Packed by, Approval number, BL number, E-Seal */}
                 <tr className="border-b border-black font-bold text-[11px]">
                   <td colSpan={5} className="p-2 align-top space-y-1">
                     <div>PROCESSED &amp; PACKED BY: &nbsp;{factoryNameAndAddress}</div>
-                    <div className="flex justify-between pt-0.5">
+                    <div className="flex justify-between pt-0.5 flex-wrap gap-x-4">
                       <span>APPROVAL NUMBER OF THE FACTORY : &nbsp;{factoryApprovalNumber}</span>
                       <span>BILL OF LADING NUMBER: &nbsp;{billOfLadingNo}</span>
+                      {eSealNo && <span>E-SEAL NUMBER: &nbsp;{eSealNo}</span>}
                     </div>
                   </td>
                 </tr>

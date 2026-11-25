@@ -650,7 +650,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
     </w:tc>
   </w:tr>
 
-  <!-- Row 17: Processed & Packed by, Factory Approval, BL Number -->
+  <!-- Row 17: Processed & Packed by, Factory Approval, BL Number, E-Seal Number -->
   <w:tr w:rsidR="00687369" w:rsidRPr="00197130" w14:paraId="${randId()}" w14:textId="77777777" w:rsidTr="005F79C3">
     <w:trPr><w:trHeight w:val="819"/></w:trPr>
     <w:tc>
@@ -663,6 +663,7 @@ export function buildInvoiceTableXml(inv: Partial<SalesInvoice>, settings?: Busi
         <w:pPr><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">APPROVAL NUMBER OF THE FACTORY : ${escapeXml(inv.factoryApprovalNumber || '')}</w:t></w:r>
         <w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">     BILL OF LADING NUMBER: ${escapeXml(inv.billOfLadingNo || '')}</w:t></w:r>
+        ${inv.eSealNo ? `<w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t xml:space="preserve">     E-SEAL NUMBER: ${escapeXml(inv.eSealNo)}</w:t></w:r>` : ''}
       </w:p>
     </w:tc>
   </w:tr>

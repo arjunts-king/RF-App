@@ -5741,6 +5741,7 @@ test('Sales Invoice Export File: includes all line items, product-wise price, an
   assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'gradeSize'), 'Must have Grade Size column');
   assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'containerNo'), 'Must have Container No column');
   assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'sealNo'), 'Must have Seal No column');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'eSealNo'), 'Must have E-Seal No column');
 
   const mockCustomers = [
     { id: 'cust-1', name: 'Tokyo Seafood Trading LLC', country: 'JAPAN', address: '1-1 Tsukiji, Chuo-ku, Tokyo' },
@@ -5790,6 +5791,7 @@ test('Sales Invoice Export File: includes all line items, product-wise price, an
       vesselFlightNo: 'EVER GIVEN V-102',
       containerNo: 'MSKU1234567',
       sealNo: 'ML-998877',
+      eSealNo: 'ES-112233',
       billOfLadingNo: 'BL-COCHIN-001',
       shippingMarks: 'TOKYO SEAFOOD / JAPAN',
       totalCartons: 1200,
@@ -5880,6 +5882,7 @@ test('Sales Invoice Export File: includes all line items, product-wise price, an
   assert.equal(row1.buyerName, 'Nippon Fisheries Ltd');
   assert.equal(row1.containerNo, 'MSKU1234567');
   assert.equal(row1.sealNo, 'ML-998877');
+  assert.equal(row1.eSealNo, 'ES-112233');
   assert.equal(row1.vesselFlightNo, 'EVER GIVEN V-102');
   assert.equal(row1.portOfLoading, 'Cochin Port (INCOK)');
   assert.equal(row1.portOfDischarge, 'Yokohama Port (JPYOK)');
@@ -6204,4 +6207,38 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   ];
   const corruptedMatch = filterSpecies('mackerel', corruptedRibbonfish);
   assert.equal(corruptedMatch.length, 0, 'Corrupted Ribbonfish record must NEVER match "mackerel" search query');
+});
+
+// ============================================================================
+// SUITE 77: E-SEAL Number Component in Rows 16 - 18 of Invoice Entry Form
+// ============================================================================
+test('E-SEAL Number component in rows 16-18 of invoice entry form and export models', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify SalesInvoiceEntryForm defines and renders E-SEAL Number in Rows 16 - 18
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(formCode.includes('eSealNo'), 'SalesInvoiceEntryForm must maintain eSealNo state');
+  assert.ok(formCode.includes('setESealNo'), 'SalesInvoiceEntryForm must define setESealNo setter');
+  assert.ok(formCode.includes('E-SEAL NUMBER (Row 17)'), 'SalesInvoiceEntryForm must render E-SEAL NUMBER label in Row 17');
+  assert.ok(formCode.includes('Rows 16 - 18 Particulars'), 'SalesInvoiceEntryForm must contain Section 7 Rows 16-18');
+
+  // 2. Verify DataContext supports eSealNo in addSalesInvoice
+  const dataCtxCode = fs.readFileSync(path.resolve('src/context/DataContext.tsx'), 'utf8');
+  assert.ok(dataCtxCode.includes('eSealNo: invoiceData.eSealNo'), 'DataContext addSalesInvoice must persist eSealNo');
+
+  // 3. Verify types/index.ts includes eSealNo in SalesInvoice
+  const typesCode = fs.readFileSync(path.resolve('src/types/index.ts'), 'utf8');
+  assert.ok(typesCode.includes('eSealNo?: string;'), 'SalesInvoice interface must define optional eSealNo');
+
+  // 4. Verify ExportInvoicePreviewModal and exportWordInvoice reflect E-SEAL Number in Row 17
+  const previewCode = fs.readFileSync(path.resolve('src/components/sales/ExportInvoicePreviewModal.tsx'), 'utf8');
+  assert.ok(previewCode.includes('E-SEAL NUMBER:'), 'ExportInvoicePreviewModal must render E-SEAL NUMBER in Row 17');
+
+  const wordCode = fs.readFileSync(path.resolve('src/utils/exportWordInvoice.ts'), 'utf8');
+  assert.ok(wordCode.includes('E-SEAL NUMBER:'), 'exportWordInvoice must format E-SEAL NUMBER in Word Row 17');
+
+  // 5. Verify SalesDashboard searches on eSealNo
+  const dashCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf8');
+  assert.ok(dashCode.includes('inv.eSealNo'), 'SalesDashboard must allow search by eSealNo');
 });

@@ -480,6 +480,7 @@ export interface SalesInvoice {
   shippingMarks?: string;
   containerNo?: string;
   sealNo?: string;
+  eSealNo?: string; // Electronic / RFID E-Seal Number (Customs E-Seal, Rows 16 - 18)
   netWeightKg?: number;
   grossWeightKg?: number;
   amountInWords?: string;

@@ -3313,6 +3313,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       shippingMarks: invoiceData.shippingMarks,
       containerNo: invoiceData.containerNo,
       sealNo: invoiceData.sealNo,
+      eSealNo: invoiceData.eSealNo,
       netWeightKg: invoiceData.netWeightKg !== undefined ? invoiceData.netWeightKg : totalWeightKg,
       grossWeightKg: invoiceData.grossWeightKg,
       amountInWords: invoiceData.amountInWords,

@@ -53,6 +53,7 @@ export interface DetailedSalesInvoiceExportRow {
   vesselFlightNo: string;
   containerNo: string;
   sealNo: string;
+  eSealNo: string;
   billOfLadingNo: string;
   shippingMarks: string;
 
@@ -165,6 +166,7 @@ export const DETAILED_SALES_INVOICE_COLUMNS: { key: keyof DetailedSalesInvoiceEx
   { key: 'vesselFlightNo', label: 'Vessel / Flight No' },
   { key: 'containerNo', label: 'Container No' },
   { key: 'sealNo', label: 'Seal No' },
+  { key: 'eSealNo', label: 'E-Seal No' },
   { key: 'billOfLadingNo', label: 'Bill of Lading (BL) No' },
   { key: 'shippingMarks', label: 'Shipping Marks' },
   { key: 'preCarriageBy', label: 'Pre-Carriage By' },
@@ -359,6 +361,7 @@ export function buildDetailedSalesInvoiceRows(params: ExportSalesInvoicesParams)
           vesselFlightNo: inv.vesselFlightNo || '',
           containerNo: inv.containerNo || '',
           sealNo: inv.sealNo || '',
+          eSealNo: inv.eSealNo || '',
           billOfLadingNo: inv.billOfLadingNo || '',
           shippingMarks: inv.shippingMarks || '',
 
@@ -473,6 +476,7 @@ export function buildDetailedSalesInvoiceRows(params: ExportSalesInvoicesParams)
         vesselFlightNo: inv.vesselFlightNo || '',
         containerNo: inv.containerNo || '',
         sealNo: inv.sealNo || '',
+        eSealNo: inv.eSealNo || '',
         billOfLadingNo: inv.billOfLadingNo || '',
         shippingMarks: inv.shippingMarks || '',
 
@@ -603,6 +607,7 @@ function buildInvoicesSummarySheetData(invoices: SalesInvoice[], customers: Cust
     'Vessel / Flight No',
     'Container No',
     'Seal No',
+    'E-Seal No',
     'Bill of Lading No',
     'Terms of Payment',
     'Price Terms',
@@ -674,6 +679,7 @@ function buildInvoicesSummarySheetData(invoices: SalesInvoice[], customers: Cust
       inv.vesselFlightNo || '',
       inv.containerNo || '',
       inv.sealNo || '',
+      inv.eSealNo || '',
       inv.billOfLadingNo || '',
       inv.termsOfPayment || '',
       inv.priceTerms || 'FOB',

@@ -594,7 +594,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             const matchSO = (inv.salesOrderNo || '').toLowerCase().includes(t);
             const matchPO = (inv.orderNo || '').toLowerCase().includes(t);
             const matchContainer = (inv.containerNo || '').toLowerCase().includes(t);
-            const matchSeal = (inv.sealNo || '').toLowerCase().includes(t);
+            const matchSeal = (inv.sealNo || '').toLowerCase().includes(t) || (inv.eSealNo || '').toLowerCase().includes(t);
             const matchComm = (inv.commodityDescription || '').toLowerCase().includes(t);
             const matchProduct = inv.lineItems?.some((l) => {
               const sp = speciesMap.get(l.speciesId);
