@@ -3730,8 +3730,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -6057,12 +6057,12 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   assert.ok(comboCode.includes('isMackerelSearch'), 'ProductCombobox must define isMackerelSearch guard');
   assert.ok(comboCode.includes('isMackerelProduct'), 'ProductCombobox must define isMackerelProduct guard');
 
-  // 2. Verify Service Worker cache version is bumped to v34 for fresh asset delivery
+  // 2. Verify Service Worker cache version is bumped to v35 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v34'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v34');
+  assert.ok(swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v35');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=34'), 'main.tsx must register sw.js with v=34 query parameter');
+  assert.ok(mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=35 query parameter');
 
   // 3. Test search filter simulation across 32 catalog products
   const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
@@ -6097,7 +6097,6 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
         const isMackerelProduct =
           nameLower.includes('mackerel') ||
           (sp.speciesHeadName || '').toLowerCase().includes('mackerel') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('mackerel') ||
           (sp.scientificName || '').toLowerCase().includes('kanagurta');
         if (!isMackerelProduct) return false;
       }
@@ -6119,7 +6118,6 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
         const isRibbonProduct =
           nameLower.includes('ribbon') ||
           (sp.speciesHeadName || '').toLowerCase().includes('ribbon') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('ribbon') ||
           (sp.scientificName || '').toLowerCase().includes('savala');
         if (!isRibbonProduct) return false;
       }
@@ -6140,7 +6138,6 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
         const isVannameiProduct =
           nameLower.includes('van') ||
           (sp.speciesHeadName || '').toLowerCase().includes('van') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('van') ||
           (sp.scientificName || '').toLowerCase().includes('vannamei');
         if (!isVannameiProduct) return false;
       }
@@ -6149,7 +6146,6 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
         sp.name,
         sp.code,
         sp.speciesHeadName,
-        sp.rawSpeciesName,
         sp.scientificName,
         sp.category,
         sp.productForm,

@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V34 - Canonical Species Master Precision Search & Cache Invalidation)
-const CACHE_VERSION = 'seafood-pwa-v34';
+// Seafood Purchase App - Offline PWA Service Worker (V35 - Network-First Pipeline & Product Deduplication)
+const CACHE_VERSION = 'seafood-pwa-v35';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -66,22 +66,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for hashed scripts/styles/assets
+  // Network-First with Cache fallback for all scripts, styles, assets
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_VERSION).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_VERSION).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

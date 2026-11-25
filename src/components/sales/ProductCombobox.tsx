@@ -82,7 +82,6 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
         const isMackerelProduct =
           nameLower.includes('mackerel') ||
           (sp.speciesHeadName || '').toLowerCase().includes('mackerel') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('mackerel') ||
           (sp.scientificName || '').toLowerCase().includes('kanagurta');
         if (!isMackerelProduct) return false;
       }
@@ -104,7 +103,6 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
         const isRibbonProduct =
           nameLower.includes('ribbon') ||
           (sp.speciesHeadName || '').toLowerCase().includes('ribbon') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('ribbon') ||
           (sp.scientificName || '').toLowerCase().includes('savala');
         if (!isRibbonProduct) return false;
       }
@@ -125,7 +123,6 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
         const isVannameiProduct =
           nameLower.includes('van') ||
           (sp.speciesHeadName || '').toLowerCase().includes('van') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('van') ||
           (sp.scientificName || '').toLowerCase().includes('vannamei');
         if (!isVannameiProduct) return false;
       }
@@ -136,7 +133,6 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
           (sp.name || '').toLowerCase().includes('squid') ||
           (sp.name || '').toLowerCase().includes('loligo') ||
           (sp.speciesHeadName || '').toLowerCase().includes('squid') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('squid') ||
           (sp.scientificName || '').toLowerCase().includes('duvaucelii');
         if (!isSquidProduct) return false;
       }
@@ -146,7 +142,6 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
         const isOctopusProduct =
           (sp.name || '').toLowerCase().includes('octopus') ||
           (sp.speciesHeadName || '').toLowerCase().includes('octopus') ||
-          (sp.rawSpeciesName || '').toLowerCase().includes('octopus') ||
           (sp.scientificName || '').toLowerCase().includes('octopus');
         if (!isOctopusProduct) return false;
       }

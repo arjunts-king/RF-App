@@ -338,7 +338,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fresh storage key version v2 to ensure clean empty slate on update
   const DB_PREFIX = 'seafood_v2_';
-  const SALES_DATASET_VERSION = 'v73_authentic_commercial_species_heads_v10';
+  const SALES_DATASET_VERSION = 'v74_authentic_commercial_species_heads_v11';
   const PURCHASE_DATASET_VERSION = 'v29_purchase_species_isolated_v1';
 
   // Helper to identify commercial export sales products (from VERIFIED_SPECIES)
@@ -434,49 +434,32 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const saved = localStorage.getItem(`${DB_PREFIX}species`);
     const list: Species[] = saved ? JSON.parse(saved) : INITIAL_SPECIES;
 
-    // STRICT MODULE ISOLATION: Keep ONLY commercial export products in sales module
+    // STRICT MODULE ISOLATION & DEDUPLICATION: Keep ONLY unique commercial export products
     const salesOnlyList = list.filter((sp) => isSalesExportProduct(sp));
+    const verifiedCodes = new Set(VERIFIED_SPECIES.map((v) => v.code.toUpperCase()));
 
-    const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
-    const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
-    const reconciled = salesOnlyList.map((sp) => {
-      const v = verifiedMap.get((sp.code || '').toLowerCase()) || verifiedNameMap.get((sp.name || '').trim().toLowerCase());
-      const inferred = inferSpeciesHeadFromName(sp.name);
-      const canonical = (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferred;
-      const headId = (v && canonical) ? canonical.speciesHeadId : (canonical?.speciesHeadId || sp.speciesHeadId);
-      const headName = (v && canonical) ? canonical.speciesHeadName : (canonical?.speciesHeadName || sp.speciesHeadName);
-      if (v) {
-        return {
-          ...sp,
-          code: v.code,
-          name: v.name,
-          speciesHeadId: headId,
-          speciesHeadName: headName,
-          rawSpeciesName: v.rawSpeciesName || sp.rawSpeciesName,
-          scientificName: v.scientificName || sp.scientificName,
-          category: v.category || sp.category,
-          productForm: v.productForm || sp.productForm,
-          processingType: v.processingType || sp.processingType,
-          hsCode: v.hsCode || sp.hsCode,
-          active: v.active !== undefined ? v.active : sp.active
-        };
+    const customUniqueMap = new Map<string, Species>();
+    for (const sp of salesOnlyList) {
+      const codeUpper = (sp.code || '').trim().toUpperCase();
+      if (!verifiedCodes.has(codeUpper)) {
+        const key = codeUpper || sp.name.trim().toLowerCase();
+        if (!customUniqueMap.has(key)) {
+          customUniqueMap.set(key, sp);
+        }
       }
+    }
+    const customProducts = Array.from(customUniqueMap.values());
+
+    const canonicalProducts = VERIFIED_SPECIES.map((v) => {
+      const canonical = DEFAULT_PRODUCT_HEAD_MAP[v.id] || inferSpeciesHeadFromName(v.name);
       return {
-        ...sp,
-        speciesHeadId: headId,
-        speciesHeadName: headName
-      };
-    });
-    const existingNames = new Set(reconciled.map((sp) => sp.name.trim().toLowerCase()));
-    const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase())).map((sp) => {
-      const canonical = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
-      return {
-        ...sp,
+        ...v,
         speciesHeadId: canonical?.speciesHeadId,
         speciesHeadName: canonical?.speciesHeadName
       };
     });
-    const result = [...reconciled, ...missing];
+
+    const result = [...canonicalProducts, ...customProducts];
     safeSet(`${DB_PREFIX}species`, result);
     return result;
   });
@@ -1115,46 +1098,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         if (!mutatedKeysRef.current.has('species') && Array.isArray(idbSpecies) && idbSpecies.length > 0) {
           const salesOnlyIdb = idbSpecies.filter((sp) => isSalesExportProduct(sp));
-          const verifiedMap = new Map(VERIFIED_SPECIES.map((v) => [v.code.toLowerCase(), v]));
-          const verifiedNameMap = new Map(VERIFIED_SPECIES.map((v) => [v.name.trim().toLowerCase(), v]));
-          const reconciledIdb = salesOnlyIdb.map((sp) => {
-            const v = verifiedMap.get((sp.code || '').toLowerCase()) || verifiedNameMap.get((sp.name || '').trim().toLowerCase());
-            const inferred = inferSpeciesHeadFromName(sp.name);
-            const canonical = (v ? DEFAULT_PRODUCT_HEAD_MAP[v.id] : undefined) || DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferred;
-            const headId = (v && canonical) ? canonical.speciesHeadId : (canonical?.speciesHeadId || sp.speciesHeadId);
-            const headName = (v && canonical) ? canonical.speciesHeadName : (canonical?.speciesHeadName || sp.speciesHeadName);
-            if (v) {
-              return {
-                ...sp,
-                code: v.code,
-                name: v.name,
-                speciesHeadId: headId,
-                speciesHeadName: headName,
-                rawSpeciesName: v.rawSpeciesName || sp.rawSpeciesName,
-                scientificName: v.scientificName || sp.scientificName,
-                category: v.category || sp.category,
-                productForm: v.productForm || sp.productForm,
-                processingType: v.processingType || sp.processingType,
-                hsCode: v.hsCode || sp.hsCode,
-                active: v.active !== undefined ? v.active : sp.active
-              };
+          const verifiedCodes = new Set(VERIFIED_SPECIES.map((v) => v.code.toUpperCase()));
+
+          const customUniqueMap = new Map<string, Species>();
+          for (const sp of salesOnlyIdb) {
+            const codeUpper = (sp.code || '').trim().toUpperCase();
+            if (!verifiedCodes.has(codeUpper)) {
+              const key = codeUpper || sp.name.trim().toLowerCase();
+              if (!customUniqueMap.has(key)) {
+                customUniqueMap.set(key, sp);
+              }
             }
+          }
+          const customProductsIdb = Array.from(customUniqueMap.values());
+
+          const canonicalProducts = VERIFIED_SPECIES.map((v) => {
+            const canonical = DEFAULT_PRODUCT_HEAD_MAP[v.id] || inferSpeciesHeadFromName(v.name);
             return {
-              ...sp,
-              speciesHeadId: headId,
-              speciesHeadName: headName
-            };
-          });
-          const existingNames = new Set(reconciledIdb.map((sp) => sp.name.trim().toLowerCase()));
-          const missing = VERIFIED_SPECIES.filter((sp) => !existingNames.has(sp.name.trim().toLowerCase())).map((sp) => {
-            const canonical = DEFAULT_PRODUCT_HEAD_MAP[sp.id] || inferSpeciesHeadFromName(sp.name);
-            return {
-              ...sp,
+              ...v,
               speciesHeadId: canonical?.speciesHeadId,
               speciesHeadName: canonical?.speciesHeadName
             };
           });
-          const fullIdbList = [...reconciledIdb, ...missing];
+
+          const fullIdbList = [...canonicalProducts, ...customProductsIdb];
           setSpecies(fullIdbList);
           safeSet(`${DB_PREFIX}species`, fullIdbList);
           const misplacedIdb = idbSpecies.filter((sp) => !isSalesExportProduct(sp));
