@@ -5,6 +5,7 @@ import { formatINR, formatKg } from '../../utils/calculations';
 import { PageHeader } from '../common/PageHeader';
 import { MultiSelectFilter } from '../common/MultiSelectFilter';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
+import { exportSalesInvoicesToExcel, exportSalesInvoicesToCSV } from '../../utils/exportSalesInvoices';
 import {
   TrendingUp,
   BadgeDollarSign,
@@ -36,7 +37,7 @@ const formatUSD = (val: number | undefined | null): string => {
 };
 
 export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({ onNavigate }) => {
-  const { salesInvoices, customers, ports, species, businessSettings } = useData();
+  const { salesInvoices, customers, ports, species, sizes, salesSizes, counts, businessSettings } = useData();
 
   // Currency View Mode: Dual (both side-by-side), USD only, INR only
   const [currencyMode, setCurrencyMode] = useState<CurrencyViewMode>('dual');
@@ -402,7 +403,27 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
     setSelectedInvoiceIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
-  // CSV Export of FOB Performance Ledger
+  // Export Detailed FOB Performance Ledger to Excel & CSV with full product-wise breakdown
+  const handleExportExcel = () => {
+    const targetInvoices =
+      selectedInvoiceIds.length > 0
+        ? filteredInvoices.filter((i) => selectedInvoiceIds.includes(i.id))
+        : filteredInvoices;
+
+    if (targetInvoices.length === 0) return;
+
+    exportSalesInvoicesToExcel({
+      invoices: targetInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'FOB_Export_Performance_Detailed'
+    });
+  };
+
   const handleExportCSV = () => {
     const targetInvoices =
       selectedInvoiceIds.length > 0
@@ -411,71 +432,16 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
     if (targetInvoices.length === 0) return;
 
-    const headers = [
-      'Invoice No',
-      'Invoice Date',
-      'Consignee Name',
-      'Destination Country',
-      'Port of Discharge',
-      'Exchange Rate (INR/USD)',
-      'Total Net Weight (Kg)',
-      'Total Sales Value (USD)',
-      'Total Sales Value (INR)',
-      'Total FOB Value (USD)',
-      'Total FOB Value (INR)',
-      'Purchase Value (USD)',
-      'Purchase Value (INR)',
-      'Gross Profit (USD)',
-      'Gross Profit (INR)',
-      'Margin %',
-      'Realized USD',
-      'Realized INR',
-      'Balance USD',
-      'Realization Status'
-    ];
-
-    const rows = targetInvoices.map((inv) => {
-      const cust = customerMap.get(inv.consigneeId);
-      const pod = portMap.get(inv.portOfDischargeId);
-      const fobINR = inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2));
-      const purUSD = inv.totalPurchaseValueCurrency || 0;
-      const purINR = inv.totalPurchaseValueINR || (purUSD ? Number((purUSD * inv.exchangeRate).toFixed(2)) : 0);
-      const profitUSD = purUSD > 0 ? Number((inv.totalFobValueCurrency - purUSD).toFixed(2)) : '';
-      const profitINR = purINR > 0 ? Number((fobINR - purINR).toFixed(2)) : '';
-      const margin = inv.totalFobValueCurrency > 0 && purUSD > 0 ? Number((((inv.totalFobValueCurrency - purUSD) / inv.totalFobValueCurrency) * 100).toFixed(2)) : '';
-
-      return [
-        `"${inv.invoiceNo}"`,
-        `"${inv.invoiceDate}"`,
-        `"${cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}"`,
-        `"${cust?.country || inv.countryOfDestination || 'Global Export'}"`,
-        `"${pod?.name || inv.portOfDischarge || 'POD'}"`,
-        inv.exchangeRate,
-        inv.totalWeightKg,
-        inv.totalAmountCurrency.toFixed(2),
-        inv.estimatedAmountINR.toFixed(2),
-        inv.totalFobValueCurrency.toFixed(2),
-        fobINR.toFixed(2),
-        purUSD ? purUSD.toFixed(2) : '',
-        purINR ? purINR.toFixed(2) : '',
-        profitUSD,
-        profitINR,
-        margin,
-        inv.totalRealizedCurrency.toFixed(2),
-        inv.totalRealizedINR.toFixed(2),
-        inv.balanceRealizationCurrency.toFixed(2),
-        `"${inv.realizationStatus}"`
-      ].join(',');
+    exportSalesInvoicesToCSV({
+      invoices: targetInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'FOB_Export_Performance_Detailed'
     });
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FOB_Export_Performance_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const clearAllFilters = () => {
@@ -531,7 +497,12 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               ]
             : []),
           {
-            label: 'Export FOB Ledger (CSV)',
+            label: 'Export Excel',
+            onClick: handleExportExcel,
+            icon: FileSpreadsheet
+          },
+          {
+            label: 'Export CSV',
             onClick: handleExportCSV,
             icon: Download
           },
@@ -1266,8 +1237,17 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleExportExcel}
+              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+              title="Export complete shipment ledger with all product lines to Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Export Excel ({selectedInvoiceIds.length > 0 ? selectedInvoiceIds.length : filteredInvoices.length})</span>
+            </button>
+            <button
               onClick={handleExportCSV}
               className="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-ink-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+              title="Export complete shipment ledger with all product lines to CSV (.csv)"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV ({selectedInvoiceIds.length > 0 ? selectedInvoiceIds.length : filteredInvoices.length})</span>

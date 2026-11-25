@@ -1,7 +1,8 @@
 import React from 'react';
 import { SalesInvoice, BusinessSettings, Customer, PortMaster } from '../../types';
 import { exportInvoiceToWord, formatDDMMYYYY, numberToWordsInternational } from '../../utils/exportWordInvoice';
-import { Download, Printer, X, FileText, CheckCircle2 } from 'lucide-react';
+import { exportSalesInvoicesToExcel } from '../../utils/exportSalesInvoices';
+import { Download, Printer, X, FileText, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 
 interface ExportInvoicePreviewModalProps {
   isOpen: boolean;
@@ -105,6 +106,20 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
     }
   };
 
+  const handleDownloadExcel = () => {
+    try {
+      exportSalesInvoicesToExcel({
+        invoices: [invoice as SalesInvoice],
+        customers,
+        ports,
+        businessSettings: settings,
+        filenamePrefix: `Invoice_${(invoice.invoiceNo || 'Document').replace(/[^a-zA-Z0-9_-]/g, '_')}`
+      });
+    } catch (err: any) {
+      alert(`Excel export error: ${err.message || 'Unknown error'}`);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -136,11 +151,19 @@ export const ExportInvoicePreviewModal: React.FC<ExportInvoicePreviewModalProps>
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleDownloadExcel}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
+              title="Download detailed Excel spreadsheet (.xlsx)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Excel (.xlsx)</span>
+            </button>
+            <button
               onClick={handleDownload}
               className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download Word (.docx)</span>
+              <span>Word (.docx)</span>
             </button>
             <button
               onClick={handlePrint}

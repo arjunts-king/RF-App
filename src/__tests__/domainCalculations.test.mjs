@@ -5450,6 +5450,7 @@ test('Sales Module Species Head Master & Product Integration (Ribbonfish Groupin
   assert.ok(dashCode.includes('speciesHeadOptions'), 'SalesDashboard must compute speciesHeadOptions');
   assert.ok(dashCode.includes('Species Head'), 'SalesDashboard must render Species Head filter');
   assert.ok(dashCode.includes('speciesHeadName'), 'SalesDashboard must display speciesHeadName in product matrix');
+});
 
 // ============================================================================
 // SUITE 73: Fish-wise Ledger Statement & PDF / Excel Export Integrity
@@ -5721,23 +5722,199 @@ test('Fish-wise Ledger Statement: running volume, landed cost, debit notes, blan
   assert.ok(reportsHubCode.includes("'fish-ledger'"), "OperationalReportsHub must link to 'fish-ledger'");
 });
 
+// ============================================================================
+// SUITE 74: Sales Invoice Export Integrity (Complete Product-wise Details)
+// ============================================================================
+test('Sales Invoice Export File: includes all line items, product-wise price, and complete invoice particulars in Excel and CSV', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
 
+  // 1. Verify exportSalesInvoices.ts functions
+  const {
+    buildDetailedSalesInvoiceRows,
+    DETAILED_SALES_INVOICE_COLUMNS
+  } = await import('../utils/exportSalesInvoices.ts');
 
+  assert.ok(Array.isArray(DETAILED_SALES_INVOICE_COLUMNS), 'DETAILED_SALES_INVOICE_COLUMNS must be an array');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'ratePerKg' && c.label.includes('Rate / Kg')), 'Must have Rate / Kg column');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'productName'), 'Must have Product Name column');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'gradeSize'), 'Must have Grade Size column');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'containerNo'), 'Must have Container No column');
+  assert.ok(DETAILED_SALES_INVOICE_COLUMNS.some((c) => c.key === 'sealNo'), 'Must have Seal No column');
 
+  const mockCustomers = [
+    { id: 'cust-1', name: 'Tokyo Seafood Trading LLC', country: 'JAPAN', address: '1-1 Tsukiji, Chuo-ku, Tokyo' },
+    { id: 'cust-2', name: 'Nippon Fisheries Ltd', country: 'JAPAN', address: '2-4 Minato, Tokyo' }
+  ];
 
+  const mockPorts = [
+    { id: 'pol-1', name: 'Cochin Port (INCOK)', code: 'INCOK' },
+    { id: 'pod-1', name: 'Yokohama Port (JPYOK)', code: 'JPYOK' }
+  ];
 
+  const mockSpecies = [
+    { id: 'sp-van', name: 'Frozen Vannamei Shrimp', hsCode: '03061790' },
+    { id: 'sp-mac', name: 'Frozen Indian Mackerel', hsCode: '03038990' }
+  ];
 
+  const mockSizes = [
+    { id: 'sz-1', name: '16/20' },
+    { id: 'sz-2', name: '6/8' }
+  ];
 
+  const mockCounts = [
+    { id: 'cnt-1', name: '16-20 pcs/lb' }
+  ];
 
+  const mockInvoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'EXP-2026-001',
+      invoiceDate: '2026-11-10',
+      financialYear: 'FY 2026-27',
+      consigneeId: 'cust-1',
+      buyerId: 'cust-2',
+      salesOrderNo: 'SO-101',
+      orderNo: 'PO-9988',
+      orderDate: '2026-11-01',
+      internalInvoiceNo: 'INT-001',
+      exporterRef: 'EXP-REF-1',
+      portOfLoadingId: 'pol-1',
+      portOfDischargeId: 'pod-1',
+      finalDestinationId: 'pod-1',
+      currency: 'USD',
+      exchangeRate: 85.0,
+      bankPreDeterminedExchangeRate: 85.5,
+      priceTerms: 'FOB',
+      termsOfPayment: '30% Advance, Balance CAD',
+      vesselFlightNo: 'EVER GIVEN V-102',
+      containerNo: 'MSKU1234567',
+      sealNo: 'ML-998877',
+      billOfLadingNo: 'BL-COCHIN-001',
+      shippingMarks: 'TOKYO SEAFOOD / JAPAN',
+      totalCartons: 1200,
+      totalWeightKg: 12000,
+      grossWeightKg: 13200,
+      totalAmountCurrency: 102000,
+      totalFobValueCurrency: 102000,
+      totalFobValueINR: 8670000,
+      totalPurchaseValueCurrency: 85000,
+      totalPurchaseValueINR: 7225000,
+      grossProfitCurrency: 17000,
+      grossProfitINR: 1445000,
+      profitMarginPct: 16.67,
+      advanceTermsUSD: 30000,
+      advanceReceivedCurrency: 30000,
+      advanceReceivedDate: '2026-11-12',
+      advanceBankRef: 'FIRC-001',
+      balanceActualPriceUSD: 72000,
+      balancePaymentAmountCurrency: 72000,
+      balancePaymentDate: '2026-11-20',
+      balanceBankRef: 'FIRC-002',
+      totalRealizedCurrency: 102000,
+      totalRealizedINR: 8721000,
+      balanceRealizationCurrency: 0,
+      realizationStatus: 'Fully Realized',
+      isVoided: false,
+      remarks: 'First consignment to Japan',
+      lineItems: [
+        {
+          id: 'line-1',
+          speciesId: 'sp-van',
+          productDescription: 'Frozen HLSO Vannamei Shrimp IQF',
+          gradeSize: '16/20',
+          sizeId: 'sz-1',
+          countId: 'cnt-1',
+          hsCode: '03061790',
+          cartonsCount: 800,
+          weightKg: 8000,
+          ratePerKg: 9.5, // Product-wise Price
+          amountCurrency: 76000,
+          fobValueCurrency: 76000,
+          purchaseValueCurrency: 64000
+        },
+        {
+          id: 'line-2',
+          speciesId: 'sp-mac',
+          productDescription: 'Frozen Indian Mackerel Whole Round Blast Frozen',
+          gradeSize: '6/8',
+          sizeId: 'sz-2',
+          hsCode: '03038990',
+          cartonsCount: 400,
+          weightKg: 4000,
+          ratePerKg: 6.5, // Product-wise Price
+          amountCurrency: 26000,
+          fobValueCurrency: 26000,
+          purchaseValueCurrency: 21000
+        }
+      ]
+    }
+  ];
 
+  const detailedRows = buildDetailedSalesInvoiceRows({
+    invoices: mockInvoices,
+    customers: mockCustomers,
+    ports: mockPorts,
+    species: mockSpecies,
+    sizes: mockSizes,
+    counts: mockCounts
+  });
 
+  // Verify that an invoice with 2 line items generates 2 detailed rows
+  assert.equal(detailedRows.length, 2, 'Must generate 2 detailed rows for 2 line items');
 
+  // Verify Line 1 particulars
+  const row1 = detailedRows[0];
+  assert.equal(row1.invoiceNo, 'EXP-2026-001');
+  assert.equal(row1.itemIndex, 1);
+  assert.equal(row1.productName, 'Frozen Vannamei Shrimp');
+  assert.equal(row1.productDescription, 'Frozen HLSO Vannamei Shrimp IQF');
+  assert.equal(row1.gradeSize, '16/20');
+  assert.equal(row1.pieceCount, '16-20 pcs/lb');
+  assert.equal(row1.cartonsCount, 800);
+  assert.equal(row1.weightKg, 8000);
+  assert.equal(row1.ratePerKg, 9.5, 'Product-wise price for Line 1 must be 9.5 USD/Kg');
+  assert.equal(row1.lineAmountCurrency, 76000);
+  assert.equal(row1.lineAmountINR, 76000 * 85.0);
+  assert.equal(row1.consigneeName, 'Tokyo Seafood Trading LLC');
+  assert.equal(row1.buyerName, 'Nippon Fisheries Ltd');
+  assert.equal(row1.containerNo, 'MSKU1234567');
+  assert.equal(row1.sealNo, 'ML-998877');
+  assert.equal(row1.vesselFlightNo, 'EVER GIVEN V-102');
+  assert.equal(row1.portOfLoading, 'Cochin Port (INCOK)');
+  assert.equal(row1.portOfDischarge, 'Yokohama Port (JPYOK)');
+  assert.equal(row1.realizationStatus, 'Fully Realized');
 
+  // Verify Line 2 particulars
+  const row2 = detailedRows[1];
+  assert.equal(row2.invoiceNo, 'EXP-2026-001');
+  assert.equal(row2.itemIndex, 2);
+  assert.equal(row2.productName, 'Frozen Indian Mackerel');
+  assert.equal(row2.productDescription, 'Frozen Indian Mackerel Whole Round Blast Frozen');
+  assert.equal(row2.gradeSize, '6/8');
+  assert.equal(row2.cartonsCount, 400);
+  assert.equal(row2.weightKg, 4000);
+  assert.equal(row2.ratePerKg, 6.5, 'Product-wise price for Line 2 must be 6.5 USD/Kg');
+  assert.equal(row2.lineAmountCurrency, 26000);
+  assert.equal(row2.lineAmountINR, 26000 * 85.0);
 
+  // 2. Verify component integration: SalesInvoiceList.tsx has Export Excel and Export CSV with complete product details
+  const listCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceList.tsx'), 'utf8');
+  assert.ok(listCode.includes('exportSalesInvoicesToExcel'), 'SalesInvoiceList must import exportSalesInvoicesToExcel');
+  assert.ok(listCode.includes('exportSalesInvoicesToCSV'), 'SalesInvoiceList must import exportSalesInvoicesToCSV');
+  assert.ok(listCode.includes('handleExportExcel'), 'SalesInvoiceList must define handleExportExcel');
+  assert.ok(listCode.includes('handleExportCSV'), 'SalesInvoiceList must define handleExportCSV');
+  assert.ok(listCode.includes('handleBulkExportExcel'), 'SalesInvoiceList must define handleBulkExportExcel');
+  assert.ok(listCode.includes('handleBulkExportCSV'), 'SalesInvoiceList must define handleBulkExportCSV');
 
+  // 3. Verify component integration: ExportInvoicePreviewModal.tsx has Download Excel option
+  const previewModalCode = fs.readFileSync(path.resolve('src/components/sales/ExportInvoicePreviewModal.tsx'), 'utf8');
+  assert.ok(previewModalCode.includes('exportSalesInvoicesToExcel'), 'ExportInvoicePreviewModal must import exportSalesInvoicesToExcel');
+  assert.ok(previewModalCode.includes('handleDownloadExcel'), 'ExportInvoicePreviewModal must define handleDownloadExcel');
 
-
-
-
-
-
+  // 4. Verify component integration: FobDashboard.tsx has Export Excel and CSV with complete product lines
+  const fobCode = fs.readFileSync(path.resolve('src/components/sales/FobDashboard.tsx'), 'utf8');
+  assert.ok(fobCode.includes('exportSalesInvoicesToExcel'), 'FobDashboard must import exportSalesInvoicesToExcel');
+  assert.ok(fobCode.includes('exportSalesInvoicesToCSV'), 'FobDashboard must import exportSalesInvoicesToCSV');
+  assert.ok(fobCode.includes('handleExportExcel'), 'FobDashboard must define handleExportExcel');
+});

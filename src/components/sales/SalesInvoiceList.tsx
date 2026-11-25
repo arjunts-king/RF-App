@@ -12,7 +12,7 @@ import { RealizationModal } from './RealizationModal';
 import { RealizationStatementModal } from './RealizationStatementModal';
 import { ExportInvoicePreviewModal } from './ExportInvoicePreviewModal';
 import { PaginationControls } from '../common/PaginationControls';
-import { convertToCSV, downloadFile } from '../../utils/exportUtils';
+import { exportSalesInvoicesToExcel, exportSalesInvoicesToCSV } from '../../utils/exportSalesInvoices';
 import { exportInvoiceToWord } from '../../utils/exportWordInvoice';
 import {
   Search,
@@ -44,6 +44,10 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
     salesInvoices,
     customers,
     ports,
+    species,
+    sizes,
+    salesSizes,
+    counts,
     bankAccounts,
     businessSettings,
     updateSalesInvoice,
@@ -224,69 +228,36 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
     );
   };
 
+  const handleBulkExportExcel = () => {
+    const selectedInvoices = filteredInvoices.filter((inv) => selectedIds.includes(inv.id));
+    if (selectedInvoices.length === 0) return;
+    exportSalesInvoicesToExcel({
+      invoices: selectedInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'Sales_Invoices_Selected'
+    });
+    showToast(`Exported ${selectedInvoices.length} selected invoices with complete product particulars to Excel.`, 'success');
+  };
+
   const handleBulkExportCSV = () => {
     const selectedInvoices = filteredInvoices.filter((inv) => selectedIds.includes(inv.id));
     if (selectedInvoices.length === 0) return;
-    const exportData = selectedInvoices.map((inv) => {
-      const consignee = customerMap.get(inv.consigneeId);
-      const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
-      const pod = portMap.get(inv.portOfDischargeId);
-      const pol = portMap.get(inv.portOfLoadingId);
-
-      return {
-        InvoiceNo: inv.invoiceNo,
-        Date: inv.invoiceDate,
-        Consignee: consignee?.name || inv.consigneeName || '',
-        Buyer: buyer?.name || inv.buyerName || '',
-        Country: consignee?.country || inv.countryOfDestination || '',
-        POL: pol?.name || '',
-        POD: pod?.name || '',
-        HSNCode: inv.hsnCode || '',
-        Currency: inv.currency,
-        TotalWeightKg: inv.totalWeightKg,
-        TotalAmount: inv.totalAmountCurrency,
-        FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
-        RealizedAmount: inv.totalRealizedCurrency,
-        BalanceUSD: inv.balanceRealizationCurrency,
-        RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',
-        BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
-        AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
-        AdvanceReceivedDate: inv.advanceReceivedDate || '',
-        BalancePaymentUSD: inv.balancePaymentAmountCurrency || 0,
-        BalancePaymentDate: inv.balancePaymentDate || '',
-        Status: inv.realizationStatus,
-        Voided: inv.isVoided ? 'Yes' : 'No'
-      };
+    exportSalesInvoicesToCSV({
+      invoices: selectedInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'Sales_Invoices_Selected'
     });
-
-    const csvStr = convertToCSV(exportData, [
-      { key: 'InvoiceNo', label: 'Invoice No' },
-      { key: 'Date', label: 'Invoice Date' },
-      { key: 'Consignee', label: 'Consignee / Customer' },
-      { key: 'Buyer', label: 'Buyer' },
-      { key: 'Country', label: 'Country' },
-      { key: 'POL', label: 'Port of Loading' },
-      { key: 'POD', label: 'Port of Discharge' },
-      { key: 'HSNCode', label: 'HSN / ITC Code' },
-      { key: 'Currency', label: 'Currency' },
-      { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
-      { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
-      { key: 'FOBValueUSD', label: 'FOB Value (USD)' },
-      { key: 'FOBValueINR', label: 'FOB Value (INR)' },
-      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
-      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
-      { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
-      { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
-      { key: 'BalancePaymentDate', label: 'Date of Receiving Balance Payment' },
-      { key: 'RealizedAmount', label: 'Realized Value' },
-      { key: 'BalanceUSD', label: 'Balance Realization' },
-      { key: 'RealizedINR', label: 'Realized INR' },
-      { key: 'Status', label: 'Realization Status' },
-      { key: 'Voided', label: 'Voided' }
-    ]);
-
-    downloadFile(csvStr, `Export_Invoices_Selected_${new Date().toISOString().split('T')[0]}.csv`);
+    showToast(`Exported ${selectedInvoices.length} selected invoices with complete product particulars to CSV.`, 'success');
   };
 
   const handleBulkConfirmVoid = () => {
@@ -314,67 +285,40 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
     setSelectedIds([]);
   };
 
-  const handleExportCSV = () => {
-    const exportData = filteredInvoices.map((inv) => {
-      const consignee = customerMap.get(inv.consigneeId);
-      const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
-      const pod = portMap.get(inv.portOfDischargeId);
-      const pol = portMap.get(inv.portOfLoadingId);
-
-      return {
-        InvoiceNo: inv.invoiceNo,
-        Date: inv.invoiceDate,
-        Consignee: consignee?.name || inv.consigneeName || '',
-        Buyer: buyer?.name || inv.buyerName || '',
-        Country: consignee?.country || inv.countryOfDestination || '',
-        POL: pol?.name || '',
-        POD: pod?.name || '',
-        HSNCode: inv.hsnCode || '',
-        Currency: inv.currency,
-        TotalWeightKg: inv.totalWeightKg,
-        TotalAmount: inv.totalAmountCurrency,
-        FOBValueUSD: inv.totalFobValueCurrency,
-        FOBValueINR: inv.totalFobValueINR || Number((inv.totalFobValueCurrency * inv.exchangeRate).toFixed(2)),
-        RealizedAmount: inv.totalRealizedCurrency,
-        BalanceUSD: inv.balanceRealizationCurrency,
-        RealizedINR: (inv.realizationStatus === 'Fully Realized' || (inv.totalRealizedINR && inv.totalRealizedINR > 0)) ? inv.totalRealizedINR : '',
-        BankExchangeRate: inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5,
-        AdvanceReceivedUSD: inv.advanceReceivedCurrency || 0,
-        AdvanceReceivedDate: inv.advanceReceivedDate || '',
-        BalancePaymentUSD: inv.balancePaymentAmountCurrency || 0,
-        BalancePaymentDate: inv.balancePaymentDate || '',
-        Status: inv.realizationStatus,
-        Voided: inv.isVoided ? 'Yes' : 'No'
-      };
+  const handleExportExcel = () => {
+    if (filteredInvoices.length === 0) {
+      showToast('No commercial invoices available to export.', 'warning');
+      return;
+    }
+    exportSalesInvoicesToExcel({
+      invoices: filteredInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'Sales_Invoices_Detailed'
     });
+    showToast(`Exported ${filteredInvoices.length} commercial invoices with complete product particulars to Excel.`, 'success');
+  };
 
-    const csvStr = convertToCSV(exportData, [
-      { key: 'InvoiceNo', label: 'Invoice No' },
-      { key: 'Date', label: 'Invoice Date' },
-      { key: 'Consignee', label: 'Consignee / Customer' },
-      { key: 'Buyer', label: 'Buyer' },
-      { key: 'Country', label: 'Country' },
-      { key: 'POL', label: 'Port of Loading' },
-      { key: 'POD', label: 'Port of Discharge' },
-      { key: 'HSNCode', label: 'HSN / ITC Code' },
-      { key: 'Currency', label: 'Currency' },
-      { key: 'TotalWeightKg', label: 'Total Weight (Kg)' },
-      { key: 'TotalAmount', label: 'Total Sales Value (USD)' },
-      { key: 'FOBValueUSD', label: 'Total FOB Value (USD)' },
-      { key: 'FOBValueINR', label: 'FOB Value (INR)' },
-      { key: 'BankExchangeRate', label: 'Exchange Rate (Pre-determined with Bank)' },
-      { key: 'AdvanceReceivedUSD', label: 'Advance Received (USD)' },
-      { key: 'AdvanceReceivedDate', label: 'Date of Receiving Advance' },
-      { key: 'BalancePaymentUSD', label: 'Balance Payment Amount (USD)' },
-      { key: 'BalancePaymentDate', label: 'Date of Receiving Balance Payment' },
-      { key: 'RealizedAmount', label: 'Realized Foreign Currency' },
-      { key: 'BalanceUSD', label: 'Balance Outstanding' },
-      { key: 'RealizedINR', label: 'Realized INR' },
-      { key: 'Status', label: 'Realization Status' },
-      { key: 'Voided', label: 'Voided' }
-    ]);
-
-    downloadFile(csvStr, `Sales_Invoices_${new Date().toISOString().split('T')[0]}.csv`);
+  const handleExportCSV = () => {
+    if (filteredInvoices.length === 0) {
+      showToast('No commercial invoices available to export.', 'warning');
+      return;
+    }
+    exportSalesInvoicesToCSV({
+      invoices: filteredInvoices,
+      customers,
+      ports,
+      species,
+      sizes: salesSizes && salesSizes.length > 0 ? salesSizes : sizes,
+      counts,
+      businessSettings,
+      filenamePrefix: 'Sales_Invoices_Detailed'
+    });
+    showToast(`Exported ${filteredInvoices.length} commercial invoices with complete product particulars to CSV.`, 'success');
   };
 
   return (
@@ -399,6 +343,11 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
             onClick: () => onNavigate('sales-excel-import'),
             icon: FileSpreadsheet
           }] : []),
+          {
+            label: 'Export Excel',
+            onClick: handleExportExcel,
+            icon: FileSpreadsheet
+          },
           {
             label: 'Export CSV',
             onClick: handleExportCSV,
@@ -504,10 +453,20 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
 
         <div className="flex items-center gap-2">
           <button
+            onClick={handleExportExcel}
+            className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+            title="Export detailed commercial invoices with all product-wise particulars to Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Export Excel</span>
+          </button>
+
+          <button
             onClick={handleExportCSV}
             className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-ink-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+            title="Export detailed commercial invoices with all product-wise particulars to CSV (.csv)"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-ink-600" />
             <span>Export CSV</span>
           </button>
 
@@ -941,8 +900,18 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
           </span>
 
           <button
+            onClick={handleBulkExportExcel}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition font-bold"
+            title="Export selected invoices with full product particulars to Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Export Excel</span>
+          </button>
+
+          <button
             onClick={handleBulkExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition font-semibold"
+            title="Export selected invoices with full product particulars to CSV (.csv)"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
