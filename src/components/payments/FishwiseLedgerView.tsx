@@ -500,7 +500,16 @@ export const FishwiseLedgerView: React.FC = () => {
 
                       {/* Inward Weight (Kg) */}
                       <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums font-bold text-sky-950">
-                        {row.inwardWeightKg !== null ? `${row.inwardWeightKg.toLocaleString('en-IN')} Kg` : ''}
+                        {row.inwardWeightKg !== null ? (
+                          <div>
+                            <div>{row.inwardWeightKg.toLocaleString('en-IN')} Kg</div>
+                            {row.boxesCount && row.boxesCount > 0 ? (
+                              <div className="text-[9px] print:text-[7.5px] font-bold text-amber-800">
+                                {row.boxesCount} Boxes
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : ''}
                       </td>
 
                       {/* Return Weight (Kg) */}

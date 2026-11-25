@@ -27,7 +27,8 @@ import {
 import {
   normalizeKey,
   getFlexibleValue,
-  formatExcelDate
+  formatExcelDate,
+  extractBoxesCountFromRow
 } from '../utils/excelFormatters.ts';
 
 import {
@@ -3730,8 +3731,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -6060,12 +6061,12 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   assert.ok(comboCode.includes('isMackerelSearch'), 'ProductCombobox must define isMackerelSearch guard');
   assert.ok(comboCode.includes('isMackerelProduct'), 'ProductCombobox must define isMackerelProduct guard');
 
-  // 2. Verify Service Worker cache version is bumped to v35 for fresh asset delivery
+  // 2. Verify Service Worker cache version is bumped to v35/v36 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v35');
+  assert.ok(swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v35 or v36');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=35 query parameter');
+  assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=35 or v=36 query parameter');
 
   // 3. Test search filter simulation across 32 catalog products
   const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
@@ -6362,3 +6363,68 @@ test('Purchase Dashboard displays total boxes purchased alongside quantity, purc
   const totalBoxes = mockPurchases.reduce((s, p) => s + (p.boxesCount || 0), 0);
   assert.equal(totalBoxes, 75, 'Overall total boxes should be 75 (50 + 25 + 0)');
 });
+
+test('Suite 79: Deepsea purchase box extraction from imported Excel & ledger/report integration', () => {
+  // 1. Direct column matching for deepsea & box variants
+  assert.equal(extractBoxesCountFromRow({ 'Deepsea Boxes': 45 }), 45, 'Extracts from Deepsea Boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Deep Sea Boxes': 60 }), 60, 'Extracts from Deep Sea Boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Deepsea No of Boxes': 75 }), 75, 'Extracts from Deepsea No of Boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Deep Sea': 30 }), 30, 'Extracts from Deep Sea');
+  assert.equal(extractBoxesCountFromRow({ 'Deepsea': '55' }), 55, 'Extracts string deepsea count');
+  assert.equal(extractBoxesCountFromRow({ 'No of Boxes': 120 }), 120, 'Extracts from No of Boxes');
+  assert.equal(extractBoxesCountFromRow({ 'No. of Boxes': '80' }), 80, 'Extracts from No. of Boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Box Count': 40 }), 40, 'Extracts from Box Count');
+  assert.equal(extractBoxesCountFromRow({ 'Crates': 35 }), 35, 'Extracts from Crates');
+  assert.equal(extractBoxesCountFromRow({ 'Tubs': 22 }), 22, 'Extracts from Tubs');
+  assert.equal(extractBoxesCountFromRow({ 'Cartons': 18 }), 18, 'Extracts from Cartons');
+
+  // 2. Fuzzy normalized column header matching
+  assert.equal(extractBoxesCountFromRow({ 'Total Deepsea Box Qty': 90 }), 90, 'Fuzzy matches deepsea box qty');
+  assert.equal(extractBoxesCountFromRow({ 'Harbour Deep Sea Crates': 50 }), 50, 'Fuzzy matches harbour deep sea crates');
+
+  // 3. Regex extraction from text fields (remarks, notes, species, etc.)
+  assert.equal(extractBoxesCountFromRow({ remarks: 'Deepsea purchase 50 boxes arrived in good condition' }), 50, 'Extracts from remarks: 50 boxes');
+  assert.equal(extractBoxesCountFromRow({ remarks: 'Deep sea: 25 box' }), 25, 'Extracts from remarks: Deep sea: 25 box');
+  assert.equal(extractBoxesCountFromRow({ notes: 'Purchased 40 bxs deepsea trawler landing' }), 40, 'Extracts from notes: 40 bxs');
+  assert.equal(extractBoxesCountFromRow({ species: 'Ribbonfish (30 boxes)' }), 30, 'Extracts from species: 30 boxes');
+  assert.equal(extractBoxesCountFromRow({ comments: 'Deepsea 65' }), 65, 'Extracts from comments: Deepsea 65');
+  assert.equal(extractBoxesCountFromRow({ remarks: 'Box - 15' }), 15, 'Extracts from remarks: Box - 15');
+  assert.equal(extractBoxesCountFromRow({ remarks: 'Direct landing without boxes' }), 0, 'Returns 0 when no box count specified');
+  assert.equal(extractBoxesCountFromRow({}), 0, 'Returns 0 for empty row');
+  assert.equal(extractBoxesCountFromRow(null), 0, 'Returns 0 for null');
+
+  // 4. Verification that supplier ledger statement includes boxes in briefDetails
+  const mockSupplier = {
+    id: 'sup-1',
+    name: 'Harbour Trawlers Co',
+    openingBalance: 0
+  };
+
+  const mockPurchaseWithBoxes = {
+    id: 'p-deep-1',
+    purchaseId: 'PUR-DEEP-01',
+    purchaseDate: '2026-03-20',
+    supplierId: 'sup-1',
+    speciesId: 'sp-mackerel',
+    lotNo: 'LOT-DS-01',
+    weightKg: 1200,
+    ratePerKg: 180,
+    purchaseValue: 216000,
+    totalExpenses: 12000,
+    totalCost: 228000,
+    amountPaid: 0,
+    paymentStatus: 'unpaid',
+    boxesCount: 40,
+    remarks: 'Deepsea landing'
+  };
+
+  const supplierStatement = buildSupplierLedgerStatement({
+    supplier: mockSupplier,
+    purchases: [mockPurchaseWithBoxes],
+    payments: []
+  });
+  const purchaseEntry = supplierStatement.rows.find((e) => e.purchaseId === 'PUR-DEEP-01');
+  assert.ok(purchaseEntry, 'Purchase entry must exist in supplier ledger statement');
+  assert.ok(purchaseEntry.briefDetails.includes('40 Boxes'), 'Supplier ledger briefDetails must include "40 Boxes"');
+});
+

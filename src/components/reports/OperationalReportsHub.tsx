@@ -742,6 +742,7 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
         Species: resolveSpeciesName(p.speciesId, p),
         Weight: p.weightKg,
+        Boxes: p.boxesCount || 0,
         Rate: p.ratePerKg,
         Expenses: p.totalExpenses,
         TotalCost: p.totalCost,
@@ -753,6 +754,7 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         { key: 'Supplier', label: 'Supplier' },
         { key: 'Species', label: 'Species' },
         { key: 'Weight', label: 'Weight (Kg)' },
+        { key: 'Boxes', label: 'No of Boxes' },
         { key: 'Rate', label: 'Rate/Kg' },
         { key: 'Expenses', label: 'Expenses' },
         { key: 'TotalCost', label: 'Total Cost' },
@@ -765,6 +767,7 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         Supplier: supplierMap.get(p.supplierId)?.name || 'N/A',
         Species: resolveSpeciesName(p.speciesId, p),
         Weight: p.weightKg,
+        Boxes: p.boxesCount || 0,
         Rate: p.ratePerKg,
         Expenses: p.totalExpenses,
         TotalCost: p.totalCost,
@@ -776,6 +779,7 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         { key: 'Supplier', label: 'Supplier' },
         { key: 'Species', label: 'Species' },
         { key: 'Weight', label: 'Weight (Kg)' },
+        { key: 'Boxes', label: 'No of Boxes' },
         { key: 'Rate', label: 'Rate/Kg' },
         { key: 'Expenses', label: 'Expenses' },
         { key: 'TotalCost', label: 'Total Cost' },
@@ -1033,7 +1037,14 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
                       <td className="py-2.5 px-3">{supplierMap.get(p.supplierId)?.name}</td>
                       <td className="py-2.5 px-3 font-semibold">{resolveSpeciesName(p.speciesId, p)}</td>
                       <td className="py-2.5 px-3 text-ink-500">{locationMap.get(p.locationId)?.name}</td>
-                      <td className="py-2.5 px-3 text-right font-bold">{p.weightKg.toLocaleString('en-IN')}</td>
+                      <td className="py-2.5 px-3 text-right font-bold">
+                        <div>{p.weightKg.toLocaleString('en-IN')} Kg</div>
+                        {p.boxesCount > 0 && (
+                          <div className="text-[10px] text-amber-800 font-bold mt-0.5">
+                            {p.boxesCount} Boxes
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-right">₹{p.ratePerKg.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right">{formatINR(p.totalExpenses)}</td>
                       <td className="py-2.5 px-3 text-right font-bold text-rose-900">{formatINR(p.totalCost)}</td>

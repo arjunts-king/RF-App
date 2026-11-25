@@ -479,7 +479,12 @@ export const BatchExpenseView: React.FC = () => {
                               {specName}
                             </td>
                             <td className="py-3 px-4 text-right font-bold tabular-nums">
-                              {formatKg(p.weightKg)}
+                              <div>{formatKg(p.weightKg)}</div>
+                              {p.boxesCount > 0 && (
+                                <div className="text-[10px] text-amber-800 font-bold mt-0.5">
+                                  {p.boxesCount} Boxes
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right font-bold text-amber-800 tabular-nums">
                               {sharePct.toFixed(1)}%
@@ -797,7 +802,12 @@ export const BatchExpenseView: React.FC = () => {
                               {specName}
                             </td>
                             <td className="py-3 px-4 text-right font-bold tabular-nums">
-                              {formatKg(p.weightKg)}
+                              <div>{formatKg(p.weightKg)}</div>
+                              {p.boxesCount > 0 && (
+                                <div className="text-[10px] text-amber-800 font-bold mt-0.5">
+                                  {p.boxesCount} Boxes
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-4 text-right font-bold text-emerald-800 tabular-nums">
                               {sharePct.toFixed(1)}%

@@ -24,8 +24,8 @@ export type ImportEntityType =
   | 'sales-realizations'
   | 'sales-multi-sheet';
 
-import { normalizeKey, getFlexibleValue, formatExcelDate } from './excelFormatters';
-export { normalizeKey, getFlexibleValue, formatExcelDate };
+import { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow } from './excelFormatters';
+export { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow };
 
 
 /**

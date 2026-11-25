@@ -166,6 +166,7 @@ export function buildSupplierLedgerStatement(
     const specName = spec?.rawSpeciesName || spec?.name || (p.remarks && !p.remarks.toLowerCase().includes('auto') ? p.remarks : undefined);
     const detailParts: string[] = [];
     if (specName) detailParts.push(specName);
+    if (p.boxesCount > 0) detailParts.push(`${p.boxesCount} Boxes`);
     if (p.invoiceNo) detailParts.push(`Inv: ${p.invoiceNo}`);
     if (damageAmt > 0) detailParts.push(`After Dmg: -${formatINRNum(damageAmt)}`);
     const briefDetails = detailParts.length > 0 ? detailParts.join(' · ') : 'Harbour Purchase';

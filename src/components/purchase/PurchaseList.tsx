@@ -24,6 +24,7 @@ import {
   Sparkles,
   PlusCircle,
   CreditCard,
+  Boxes,
   X
 } from 'lucide-react';
 
@@ -380,6 +381,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
         : (sizeMap.get(p.sizeId)?.name || 'N/A'),
       Count: countMap.get(p.countId)?.name || 'N/A',
+      BoxesCount: p.boxesCount || 0,
       WeightKg: p.weightKg,
       YieldWeightKg: p.yieldWeightKg !== undefined ? p.yieldWeightKg : '',
       YieldPct: p.yieldPct !== undefined ? `${p.yieldPct}%` : '',
@@ -411,6 +413,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       { key: 'Grade', label: 'Grade' },
       { key: 'Size', label: 'Physical Size' },
       { key: 'Count', label: 'Piece Count' },
+      { key: 'BoxesCount', label: 'No of Boxes' },
       { key: 'WeightKg', label: 'Weight (Kg)' },
       { key: 'YieldWeightKg', label: 'Yield Weight (Kg)' },
       { key: 'YieldPct', label: 'Yield %' },
@@ -568,6 +571,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
         ? `${sizeMap.get(p.sizeId)?.name || 'N/A'} & ${sizeMap.get(p.secondarySizeId)?.name || 'N/A'} (Dual Size)`
         : (sizeMap.get(p.sizeId)?.name || 'N/A'),
       Count: countMap.get(p.countId)?.name || 'N/A',
+      BoxesCount: p.boxesCount || 0,
       WeightKg: p.weightKg,
       YieldWeightKg: p.yieldWeightKg !== undefined ? p.yieldWeightKg : '',
       YieldPct: p.yieldPct !== undefined ? `${p.yieldPct}%` : '',
@@ -602,6 +606,7 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
       { key: 'Grade', label: 'Grade' },
       { key: 'Size', label: 'Physical Size' },
       { key: 'Count', label: 'Piece Count' },
+      { key: 'BoxesCount', label: 'No of Boxes' },
       { key: 'WeightKg', label: 'Weight (Kg)' },
       { key: 'YieldWeightKg', label: 'Yield Weight (Kg)' },
       { key: 'YieldPct', label: 'Yield %' },
@@ -639,13 +644,17 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     setShowVoided(false);
   };
 
+  const totalBoxesInList = useMemo(() => {
+    return filteredPurchases.reduce((s, p) => s + (p.boxesCount || 0), 0);
+  }, [filteredPurchases]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* FIGMA-STYLE HEADLINE-FIRST HEADER */}
       <PageHeader
         title="Purchase transactions"
         description="Audit, search, verify and export raw seafood harbour landing records."
-        badge={`${filteredPurchases.length} Records`}
+        badge={`${filteredPurchases.length} Records${totalBoxesInList > 0 ? ` • ${totalBoxesInList.toLocaleString('en-IN')} Boxes` : ''}`}
         primaryAction={
           onNavigate && permissions.canCreateEditPurchases
             ? {
@@ -920,6 +929,14 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
 
                       <td className="py-3 px-4 text-right font-bold whitespace-nowrap">
                         <div>{formatKg(p.weightKg)}</div>
+                        {p.boxesCount > 0 && (
+                          <div className="mt-0.5">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Boxes className="w-2.5 h-2.5 text-amber-600" />
+                              {p.boxesCount} {p.boxesCount === 1 ? 'Box' : 'Boxes'}
+                            </span>
+                          </div>
+                        )}
                         {totalReturnedKg > 0 && (
                           <div className="text-[10px] text-amber-700 font-bold" title={`Returned: ${formatKg(totalReturnedKg)}`}>
                             Ret: {formatKg(totalReturnedKg)}
@@ -1210,7 +1227,15 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                   <strong>Piece Count:</strong> {countMap.get(selectedPurchase.countId)?.name || 'N/A'}
                 </div>
                 <div>
-                  <strong>Total Boxes:</strong> {selectedPurchase.boxesCount}
+                  <strong>Total Boxes:</strong>{' '}
+                  {selectedPurchase.boxesCount > 0 ? (
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 text-xs">
+                      <Boxes className="w-3 h-3 text-amber-600 inline" />
+                      {selectedPurchase.boxesCount} Boxes
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </div>
               </div>
             </div>

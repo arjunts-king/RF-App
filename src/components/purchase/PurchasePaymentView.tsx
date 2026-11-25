@@ -602,7 +602,7 @@ export const PurchasePaymentView: React.FC<PurchasePaymentViewProps> = ({
                         <option value="">-- Choose Purchase Lot --</option>
                         {supplierUnpaidPurchases.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.purchaseId} • {p.purchaseDate} • Inv: {p.invoiceNo || 'N/A'} • Total: {formatINR(p.totalCost)} • Due: {formatINR(p.balancePayable)}
+                            {p.purchaseId} • {p.purchaseDate}{p.boxesCount > 0 ? ` • ${p.boxesCount} Boxes` : ''} • Inv: {p.invoiceNo || 'N/A'} • Total: {formatINR(p.totalCost)} • Due: {formatINR(p.balancePayable)}
                           </option>
                         ))}
                       </select>
@@ -833,7 +833,7 @@ export const PurchasePaymentView: React.FC<PurchasePaymentViewProps> = ({
                         >
                           <div>
                             <span className="font-bold font-mono text-ink-900 block">{p.purchaseId}</span>
-                            <span className="text-[10px] text-ink-500">{p.purchaseDate} • Due: {formatINR(p.balancePayable)}</span>
+                            <span className="text-[10px] text-ink-500">{p.purchaseDate}{p.boxesCount > 0 ? ` • ${p.boxesCount} Boxes` : ''} • Due: {formatINR(p.balancePayable)}</span>
                           </div>
                           <button
                             type="button"
@@ -1452,7 +1452,10 @@ export const PurchasePaymentView: React.FC<PurchasePaymentViewProps> = ({
               </div>
               <div>
                 <span className="text-ink-500">Total Quantity:</span>
-                <strong className="text-ink-900 block font-mono">{inspectPurchaseTarget.weightKg} Kg</strong>
+                <strong className="text-ink-900 block font-mono">
+                  {inspectPurchaseTarget.weightKg} Kg
+                  {inspectPurchaseTarget.boxesCount > 0 && ` (${inspectPurchaseTarget.boxesCount} Boxes)`}
+                </strong>
               </div>
               <div>
                 <span className="text-ink-500">Total Landed Cost:</span>

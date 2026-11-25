@@ -82,7 +82,7 @@ import {
   sortSalesInvoicesByNumber,
   getNextInvoiceSequenceNumber
 } from '../utils/calculations';
-import { normalizeKey, getFlexibleValue, formatExcelDate } from '../utils/excelFormatters';
+import { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow } from '../utils/excelFormatters';
 import { computeSettlementReconciliation } from '../utils/collectionAnalysis';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
@@ -546,6 +546,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (spLower === 'auto uploaded' || spLower === 'autouploaded' || spLower === 'auto-uploaded' || spLower === 'auto') {
           if (cleanP.remarks && !cleanP.remarks.toLowerCase().includes('auto')) {
             cleanP.speciesId = cleanP.remarks.trim();
+          }
+        }
+        // Auto-extract boxesCount if 0 and remarks/species/invoice mentions deepsea or box count
+        if (!cleanP.boxesCount || cleanP.boxesCount === 0) {
+          const extracted = extractBoxesCountFromRow({
+            remarks: cleanP.remarks,
+            species: cleanP.speciesId,
+            batchNo: cleanP.batchNo,
+            invoiceNo: cleanP.invoiceNo
+          });
+          if (extracted > 0) {
+            cleanP.boxesCount = extracted;
           }
         }
         if (!cleanP.expenseBreakdown || Object.keys(cleanP.expenseBreakdown).length === 0) return cleanP;
@@ -2298,7 +2310,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       secondarySizeId: purchaseData.secondarySizeId || undefined,
       isDualSize: Boolean(purchaseData.isDualSize && purchaseData.secondarySizeId),
       countId: purchaseData.countId || '',
-      boxesCount: Number(purchaseData.boxesCount) || 0,
+      boxesCount: Number(purchaseData.boxesCount) || extractBoxesCountFromRow({ remarks: purchaseData.remarks, species: purchaseData.speciesId, invoiceNo: purchaseData.invoiceNo }),
       weightKg: Number(purchaseData.weightKg),
       ratePerKg: Number(purchaseData.ratePerKg),
       yieldWeightKg: derived.yieldWeightKg,
@@ -5483,7 +5495,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // 5. Numeric & Optional Fields
-      const boxesCount = Number(getFlexibleValue(row, ['noofboxes', 'boxes', 'bags', 'boxcount'])) || 0;
+      const boxesCount = extractBoxesCountFromRow(row);
       const damageWeightKg = Number(getFlexibleValue(row, ['damageweightkg', 'damageweight', 'damagekg'])) || 0;
       const damageRatePerKg = Number(getFlexibleValue(row, ['damagerateperkg', 'damagerate', 'damageratekg'])) || 0;
       const amountPaid = Number(getFlexibleValue(row, ['amountpaidnowinr', 'amountpaid', 'paid', 'payment', 'advance'])) || 0;

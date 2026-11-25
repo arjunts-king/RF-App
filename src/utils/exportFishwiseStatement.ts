@@ -765,7 +765,7 @@ export function buildFishwiseLedgerWordTableXml(
         ${buildTextCell(W[1], bg, row.formattedDate, { sizeHalfPt: 14 })}
         ${buildTextCell(W[2], bg, row.supplierName, { sizeHalfPt: 13, subText: row.locationName })}
         ${buildTextCell(W[3], bg, row.grade, { sizeHalfPt: 13, subText: row.sizeCount })}
-        ${buildTextCell(W[4], bg, wtText, { align: 'right', bold: true, colorHex: isReturn ? 'B45309' : '0F172A', sizeHalfPt: 14 })}
+        ${buildTextCell(W[4], bg, wtText, { align: 'right', bold: true, colorHex: isReturn ? 'B45309' : '0F172A', sizeHalfPt: 14, subText: row.boxesCount ? `${row.boxesCount} Boxes` : undefined })}
         ${buildTextCell(W[5], bg, row.purchaseRatePerKg !== null ? formatINRNum(row.purchaseRatePerKg) : '', { align: 'right', sizeHalfPt: 14 })}
         ${buildTextCell(W[6], bg, row.expenseRatePerKg !== null ? formatINRNum(row.expenseRatePerKg) : '', { align: 'right', sizeHalfPt: 14 })}
         ${buildTextCell(W[7], bg, row.landedCost > 0 ? formatINRNum(row.landedCost) : '', { align: 'right', bold: true, colorHex: '0284C7', sizeHalfPt: 14 })}
