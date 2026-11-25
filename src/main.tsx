@@ -17,7 +17,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   if ('caches' in window) {
     window.caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== 'seafood-pwa-v36').map((key) => window.caches.delete(key))
+        keys.filter((key) => key !== 'seafood-pwa-v37').map((key) => window.caches.delete(key))
       );
     }).catch(() => {});
   }

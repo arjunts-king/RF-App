@@ -79,10 +79,11 @@ import {
   allocateBatchExpenses,
   allocateBatchYield,
   getIndianFinancialYear,
+  derivePaymentStatus,
   sortSalesInvoicesByNumber,
   getNextInvoiceSequenceNumber
 } from '../utils/calculations';
-import { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow } from '../utils/excelFormatters';
+import { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow, parseNumeric } from '../utils/excelFormatters';
 import { computeSettlementReconciliation } from '../utils/collectionAnalysis';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
@@ -550,7 +551,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         // Auto-extract boxesCount if 0 and remarks/species/invoice mentions deepsea or box count
         if (!cleanP.boxesCount || cleanP.boxesCount === 0) {
-          const extracted = extractBoxesCountFromRow({
+          const extracted = extractBoxesCountFromRow(cleanP) || extractBoxesCountFromRow({
             remarks: cleanP.remarks,
             species: cleanP.speciesId,
             batchNo: cleanP.batchNo,
@@ -5184,27 +5185,121 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const sizeVal = getFlexibleValue(row, ['sizecodeorname', 'size', 'sizename', 'physicalsize']);
       const countVal = getFlexibleValue(row, ['countcodeorname', 'count', 'countname', 'piececount', 'counts', 'pcs']);
 
-      const weightVal = Number(
+      // Extract explicit Fish Purchase / Base Catch Value from Excel if present
+      const explicitFishPurchase = parseNumeric(
+        getFlexibleValue(row, [
+          'fishpurchasetotalinr',
+          'fishpurchasetotal',
+          'fishpurchasevalueinr',
+          'fishpurchasevalue',
+          'fishpurchaseinr',
+          'fishpurchase',
+          'totalfishpurchaseinr',
+          'totalfishpurchase',
+          'totalfishvalueinr',
+          'totalfishvalue',
+          'totalfishamountinr',
+          'totalfishamount',
+          'fishamountinr',
+          'fishamount',
+          'fishcostinr',
+          'fishcost',
+          'basepurchasevalueinr',
+          'basepurchasevalue',
+          'rawpurchasevalueinr',
+          'rawpurchasevalue',
+          'rawcatchvalueinr',
+          'rawcatchvalue',
+          'fishtotal',
+          'grosspurchasevalue',
+          'purchasevalue',
+          'grossvalue'
+        ])
+      );
+
+      // Extract explicit Final Purchase Value / Total Landed Cost from Excel if present
+      const explicitFinalPurchase = parseNumeric(
+        getFlexibleValue(row, [
+          'finalpurchasevalueinr',
+          'finalpurchasevalue',
+          'finalpurchasetotalinr',
+          'finalpurchasetotal',
+          'finalpurchaseinr',
+          'finalpurchase',
+          'totalpurchasevalueincludinglandingcosts',
+          'totalpurchasevalueincludinglandingcost',
+          'totalpurchasevalueinr',
+          'totalpurchasevalue',
+          'totalpurchasetotalinr',
+          'totalpurchasetotal',
+          'totallandedcostinr',
+          'totallandedcost',
+          'totalcostinr',
+          'totalcost',
+          'landedcostinr',
+          'landedcost',
+          'finalcostinr',
+          'finalcost',
+          'finalvalueinr',
+          'finalvalue',
+          'netpurchasevalueinr',
+          'netpurchasevalue'
+        ])
+      );
+
+      // Extract explicit Total Expenses / Landing Expenses from Excel if present
+      const explicitTotalExpenses = parseNumeric(
+        getFlexibleValue(row, [
+          'totallandingexpensesinr',
+          'totallandingexpenses',
+          'landingexpensesinr',
+          'landingexpenses',
+          'totalexpensesinr',
+          'totalexpenses',
+          'totallandingcostinr',
+          'totallandingcost',
+          'directexpensesinr',
+          'directexpenses',
+          'expensesinr',
+          'expenses',
+          'landingchargesinr',
+          'landingcharges',
+          'harbourexpensesinr',
+          'harbourexpenses'
+        ])
+      );
+
+      const weightVal = parseNumeric(
         getFlexibleValue(row, ['weightkg', 'weight', 'kg', 'quantity', 'qty', 'netweight'])
       );
-      let rateVal = Number(
+      let rateVal = parseNumeric(
         getFlexibleValue(row, ['rateperkginr', 'rateperkg', 'ratekg', 'rate', 'price', 'unitprice', 'pricekg'])
       );
 
-      // If rate is missing or zero, auto-derive from Fish Purchase Total if provided
-      if ((isNaN(rateVal) || rateVal <= 0) && weightVal > 0) {
-        const fishTotal = Number(
-          getFlexibleValue(row, [
-            'fishpurchasetotalinr',
-            'fishpurchasetotal',
-            'fishtotal',
-            'grosspurchasevalue',
-            'purchasevalue',
-            'grossvalue'
-          ])
-        );
-        if (fishTotal > 0) {
-          rateVal = Number((fishTotal / weightVal).toFixed(2));
+      // Skip summary / total rows (e.g. Total, Grand Total)
+      const firstColVal = String(row[Object.keys(row)[0]] || '').trim().toLowerCase();
+      const suppStr = String(supplierVal || '').trim().toLowerCase();
+      const specStr = String(speciesVal || '').trim().toLowerCase();
+      if (
+        firstColVal === 'total' ||
+        firstColVal === 'grand total' ||
+        firstColVal === 'summary' ||
+        suppStr === 'total' ||
+        suppStr === 'grand total' ||
+        specStr === 'total' ||
+        specStr === 'grand total'
+      ) {
+        return;
+      }
+
+      // If rate is missing or zero, auto-derive from Fish Purchase or Final Purchase Value
+      if ((rateVal <= 0) && weightVal > 0) {
+        if (explicitFishPurchase > 0) {
+          rateVal = Number((explicitFishPurchase / weightVal).toFixed(4));
+        } else if (explicitFinalPurchase > 0 && explicitTotalExpenses > 0) {
+          rateVal = Number(((explicitFinalPurchase - explicitTotalExpenses) / weightVal).toFixed(4));
+        } else if (explicitFinalPurchase > 0) {
+          rateVal = Number((explicitFinalPurchase / weightVal).toFixed(4));
         }
       }
 
@@ -5496,9 +5591,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 5. Numeric & Optional Fields
       const boxesCount = extractBoxesCountFromRow(row);
-      const damageWeightKg = Number(getFlexibleValue(row, ['damageweightkg', 'damageweight', 'damagekg'])) || 0;
-      const damageRatePerKg = Number(getFlexibleValue(row, ['damagerateperkg', 'damagerate', 'damageratekg'])) || 0;
-      const amountPaid = Number(getFlexibleValue(row, ['amountpaidnowinr', 'amountpaid', 'paid', 'payment', 'advance'])) || 0;
+      const damageWeightKg = parseNumeric(getFlexibleValue(row, ['damageweightkg', 'damageweight', 'damagekg']));
+      const damageRatePerKg = parseNumeric(getFlexibleValue(row, ['damagerateperkg', 'damagerate', 'damageratekg']));
+      const amountPaid = parseNumeric(getFlexibleValue(row, ['amountpaidnowinr', 'amountpaid', 'paid', 'payment', 'advance']));
       const invoiceNo = String(getFlexibleValue(row, ['invoicebillno', 'invoiceno', 'billno', 'invoice', 'bill']) || '');
 
       const rawExpenseBatch = String(getFlexibleValue(row, [
@@ -5542,7 +5637,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const expenseBreakdown: Record<string, number> = {};
 
       // 1. Ice & Preservation Charges
-      const iceExp = Number(getFlexibleValue(row, [
+      const iceExp = parseNumeric(getFlexibleValue(row, [
         'icecrushedflakeinr',
         'icecrushedflake',
         'iceexpenseinr',
@@ -5551,12 +5646,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'icecost',
         'crushedice',
         'salting'
-      ])) || 0;
+      ]));
       const iceId = iceExp > 0 ? getExpenseTypeId(['ice', 'flake'], 'Ice & Crushed Flake', 'Preservation') : '';
       if (iceExp > 0 && iceId) expenseBreakdown[iceId] = iceExp;
 
       // 2. Transport & Logistics Charges
-      const trnExp = Number(getFlexibleValue(row, [
+      const trnExp = parseNumeric(getFlexibleValue(row, [
         'vehiclerenttransportinr',
         'vehiclerenttransport',
         'transportexpenseinr',
@@ -5567,12 +5662,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'freight',
         'truck',
         'vanrent'
-      ])) || 0;
+      ]));
       const trnId = trnExp > 0 ? getExpenseTypeId(['transport', 'freight', 'vehicle', 'truck'], 'Vehicle Rent / Transport', 'Logistics') : '';
       if (trnExp > 0 && trnId) expenseBreakdown[trnId] = trnExp;
 
       // 3. Commission & Dalali Charges
-      const comExp = Number(getFlexibleValue(row, [
+      const comExp = parseNumeric(getFlexibleValue(row, [
         'commissiondalaliinr',
         'commissiondalali',
         'commissioninr',
@@ -5582,12 +5677,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'brokerage',
         'agentcommission',
         'dalalicharges'
-      ])) || 0;
+      ]));
       const comId = comExp > 0 ? getExpenseTypeId(['commission', 'dalali', 'brokerage'], 'Commission & Dalali', 'Brokerage') : '';
       if (comExp > 0 && comId) expenseBreakdown[comId] = comExp;
 
       // 4. Loading / Unloading Labour Charges
-      const lbrExp = Number(getFlexibleValue(row, [
+      const lbrExp = parseNumeric(getFlexibleValue(row, [
         'loadingunloadinglabourinr',
         'loadingunloadinglabour',
         'loadingunloadinglaborinr',
@@ -5600,12 +5695,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'handling',
         'coolie',
         'hamali'
-      ])) || 0;
+      ]));
       const lbrId = lbrExp > 0 ? getExpenseTypeId(['labour', 'labor', 'loading', 'unloading', 'handling', 'coolie'], 'Loading / Unloading Labour', 'Handling') : '';
       if (lbrExp > 0 && lbrId) expenseBreakdown[lbrId] = lbrExp;
 
       // 5. Other Direct Landing Expenses (Other Expenses / Other Charges / Misc Expenses)
-      const othExp = Number(getFlexibleValue(row, [
+      const othExp = parseNumeric(getFlexibleValue(row, [
         'otherexpensesinr',
         'otherexpenseinr',
         'otherexpenses',
@@ -5631,7 +5726,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'misccharges',
         'miscellaneouscharges',
         'other'
-      ])) || 0;
+      ]));
       const othId = othExp > 0 ? getExpenseTypeId(['otherexpenses', 'otherexpense', 'other', 'misc', 'miscellaneous'], 'Other Expenses', 'Landing') : '';
       if (othExp > 0 && othId) expenseBreakdown[othId] = othExp;
 
@@ -5659,8 +5754,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ];
 
         const rawVal = getFlexibleValue(row, keysToTry);
-        if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
-          const num = Number(rawVal);
+        if (rawVal !== undefined && rawVal !== '') {
+          const num = parseNumeric(rawVal);
           if (num > 0) {
             expenseBreakdown[et.id] = num;
           }
@@ -5715,8 +5810,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           if (lower.includes('expense') || lower.includes('charges') || lower.includes('cost') || lower.includes('fee')) {
             const rawVal = row[colHeader];
-            if (rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal))) {
-              const num = Number(rawVal);
+            if (rawVal !== undefined && rawVal !== '') {
+              const num = parseNumeric(rawVal);
               if (num > 0) {
                 const cleanHeader = colHeader.replace(/\s*\(inr\)|\s*\(rs\)|\s*\(₹\)/gi, '').trim();
                 const baseName = cleanHeader.replace(/\b(expenses?|charges?|costs?|fees?)\b/gi, '').trim() || cleanHeader;
@@ -5728,6 +5823,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           }
         });
+      }
+
+      // 8. Reconcile with explicit Total Landing Expenses or Final Purchase Value if present
+      const sumIndividualExpenses = Object.values(expenseBreakdown).reduce((s, v) => s + v, 0);
+      const otherExpTypeId = getExpenseTypeId(['otherexpenses', 'landingexpenses', 'other'], 'Other Expenses', 'Landing') || 'exp-5';
+
+      if (explicitTotalExpenses > 0 && sumIndividualExpenses < explicitTotalExpenses) {
+        const remainingExp = Number((explicitTotalExpenses - sumIndividualExpenses).toFixed(2));
+        expenseBreakdown[otherExpTypeId] = Number(((expenseBreakdown[otherExpTypeId] || 0) + remainingExp).toFixed(2));
+      } else if (explicitFinalPurchase > 0 && explicitFishPurchase > 0) {
+        const expectedExpenses = Math.max(0, Number((explicitFinalPurchase - explicitFishPurchase).toFixed(2)));
+        if (expectedExpenses > 0 && sumIndividualExpenses < expectedExpenses) {
+          const diff = Number((expectedExpenses - sumIndividualExpenses).toFixed(2));
+          expenseBreakdown[otherExpTypeId] = Number(((expenseBreakdown[otherExpTypeId] || 0) + diff).toFixed(2));
+        }
       }
 
       if (!resolvedSupplier || !resolvedLocation || !resolvedSpecies) {
@@ -5774,22 +5884,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ]);
 
       const parsedBatchYieldWeightKg =
-        rawBatchYieldWeight !== undefined && !isNaN(Number(rawBatchYieldWeight)) && Number(rawBatchYieldWeight) > 0
-          ? Number(rawBatchYieldWeight)
+        rawBatchYieldWeight !== undefined && parseNumeric(rawBatchYieldWeight) > 0
+          ? parseNumeric(rawBatchYieldWeight)
           : undefined;
 
       const parsedBatchYieldPct =
-        rawBatchYieldPct !== undefined && !isNaN(Number(rawBatchYieldPct)) && Number(rawBatchYieldPct) > 0
-          ? Number(rawBatchYieldPct)
+        rawBatchYieldPct !== undefined && parseNumeric(rawBatchYieldPct) > 0
+          ? parseNumeric(rawBatchYieldPct)
           : undefined;
 
       let resolvedYieldWeight: number | undefined =
-        rawYieldWeight !== undefined && !isNaN(Number(rawYieldWeight)) && Number(rawYieldWeight) > 0
-          ? Number(rawYieldWeight)
+        rawYieldWeight !== undefined && parseNumeric(rawYieldWeight) > 0
+          ? parseNumeric(rawYieldWeight)
           : undefined;
 
-      if (!resolvedYieldWeight && rawYieldPct !== undefined && !isNaN(Number(rawYieldPct)) && Number(rawYieldPct) > 0 && weightVal > 0) {
-        resolvedYieldWeight = Number(((weightVal * Number(rawYieldPct)) / 100).toFixed(2));
+      if (!resolvedYieldWeight && rawYieldPct !== undefined && parseNumeric(rawYieldPct) > 0 && weightVal > 0) {
+        resolvedYieldWeight = Number(((weightVal * parseNumeric(rawYieldPct)) / 100).toFixed(2));
       }
 
       // Compute calculations
@@ -5807,6 +5917,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       maxPurNum++;
       const purchaseId = `PUR-${String(maxPurNum).padStart(5, '0')}`;
+
+      // If explicit Fish Purchase or Final Purchase was specified in Excel, preserve exact values
+      const finalPurchaseValue = explicitFishPurchase > 0 ? explicitFishPurchase : derived.purchaseValue;
+      const finalGrossPurchaseValue = explicitFishPurchase > 0 ? Number((explicitFishPurchase - derived.damageAmount).toFixed(2)) : derived.grossPurchaseValue;
+      const finalTotalCost = explicitFinalPurchase > 0 ? explicitFinalPurchase : Number((finalGrossPurchaseValue + derived.totalExpenses).toFixed(2));
+      const finalEffectiveRate = weightVal > 0 ? Number((finalTotalCost / weightVal).toFixed(2)) : derived.effectiveRatePerKg;
+      const finalBalancePayable = Number(Math.max(0, finalTotalCost - amountPaid).toFixed(2));
+      const finalPaymentStatus = derivePaymentStatus(finalTotalCost, amountPaid);
 
       const newPurchase: Purchase = {
         id: `pur-${Date.now()}-${idx}`,
@@ -5833,21 +5951,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         batchYieldWeightKg: parsedBatchYieldWeightKg,
         batchYieldPct: parsedBatchYieldPct,
         isBatchYieldAllocated: false,
-        purchaseValue: derived.purchaseValue,
+        purchaseValue: finalPurchaseValue,
         damageWeightKg,
         damageRatePerKg,
         damageAmount: derived.damageAmount,
-        grossPurchaseValue: derived.grossPurchaseValue,
+        grossPurchaseValue: finalGrossPurchaseValue,
         expenseBreakdown,
         totalExpenses: derived.totalExpenses,
         isBatchAllocated: false,
-        totalCost: derived.totalCost,
-        effectiveRatePerKg: derived.effectiveRatePerKg,
+        totalCost: finalTotalCost,
+        effectiveRatePerKg: finalEffectiveRate,
         directAmountPaid: amountPaid,
         amountPaid,
-        balancePayable: derived.balancePayable,
+        balancePayable: finalBalancePayable,
         dueDate: derived.dueDate,
-        paymentStatus: derived.paymentStatus,
+        paymentStatus: finalPaymentStatus,
         rejectionWeightKg: 0,
         remarks: remarks || (isDualSize ? `Combined lot of sizes ${primarySizeStr} & ${secondarySizeStr} (${weightVal} Kg total)` : 'Imported from Excel'),
         isVoided: false,

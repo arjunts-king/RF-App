@@ -28,7 +28,8 @@ import {
   normalizeKey,
   getFlexibleValue,
   formatExcelDate,
-  extractBoxesCountFromRow
+  extractBoxesCountFromRow,
+  parseNumeric
 } from '../utils/excelFormatters.ts';
 
 import {
@@ -3731,7 +3732,7 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
   assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
@@ -6063,7 +6064,7 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
 
   // 2. Verify Service Worker cache version is bumped to v35/v36 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v35 or v36');
+  assert.ok(swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v37');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
   assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=35 or v=36 query parameter');
@@ -6365,7 +6366,18 @@ test('Purchase Dashboard displays total boxes purchased alongside quantity, purc
 });
 
 test('Suite 79: Deepsea purchase box extraction from imported Excel & ledger/report integration', () => {
-  // 1. Direct column matching for deepsea & box variants
+  // 1. Safe numeric parsing handling commas, currencies, whitespace, parentheses
+  assert.equal(parseNumeric('48,32,88,093.10'), 483288093.1, 'Parses Indian formatted 48,32,88,093.10 correctly');
+  assert.equal(parseNumeric('45,54,67,239.92'), 455467239.92, 'Parses Indian formatted 45,54,67,239.92 correctly');
+  assert.equal(parseNumeric('₹ 48,32,88,093.10'), 483288093.1, 'Parses rupee formatted string');
+  assert.equal(parseNumeric(' 1,500.50 '), 1500.5, 'Parses trimmed comma float');
+  assert.equal(parseNumeric('(1,200.00)'), -1200, 'Parses parenthetical negative number');
+  assert.equal(parseNumeric('', 0), 0, 'Falls back on empty string');
+
+  // 2. Direct column matching for deepsea & box variants
+  assert.equal(extractBoxesCountFromRow({ 'No of Boxes Purchased of Deepsea': '1,200' }), 1200, 'Extracts from No of Boxes Purchased of Deepsea with commas');
+  assert.equal(extractBoxesCountFromRow({ 'No. of Boxes Purchased': 85 }), 85, 'Extracts from No. of Boxes Purchased');
+  assert.equal(extractBoxesCountFromRow({ 'Boxes Purchased of Deepsea': '450 boxes' }), 450, 'Extracts from Boxes Purchased of Deepsea');
   assert.equal(extractBoxesCountFromRow({ 'Deepsea Boxes': 45 }), 45, 'Extracts from Deepsea Boxes');
   assert.equal(extractBoxesCountFromRow({ 'Deep Sea Boxes': 60 }), 60, 'Extracts from Deep Sea Boxes');
   assert.equal(extractBoxesCountFromRow({ 'Deepsea No of Boxes': 75 }), 75, 'Extracts from Deepsea No of Boxes');
@@ -6378,14 +6390,19 @@ test('Suite 79: Deepsea purchase box extraction from imported Excel & ledger/rep
   assert.equal(extractBoxesCountFromRow({ 'Tubs': 22 }), 22, 'Extracts from Tubs');
   assert.equal(extractBoxesCountFromRow({ 'Cartons': 18 }), 18, 'Extracts from Cartons');
 
-  // 2. Fuzzy normalized column header matching
+  // 3. Strict safety: Monetary and weight columns must NEVER be mistaken for box counts
+  assert.equal(extractBoxesCountFromRow({ 'Deep Sea Fish Purchase': 455467239.92 }), 0, 'Does NOT treat Deep Sea Fish Purchase monetary column as boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Deepsea Purchase Value (INR)': 483288093.10 }), 0, 'Does NOT treat Deepsea Purchase Value monetary column as boxes');
+  assert.equal(extractBoxesCountFromRow({ 'Deep Sea Rate / Kg': 250 }), 0, 'Does NOT treat rate column as boxes');
+
+  // 4. Fuzzy normalized column header matching
   assert.equal(extractBoxesCountFromRow({ 'Total Deepsea Box Qty': 90 }), 90, 'Fuzzy matches deepsea box qty');
   assert.equal(extractBoxesCountFromRow({ 'Harbour Deep Sea Crates': 50 }), 50, 'Fuzzy matches harbour deep sea crates');
 
-  // 3. Regex extraction from text fields (remarks, notes, species, etc.)
+  // 5. Regex extraction from text fields (remarks, notes, species, etc.)
   assert.equal(extractBoxesCountFromRow({ remarks: 'Deepsea purchase 50 boxes arrived in good condition' }), 50, 'Extracts from remarks: 50 boxes');
   assert.equal(extractBoxesCountFromRow({ remarks: 'Deep sea: 25 box' }), 25, 'Extracts from remarks: Deep sea: 25 box');
-  assert.equal(extractBoxesCountFromRow({ notes: 'Purchased 40 bxs deepsea trawler landing' }), 40, 'Extracts from notes: 40 bxs');
+  assert.equal(extractBoxesCountFromRow({ notes: 'Purchased 1,500 bxs deepsea trawler landing' }), 1500, 'Extracts from notes: 1,500 bxs with comma');
   assert.equal(extractBoxesCountFromRow({ species: 'Ribbonfish (30 boxes)' }), 30, 'Extracts from species: 30 boxes');
   assert.equal(extractBoxesCountFromRow({ comments: 'Deepsea 65' }), 65, 'Extracts from comments: Deepsea 65');
   assert.equal(extractBoxesCountFromRow({ remarks: 'Box - 15' }), 15, 'Extracts from remarks: Box - 15');
@@ -6393,7 +6410,13 @@ test('Suite 79: Deepsea purchase box extraction from imported Excel & ledger/rep
   assert.equal(extractBoxesCountFromRow({}), 0, 'Returns 0 for empty row');
   assert.equal(extractBoxesCountFromRow(null), 0, 'Returns 0 for null');
 
-  // 4. Verification that supplier ledger statement includes boxes in briefDetails
+  // 6. Valuation tie-out validation for user import scenario
+  const userFishPurchase = 455467239.92;
+  const userFinalPurchase = 483288093.10;
+  const expectedLandingExpenses = Number((userFinalPurchase - userFishPurchase).toFixed(2));
+  assert.equal(expectedLandingExpenses, 27820853.18, 'Expected Landing Expenses must tie out to exactly ₹2,78,20,853.18');
+
+  // 7. Verification that supplier ledger statement includes boxes in briefDetails
   const mockSupplier = {
     id: 'sup-1',
     name: 'Harbour Trawlers Co',

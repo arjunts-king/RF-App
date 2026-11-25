@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V36 - Purchase Dashboard Box Purchases Breakdown)
-const CACHE_VERSION = 'seafood-pwa-v36';
+// Seafood Purchase App - Offline PWA Service Worker (V37 - Deepsea Box Purchases & Valuation Tie-out)
+const CACHE_VERSION = 'seafood-pwa-v37';
 const STATIC_ASSETS = [
   './',
   './index.html',

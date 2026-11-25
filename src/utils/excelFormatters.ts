@@ -95,26 +95,98 @@ export function formatExcelDate(rawDate: any): string {
 }
 
 /**
+ * Safely parses any numeric value from an imported Excel or CSV cell.
+ * Handles numbers, strings with commas (e.g. "48,32,88,093.10", "45,54,67,239.92", "1,500.50"),
+ * currency symbols (₹, Rs, INR, $, USD, €, EUR, £, GBP), whitespace, quotes, parentheses for
+ * negative numbers e.g. "(1,200.00)", and percentage signs.
+ * Returns fallback (default 0) if parsing fails.
+ */
+export function parseNumeric(val: any, fallback = 0): number {
+  if (val === undefined || val === null || val === '') return fallback;
+  if (typeof val === 'number') return isNaN(val) ? fallback : val;
+  const str = String(val).trim();
+  if (!str) return fallback;
+
+  // Check parenthetical negative e.g. (1,500.50)
+  const isParenthetical = /^\s*\((.*)\)\s*$/.test(str);
+  const core = isParenthetical ? str.replace(/^\s*\((.*)\)\s*$/, '$1') : str;
+
+  // Strip currency symbols, spaces, commas, quotes, and units
+  const cleaned = core
+    .replace(/[₹$€£\s,`'"]/g, '')
+    .replace(/\b(?:INR|Rs\.?|USD|EUR|GBP|Kg|Kgs|Nos?)\b/gi, '')
+    .replace(/%$/, '')
+    .trim();
+
+  if (!cleaned) return fallback;
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return fallback;
+  return isParenthetical ? -Math.abs(num) : num;
+}
+
+/**
  * Intelligently extracts the number of boxes from an imported row or object.
  * Supports:
- * - Direct column headers: "No of Boxes", "No. of Boxes", "Boxes", "Box", "Deepsea Boxes", "Deep Sea Boxes", "Deepsea", "Deep Sea", "Crates", "Tubs", "Cartons", etc.
- * - Fuzzy normalized matching across keys containing "box", "deepsea", "crate", "tub"
+ * - Direct column headers: "No of Boxes Purchased of Deepsea", "No. of Boxes Purchased", "Boxes Purchased",
+ *   "Deepsea Boxes", "Deep Sea Boxes", "Deepsea", "Deep Sea", "No of Boxes", "No. of Boxes", "Boxes", "Crates", "Tubs", "Cartons", etc.
+ * - Comma-formatted box quantities (e.g. "1,500", "1,200 boxes")
+ * - Sanitized fuzzy scanning that strictly ignores monetary and weight columns
  * - Inline embedded box mentions in text fields (e.g. remarks, species, notes): "Deepsea 50 boxes", "40 boxes", "Box: 30", "Deepsea purchase 45 boxes"
  */
 export function extractBoxesCountFromRow(row: Record<string, any>): number {
   if (!row || typeof row !== 'object') return 0;
 
-  // 1. Direct explicit column aliases matching via getFlexibleValue
+  // 1. Check exact "Deepsea", "Deep Sea", or "DS" column if present and not a monetary header
+  const exactDeepseaVal =
+    row['Deepsea'] ??
+    row['Deep Sea'] ??
+    row['Deepsea '] ??
+    row['Deep Sea '] ??
+    row['deepsea'] ??
+    row['deep_sea'] ??
+    row['Deep-Sea'] ??
+    row['DS'] ??
+    row['D.S.'] ??
+    row['D.S'];
+
+  if (exactDeepseaVal !== undefined && exactDeepseaVal !== null && exactDeepseaVal !== '') {
+    const num = typeof exactDeepseaVal === 'number' ? exactDeepseaVal : parseInt(String(exactDeepseaVal).replace(/[,\s]/g, ''), 10);
+    if (!isNaN(num) && num > 0 && num < 100000) return Math.round(num);
+  }
+
+  // 2. Direct explicit column aliases matching via getFlexibleValue
   const directVal = getFlexibleValue(row, [
+    'noofboxespurchasedofdeepsea',
+    'noofboxespurchaseddeepsea',
+    'boxespurchasedofdeepsea',
+    'boxespurchaseddeepsea',
+    'noofboxespurchased',
+    'boxespurchased',
+    'deepseaboxespurchased',
+    'deepseapurchaseboxes',
+    'deepseapurchasenoofboxes',
+    'deepseanoofboxes',
     'deepseaboxes',
     'deepseabox',
-    'deepseanoofboxes',
     'deepseaboxcount',
     'deepseaqty',
     'deepseacount',
-    'deepsea',
     'deepseapcs',
     'deepseabags',
+    'deepseacrates',
+    'deepseatubs',
+    'deepseacartons',
+    'deepsealandingboxes',
+    'deepseatrawlerboxes',
+    'trawlerboxes',
+    'boatboxes',
+    'noofdeepseaboxes',
+    'noofboxesdeepsea',
+    'boxesdeepsea',
+    'noofboxesds',
+    'boxesds',
+    'dsboxes',
+    'dsnoofboxes',
     'noofboxes',
     'boxes',
     'box',
@@ -141,33 +213,63 @@ export function extractBoxesCountFromRow(row: Record<string, any>): number {
     if (typeof directVal === 'number' && !isNaN(directVal) && directVal > 0) {
       return Math.round(directVal);
     }
-    const str = String(directVal).trim();
-    const m = str.match(/(\d+)/);
+    const cleanStr = String(directVal).replace(/[,\s]/g, '').trim();
+    const m = cleanStr.match(/(\d+)/);
     if (m) {
       const parsed = parseInt(m[1], 10);
-      if (!isNaN(parsed) && parsed > 0) return parsed;
+      if (!isNaN(parsed) && parsed > 0 && parsed < 100000) return parsed;
     }
   }
 
-  // 2. Scan all object keys for any key containing "deepsea", "deep", "box", "crate", "tub"
+  // 2. Scan all object keys for any key containing "box", "crate", "tub", "carton", or deepsea box descriptors
+  // STRICT SAFETY: Skip any keys that represent monetary amounts, valuations, rates, prices, costs, or weights.
   for (const [key, val] of Object.entries(row)) {
     if (val === undefined || val === null || val === '') continue;
     const norm = normalizeKey(key);
+
     if (
+      norm.includes('amount') ||
+      norm.includes('value') ||
+      norm.includes('val') ||
+      norm.includes('rate') ||
+      norm.includes('price') ||
+      norm.includes('cost') ||
+      norm.includes('inr') ||
+      norm.includes('rs') ||
+      norm.includes('rupee') ||
+      norm.includes('currency') ||
+      norm.includes('weight') ||
+      norm.includes('kg') ||
+      norm.includes('date') ||
+      norm.includes('supplier') ||
+      norm.includes('location') ||
+      norm.includes('centre') ||
+      norm.includes('batch') ||
+      norm.includes('invoice') ||
+      norm.includes('bill')
+    ) {
+      continue;
+    }
+
+    const isBoxKey =
       norm.includes('box') ||
       norm.includes('crate') ||
       norm.includes('tub') ||
-      norm.includes('deepsea') ||
-      norm.includes('deep')
-    ) {
-      if (typeof val === 'number' && !isNaN(val) && val > 0) {
+      norm.includes('carton') ||
+      norm.includes('basket') ||
+      norm.includes('bag') ||
+      ((norm.includes('deepsea') || norm.includes('deep')) &&
+        (norm.includes('qty') || norm.includes('count') || norm.includes('nos') || norm.includes('pcs')));
+
+    if (isBoxKey) {
+      if (typeof val === 'number' && !isNaN(val) && val > 0 && val < 100000) {
         return Math.round(val);
       }
-      const str = String(val).trim();
-      const m = str.match(/(\d+)/);
+      const cleanStr = String(val).replace(/[,\s]/g, '').trim();
+      const m = cleanStr.match(/(\d+)/);
       if (m) {
         const parsed = parseInt(m[1], 10);
-        if (!isNaN(parsed) && parsed > 0) return parsed;
+        if (!isNaN(parsed) && parsed > 0 && parsed < 100000) return parsed;
       }
     }
   }
@@ -197,31 +299,29 @@ export function extractBoxesCountFromRow(row: Record<string, any>): number {
     row.batchno,
     row['Batch No'],
     row.lotno,
-    row['Lot No'],
-    row.supplierboxid,
-    row['Supplier Box ID']
+    row['Lot No']
   ];
 
   for (const text of textCandidates) {
     if (!text) continue;
     const s = String(text);
-    // e.g. "50 boxes", "50 box", "50 bxs", "50 bx", "50 crates", "50 tubs"
-    const m1 = s.match(/(\d+)\s*(?:deep\s*sea\s*)?(?:box(?:es)?|bxs|bx|crates?|tubs?|cartons?|baskets?|bags?)\b/i);
+    // e.g. "50 boxes", "1,500 boxes", "50 box", "50 bxs", "50 bx", "50 crates", "50 tubs"
+    const m1 = s.match(/(\d+(?:,\d+)?)\s*(?:deep\s*sea\s*)?(?:box(?:es)?|bxs|bx|crates?|tubs?|cartons?|baskets?|bags?|nos?)\b/i);
     if (m1) {
-      const p = parseInt(m1[1], 10);
-      if (!isNaN(p) && p > 0) return p;
+      const p = parseInt(m1[1].replace(/,/g, ''), 10);
+      if (!isNaN(p) && p > 0 && p < 100000) return p;
     }
-    // e.g. "boxes: 50", "box = 50", "box - 50", "boxes-50"
-    const m2 = s.match(/(?:box(?:es)?|crates?|tubs?|cartons?)\s*[:=-]\s*(\d+)/i);
+    // e.g. "boxes: 50", "box = 50", "box - 50", "boxes-50", "boxes: 1,500"
+    const m2 = s.match(/(?:box(?:es)?|crates?|tubs?|cartons?)\s*[:=-]\s*(\d+(?:,\d+)?)/i);
     if (m2) {
-      const p = parseInt(m2[1], 10);
-      if (!isNaN(p) && p > 0) return p;
+      const p = parseInt(m2[1].replace(/,/g, ''), 10);
+      if (!isNaN(p) && p > 0 && p < 100000) return p;
     }
     // e.g. "Deepsea 50", "Deep sea 50", "Deepsea - 50", "Deep sea purchase 50"
-    const m3 = s.match(/deep\s*sea(?:\s*purchase)?\s*[:=-]?\s*(\d+)/i);
+    const m3 = s.match(/deep\s*sea(?:\s*purchase)?\s*[:=-]?\s*(\d+(?:,\d+)?)/i);
     if (m3) {
-      const p = parseInt(m3[1], 10);
-      if (!isNaN(p) && p > 0) return p;
+      const p = parseInt(m3[1].replace(/,/g, ''), 10);
+      if (!isNaN(p) && p > 0 && p < 100000) return p;
     }
   }
 

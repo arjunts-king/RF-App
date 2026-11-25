@@ -389,7 +389,18 @@ export const ExcelImportView: React.FC<{
           setSelectedModule('purchase');
           setSelectedEntity('locations');
           showToast('Detected Landing Centre sheet.', 'info');
-        } else if (sName.includes('purchase') || colKeys.includes('rateperkg') || colKeys.includes('effectivecost')) {
+        } else if (
+          sName.includes('purchase') ||
+          colKeys.includes('rateperkg') ||
+          colKeys.includes('effectivecost') ||
+          colKeys.includes('fishpurchase') ||
+          colKeys.includes('fishpurchasetotal') ||
+          colKeys.includes('finalpurchasevalue') ||
+          colKeys.includes('totalpurchasevalue') ||
+          colKeys.includes('deepseaboxes') ||
+          colKeys.includes('deepsea') ||
+          (colKeys.includes('weight') && (colKeys.includes('rate') || colKeys.includes('price')))
+        ) {
           setSelectedModule('purchase');
           setSelectedEntity('purchases');
         }
@@ -848,6 +859,7 @@ export const ExcelImportView: React.FC<{
           ? `${sz?.name || ''} & ${sizes.find((s) => s.id === p.secondarySizeId)?.name || ''}`
           : (sz?.name || ''),
         'Piece Count': cnt?.name || '',
+        'No of Boxes': p.boxesCount || 0,
         'Weight (Kg)': p.weightKg,
         'Yield Weight (Kg)': p.yieldWeightKg ?? '',
         'Yield %': p.yieldPct ? `${p.yieldPct}%` : (p.yieldWeightKg && p.weightKg ? `${((p.yieldWeightKg / p.weightKg) * 100).toFixed(1)}%` : ''),
