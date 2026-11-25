@@ -19,7 +19,8 @@ import {
   Award,
   AlertCircle,
   EyeOff,
-  Fish
+  Fish,
+  Boxes
 } from 'lucide-react';
 import {
   BarChartVisual,
@@ -315,7 +316,9 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
       const list = activePurchases.filter((p) => matchesSpecies(p, sp.id));
       const weight = list.reduce((s, p) => s + p.weightKg, 0);
       const value = list.reduce((s, p) => s + p.purchaseValue, 0);
+      const expenses = list.reduce((s, p) => s + (p.totalExpenses || 0), 0);
       const cost = list.reduce((s, p) => s + p.totalCost, 0);
+      const boxesCount = list.reduce((s, p) => s + (p.boxesCount || 0), 0);
       const avgRate = weight > 0 ? value / weight : 0;
       const effRate = weight > 0 ? cost / weight : 0;
       const directSp = findSpecies(sp.id);
@@ -326,7 +329,9 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         category: directSp?.category || 'Raw Catch',
         lotsCount: list.length,
         weight,
+        boxesCount,
         value,
+        expenses,
         cost,
         avgRate,
         effRate
@@ -783,6 +788,9 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
         { key: 'category', label: 'Category' },
         { key: 'lotsCount', label: 'Lots' },
         { key: 'weight', label: 'Total Weight' },
+        { key: 'boxesCount', label: 'Total Boxes' },
+        { key: 'value', label: 'Purchase Value' },
+        { key: 'expenses', label: 'Expenses' },
         { key: 'avgRate', label: 'Avg Rate' },
         { key: 'effRate', label: 'Effective Rate' },
         { key: 'cost', label: 'Total Cost' }
@@ -1167,6 +1175,9 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
                   <th className="py-2.5 px-3">Category</th>
                   <th className="py-2.5 px-3 text-center">Lots</th>
                   <th className="py-2.5 px-3 text-right">Total Weight</th>
+                  <th className="py-2.5 px-3 text-center">Total Boxes</th>
+                  <th className="py-2.5 px-3 text-right">Purchase Value</th>
+                  <th className="py-2.5 px-3 text-right">Expenses</th>
                   <th className="py-2.5 px-3 text-right">Avg Purchase Rate</th>
                   <th className="py-2.5 px-3 text-right">Effective Landed Rate</th>
                   <th className="py-2.5 px-3 text-right">Total Landed Cost</th>
@@ -1176,7 +1187,7 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
               <tbody className="divide-y divide-gray-100 font-medium">
                 {speciesAnalysis.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-ink-500">
+                    <td colSpan={11} className="py-8 text-center text-ink-500">
                       No purchase transactions recorded for any species yet.
                     </td>
                   </tr>
@@ -1187,6 +1198,18 @@ export const OperationalReportsHub: React.FC<OperationalReportsHubProps> = ({ on
                       <td className="py-3 px-3 text-ink-500">{sp.category}</td>
                       <td className="py-3 px-3 text-center">{sp.lotsCount}</td>
                       <td className="py-3 px-3 text-right font-bold">{formatKg(sp.weight)}</td>
+                      <td className="py-3 px-3 text-center">
+                        {sp.boxesCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            <Boxes className="w-3 h-3 text-amber-600" />
+                            {sp.boxesCount.toLocaleString('en-IN')} Boxes
+                          </span>
+                        ) : (
+                          <span className="text-ink-400 font-mono">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-right font-medium">{formatINR(sp.value)}</td>
+                      <td className="py-3 px-3 text-right font-medium text-amber-700">{formatINR(sp.expenses)}</td>
                       <td className="py-3 px-3 text-right">₹{sp.avgRate.toFixed(2)} / Kg</td>
                       <td className="py-3 px-3 text-right font-bold text-rose-700">₹{sp.effRate.toFixed(2)} / Kg</td>
                       <td className="py-3 px-3 text-right font-extrabold text-ink-900">{formatINR(sp.cost)}</td>

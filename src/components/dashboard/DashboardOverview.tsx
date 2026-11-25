@@ -23,7 +23,8 @@ import {
   Anchor,
   ShoppingBag,
   Activity,
-  Calendar
+  Calendar,
+  Boxes
 } from 'lucide-react';
 
 interface DashboardOverviewProps {
@@ -318,6 +319,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     const totalCost = filteredPurchases.reduce((s, p) => s + p.totalCost, 0);
     const totalExpenses = filteredPurchases.reduce((s, p) => s + p.totalExpenses, 0);
     const totalOutstanding = filteredPurchases.reduce((s, p) => s + p.balancePayable, 0);
+    const totalBoxes = filteredPurchases.reduce((s, p) => s + (p.boxesCount || 0), 0);
 
     const avgRate = totalWeight > 0 ? totalPurchaseValue / totalWeight : 0;
     const effectiveCostPerKg = totalWeight > 0 ? totalCost / totalWeight : 0;
@@ -329,6 +331,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       totalCost,
       totalExpenses,
       totalOutstanding,
+      totalBoxes,
       avgRate,
       effectiveCostPerKg,
       activeSupplierCount
@@ -341,6 +344,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     totalCost,
     totalExpenses,
     totalOutstanding,
+    totalBoxes,
     avgRate,
     effectiveCostPerKg,
     activeSupplierCount
@@ -348,16 +352,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
   // Charts 1, 2, 3: Single-pass O(P) grouping accumulator instead of repeated O(N * M) filtering
   const { speciesData, expenseBreakdownData, supplierOutstandingData } = useMemo(() => {
-    const spAccumulator = new Map<string, { name: string; weight: number; cost: number }>();
+    const spAccumulator = new Map<string, {
+      name: string;
+      weight: number;
+      purchaseValue: number;
+      expenses: number;
+      cost: number;
+      boxesCount: number;
+      lotsCount: number;
+      avgRate: number;
+      effectiveCostPerKg: number;
+    }>();
     const expMap = new Map<string, number>();
     const suppMap = new Map<string, number>();
 
     for (const p of filteredPurchases) {
       if (p.speciesId) {
         const resolvedName = resolveSpeciesName(p.speciesId);
-        const cur = spAccumulator.get(resolvedName) || { name: resolvedName, weight: 0, cost: 0 };
+        const cur = spAccumulator.get(resolvedName) || {
+          name: resolvedName,
+          weight: 0,
+          purchaseValue: 0,
+          expenses: 0,
+          cost: 0,
+          boxesCount: 0,
+          lotsCount: 0,
+          avgRate: 0,
+          effectiveCostPerKg: 0
+        };
         cur.weight += p.weightKg || 0;
+        cur.purchaseValue += p.purchaseValue || 0;
+        cur.expenses += p.totalExpenses || 0;
         cur.cost += p.totalCost || 0;
+        cur.boxesCount += p.boxesCount || 0;
+        cur.lotsCount += 1;
         spAccumulator.set(resolvedName, cur);
       }
       if (p.expenseBreakdown) {
@@ -374,6 +402,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
     const speciesList = Array.from(spAccumulator.values())
       .filter((d) => d.weight > 0)
+      .map((d) => ({
+        ...d,
+        avgRate: d.weight > 0 ? d.purchaseValue / d.weight : 0,
+        effectiveCostPerKg: d.weight > 0 ? d.cost / d.weight : 0
+      }))
       .sort((a, b) => b.weight - a.weight);
 
     const expenseList = expenseTypes
@@ -729,9 +762,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     >
                       {formatKg(totalWeight)}
                     </span>
+                    {totalBoxes > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0 inline-flex items-center gap-1">
+                        <Boxes className="w-3 h-3 text-amber-600" />
+                        {totalBoxes.toLocaleString('en-IN')} Boxes
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Weighed landings across all centres">
-                    Weighed landings across all centres
+                    {totalBoxes > 0
+                      ? `Weighed landings across all centres • ${totalBoxes.toLocaleString('en-IN')} boxes`
+                      : 'Weighed landings across all centres'}
                   </p>
                 </div>
               </div>
@@ -1049,9 +1090,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     >
                       {formatKg(totalWeight)}
                     </span>
+                    {totalBoxes > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0 inline-flex items-center gap-1">
+                        <Boxes className="w-3 h-3 text-amber-600" />
+                        {totalBoxes.toLocaleString('en-IN')} Boxes
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-ink-500 leading-snug line-clamp-1" title="Weighed landings across all centres">
-                    Weighed landings across all centres
+                    {totalBoxes > 0
+                      ? `Weighed landings across all centres • ${totalBoxes.toLocaleString('en-IN')} boxes`
+                      : 'Weighed landings across all centres'}
                   </p>
                 </div>
               </div>
@@ -1391,8 +1440,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                   <h5 className="font-extrabold text-sm text-ink-900 group-hover:text-rose-700 transition truncate">
                     {supp?.name || 'Unknown Supplier'}
                   </h5>
-                  <p className="text-xs text-ink-500 mt-0.5 truncate">
-                    {spName} · <span className="font-semibold text-ink-700">{formatKg(p.weightKg)}</span>
+                  <p className="text-xs text-ink-500 mt-0.5 truncate flex items-center gap-1.5 flex-wrap">
+                    <span>{spName}</span>
+                    <span>·</span>
+                    <span className="font-semibold text-ink-700">{formatKg(p.weightKg)}</span>
+                    {p.boxesCount > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                          <Boxes className="w-2.5 h-2.5 text-amber-600" />
+                          {p.boxesCount} {p.boxesCount === 1 ? 'Box' : 'Boxes'}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -1556,21 +1616,37 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             <p className="text-xs text-ink-500 py-12 text-center italic">No species data recorded yet.</p>
           ) : (
             <div className="space-y-3">
-              {speciesData.slice(0, 5).map((item) => {
+              {speciesData.slice(0, 6).map((item) => {
                 const weightPct = totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0;
                 return (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex justify-between text-xs font-medium">
-                      <span className="font-bold text-ink-900 truncate max-w-[220px]">{item.name}</span>
-                      <span className="text-ink-500 text-[11px] font-mono whitespace-nowrap">
-                        {formatKg(item.weight)} ({weightPct.toFixed(1)}%)
+                  <div key={item.name} className="p-2.5 rounded-xl bg-gray-50/70 hover:bg-gray-50 border border-gray-100 transition space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Fish className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span className="font-bold text-ink-900 truncate max-w-[180px]">{item.name}</span>
+                        {item.boxesCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold shrink-0">
+                            <Boxes className="w-2.5 h-2.5 text-amber-600" />
+                            {item.boxesCount.toLocaleString('en-IN')} Boxes
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-ink-600 text-[11px] font-mono font-bold whitespace-nowrap">
+                        {formatKg(item.weight)} <span className="text-ink-400 font-normal">({weightPct.toFixed(1)}%)</span>
                       </span>
                     </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-rose-600 h-full rounded-full transition-all duration-300"
                         style={{ width: `${weightPct}%` }}
                       />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-ink-500 font-mono pt-0.5">
+                      <span>Purch: <strong className="text-ink-800">{formatINR(item.purchaseValue)}</strong></span>
+                      <span>Exp: <strong className="text-amber-700">{formatINR(item.expenses)}</strong></span>
+                      <span>Landed: <strong className="text-rose-700">{formatINR(item.cost)}</strong></span>
                     </div>
                   </div>
                 );
@@ -1717,18 +1793,33 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               speciesData.map((item) => {
                 const weightPct = totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0;
                 return (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex justify-between text-xs font-medium">
-                      <span className="font-bold text-ink-900 line-clamp-1">{item.name}</span>
+                  <div key={item.name} className="p-2.5 rounded-xl bg-gray-50/70 border border-gray-100 hover:border-gray-200 transition space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-bold text-ink-900 truncate">{item.name}</span>
+                        {item.boxesCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold shrink-0">
+                            <Boxes className="w-2.5 h-2.5 text-amber-600" />
+                            {item.boxesCount.toLocaleString('en-IN')} Boxes
+                          </span>
+                        )}
+                      </div>
                       <span className="text-ink-500 text-[11px] font-mono whitespace-nowrap">
                         {formatKg(item.weight)} ({weightPct.toFixed(1)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-rose-600 h-full rounded-full transition-all duration-300"
                         style={{ width: `${weightPct}%` }}
                       />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-ink-500 font-mono">
+                      <span>Purch: <strong className="text-ink-800">{formatINR(item.purchaseValue)}</strong></span>
+                      <span>Exp: <strong className="text-amber-700">{formatINR(item.expenses)}</strong></span>
+                      <span>Landed: <strong className="text-rose-700">{formatINR(item.cost)}</strong></span>
                     </div>
                   </div>
                 );
@@ -1813,6 +1904,154 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               })
             )}
           </div>
+        </div>
+      </div>
+
+      {/* 8. PRODUCT-WISE PROCUREMENT BREAKDOWN (With Boxes Count, Quantity, Purchase & Expense Amounts) */}
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
+              <Boxes className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-ink-900 tracking-tight flex items-center gap-2">
+                Product-wise Procurement Breakdown
+                {speciesData.some((s) => s.boxesCount > 0) && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    <Boxes className="w-3 h-3 text-amber-600" />
+                    Box Purchases Active
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                Breakdown of procured quantities, total box purchases, base value, direct expenses, and landed cost by product.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-ink-600 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-200">
+              {speciesData.length} {speciesData.length === 1 ? 'Variety' : 'Varieties'}
+            </span>
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('fish-ledger')}
+                className="text-xs font-bold text-rose-700 hover:text-rose-900 px-3 py-1 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 transition inline-flex items-center gap-1"
+              >
+                <span>Fish Ledger</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-gray-50/75 border-b border-gray-100 text-ink-600 font-bold uppercase tracking-wider text-[11px]">
+              <tr>
+                <th className="py-3 px-4">Product / Species</th>
+                <th className="py-3 px-3 text-center">Lots</th>
+                <th className="py-3 px-3 text-right">Procured Quantity</th>
+                <th className="py-3 px-3 text-center">Total Boxes Purchased</th>
+                <th className="py-3 px-3 text-right">Purchase Amount</th>
+                <th className="py-3 px-3 text-right">Direct Expenses</th>
+                <th className="py-3 px-3 text-right">Total Landed Cost</th>
+                <th className="py-3 px-3 text-right">Avg Buy Rate</th>
+                <th className="py-3 px-3 text-right">Effective Landed Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 font-medium">
+              {speciesData.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-10 text-center text-ink-400 italic">
+                    No purchase data available for the current filter criteria.
+                  </td>
+                </tr>
+              ) : (
+                speciesData.map((item) => (
+                  <tr key={item.name} className="hover:bg-rose-50/30 transition">
+                    <td className="py-3 px-4 font-bold text-ink-900">
+                      <div className="flex items-center gap-2">
+                        <Fish className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span className="truncate max-w-[200px]">{item.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-center font-semibold text-ink-700">
+                      {item.lotsCount}
+                    </td>
+                    <td className="py-3 px-3 text-right font-black font-mono text-ink-900">
+                      {formatKg(item.weight)}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      {item.boxesCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                          <Boxes className="w-3.5 h-3.5 text-amber-600" />
+                          {item.boxesCount.toLocaleString('en-IN')} Boxes
+                        </span>
+                      ) : (
+                        <span className="text-ink-400 font-mono">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold font-mono text-ink-800">
+                      {formatINR(item.purchaseValue)}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold font-mono text-amber-700">
+                      {formatINR(item.expenses)}
+                    </td>
+                    <td className="py-3 px-3 text-right font-black font-mono text-rose-700">
+                      {formatINR(item.cost)}
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono text-ink-600">
+                      ₹{item.avgRate.toFixed(2)}/Kg
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold font-mono text-rose-800">
+                      ₹{item.effectiveCostPerKg.toFixed(2)}/Kg
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {speciesData.length > 0 && (
+              <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200 text-ink-900 text-xs">
+                <tr>
+                  <td className="py-3 px-4 uppercase tracking-wider font-extrabold">Total</td>
+                  <td className="py-3 px-3 text-center font-mono">
+                    {speciesData.reduce((s, i) => s + i.lotsCount, 0)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black font-mono text-ink-900">
+                    {formatKg(totalWeight)}
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    {totalBoxes > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                        <Boxes className="w-3.5 h-3.5 text-amber-700" />
+                        {totalBoxes.toLocaleString('en-IN')} Boxes
+                      </span>
+                    ) : (
+                      <span className="text-ink-400 font-mono">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black font-mono text-ink-900">
+                    {formatINR(totalPurchaseValue)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black font-mono text-amber-800">
+                    {formatINR(totalExpenses)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-black font-mono text-rose-800">
+                    {formatINR(totalCost)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-ink-700">
+                    ₹{avgRate.toFixed(2)}/Kg
+                  </td>
+                  <td className="py-3 px-3 text-right font-black font-mono text-rose-900">
+                    ₹{effectiveCostPerKg.toFixed(2)}/Kg
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
         </div>
       </div>
     </div>

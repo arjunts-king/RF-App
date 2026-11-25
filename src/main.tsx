@@ -17,14 +17,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   if ('caches' in window) {
     window.caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== 'seafood-pwa-v35').map((key) => window.caches.delete(key))
+        keys.filter((key) => key !== 'seafood-pwa-v36').map((key) => window.caches.delete(key))
       );
     }).catch(() => {});
   }
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js?v=35`, { updateViaCache: 'none' })
+      .register(`${import.meta.env.BASE_URL}sw.js?v=36`, { updateViaCache: 'none' })
       .then((reg) => {
         // If a new worker is waiting, activate immediately
         if (reg.waiting) {

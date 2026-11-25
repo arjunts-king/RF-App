@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V35 - Network-First Pipeline & Product Deduplication)
-const CACHE_VERSION = 'seafood-pwa-v35';
+// Seafood Purchase App - Offline PWA Service Worker (V36 - Purchase Dashboard Box Purchases Breakdown)
+const CACHE_VERSION = 'seafood-pwa-v36';
 const STATIC_ASSETS = [
   './',
   './index.html',

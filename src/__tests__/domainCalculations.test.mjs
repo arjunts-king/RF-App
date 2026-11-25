@@ -6242,3 +6242,123 @@ test('E-SEAL Number component in rows 16-18 of invoice entry form and export mod
   const dashCode = fs.readFileSync(path.resolve('src/components/sales/SalesDashboard.tsx'), 'utf8');
   assert.ok(dashCode.includes('inv.eSealNo'), 'SalesDashboard must allow search by eSealNo');
 });
+
+// ============================================================================
+// SUITE 78: Purchase Dashboard Product-wise Total Boxes, Quantity, Purchase & Expense Breakdown
+// ============================================================================
+test('Purchase Dashboard displays total boxes purchased alongside quantity, purchase, and expense amounts', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Static Verification of DashboardOverview.tsx
+  const dashCode = fs.readFileSync(path.resolve('src/components/dashboard/DashboardOverview.tsx'), 'utf8');
+  assert.ok(dashCode.includes('boxesCount'), 'DashboardOverview must track boxesCount in speciesData');
+  assert.ok(dashCode.includes('totalBoxes'), 'DashboardOverview must calculate totalBoxes in kpis');
+  assert.ok(dashCode.includes('Product-wise Procurement Breakdown'), 'DashboardOverview must render Product-wise Procurement Breakdown table');
+  assert.ok(dashCode.includes('Total Boxes Purchased'), 'DashboardOverview must include Total Boxes Purchased table header');
+  assert.ok(dashCode.includes('item.boxesCount > 0'), 'DashboardOverview must condition display on item having box purchases');
+
+  // 2. Static Verification of OperationalReportsHub.tsx
+  const reportCode = fs.readFileSync(path.resolve('src/components/reports/OperationalReportsHub.tsx'), 'utf8');
+  assert.ok(reportCode.includes('boxesCount = list.reduce'), 'OperationalReportsHub must track boxesCount in speciesAnalysis');
+  assert.ok(reportCode.includes('sp.boxesCount > 0'), 'OperationalReportsHub must display box count badge when boxes exist');
+
+  // 3. Functional Accumulator Logic Verification
+  const mockPurchases = [
+    {
+      speciesId: 'sp-mackerel',
+      weightKg: 1000,
+      boxesCount: 30,
+      purchaseValue: 200000,
+      totalExpenses: 12000,
+      totalCost: 212000,
+      balancePayable: 50000
+    },
+    {
+      speciesId: 'sp-mackerel',
+      weightKg: 500,
+      boxesCount: 20,
+      purchaseValue: 100000,
+      totalExpenses: 6000,
+      totalCost: 106000,
+      balancePayable: 0
+    },
+    {
+      speciesId: 'sp-sardine',
+      weightKg: 800,
+      boxesCount: 25,
+      purchaseValue: 80000,
+      totalExpenses: 8000,
+      totalCost: 88000,
+      balancePayable: 20000
+    },
+    {
+      speciesId: 'sp-squid', // No box purchases (bulk landings)
+      weightKg: 600,
+      boxesCount: 0,
+      purchaseValue: 150000,
+      totalExpenses: 7000,
+      totalCost: 157000,
+      balancePayable: 30000
+    }
+  ];
+
+  const spAccumulator = new Map();
+  for (const p of mockPurchases) {
+    const name = p.speciesId;
+    const cur = spAccumulator.get(name) || {
+      name,
+      weight: 0,
+      purchaseValue: 0,
+      expenses: 0,
+      cost: 0,
+      boxesCount: 0,
+      lotsCount: 0
+    };
+    cur.weight += p.weightKg || 0;
+    cur.purchaseValue += p.purchaseValue || 0;
+    cur.expenses += p.totalExpenses || 0;
+    cur.cost += p.totalCost || 0;
+    cur.boxesCount += p.boxesCount || 0;
+    cur.lotsCount += 1;
+    spAccumulator.set(name, cur);
+  }
+
+  const speciesList = Array.from(spAccumulator.values()).map((d) => ({
+    ...d,
+    avgRate: d.weight > 0 ? d.purchaseValue / d.weight : 0,
+    effectiveCostPerKg: d.weight > 0 ? d.cost / d.weight : 0
+  }));
+
+  // Assert Mackerel aggregations (purchased in boxes)
+  const mackerel = speciesList.find((s) => s.name === 'sp-mackerel');
+  assert.ok(mackerel, 'Mackerel must exist');
+  assert.equal(mackerel.weight, 1500, 'Mackerel total weight should be 1,500 Kg');
+  assert.equal(mackerel.boxesCount, 50, 'Mackerel total boxes should be 50 (30 + 20)');
+  assert.equal(mackerel.purchaseValue, 300000, 'Mackerel purchase amount should be ₹3,00,000');
+  assert.equal(mackerel.expenses, 18000, 'Mackerel expenses should be ₹18,000');
+  assert.equal(mackerel.cost, 318000, 'Mackerel landed cost should be ₹3,18,000');
+  assert.equal(mackerel.avgRate, 200, 'Mackerel avg rate should be ₹200/Kg');
+  assert.equal(mackerel.effectiveCostPerKg, 212, 'Mackerel effective landed rate should be ₹212/Kg');
+
+  // Assert Sardine aggregations (purchased in boxes)
+  const sardine = speciesList.find((s) => s.name === 'sp-sardine');
+  assert.ok(sardine, 'Sardine must exist');
+  assert.equal(sardine.weight, 800, 'Sardine total weight should be 800 Kg');
+  assert.equal(sardine.boxesCount, 25, 'Sardine total boxes should be 25');
+  assert.equal(sardine.purchaseValue, 80000, 'Sardine purchase amount should be ₹80,000');
+  assert.equal(sardine.expenses, 8000, 'Sardine expenses should be ₹8,000');
+  assert.equal(sardine.cost, 88000, 'Sardine landed cost should be ₹88,000');
+
+  // Assert Squid aggregations (no boxes)
+  const squid = speciesList.find((s) => s.name === 'sp-squid');
+  assert.ok(squid, 'Squid must exist');
+  assert.equal(squid.weight, 600, 'Squid total weight should be 600 Kg');
+  assert.equal(squid.boxesCount, 0, 'Squid total boxes should be 0');
+  assert.equal(squid.purchaseValue, 150000, 'Squid purchase amount should be ₹1,50,000');
+  assert.equal(squid.expenses, 7000, 'Squid expenses should be ₹7,000');
+
+  // Overall KPI total boxes
+  const totalBoxes = mockPurchases.reduce((s, p) => s + (p.boxesCount || 0), 0);
+  assert.equal(totalBoxes, 75, 'Overall total boxes should be 75 (50 + 25 + 0)');
+});
