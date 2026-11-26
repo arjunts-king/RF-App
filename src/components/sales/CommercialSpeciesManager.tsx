@@ -246,7 +246,14 @@ export const CommercialSpeciesManager: React.FC<CommercialSpeciesManagerProps> =
 
       const normCorpus = searchCorpus.replace(/[^a-z0-9]/g, '');
 
-      const allTokensMatch = tokens.every((token) => searchCorpus.includes(token));
+      const tokenMatches = (token: string) => {
+        if (token.length === 1) {
+          const wordRe = new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+          return wordRe.test(sp.name || '') || wordRe.test(sp.code || '');
+        }
+        return searchCorpus.includes(token);
+      };
+      const allTokensMatch = tokens.every(tokenMatches);
       const normMatch = normQ.length >= 2 && normCorpus.includes(normQ);
 
       return allTokensMatch || normMatch;

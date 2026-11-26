@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V41 - Always-Fresh Network Pass-Through & Cache Purge)
-const CACHE_VERSION = 'seafood-pwa-v41';
+// Seafood Purchase App - Self-Cleaning Service Worker (V42 - Purge Legacy Caches & Unregister)
+const CACHE_VERSION = 'seafood-pwa-v42';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -7,9 +7,18 @@ self.addEventListener('install', () => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(keys.map((key) => caches.delete(key)));
-    })
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then((clients) => {
+        clients.forEach((client) => {
+          if ('navigate' in client) {
+            client.navigate(client.url);
+          }
+        });
+      })
   );
   self.clients.claim();
 });
@@ -22,12 +31,10 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
   const isNavigation = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html');
   if (isNavigation) {
     event.respondWith(fetch(new Request(event.request, { cache: 'no-store' })).catch(() => fetch(event.request)));
     return;
   }
-
   event.respondWith(fetch(event.request));
 });

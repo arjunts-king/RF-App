@@ -525,11 +525,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Quick Refresh App Version Button */}
             <button
               onClick={handleForceUpdate}
-              className="p-1.5 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
+              className="flex items-center gap-1 px-2 py-1 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
               title="Refresh and load latest deployment version (clears cached release)"
               aria-label="Refresh app version"
             >
               <RefreshCw className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-mono font-bold">v42</span>
             </button>
 
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}
