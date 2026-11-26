@@ -95,9 +95,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     } catch (err) {
       console.warn('Cache clearing error:', err);
     }
-    const url = new URL(window.location.href);
-    url.searchParams.set('v', String(Date.now()));
-    window.location.replace(url.toString());
+    // Clean reload directly to the base canonical URL without query parameters
+    window.location.href = window.location.origin + window.location.pathname;
   };
 
   const totalAlerts = useMemo(() => {
@@ -522,15 +521,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[11px] font-semibold">{isOnline ? 'Live' : 'Offline'}</span>
             </div>
 
-            {/* Quick Refresh App Version Button */}
+            {/* Quick Refresh App Button */}
             <button
               onClick={handleForceUpdate}
-              className="flex items-center gap-1 px-2 py-1 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
-              title="Refresh and load latest deployment version (clears cached release)"
-              aria-label="Refresh app version"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-ink-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
+              title="Refresh and load latest application updates"
+              aria-label="Refresh application"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-mono font-bold">v43</span>
+              <span className="text-[11px] font-medium">Sync</span>
             </button>
 
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}
