@@ -530,7 +530,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-label="Refresh app version"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-mono font-bold">v42</span>
+              <span className="text-[10px] font-mono font-bold">v43</span>
             </button>
 
             {/* User Profile Pill showing Role as Fixed Read-Only Label */}

@@ -3745,8 +3745,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v42') || swCode.includes('seafood-pwa-v41') || swCode.includes('seafood-pwa-v40') || swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=42') || mainCode.includes('sw.js?v=41') || mainCode.includes('sw.js?v=40') || mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v43') || swCode.includes('seafood-pwa-v42') || swCode.includes('seafood-pwa-v41') || swCode.includes('seafood-pwa-v40') || swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('getRegistrations') || mainCode.includes('sw.js?v=42'), 'main.tsx must unregister legacy service workers or register updated sw.js');
 });
 
 // ============================================================================
@@ -6077,12 +6077,12 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   assert.ok(comboCode.includes('createPortal'), 'ProductCombobox must portal its dropdown menu to prevent table overflow clipping');
   assert.ok(comboCode.includes('listRef.current.scrollTop = 0'), 'ProductCombobox must reset scroll position when search query changes');
 
-  // 2. Verify Service Worker cache version is bumped to v42 for fresh asset delivery
+  // 2. Verify Service Worker cache version is bumped to v43 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v42') || swCode.includes('seafood-pwa-v41') || swCode.includes('seafood-pwa-v40') || swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v42');
+  assert.ok(swCode.includes('seafood-pwa-v43') || swCode.includes('seafood-pwa-v42'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v43');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=42') || mainCode.includes('sw.js?v=41') || mainCode.includes('sw.js?v=40') || mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=42 query parameter');
+  assert.ok(mainCode.includes('getRegistrations') && mainCode.includes('unregister'), 'main.tsx must clean up legacy service workers');
 
   // 3. Test search filter simulation across 32 catalog products
   const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
@@ -6679,11 +6679,11 @@ test('Combobox Inline Cursor UX & Tab Key Navigation Integrity across Commercial
   assert.ok(formCode.includes('e.key === \'Tab\' && !e.shiftKey'), 'handleRateKeyDown must support Tab key navigation to advance to next row');
   assert.ok(formCode.includes('tabIndex={-1}'), 'Line delete buttons and helper buttons must have tabIndex={-1}');
 
-  // 5. Verify Service Worker cache version is v42 and main.tsx registers v42
+  // 5. Verify Service Worker cache version is v43 and main.tsx cleans up legacy SWs
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v42'), 'sw.js CACHE_VERSION must be seafood-pwa-v42');
+  assert.ok(swCode.includes('seafood-pwa-v43'), 'sw.js CACHE_VERSION must be seafood-pwa-v43');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=42'), 'main.tsx must register sw.js?v=42');
+  assert.ok(mainCode.includes('getRegistrations') && mainCode.includes('unregister'), 'main.tsx must unregister legacy SWs');
 });
 
 test('Strict Species Search Isolation: Mackerel search returns ONLY authentic mackerels (0 Ribbonfish, 0 Vannamei, 0 Shrimps)', async () => {
