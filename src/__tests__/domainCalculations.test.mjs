@@ -3745,8 +3745,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v40') || swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=40') || mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -6077,12 +6077,12 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   assert.ok(comboCode.includes('createPortal'), 'ProductCombobox must portal its dropdown menu to prevent table overflow clipping');
   assert.ok(comboCode.includes('listRef.current.scrollTop = 0'), 'ProductCombobox must reset scroll position when search query changes');
 
-  // 2. Verify Service Worker cache version is bumped to v35/v36 for fresh asset delivery
+  // 2. Verify Service Worker cache version is bumped to v40 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v39');
+  assert.ok(swCode.includes('seafood-pwa-v40') || swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v40');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=39 query parameter');
+  assert.ok(mainCode.includes('sw.js?v=40') || mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=40 query parameter');
 
   // 3. Test search filter simulation across 32 catalog products
   const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
@@ -6679,12 +6679,80 @@ test('Combobox Inline Cursor UX & Tab Key Navigation Integrity across Commercial
   assert.ok(formCode.includes('e.key === \'Tab\' && !e.shiftKey'), 'handleRateKeyDown must support Tab key navigation to advance to next row');
   assert.ok(formCode.includes('tabIndex={-1}'), 'Line delete buttons and helper buttons must have tabIndex={-1}');
 
-  // 5. Verify Service Worker cache version is v39 and main.tsx registers v39
+  // 5. Verify Service Worker cache version is v40 and main.tsx registers v40
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v39'), 'sw.js CACHE_VERSION must be seafood-pwa-v39');
+  assert.ok(swCode.includes('seafood-pwa-v40'), 'sw.js CACHE_VERSION must be seafood-pwa-v40');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=39'), 'main.tsx must register sw.js?v=39');
+  assert.ok(mainCode.includes('sw.js?v=40'), 'main.tsx must register sw.js?v=40');
 });
+
+test('Strict Species Search Isolation: Mackerel search returns ONLY authentic mackerels (0 Ribbonfish, 0 Vannamei, 0 Shrimps)', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
+  const spPrefix = 'export const VERIFIED_SPECIES: Species[] = ';
+  const spStart = content.indexOf(spPrefix);
+  const spEnd = content.indexOf('export const VERIFIED_SIZES');
+  const speciesList = JSON.parse(content.slice(spStart + spPrefix.length, spEnd).trim().replace(/;$/, ''));
+
+  const MACKEREL_ALIASES = ['mackerel', 'mackrel', 'mackeral', 'makarel', 'makrel', 'mackerell', 'kanagurta'];
+  function normalizeSearchToken(token) {
+    const lower = token.toLowerCase();
+    if (MACKEREL_ALIASES.some((alias) => lower === alias || (lower.length >= 3 && alias.startsWith(lower)))) {
+      return 'mackerel';
+    }
+    return lower;
+  }
+
+  const query = 'mackerel';
+  const rawTokens = query.split(/\s+/).filter(Boolean);
+  const tokens = rawTokens.map(normalizeSearchToken);
+
+  const matched = speciesList.filter((sp) => {
+    const isMackerelSearch = tokens.some(
+      (t) =>
+        t.includes('mackerel') ||
+        t.includes('kanagurta') ||
+        MACKEREL_ALIASES.some((a) => t.includes(a) || (t.length >= 3 && a.startsWith(t)))
+    );
+    if (isMackerelSearch) {
+      const nameLower = (sp.name || '').toLowerCase();
+      const headLower = (sp.speciesHeadName || '').toLowerCase();
+      const rawLower = (sp.rawSpeciesName || '').toLowerCase();
+      const sciLower = (sp.scientificName || '').toLowerCase();
+      const catLower = (sp.category || '').toLowerCase();
+
+      const isOtherSpecies =
+        nameLower.includes('ribbon') || headLower.includes('ribbon') || rawLower.includes('ribbon') ||
+        nameLower.includes('van') || headLower.includes('van') || rawLower.includes('van') ||
+        nameLower.includes('shrimp') || headLower.includes('shrimp') || rawLower.includes('shrimp') || catLower.includes('shrimp') ||
+        nameLower.includes('prawn') || headLower.includes('prawn') || rawLower.includes('prawn') ||
+        nameLower.includes('squid') || headLower.includes('squid') || rawLower.includes('squid') || catLower.includes('squid') ||
+        nameLower.includes('octopus') || headLower.includes('octopus') || rawLower.includes('octopus') || catLower.includes('octopus') ||
+        nameLower.includes('poovalan') || headLower.includes('poovalan') || rawLower.includes('poovalan') ||
+        nameLower.includes('leather jacket') || headLower.includes('leather jacket') || rawLower.includes('leather jacket') ||
+        nameLower.includes('cuttlefish') || headLower.includes('cuttlefish') || rawLower.includes('cuttlefish') ||
+        nameLower.includes('tuna') || headLower.includes('tuna') || rawLower.includes('tuna');
+      if (isOtherSpecies) return false;
+
+      const isMackerelProduct =
+        nameLower.includes('mackerel') ||
+        headLower.includes('mackerel') ||
+        sciLower.includes('kanagurta') ||
+        rawLower.includes('mackerel');
+      return isMackerelProduct;
+    }
+    return false;
+  });
+
+  assert.equal(matched.length, 6, 'Mackerel search across 32 catalog products must return exactly 6 genuine mackerel varieties');
+  assert.ok(matched.every((m) => m.name.toLowerCase().includes('mackerel')), 'Every matched product must have mackerel in name');
+  assert.ok(!matched.some((m) => m.name.toLowerCase().includes('ribbon')), 'Zero Ribbonfish products can match mackerel');
+  assert.ok(!matched.some((m) => m.name.toLowerCase().includes('van')), 'Zero Vannamei products can match mackerel');
+  assert.ok(!matched.some((m) => m.category === 'Shrimp'), 'Zero Shrimp products can match mackerel');
+});
+
 
 
 

@@ -1,5 +1,5 @@
-// Seafood Purchase App - Offline PWA Service Worker (V39 - Inline Combobox Cursors, Tab Flow & Export Fixes)
-const CACHE_VERSION = 'seafood-pwa-v39';
+// Seafood Purchase App - Offline PWA Service Worker (V40 - Direct Species Search Isolation & Mackerel Filtering)
+const CACHE_VERSION = 'seafood-pwa-v40';
 const STATIC_ASSETS = [
   './',
   './index.html',
