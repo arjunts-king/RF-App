@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import {
   PerformanceExpenseEntry,
   PerformanceSalesEntry,
+  PerformanceHeadShare,
   PerformanceFilters,
   PerformanceAuditEntry,
   PerformanceSavedView,
@@ -11,6 +12,7 @@ import {
   Customer,
   User,
 } from '../types';
+import { resolveSpeciesHead } from '../utils/performanceHelpers';
 
 const EXPENSES_KEY = 'seafood_v2_performance_expenses';
 const SALES_KEY = 'seafood_v2_performance_sales';
@@ -371,16 +373,46 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       prevExpenses: PerformanceExpenseEntry[],
       prevSales: PerformanceSalesEntry[]
     ) => {
-      const speciesById = new Map(speciesList.map((sp) => [sp.id, sp]));
-      const headById = new Map(speciesHeads.map((sh) => [sh.id, sh]));
       const customerById = new Map(customers.map((c) => [c.id, c]));
 
-      const existingExpenseMap = new Map(
-        prevExpenses.map((e) => [`${e.invoiceId}__${e.speciesHeadId}`, e])
-      );
-      const existingSalesMap = new Map(
-        prevSales.map((e) => [`${e.invoiceId}__${e.speciesHeadId}`, e])
-      );
+      // Index existing entries by invoiceId (summing if migrating from multi-row per invoice)
+      const existingExpenseByInvoice = new Map<string, PerformanceExpenseEntry>();
+      for (const e of prevExpenses) {
+        if (e.isDeleted) continue;
+        const cur = existingExpenseByInvoice.get(e.invoiceId);
+        if (!cur) {
+          existingExpenseByInvoice.set(e.invoiceId, { ...e });
+        } else {
+          existingExpenseByInvoice.set(e.invoiceId, {
+            ...cur,
+            eiaExpense: (cur.eiaExpense || 0) + (e.eiaExpense || 0),
+            cartonExpense: (cur.cartonExpense || 0) + (e.cartonExpense || 0),
+            cover: (cur.cover || 0) + (e.cover || 0),
+            freight: (cur.freight || 0) + (e.freight || 0),
+            courier: (cur.courier || 0) + (e.courier || 0),
+            freezingCharge: (cur.freezingCharge || 0) + (e.freezingCharge || 0),
+            ice: (cur.ice || 0) + (e.ice || 0),
+            otherExpense: (cur.otherExpense || 0) + (e.otherExpense || 0),
+          });
+        }
+      }
+
+      const existingSalesByInvoice = new Map<string, PerformanceSalesEntry>();
+      for (const s of prevSales) {
+        if (s.isDeleted) continue;
+        const cur = existingSalesByInvoice.get(s.invoiceId);
+        if (!cur) {
+          existingSalesByInvoice.set(s.invoiceId, { ...s });
+        } else {
+          existingSalesByInvoice.set(s.invoiceId, {
+            ...cur,
+            drawbackExpected: (cur.drawbackExpected || 0) + (s.drawbackExpected || 0),
+            drawbackReceived: (cur.drawbackReceived || 0) + (s.drawbackReceived || 0),
+            rodtepExpected: (cur.rodtepExpected || 0) + (s.rodtepExpected || 0),
+            rodtepReceived: (cur.rodtepReceived || 0) + (s.rodtepReceived || 0),
+          });
+        }
+      }
 
       const newExpenses: PerformanceExpenseEntry[] = [];
       const newSales: PerformanceSalesEntry[] = [];
@@ -390,150 +422,171 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       for (const invoice of salesInvoices) {
         if (invoice.isVoided) continue;
         const lines = invoice.lineItems || [];
-        if (lines.length === 0) continue;
 
         const customer = customerById.get(invoice.consigneeId);
         const customerName = customer?.name || invoice.consigneeName || invoice.consigneeId || '';
 
-        const groups = new Map<string, typeof lines>();
-        for (const line of lines) {
-          const sp = speciesById.get(line.speciesId);
-          const headId = sp?.speciesHeadId || '__unmapped__';
-          if (!groups.has(headId)) groups.set(headId, []);
-          groups.get(headId)!.push(line);
-        }
-
-        const invoiceTotalWeightKg =
-          invoice.totalWeightKg || lines.reduce((s, l) => s + (l.weightKg || 0), 0);
-        const invoiceTotalValueINR =
-          (invoice as any).totalRealizedINR ||
-          invoice.totalFobValueINR ||
-          invoice.estimatedAmountINR ||
-          0;
+        const totalWeightKg =
+          invoice.totalWeightKg || lines.reduce((s, l) => s + (Number(l.weightKg) || 0), 0);
+        const totalCartons =
+          invoice.totalCartons || lines.reduce((s, l) => s + (Number(l.cartonsCount) || 0), 0);
+        const totalSalesUSD =
+          invoice.totalAmountCurrency || lines.reduce((s, l) => s + (Number(l.amountCurrency) || 0), 0);
+        const totalFobINR =
+          invoice.totalFobValueINR || lines.reduce((s, l) => s + (Number(l.fobValueINR) || 0), 0);
         const exchangeRate = invoice.exchangeRate || 83;
 
-        // Check if invoice has settlement / realized INR
         const realizations: any[] = (invoice as any).realizations || [];
         const totalRealizedINRFromSettlement = realizations.reduce(
           (sum, r) => sum + (Number(r.amountINR) || 0),
           0
         );
 
-        for (const [headId, headLines] of groups) {
-          const head = headById.get(headId);
-          const speciesHeadName =
-            head?.name || (headId === '__unmapped__' ? 'Unmapped Product' : headId);
-
-          const lineWeightKg = headLines.reduce((sum, l) => sum + (Number(l.weightKg) || 0), 0);
-          const lineCartonsCount = headLines.reduce((sum, l) => sum + (Number(l.cartonsCount) || 0), 0);
-          const lineSalesUSD = headLines.reduce((sum, l) => sum + (Number(l.amountCurrency) || 0), 0);
-          const lineFobINR = headLines.reduce((sum, l) => sum + (Number(l.fobValueINR) || 0), 0);
-          const totalInvoiceUSD = invoice.totalAmountCurrency || lines.reduce((s, l) => s + (Number(l.amountCurrency) || 0), 0);
-
-          let salesAmountINR = 0;
-          let salesBasis: 'realized' | 'estimated' = 'estimated';
-          if (totalRealizedINRFromSettlement > 0 && totalInvoiceUSD > 0) {
-            salesAmountINR = Number(((totalRealizedINRFromSettlement * lineSalesUSD) / totalInvoiceUSD).toFixed(2));
-            salesBasis = 'realized';
-          } else if ((invoice as any).realizationStatus === 'Fully Realized' && lineFobINR > 0) {
-            salesAmountINR = Number(lineFobINR.toFixed(2));
-            salesBasis = 'realized';
-          } else {
-            salesAmountINR = Number((lineSalesUSD * exchangeRate).toFixed(2));
-            salesBasis = 'estimated';
-          }
-
-          const splitRatio = invoiceTotalWeightKg > 0 ? lineWeightKg / invoiceTotalWeightKg : 1 / groups.size;
-          const entryKey = `${invoice.id}__${headId}`;
-          const serialStr = String(serialCounter++);
-
-          const existingExp = existingExpenseMap.get(entryKey);
-          const expEntry: PerformanceExpenseEntry = {
-            id: existingExp?.id ?? entryKey,
-            invoiceId: invoice.id,
-            invoiceNo: invoice.invoiceNo,
-            invoiceDate: invoice.invoiceDate,
-            financialYear: invoice.financialYear,
-            customerId: invoice.consigneeId,
-            customerName,
-            portOfLoadingId: invoice.portOfLoadingId,
-            portOfDischargeId: invoice.portOfDischargeId,
-            speciesHeadId: headId,
-            speciesHeadName,
-            serialNo: existingExp?.serialNo || serialStr,
-            invoiceTotalWeightKg,
-            invoiceTotalValueINR,
-            lineWeightKg,
-            lineCartonsCount,
-            splitRatio,
-            eiaExpense: existingExp?.eiaExpense ?? 0,
-            cartonExpense: existingExp?.cartonExpense ?? 0,
-            cover: existingExp?.cover ?? 0,
-            freight: existingExp?.freight ?? 0,
-            freightEnteredTotal: existingExp?.freightEnteredTotal,
-            courier: existingExp?.courier ?? 0,
-            courierEnteredTotal: existingExp?.courierEnteredTotal,
-            freezingCharge: existingExp?.freezingCharge ?? 0,
-            ice: existingExp?.ice ?? 0,
-            otherExpense: existingExp?.otherExpense ?? 0,
-            grandTotal: existingExp ? computeExpenseGrandTotal(existingExp) : 0,
-            expensesComplete: existingExp ? computeExpenseGrandTotal(existingExp) > 0 : false,
-            isVoided: false,
-            isDeleted: existingExp?.isDeleted ?? false,
-            deletionReason: existingExp?.deletionReason,
-            deletedAt: existingExp?.deletedAt,
-            deletedBy: existingExp?.deletedBy,
-            createdAt: existingExp?.createdAt ?? now,
-            updatedAt: existingExp ? existingExp.updatedAt : now,
-          };
-          newExpenses.push(expEntry);
-
-          const existingSale = existingSalesMap.get(entryKey);
-          const dbExp = existingSale?.drawbackExpected ?? 0;
-          const dbRec = existingSale?.drawbackReceived ?? 0;
-          const rtExp = existingSale?.rodtepExpected ?? 0;
-          const rtRec = existingSale?.rodtepReceived ?? 0;
-
-          const saleEntry: PerformanceSalesEntry = {
-            id: existingSale?.id ?? entryKey,
-            invoiceId: invoice.id,
-            invoiceNo: invoice.invoiceNo,
-            invoiceDate: invoice.invoiceDate,
-            financialYear: invoice.financialYear,
-            customerId: invoice.consigneeId,
-            customerName,
-            portOfDischargeId: invoice.portOfDischargeId,
-            speciesHeadId: headId,
-            speciesHeadName,
-            cartonsCount: lineCartonsCount,
-            weightKg: lineWeightKg,
-            salesAmountUSD: lineSalesUSD,
-            salesAmountINR,
-            salesBasis,
-            exchangeRate,
-            drawbackExpected: dbExp,
-            drawbackReceived: dbRec,
-            drawbackPending: Math.max(0, Number((dbExp - dbRec).toFixed(2))),
-            rodtepExpected: rtExp,
-            rodtepReceived: rtRec,
-            rodtepPending: Math.max(0, Number((rtExp - rtRec).toFixed(2))),
-            isVoided: false,
-            isDeleted: existingSale?.isDeleted ?? false,
-            deletionReason: existingSale?.deletionReason,
-            createdAt: existingSale?.createdAt ?? now,
-            updatedAt: existingSale ? existingSale.updatedAt : now,
-          };
-          newSales.push(saleEntry);
+        let salesAmountINR = 0;
+        let salesBasis: 'realized' | 'estimated' = 'estimated';
+        if (totalRealizedINRFromSettlement > 0) {
+          salesAmountINR = Number(totalRealizedINRFromSettlement.toFixed(2));
+          salesBasis = 'realized';
+        } else if ((invoice as any).realizationStatus === 'Fully Realized' && totalFobINR > 0) {
+          salesAmountINR = Number(totalFobINR.toFixed(2));
+          salesBasis = 'realized';
+        } else {
+          salesAmountINR = Number((totalSalesUSD * exchangeRate).toFixed(2));
+          salesBasis = 'estimated';
         }
-      }
 
-      // Preserve orphan expense entries (expenses entered whose invoice was deleted/voided) flagged as isVoided so Exception Report can catch them
-      const activeKeys = new Set(newExpenses.map((e) => `${e.invoiceId}__${e.speciesHeadId}`));
-      for (const oldExp of prevExpenses) {
-        const key = `${oldExp.invoiceId}__${oldExp.speciesHeadId}`;
-        if (!activeKeys.has(key) && oldExp.grandTotal > 0 && !oldExp.isDeleted) {
-          newExpenses.push({ ...oldExp, isVoided: true });
+        // Resolve species head per line for accurate headBreakdown (while keeping 1 row per invoice)
+        const headGroups = new Map<
+          string,
+          { headId: string; headName: string; weightKg: number; cartonsCount: number; salesUSD: number }
+        >();
+        for (const line of lines) {
+          const { headId, headName } = resolveSpeciesHead(
+            line.speciesId,
+            line.productDescription,
+            speciesList,
+            speciesHeads
+          );
+          const cur = headGroups.get(headId) || {
+            headId,
+            headName,
+            weightKg: 0,
+            cartonsCount: 0,
+            salesUSD: 0,
+          };
+          cur.weightKg += Number(line.weightKg) || 0;
+          cur.cartonsCount += Number(line.cartonsCount) || 0;
+          cur.salesUSD += Number(line.amountCurrency) || 0;
+          headGroups.set(headId, cur);
         }
+
+        const headList = Array.from(headGroups.values()).sort((a, b) => b.weightKg - a.weightKg);
+        const primaryHead = headList[0] || {
+          headId: '__unmapped__',
+          headName: 'Unmapped Product',
+          weightKg: totalWeightKg,
+          cartonsCount: totalCartons,
+          salesUSD: totalSalesUSD,
+        };
+        const displayHeadName =
+          headList.length > 1
+            ? headList.map((h) => h.headName).join(' / ')
+            : primaryHead.headName;
+
+        const headBreakdown: PerformanceHeadShare[] = headList.map((h) => {
+          const ratio = totalWeightKg > 0 ? h.weightKg / totalWeightKg : 1 / Math.max(1, headList.length);
+          const usdRatio = totalSalesUSD > 0 ? h.salesUSD / totalSalesUSD : ratio;
+          return {
+            speciesHeadId: h.headId,
+            speciesHeadName: h.headName,
+            weightKg: h.weightKg,
+            cartonsCount: h.cartonsCount,
+            salesAmountUSD: h.salesUSD,
+            salesAmountINR: Number((salesAmountINR * usdRatio).toFixed(2)),
+            splitRatio: ratio,
+          };
+        });
+
+        const serialStr = String(serialCounter++);
+        const existingExp = existingExpenseByInvoice.get(invoice.id);
+        const expEntry: PerformanceExpenseEntry = {
+          id: `pe_${invoice.id}`,
+          invoiceId: invoice.id,
+          invoiceNo: invoice.invoiceNo,
+          invoiceDate: invoice.invoiceDate,
+          financialYear: invoice.financialYear,
+          customerId: invoice.consigneeId,
+          customerName,
+          portOfLoadingId: invoice.portOfLoadingId,
+          portOfDischargeId: invoice.portOfDischargeId,
+          speciesHeadId: primaryHead.headId,
+          speciesHeadName: displayHeadName,
+          headBreakdown,
+          serialNo: existingExp?.serialNo || serialStr,
+          invoiceTotalWeightKg: totalWeightKg,
+          invoiceTotalValueINR: salesAmountINR,
+          lineWeightKg: totalWeightKg,
+          lineCartonsCount: totalCartons,
+          splitRatio: 1,
+          eiaExpense: existingExp?.eiaExpense ?? 0,
+          cartonExpense: existingExp?.cartonExpense ?? 0,
+          cover: existingExp?.cover ?? 0,
+          freight: existingExp?.freight ?? 0,
+          freightEnteredTotal: existingExp?.freightEnteredTotal,
+          courier: existingExp?.courier ?? 0,
+          courierEnteredTotal: existingExp?.courierEnteredTotal,
+          freezingCharge: existingExp?.freezingCharge ?? 0,
+          ice: existingExp?.ice ?? 0,
+          otherExpense: existingExp?.otherExpense ?? 0,
+          grandTotal: existingExp ? computeExpenseGrandTotal(existingExp) : 0,
+          expensesComplete: existingExp ? computeExpenseGrandTotal(existingExp) > 0 : false,
+          isVoided: false,
+          isDeleted: existingExp?.isDeleted ?? false,
+          deletionReason: existingExp?.deletionReason,
+          deletedAt: existingExp?.deletedAt,
+          deletedBy: existingExp?.deletedBy,
+          createdAt: existingExp?.createdAt ?? now,
+          updatedAt: existingExp ? existingExp.updatedAt : now,
+        };
+        newExpenses.push(expEntry);
+
+        const existingSale = existingSalesByInvoice.get(invoice.id);
+        const dbExp = existingSale?.drawbackExpected ?? 0;
+        const dbRec = existingSale?.drawbackReceived ?? 0;
+        const rtExp = existingSale?.rodtepExpected ?? 0;
+        const rtRec = existingSale?.rodtepReceived ?? 0;
+
+        const saleEntry: PerformanceSalesEntry = {
+          id: `ps_${invoice.id}`,
+          invoiceId: invoice.id,
+          invoiceNo: invoice.invoiceNo,
+          invoiceDate: invoice.invoiceDate,
+          financialYear: invoice.financialYear,
+          customerId: invoice.consigneeId,
+          customerName,
+          portOfDischargeId: invoice.portOfDischargeId,
+          speciesHeadId: primaryHead.headId,
+          speciesHeadName: displayHeadName,
+          headBreakdown,
+          cartonsCount: totalCartons,
+          weightKg: totalWeightKg,
+          salesAmountUSD: totalSalesUSD,
+          salesAmountINR,
+          salesBasis,
+          exchangeRate,
+          drawbackExpected: dbExp,
+          drawbackReceived: dbRec,
+          drawbackPending: Math.max(0, Number((dbExp - dbRec).toFixed(2))),
+          rodtepExpected: rtExp,
+          rodtepReceived: rtRec,
+          rodtepPending: Math.max(0, Number((rtExp - rtRec).toFixed(2))),
+          isVoided: false,
+          isDeleted: existingSale?.isDeleted ?? false,
+          deletionReason: existingSale?.deletionReason,
+          createdAt: existingSale?.createdAt ?? now,
+          updatedAt: existingSale ? existingSale.updatedAt : now,
+        };
+        newSales.push(saleEntry);
       }
 
       return { newExpenses, newSales };

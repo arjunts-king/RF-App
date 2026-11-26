@@ -5,8 +5,104 @@ import {
   PerformanceFilters,
   Purchase,
   Species,
+  SpeciesHead,
   PeriodCloseLock,
 } from '../types';
+
+export function resolveSpeciesHead(
+  speciesIdOrName: string | undefined,
+  productDescription: string | undefined,
+  speciesList: Species[],
+  speciesHeads: SpeciesHead[]
+): { headId: string; headName: string } {
+  const norm = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const lower = (s?: string) => (s || '').toLowerCase().trim();
+
+  // 1. Find Species by id, code, or name
+  const sp =
+    speciesList.find((s) => s.id === speciesIdOrName) ||
+    speciesList.find((s) => s.code && speciesIdOrName && norm(s.code) === norm(speciesIdOrName)) ||
+    speciesList.find((s) => s.name && speciesIdOrName && norm(s.name) === norm(speciesIdOrName)) ||
+    speciesList.find((s) => s.name && productDescription && norm(s.name) === norm(productDescription));
+
+  // 2. Direct speciesHeadId match
+  if (sp?.speciesHeadId) {
+    const h = speciesHeads.find((sh) => sh.id === sp.speciesHeadId);
+    if (h) return { headId: h.id, headName: h.name };
+  }
+
+  // 3. Direct speciesHeadName match
+  if (sp?.speciesHeadName) {
+    const h = speciesHeads.find((sh) => norm(sh.name) === norm(sp.speciesHeadName));
+    if (h) return { headId: h.id, headName: h.name };
+  }
+
+  // 4. Name-based matching against SpeciesHead names
+  const candidateText = [
+    sp?.speciesHeadName,
+    sp?.name,
+    sp?.rawSpeciesName,
+    productDescription,
+    speciesIdOrName,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (candidateText) {
+    // Exact or substring match with any SpeciesHead name (longest match first)
+    const sortedHeads = [...speciesHeads].sort((a, b) => b.name.length - a.name.length);
+    for (const h of sortedHeads) {
+      const hLower = lower(h.name);
+      if (hLower && candidateText.includes(hLower)) {
+        return { headId: h.id, headName: h.name };
+      }
+    }
+
+    // Biological / commercial keyword matching
+    const keywordRules: { keywords: string[]; headMatch: string[] }[] = [
+      { keywords: ['vannamei', 'vanamei', 'litopenaeus', 'pvpd', 'hlso', 'shrimp', 'prawn'], headMatch: ['vannamei', 'shrimp', 'prawn'] },
+      { keywords: ['mackerel', 'mackrel', 'kanagurta'], headMatch: ['mackerel'] },
+      { keywords: ['ribbon', 'savala', 'hairtail'], headMatch: ['ribbon'] },
+      { keywords: ['squid', 'loligo', 'duvaucelii'], headMatch: ['squid'] },
+      { keywords: ['octopus', 'vulgaris'], headMatch: ['octopus'] },
+      { keywords: ['cuttlefish', 'sepia'], headMatch: ['cuttlefish'] },
+      { keywords: ['tuna', 'yellowfin', 'skipjack'], headMatch: ['tuna'] },
+      { keywords: ['leather jacket'], headMatch: ['leather jacket'] },
+      { keywords: ['poovalan'], headMatch: ['poovalan'] },
+      { keywords: ['croaker'], headMatch: ['croaker'] },
+      { keywords: ['seer', 'kingfish'], headMatch: ['seer', 'king'] },
+      { keywords: ['pomfret'], headMatch: ['pomfret'] },
+    ];
+
+    for (const rule of keywordRules) {
+      if (rule.keywords.some((kw) => candidateText.includes(kw))) {
+        const matchedHead = sortedHeads.find((h) =>
+          rule.headMatch.some((hm) => lower(h.name).includes(hm))
+        );
+        if (matchedHead) return { headId: matchedHead.id, headName: matchedHead.name };
+      }
+    }
+
+    // Fallback: token overlap with any SpeciesHead name
+    const tokens = candidateText.split(/[^a-z0-9]+/).filter((t) => t.length >= 4);
+    for (const h of sortedHeads) {
+      const hTokens = lower(h.name).split(/[^a-z0-9]+/).filter((t) => t.length >= 4);
+      if (hTokens.some((ht) => tokens.includes(ht))) {
+        return { headId: h.id, headName: h.name };
+      }
+    }
+  }
+
+  // Fallback to product name itself if no SpeciesHead exists yet, rather than opaque "Unmapped Product"
+  if (sp?.name) {
+    return { headId: `name_${norm(sp.name)}`, headName: sp.name };
+  }
+  if (productDescription && productDescription.trim()) {
+    return { headId: `name_${norm(productDescription)}`, headName: productDescription.trim() };
+  }
+  return { headId: '__unmapped__', headName: 'Unmapped Product' };
+}
 
 export function formatINR(amount: number, showBracketsForNegative = false): string {
   const num = Number(amount) || 0;
@@ -50,7 +146,11 @@ export function applySharedFiltersToExpenses(
     if (filters.dateTo && e.invoiceDate > filters.dateTo) return false;
     if (filters.financialYear && e.financialYear && e.financialYear !== filters.financialYear) return false;
     if (filters.month && !e.invoiceDate.startsWith(filters.month)) return false;
-    if (filters.speciesHeadIds.length > 0 && !filters.speciesHeadIds.includes(e.speciesHeadId)) return false;
+    if (filters.speciesHeadIds.length > 0) {
+      const inPrimary = filters.speciesHeadIds.includes(e.speciesHeadId);
+      const inBreakdown = (e.headBreakdown || []).some((hb) => filters.speciesHeadIds.includes(hb.speciesHeadId));
+      if (!inPrimary && !inBreakdown) return false;
+    }
     if (filters.customerIds.length > 0 && !filters.customerIds.includes(e.customerId)) return false;
     if (filters.invoiceNumbers.length > 0 && !filters.invoiceNumbers.includes(e.invoiceNo)) return false;
     if (filters.portIds && filters.portIds.length > 0) {
@@ -85,7 +185,11 @@ export function applySharedFiltersToSales(
     if (filters.dateTo && e.invoiceDate > filters.dateTo) return false;
     if (filters.financialYear && e.financialYear && e.financialYear !== filters.financialYear) return false;
     if (filters.month && !e.invoiceDate.startsWith(filters.month)) return false;
-    if (filters.speciesHeadIds.length > 0 && !filters.speciesHeadIds.includes(e.speciesHeadId)) return false;
+    if (filters.speciesHeadIds.length > 0) {
+      const inPrimary = filters.speciesHeadIds.includes(e.speciesHeadId);
+      const inBreakdown = (e.headBreakdown || []).some((hb) => filters.speciesHeadIds.includes(hb.speciesHeadId));
+      if (!inPrimary && !inBreakdown) return false;
+    }
     if (filters.customerIds.length > 0 && !filters.customerIds.includes(e.customerId)) return false;
     if (filters.invoiceNumbers.length > 0 && !filters.invoiceNumbers.includes(e.invoiceNo)) return false;
     if (filters.portIds && filters.portIds.length > 0) {

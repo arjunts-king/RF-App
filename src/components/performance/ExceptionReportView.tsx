@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import { usePerformance } from '../../context/PerformanceContext';
 import { useAuth } from '../../context/AuthContext';
 import { PageHeader } from '../common/PageHeader';
-import { formatINR, formatDDMMYYYY } from '../../utils/performanceHelpers';
+import { formatINR, formatDDMMYYYY, resolveSpeciesHead } from '../../utils/performanceHelpers';
 import { CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export const ExceptionReportView: React.FC = () => {
@@ -30,8 +30,12 @@ export const ExceptionReportView: React.FC = () => {
   }, [salesInvoices, species, speciesHeads, customers, syncFromInvoices]);
 
   const unmappedProducts = useMemo(() => {
-    return species.filter((s) => s.active && !s.speciesHeadId);
-  }, [species]);
+    return species.filter((s) => {
+      if (!s.active) return false;
+      const resolved = resolveSpeciesHead(s.id, s.name, species, speciesHeads);
+      return resolved.headId === '__unmapped__' || resolved.headId.startsWith('name_');
+    });
+  }, [species, speciesHeads]);
 
   const invoicesWithoutExpenses = useMemo(() => {
     return performanceExpenses.filter((e) => !e.isDeleted && !e.isVoided && e.grandTotal === 0);

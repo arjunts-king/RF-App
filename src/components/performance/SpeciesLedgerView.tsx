@@ -11,6 +11,7 @@ import {
   formatDDMMYYYY,
   exportLedgerExcel,
   printPdfReport,
+  resolveSpeciesHead,
 } from '../../utils/performanceHelpers';
 import { FileSpreadsheet, Printer, ShieldAlert, X, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -57,17 +58,16 @@ export const SpeciesLedgerView: React.FC = () => {
     ? `${selectedHead.name.toUpperCase()} Sales Ledger`
     : 'CONSOLIDATED ALL SPECIES Sales Ledger';
 
-  // Map purchase speciesId -> speciesHeadId
+  // Map purchase speciesId -> speciesHeadId (falling back to name-based resolution)
   const speciesHeadLookup = useMemo(() => {
     const map = new Map<string, string>();
     [...species, ...purchaseSpecies].forEach((sp) => {
-      if (sp.speciesHeadId) {
-        map.set(sp.id, sp.speciesHeadId);
-        if (sp.name) map.set(sp.name.toLowerCase(), sp.speciesHeadId);
-      }
+      const resolved = resolveSpeciesHead(sp.id, sp.name, [...species, ...purchaseSpecies], speciesHeads);
+      map.set(sp.id, resolved.headId);
+      if (sp.name) map.set(sp.name.toLowerCase(), resolved.headId);
     });
     return map;
-  }, [species, purchaseSpecies]);
+  }, [species, purchaseSpecies, speciesHeads]);
 
   // Map inventoryItemId -> speciesHeadId via inventoryMappings
   const invItemHeadMap = useMemo(() => {
@@ -81,17 +81,54 @@ export const SpeciesLedgerView: React.FC = () => {
     return map;
   }, [inventoryMappings, speciesHeadLookup]);
 
-  // Filtered sales & expense rows scoped to selectedHeadId + shared filters
+  // Filtered sales & expense rows scoped to selectedHeadId + shared filters (apportioning multi-head invoices by headBreakdown)
   const scopedSales = useMemo(() => {
     const base = applySharedFiltersToSales(performanceSales, filters);
     if (selectedHeadId === 'ALL') return base;
-    return base.filter((s) => s.speciesHeadId === selectedHeadId);
+    return base
+      .map((s) => {
+        const hb = (s.headBreakdown || []).find((h) => h.speciesHeadId === selectedHeadId);
+        if (hb) {
+          return {
+            ...s,
+            weightKg: hb.weightKg,
+            cartonsCount: hb.cartonsCount,
+            salesAmountUSD: hb.salesAmountUSD,
+            salesAmountINR: hb.salesAmountINR,
+            drawbackReceived: Number((s.drawbackReceived * hb.splitRatio).toFixed(2)),
+            rodtepReceived: Number((s.rodtepReceived * hb.splitRatio).toFixed(2)),
+          };
+        }
+        return s.speciesHeadId === selectedHeadId ? s : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [performanceSales, filters, selectedHeadId]);
 
   const scopedExpenses = useMemo(() => {
     const base = applySharedFiltersToExpenses(performanceExpenses, filters);
     if (selectedHeadId === 'ALL') return base;
-    return base.filter((e) => e.speciesHeadId === selectedHeadId);
+    return base
+      .map((e) => {
+        const hb = (e.headBreakdown || []).find((h) => h.speciesHeadId === selectedHeadId);
+        if (hb) {
+          const r = hb.splitRatio;
+          return {
+            ...e,
+            lineWeightKg: hb.weightKg,
+            eiaExpense: Number((e.eiaExpense * r).toFixed(2)),
+            cartonExpense: Number((e.cartonExpense * r).toFixed(2)),
+            cover: Number((e.cover * r).toFixed(2)),
+            freight: Number((e.freight * r).toFixed(2)),
+            courier: Number((e.courier * r).toFixed(2)),
+            freezingCharge: Number((e.freezingCharge * r).toFixed(2)),
+            ice: Number((e.ice * r).toFixed(2)),
+            otherExpense: Number((e.otherExpense * r).toFixed(2)),
+            grandTotal: Number((e.grandTotal * r).toFixed(2)),
+          };
+        }
+        return e.speciesHeadId === selectedHeadId ? e : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [performanceExpenses, filters, selectedHeadId]);
 
   // Filtered purchases for the same species head & period

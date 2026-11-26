@@ -812,6 +812,16 @@ export interface InventoryCalculationResult {
 
 // ===== PERFORMANCE ANALYSIS MODULE =====
 
+export interface PerformanceHeadShare {
+  speciesHeadId: string;
+  speciesHeadName: string;
+  weightKg: number;
+  cartonsCount: number;
+  salesAmountUSD: number;
+  salesAmountINR: number;
+  splitRatio: number;
+}
+
 export interface PerformanceExpenseEntry {
   id: string;
   invoiceId: string;
@@ -824,6 +834,7 @@ export interface PerformanceExpenseEntry {
   portOfDischargeId?: string;
   speciesHeadId: string;
   speciesHeadName: string;
+  headBreakdown?: PerformanceHeadShare[];
   serialNo: string;
   invoiceTotalWeightKg: number;
   invoiceTotalValueINR?: number;
@@ -862,6 +873,7 @@ export interface PerformanceSalesEntry {
   portOfDischargeId?: string;
   speciesHeadId: string;
   speciesHeadName: string;
+  headBreakdown?: PerformanceHeadShare[];
   cartonsCount: number;
   weightKg: number;
   salesAmountUSD: number;
