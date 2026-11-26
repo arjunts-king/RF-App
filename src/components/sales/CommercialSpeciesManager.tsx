@@ -122,7 +122,9 @@ export const CommercialSpeciesManager: React.FC<CommercialSpeciesManagerProps> =
           headLower.includes('mackerel') ||
           sciLower.includes('kanagurta') ||
           rawLower.includes('mackerel');
-        return isMackerelProduct;
+        if (!isMackerelProduct) return false;
+        const extraTokens = tokens.filter((t) => t !== 'mackerel' && t !== 'kanagurta');
+        if (extraTokens.length === 0) return true;
       }
 
       const isRibbonSearch = tokens.some((t) => t.includes('ribbon') || t.includes('savala') || t.includes('hairtail'));

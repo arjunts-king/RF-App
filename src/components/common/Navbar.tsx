@@ -95,7 +95,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     } catch (err) {
       console.warn('Cache clearing error:', err);
     }
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', String(Date.now()));
+    window.location.replace(url.toString());
   };
 
   const totalAlerts = useMemo(() => {

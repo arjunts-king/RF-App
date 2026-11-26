@@ -1,29 +1,14 @@
-// Seafood Purchase App - Offline PWA Service Worker (V40 - Direct Species Search Isolation & Mackerel Filtering)
-const CACHE_VERSION = 'seafood-pwa-v40';
-const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './favicon.svg',
-  './manifest.json'
-];
+// Seafood Purchase App - Offline PWA Service Worker (V41 - Always-Fresh Network Pass-Through & Cache Purge)
+const CACHE_VERSION = 'seafood-pwa-v41';
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => {
-      return Promise.allSettled(
-        STATIC_ASSETS.map((url) => cache.add(new Request(url, { cache: 'reload' })))
-      );
-    })
-  );
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))
-      );
+      return Promise.all(keys.map((key) => caches.delete(key)));
     })
   );
   self.clients.claim();
@@ -39,45 +24,10 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const isNavigation = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html');
-
   if (isNavigation) {
-    // Force reload on navigation to bypass browser HTTP cache (max-age=600) and always get latest index.html
-    event.respondWith(
-      fetch(new Request(event.request, { cache: 'reload' }))
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(event.request).then((cached) => {
-            return (
-              cached ||
-              caches.match('./index.html') ||
-              caches.match('/RF-App/index.html') ||
-              caches.match('/index.html') ||
-              caches.match('./')
-            );
-          });
-        })
-    );
+    event.respondWith(fetch(new Request(event.request, { cache: 'no-store' })).catch(() => fetch(event.request)));
     return;
   }
 
-  // Network-First with Cache fallback for all scripts, styles, assets
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_VERSION).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  event.respondWith(fetch(event.request));
 });

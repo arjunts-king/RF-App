@@ -146,7 +146,9 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
           headLower.includes('mackerel') ||
           sciLower.includes('kanagurta') ||
           rawLower.includes('mackerel');
-        return isMackerelProduct;
+        if (!isMackerelProduct) return false;
+        const extraTokens = tokens.filter((t) => t !== 'mackerel' && t !== 'kanagurta' && !MACKEREL_ALIASES.includes(t));
+        if (extraTokens.length === 0) return true;
       }
 
       const isRibbonSearch = tokens.some(
@@ -576,6 +578,11 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
           placeholder={selectedSpecies ? selectedSpecies.name : placeholder}
           onFocus={handleFocus}
           onClick={handleClick}
+          onMouseUp={(e) => {
+            if (!isTyping && selectedSpecies) {
+              e.preventDefault();
+            }
+          }}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           className={`w-full ${
