@@ -1637,7 +1637,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[380px] rounded-xl border border-gray-200">
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">

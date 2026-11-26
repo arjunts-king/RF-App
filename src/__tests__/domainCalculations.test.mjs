@@ -6074,6 +6074,8 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
   const comboCode = fs.readFileSync(path.resolve('src/components/sales/ProductCombobox.tsx'), 'utf8');
   assert.ok(comboCode.includes('isMackerelSearch'), 'ProductCombobox must define isMackerelSearch guard');
   assert.ok(comboCode.includes('isMackerelProduct'), 'ProductCombobox must define isMackerelProduct guard');
+  assert.ok(comboCode.includes('createPortal'), 'ProductCombobox must portal its dropdown menu to prevent table overflow clipping');
+  assert.ok(comboCode.includes('listRef.current.scrollTop = 0'), 'ProductCombobox must reset scroll position when search query changes');
 
   // 2. Verify Service Worker cache version is bumped to v35/v36 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');

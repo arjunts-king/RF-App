@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check, X, Layers } from 'lucide-react';
 import { Size } from '../../types';
 
@@ -20,19 +21,48 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    openUpward: boolean;
+  } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const seedQueryRef = useRef<string | null>(null);
 
   const selectedSize = useMemo(() => {
     return sizeList.find((sz) => sz.id === value || sz.name.toLowerCase() === value.toLowerCase()) || null;
   }, [sizeList, value]);
 
-  // Click outside to close
+  const updateMenuPosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const width = Math.min(Math.max(rect.width, viewportWidth >= 640 ? 320 : 280), viewportWidth - 16);
+    const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8));
+
+    const spaceBelow = viewportHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const openUpward = spaceBelow < 320 && spaceAbove > spaceBelow;
+
+    setMenuPosition({
+      top: openUpward ? Math.max(8, rect.top - 6) : rect.bottom + 6,
+      left,
+      width,
+      openUpward
+    });
+  }, []);
+
+  // Click outside to close (handles both trigger container and portaled menu)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (!containerRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -44,12 +74,28 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
     };
   }, [isOpen]);
 
-  // Focus input when opened
+  useEffect(() => {
+    if (!isOpen) return;
+    updateMenuPosition();
+    const handleReposition = () => updateMenuPosition();
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+    };
+  }, [isOpen, updateMenuPosition]);
+
+  // Focus input immediately when opened
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
+      const seeded = seedQueryRef.current;
+      seedQueryRef.current = null;
+      setQuery(seeded ?? '');
       setHighlightedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 60);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      });
     }
   }, [isOpen]);
 
@@ -72,9 +118,12 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
     });
   }, [sizeList, query]);
 
-  // Reset highlight index when filter changes
+  // Reset highlight index & scroll position when filter changes
   useEffect(() => {
     setHighlightedIndex(0);
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
   }, [query]);
 
   // Handle keyboard navigation
@@ -83,20 +132,28 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         e.preventDefault();
         setIsOpen(true);
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        seedQueryRef.current = e.key;
+        setIsOpen(true);
       }
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightedIndex((prev) =>
-        prev < filteredSizes.length - 1 ? prev + 1 : prev
-      );
-      scrollHighlightedIntoView(highlightedIndex + 1);
+      setHighlightedIndex((prev) => {
+        const next = prev < filteredSizes.length - 1 ? prev + 1 : prev;
+        scrollHighlightedIntoView(next);
+        return next;
+      });
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-      scrollHighlightedIntoView(highlightedIndex - 1);
+      setHighlightedIndex((prev) => {
+        const next = prev > 0 ? prev - 1 : 0;
+        scrollHighlightedIntoView(next);
+        return next;
+      });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredSizes[highlightedIndex]) {
@@ -129,6 +186,123 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
     onChange(null);
     setQuery('');
   };
+
+  const dropdownMenu =
+    isOpen && menuPosition
+      ? createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: 'fixed',
+              left: `${menuPosition.left}px`,
+              width: `${menuPosition.width}px`,
+              ...(menuPosition.openUpward
+                ? { bottom: `${window.innerHeight - menuPosition.top}px` }
+                : { top: `${menuPosition.top}px` })
+            }}
+            className="bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Search Header */}
+            <div className="p-2.5 bg-gray-50/90 border-b border-gray-100">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-rose-600 pointer-events-none" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type size, grade, count (e.g. 71/90, 6/8)..."
+                  className="w-full pl-8 pr-7 py-1.5 bg-white border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 rounded-xl text-xs font-medium text-ink-900 outline-none transition"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 rounded-full"
+                    title="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Results Counter */}
+              <div className="flex items-center justify-between mt-2 px-1 text-[11px] font-semibold text-ink-500">
+                <span>
+                  {query.trim() ? `Results for "${query.trim()}"` : 'Grade / Size Masters'}
+                </span>
+                <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-gray-200 text-ink-600">
+                  {filteredSizes.length} {filteredSizes.length === 1 ? 'match' : 'matches'}
+                </span>
+              </div>
+            </div>
+
+            {/* Filtered Sizes List */}
+            <div
+              ref={listRef}
+              className="max-h-56 overflow-y-auto divide-y divide-gray-50 font-medium"
+            >
+              {filteredSizes.length === 0 ? (
+                <div className="py-6 px-4 text-center">
+                  <Layers className="w-6 h-6 mx-auto mb-1.5 text-rose-300" />
+                  <p className="text-xs font-bold text-ink-800">
+                    No sizes found matching "{query}"
+                  </p>
+                  <p className="text-[10px] text-ink-500 mt-0.5">
+                    Try searching by grade or count (e.g. 71/90, 100/200, 6/8, U/3)
+                  </p>
+                </div>
+              ) : (
+                filteredSizes.map((sz, idx) => {
+                  const isSelected = selectedSize?.id === sz.id;
+                  const isHighlighted = idx === highlightedIndex;
+
+                  return (
+                    <button
+                      key={sz.id}
+                      type="button"
+                      onClick={() => handleSelect(sz)}
+                      onMouseEnter={() => setHighlightedIndex(idx)}
+                      className={`w-full text-left px-3 py-2 transition flex items-center justify-between gap-2.5 ${
+                        isSelected
+                          ? 'bg-rose-50/80'
+                          : isHighlighted
+                          ? 'bg-rose-50/40'
+                          : 'hover:bg-gray-50/80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="font-mono text-[11px] font-black text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded border border-rose-200 shrink-0">
+                          {sz.name}
+                        </span>
+                        <span
+                          className={`text-xs truncate ${
+                            isSelected ? 'font-black text-rose-950' : 'font-semibold text-ink-800'
+                          }`}
+                        >
+                          {sz.description || sz.code}
+                        </span>
+                      </div>
+
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer note */}
+            <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-ink-400">
+              <span>Use ↑↓ and Enter</span>
+              <span>Esc to close</span>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className="relative flex-1 min-w-[120px]" ref={containerRef}>
@@ -190,108 +364,7 @@ export const SizeCombobox: React.FC<SizeComboboxProps> = ({
         </div>
       </button>
 
-      {/* Floating Searchable Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-[280px] sm:w-[320px] max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Search Header */}
-          <div className="p-2.5 bg-gray-50/90 border-b border-gray-100">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-rose-600 pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type size, grade, count (e.g. 71/90, 6/8)..."
-                className="w-full pl-8 pr-7 py-1.5 bg-white border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 rounded-xl text-xs font-medium text-ink-900 outline-none transition"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 rounded-full"
-                  title="Clear search"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-
-            {/* Results Counter */}
-            <div className="flex items-center justify-between mt-2 px-1 text-[11px] font-semibold text-ink-500">
-              <span>
-                {query.trim() ? `Results for "${query.trim()}"` : 'Grade / Size Masters'}
-              </span>
-              <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-gray-200 text-ink-600">
-                {filteredSizes.length} {filteredSizes.length === 1 ? 'match' : 'matches'}
-              </span>
-            </div>
-          </div>
-
-          {/* Filtered Sizes List */}
-          <div
-            ref={listRef}
-            className="max-h-56 overflow-y-auto divide-y divide-gray-50 font-medium"
-          >
-            {filteredSizes.length === 0 ? (
-              <div className="py-6 px-4 text-center">
-                <Layers className="w-6 h-6 mx-auto mb-1.5 text-rose-300" />
-                <p className="text-xs font-bold text-ink-800">
-                  No sizes found matching "{query}"
-                </p>
-                <p className="text-[10px] text-ink-500 mt-0.5">
-                  Try searching by grade or count (e.g. 71/90, 100/200, 6/8, U/3)
-                </p>
-              </div>
-            ) : (
-              filteredSizes.map((sz, idx) => {
-                const isSelected = selectedSize?.id === sz.id;
-                const isHighlighted = idx === highlightedIndex;
-
-                return (
-                  <button
-                    key={sz.id}
-                    type="button"
-                    onClick={() => handleSelect(sz)}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`w-full text-left px-3 py-2 transition flex items-center justify-between gap-2.5 ${
-                      isSelected
-                        ? 'bg-rose-50/80'
-                        : isHighlighted
-                        ? 'bg-rose-50/40'
-                        : 'hover:bg-gray-50/80'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="font-mono text-[11px] font-black text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded border border-rose-200 shrink-0">
-                        {sz.name}
-                      </span>
-                      <span
-                        className={`text-xs truncate ${
-                          isSelected ? 'font-black text-rose-950' : 'font-semibold text-ink-800'
-                        }`}
-                      >
-                        {sz.description || sz.code}
-                      </span>
-                    </div>
-
-                    {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Footer note */}
-          <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-ink-400">
-            <span>Use ↑↓ and Enter</span>
-            <span>Esc to close</span>
-          </div>
-        </div>
-      )}
+      {dropdownMenu}
     </div>
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check, X, Fish, Hash, Layers } from 'lucide-react';
 import { Species } from '../../types';
 
@@ -8,6 +9,16 @@ interface ProductComboboxProps {
   onChange: (species: Species | null) => void;
   placeholder?: string;
   disabled?: boolean;
+}
+
+const MACKEREL_ALIASES = ['mackerel', 'mackrel', 'mackeral', 'makarel', 'makrel', 'mackerell', 'kanagurta'];
+
+function normalizeSearchToken(token: string): string {
+  const lower = token.toLowerCase();
+  if (MACKEREL_ALIASES.some((alias) => lower === alias || (lower.length >= 5 && alias.startsWith(lower) && lower.startsWith('mack')))) {
+    return 'mackerel';
+  }
+  return lower;
 }
 
 export const ProductCombobox: React.FC<ProductComboboxProps> = ({
@@ -20,19 +31,51 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    openUpward: boolean;
+  } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const seedQueryRef = useRef<string | null>(null);
 
   const selectedSpecies = useMemo(() => {
     return speciesList.find((sp) => sp.id === value) || null;
   }, [speciesList, value]);
 
-  // Click outside to close
+  const updateMenuPosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const width = Math.min(Math.max(rect.width, viewportWidth >= 640 ? 460 : 360), viewportWidth - 16);
+    const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8));
+
+    const spaceBelow = viewportHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const estimatedHeight = 360;
+    const openUpward = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+    setMenuPosition({
+      top: openUpward ? Math.max(8, rect.top - 6) : rect.bottom + 6,
+      left,
+      width,
+      openUpward
+    });
+  }, []);
+
+  // Click outside to close (handles both trigger container and portaled menu)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inContainer = containerRef.current?.contains(target);
+      const inMenu = menuRef.current?.contains(target);
+      if (!inContainer && !inMenu) {
         setIsOpen(false);
       }
     };
@@ -44,12 +87,29 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     };
   }, [isOpen]);
 
-  // Focus input when opened
+  // Reposition portaled dropdown on scroll/resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    updateMenuPosition();
+    const handleReposition = () => updateMenuPosition();
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+    };
+  }, [isOpen, updateMenuPosition]);
+
+  // Focus input immediately when opened without dropping early keystrokes
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
+      const seeded = seedQueryRef.current;
+      seedQueryRef.current = null;
+      setQuery(seeded ?? '');
       setHighlightedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 60);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      });
     }
   }, [isOpen]);
 
@@ -58,14 +118,18 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     const q = query.trim().toLowerCase();
     if (!q) return speciesList;
 
-    const tokens = q.split(/\s+/).filter(Boolean);
-    const normQ = q.replace(/[^a-z0-9]/g, '');
+    const rawTokens = q.split(/\s+/).filter(Boolean);
+    const tokens = rawTokens.map(normalizeSearchToken);
+    const normalizedQueryStr = tokens.join(' ');
+    const normQ = normalizedQueryStr.replace(/[^a-z0-9]/g, '');
 
-    return speciesList.filter((sp) => {
+    const matched = speciesList.filter((sp) => {
       // Guard against cross-species false positives:
       // If user is searching for a specific species like "mackerel", products of a distinctly
       // different biological species (e.g. Ribbonfish, Vannamei, Squid, Octopus) must not match.
-      const isMackerelSearch = tokens.some((t) => t.includes('mackerel') || t.includes('kanagurta'));
+      const isMackerelSearch = tokens.some(
+        (t) => t.includes('mackerel') || t.includes('kanagurta') || MACKEREL_ALIASES.some((a) => t.includes(a))
+      );
       if (isMackerelSearch) {
         const nameLower = (sp.name || '').toLowerCase();
         const isOtherSpecies =
@@ -76,13 +140,16 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
           nameLower.includes('poovalan') ||
           nameLower.includes('leather jacket') ||
           nameLower.includes('cuttlefish') ||
-          nameLower.includes('tuna');
+          nameLower.includes('tuna') ||
+          nameLower.includes('shrimp') ||
+          nameLower.includes('prawn');
         if (isOtherSpecies) return false;
 
         const isMackerelProduct =
           nameLower.includes('mackerel') ||
           (sp.speciesHeadName || '').toLowerCase().includes('mackerel') ||
-          (sp.scientificName || '').toLowerCase().includes('kanagurta');
+          (sp.scientificName || '').toLowerCase().includes('kanagurta') ||
+          (sp.rawSpeciesName || '').toLowerCase().includes('mackerel');
         if (!isMackerelProduct) return false;
       }
 
@@ -172,11 +239,24 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
 
       return allTokensMatch || normMatch;
     });
+
+    // Rank direct product-name matches ahead of secondary attribute matches
+    return matched.sort((a, b) => {
+      const aName = (a.name || '').toLowerCase();
+      const bName = (b.name || '').toLowerCase();
+      const aNameHit = tokens.every((t) => aName.includes(t)) ? 1 : 0;
+      const bNameHit = tokens.every((t) => bName.includes(t)) ? 1 : 0;
+      if (aNameHit !== bNameHit) return bNameHit - aNameHit;
+      return 0;
+    });
   }, [speciesList, query]);
 
-  // Reset highlight index when filter changes
+  // Reset highlight index & scroll position when filter changes
   useEffect(() => {
     setHighlightedIndex(0);
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
   }, [query]);
 
   // Handle keyboard navigation
@@ -185,21 +265,28 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         e.preventDefault();
         setIsOpen(true);
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        seedQueryRef.current = e.key;
+        setIsOpen(true);
       }
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightedIndex((prev) =>
-        prev < filteredProducts.length - 1 ? prev + 1 : prev
-      );
-      // scroll into view
-      scrollHighlightedIntoView(highlightedIndex + 1);
+      setHighlightedIndex((prev) => {
+        const next = prev < filteredProducts.length - 1 ? prev + 1 : prev;
+        scrollHighlightedIntoView(next);
+        return next;
+      });
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-      scrollHighlightedIntoView(highlightedIndex - 1);
+      setHighlightedIndex((prev) => {
+        const next = prev > 0 ? prev - 1 : 0;
+        scrollHighlightedIntoView(next);
+        return next;
+      });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredProducts[highlightedIndex]) {
@@ -232,6 +319,166 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     onChange(null);
     setQuery('');
   };
+
+  const dropdownMenu =
+    isOpen && menuPosition
+      ? createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: 'fixed',
+              left: `${menuPosition.left}px`,
+              width: `${menuPosition.width}px`,
+              ...(menuPosition.openUpward
+                ? { bottom: `${window.innerHeight - menuPosition.top}px` }
+                : { top: `${menuPosition.top}px` })
+            }}
+            className="bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Search Header */}
+            <div className="p-2.5 bg-gray-50/90 border-b border-gray-100">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-rose-600 pointer-events-none" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type name, code, raw catch, HSN..."
+                  className="w-full pl-8 pr-7 py-1.5 bg-white border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 rounded-xl text-xs font-medium text-ink-900 outline-none transition"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 rounded-full"
+                    title="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Results Counter / Filter status */}
+              <div className="flex items-center justify-between mt-2 px-1 text-[11px] font-semibold text-ink-500">
+                <span>
+                  {query.trim()
+                    ? `Showing results for "${query.trim()}"`
+                    : 'Commercial Products Master'}
+                </span>
+                <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-gray-200 text-ink-600">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'match' : 'matches'}
+                </span>
+              </div>
+            </div>
+
+            {/* Filtered Products List */}
+            <div
+              ref={listRef}
+              className="max-h-72 overflow-y-auto divide-y divide-gray-50 font-medium"
+            >
+              {filteredProducts.length === 0 ? (
+                <div className="py-8 px-4 text-center">
+                  <Fish className="w-8 h-8 mx-auto mb-2 text-rose-300" />
+                  <p className="text-xs font-bold text-ink-800">
+                    No products found matching "{query}"
+                  </p>
+                  <p className="text-[11px] text-ink-500 mt-1 max-w-[280px] mx-auto">
+                    Try searching with product code (e.g. PRD-001), category (Fish, Shrimp, Squid), or raw species connection.
+                  </p>
+                </div>
+              ) : (
+                filteredProducts.map((sp, idx) => {
+                  const isSelected = selectedSpecies?.id === sp.id;
+                  const isHighlighted = idx === highlightedIndex;
+
+                  return (
+                    <button
+                      key={sp.id}
+                      type="button"
+                      onClick={() => handleSelect(sp)}
+                      onMouseEnter={() => setHighlightedIndex(idx)}
+                      className={`w-full text-left px-3 py-2.5 transition flex items-start justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-rose-50/80'
+                          : isHighlighted
+                          ? 'bg-rose-50/40'
+                          : 'hover:bg-gray-50/80'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {/* Line 1: Code & Name */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[10px] font-black text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded border border-rose-200 shrink-0">
+                            {sp.code}
+                          </span>
+                          <span
+                            className={`text-xs font-bold truncate ${
+                              isSelected ? 'text-rose-950 font-black' : 'text-ink-900'
+                            }`}
+                          >
+                            {sp.name}
+                          </span>
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 text-rose-600 shrink-0 ml-auto" />
+                          )}
+                        </div>
+
+                        {/* Line 2: Scientific Name & Species Head */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          {sp.speciesHeadName && (
+                            <span className="font-bold text-[10px] text-rose-800 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                              {sp.speciesHeadName}
+                            </span>
+                          )}
+                          {sp.scientificName && (
+                            <span className="italic text-ink-500 text-[11px] truncate">
+                              {sp.scientificName}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Line 3: Product Form / Processing Type */}
+                        {(sp.productForm || sp.processingType) && (
+                          <div className="text-[10px] text-ink-500 flex items-center gap-1 truncate font-normal">
+                            <Layers className="w-3 h-3 text-ink-400 shrink-0" />
+                            <span className="truncate">
+                              {sp.productForm || 'Standard'} {sp.processingType ? `· ${sp.processingType}` : ''}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right column: Category & HSN Badge */}
+                      <div className="flex flex-col items-end gap-1 shrink-0 pt-0.5">
+                        {sp.category && (
+                          <span className="text-[10px] font-semibold text-ink-600 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                            {sp.category}
+                          </span>
+                        )}
+                        {sp.hsCode && (
+                          <span className="font-mono text-[9px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 flex items-center gap-0.5">
+                            <Hash className="w-2.5 h-2.5 text-amber-600" />
+                            {sp.hsCode}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer note */}
+            <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-ink-400">
+              <span>Use ↑↓ arrows and Enter to select</span>
+              <span>Esc to close</span>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className="relative flex-1 min-w-[200px]" ref={containerRef}>
@@ -299,151 +546,7 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
         </div>
       </button>
 
-      {/* Floating Searchable Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-[380px] sm:w-[460px] max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Search Header */}
-          <div className="p-2.5 bg-gray-50/90 border-b border-gray-100">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-rose-600 pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type name, code, raw catch, HSN..."
-                className="w-full pl-8 pr-7 py-1.5 bg-white border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 rounded-xl text-xs font-medium text-ink-900 outline-none transition"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 rounded-full"
-                  title="Clear search"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-
-            {/* Results Counter / Filter status */}
-            <div className="flex items-center justify-between mt-2 px-1 text-[11px] font-semibold text-ink-500">
-              <span>
-                {query.trim()
-                  ? `Showing results for "${query.trim()}"`
-                  : 'Commercial Products Master'}
-              </span>
-              <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-gray-200 text-ink-600">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'match' : 'matches'}
-              </span>
-            </div>
-          </div>
-
-          {/* Filtered Products List */}
-          <div
-            ref={listRef}
-            className="max-h-64 overflow-y-auto divide-y divide-gray-50 font-medium"
-          >
-            {filteredProducts.length === 0 ? (
-              <div className="py-8 px-4 text-center">
-                <Fish className="w-8 h-8 mx-auto mb-2 text-rose-300" />
-                <p className="text-xs font-bold text-ink-800">
-                  No products found matching "{query}"
-                </p>
-                <p className="text-[11px] text-ink-500 mt-1 max-w-[280px] mx-auto">
-                  Try searching with product code (e.g. PRD-001), category (Fish, Shrimp, Squid), or raw species connection.
-                </p>
-              </div>
-            ) : (
-              filteredProducts.map((sp, idx) => {
-                const isSelected = selectedSpecies?.id === sp.id;
-                const isHighlighted = idx === highlightedIndex;
-
-                return (
-                  <button
-                    key={sp.id}
-                    type="button"
-                    onClick={() => handleSelect(sp)}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`w-full text-left px-3 py-2.5 transition flex items-start justify-between gap-3 ${
-                      isSelected
-                        ? 'bg-rose-50/80'
-                        : isHighlighted
-                        ? 'bg-rose-50/40'
-                        : 'hover:bg-gray-50/80'
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0 space-y-1">
-                      {/* Line 1: Code & Name */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-[10px] font-black text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded border border-rose-200 shrink-0">
-                          {sp.code}
-                        </span>
-                        <span
-                          className={`text-xs font-bold truncate ${
-                            isSelected ? 'text-rose-950 font-black' : 'text-ink-900'
-                          }`}
-                        >
-                          {sp.name}
-                        </span>
-                        {isSelected && (
-                          <Check className="w-3.5 h-3.5 text-rose-600 shrink-0 ml-auto" />
-                        )}
-                      </div>
-
-                      {/* Line 2: Scientific Name & Species Head */}
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                        {sp.speciesHeadName && (
-                          <span className="font-bold text-[10px] text-rose-800 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                            {sp.speciesHeadName}
-                          </span>
-                        )}
-                        {sp.scientificName && (
-                          <span className="italic text-ink-500 text-[11px] truncate">
-                            {sp.scientificName}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Line 3: Product Form / Processing Type */}
-                      {(sp.productForm || sp.processingType) && (
-                        <div className="text-[10px] text-ink-500 flex items-center gap-1 truncate font-normal">
-                          <Layers className="w-3 h-3 text-ink-400 shrink-0" />
-                          <span className="truncate">
-                            {sp.productForm || 'Standard'} {sp.processingType ? `· ${sp.processingType}` : ''}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right column: Category & HSN Badge */}
-                    <div className="flex flex-col items-end gap-1 shrink-0 pt-0.5">
-                      {sp.category && (
-                        <span className="text-[10px] font-semibold text-ink-600 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
-                          {sp.category}
-                        </span>
-                      )}
-                      {sp.hsCode && (
-                        <span className="font-mono text-[9px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 flex items-center gap-0.5">
-                          <Hash className="w-2.5 h-2.5 text-amber-600" />
-                          {sp.hsCode}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Footer note */}
-          <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-ink-400">
-            <span>Use ↑↓ arrows and Enter to select</span>
-            <span>Esc to close</span>
-          </div>
-        </div>
-      )}
+      {dropdownMenu}
     </div>
   );
 };
