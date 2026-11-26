@@ -809,3 +809,110 @@ export interface InventoryCalculationResult {
   totalSalesValueINR: number;
   overallGrossMarginPct: number;
 }
+
+// ===== PERFORMANCE ANALYSIS MODULE =====
+
+export interface PerformanceExpenseEntry {
+  id: string;
+  invoiceId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  financialYear?: string;
+  customerId: string;
+  customerName: string;
+  portOfLoadingId?: string;
+  portOfDischargeId?: string;
+  speciesHeadId: string;
+  speciesHeadName: string;
+  serialNo: string;
+  invoiceTotalWeightKg: number;
+  invoiceTotalValueINR?: number;
+  lineWeightKg: number;
+  lineCartonsCount: number;
+  splitRatio: number;
+  eiaExpense: number;
+  cartonExpense: number;
+  cover: number;
+  freight: number;
+  freightEnteredTotal?: number;
+  courier: number;
+  courierEnteredTotal?: number;
+  freezingCharge: number;
+  ice: number;
+  otherExpense: number;
+  grandTotal: number;
+  expensesComplete: boolean;
+  isVoided?: boolean;
+  isDeleted?: boolean;
+  deletionReason?: string;
+  deletedAt?: string;
+  deletedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerformanceSalesEntry {
+  id: string;
+  invoiceId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  financialYear?: string;
+  customerId: string;
+  customerName: string;
+  portOfDischargeId?: string;
+  speciesHeadId: string;
+  speciesHeadName: string;
+  cartonsCount: number;
+  weightKg: number;
+  salesAmountUSD: number;
+  salesAmountINR: number;
+  salesBasis: 'realized' | 'estimated';
+  exchangeRate: number;
+  drawbackExpected: number;
+  drawbackReceived: number;
+  drawbackPending: number;
+  rodtepExpected: number;
+  rodtepReceived: number;
+  rodtepPending: number;
+  isVoided?: boolean;
+  isDeleted?: boolean;
+  deletionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerformanceAuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE' | 'SYNC' | 'REBUILD' | 'IMPORT';
+  targetType: 'expense' | 'sales' | 'system';
+  targetId: string;
+  summary: string;
+  details?: string;
+}
+
+export interface PerformanceSavedView {
+  id: string;
+  name: string;
+  filters: PerformanceFilters;
+  createdAt: string;
+}
+
+export interface PerformanceFilters {
+  dateFrom: string;
+  dateTo: string;
+  financialYear: string;
+  month: string;
+  speciesHeadIds: string[];
+  customerIds: string[];
+  invoiceNumbers: string[];
+  portIds?: string[];
+  expenseTypes?: string[];
+  expensesStatus: 'pending' | 'complete' | 'all';
+  drawbackStatus: 'pending' | 'received' | 'all';
+  rodtepStatus: 'pending' | 'received' | 'all';
+  profitLoss: 'profit' | 'loss' | 'all';
+}

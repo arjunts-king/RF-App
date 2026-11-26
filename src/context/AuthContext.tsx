@@ -32,6 +32,10 @@ interface AuthContextType {
     canPeriodClose: boolean;
     canRebuildInventory: boolean;
     canManageInventoryItems: boolean;
+    canViewPerformanceExpenses: boolean;
+    canViewPerformanceLedger: boolean;
+    canEnterPerformanceData: boolean;
+    canDeletePerformanceData: boolean;
   };
 }
 
@@ -245,7 +249,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     canRecordStockCounts: currentUser.role === 'admin' || currentUser.role === 'master_accountant' || currentUser.role === 'junior_accountant',
     canPeriodClose: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
     canRebuildInventory: currentUser.role === 'admin',
-    canManageInventoryItems: currentUser.role === 'admin' || currentUser.role === 'master_accountant'
+    canManageInventoryItems: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canViewPerformanceExpenses: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canViewPerformanceLedger: currentUser.role !== 'junior_accountant',
+    canEnterPerformanceData: currentUser.role === 'admin' || currentUser.role === 'master_accountant',
+    canDeletePerformanceData: currentUser.role === 'admin'
   };
 
   return (

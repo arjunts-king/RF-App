@@ -40,15 +40,16 @@ import {
   Anchor,
   Fish,
   Sparkles,
-  CreditCard
+  CreditCard,
+  Activity
 } from 'lucide-react';
 
-export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales' | 'inventory';
+export type ActiveModuleType = 'home' | 'purchase' | 'production' | 'sales' | 'inventory' | 'performance';
 
 interface NavbarProps {
   activeModule: ActiveModuleType;
   onModuleChange: (module: ActiveModuleType) => void;
-  onNavigateTab: (module: 'purchase' | 'production' | 'sales' | 'inventory', tab: string) => void;
+  onNavigateTab: (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'performance', tab: string) => void;
   onOpenMobileMenu?: () => void;
   onOpenCommandPalette: () => void;
 }
@@ -65,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { reduceTransparency, setReduceTransparency, reduceMotion, setReduceMotion, ambientGlow, setAmbientGlow } = useLiquidGlass();
   const [showProfile, setShowProfile] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<'purchase' | 'production' | 'sales' | 'inventory' | null>(null);
+  const [activeMegaMenu, setActiveMegaMenu] = useState<'purchase' | 'production' | 'sales' | 'inventory' | 'performance' | null>(null);
 
   const megaMenuRef = useRef<HTMLDivElement>(null);
 
@@ -238,7 +239,36 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   ];
 
-  const handleMenuSelect = (module: 'purchase' | 'production' | 'sales' | 'inventory', tabId: string) => {
+  const performanceGroups = [
+    {
+      title: 'PROFITABILITY OVERVIEW',
+      items: [
+        { id: 'perf-dashboard', label: 'Profitability Dashboard', icon: Activity, desc: 'Sales, expenses, purchase cost & profit KPIs' }
+      ]
+    },
+    {
+      title: 'ANALYSIS TABLES',
+      items: [
+        { id: 'expense-analysis', label: 'Direct Expense Analysis', icon: Receipt, desc: 'Invoice-level EIA, carton, freight & direct expenses', show: permissions.canViewPerformanceExpenses },
+        { id: 'sales-analysis', label: 'Sales Analysis', icon: TrendingUp, desc: 'USD/INR sales, Drawback & RoTDEP tracking', show: permissions.canViewPerformanceExpenses }
+      ]
+    },
+    {
+      title: 'LEDGERS & P&L',
+      items: [
+        { id: 'species-ledger', label: 'Species-Head Sales Ledger', icon: BookOpen, desc: 'P&L ledger by species head with waterfall chart', show: permissions.canViewPerformanceLedger }
+      ]
+    },
+    {
+      title: 'CONTROL & AUDIT',
+      items: [
+        { id: 'exception-report', label: 'Exception & Reconciliation', icon: ShieldAlert, desc: 'Missing expenses, unmapped products & tie-outs' },
+        { id: 'perf-audit', label: 'Performance Audit Log', icon: ShieldAlert, desc: 'Full audit trail of performance entries', show: permissions.canViewAuditLog }
+      ]
+    }
+  ];
+
+  const handleMenuSelect = (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'performance', tabId: string) => {
     setActiveMegaMenu(null);
     onNavigateTab(module, tabId);
   };
@@ -386,6 +416,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
+            {/* Performance Pill with Dropdown indicator */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  onModuleChange('performance');
+                  setActiveMegaMenu(activeMegaMenu === 'performance' ? null : 'performance');
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all ${
+                  activeModule === 'performance'
+                    ? 'bg-rose-600 text-white shadow-2xs font-bold'
+                    : 'text-ink-700 hover:text-rose-700 hover:bg-white/80'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Performance</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${activeMegaMenu === 'performance' ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
             {/* GROUPED MEGA-MENU POPOVER FOR ACTIVE MODULE */}
             {activeMegaMenu && (
               <div className="absolute left-0 top-full mt-2 w-[720px] glass-surface-thick rounded-2xl border border-white/90 p-6 z-50 animate-liquid-pop text-left">
@@ -413,7 +462,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? productionGroups
                     : activeMegaMenu === 'sales'
                     ? salesGroups
-                    : inventoryGroups
+                    : activeMegaMenu === 'inventory'
+                    ? inventoryGroups
+                    : performanceGroups
                   ).map((grp) => {
                     const visibleItems = grp.items.filter((i) => i.show === undefined || i.show);
                     if (visibleItems.length === 0) return null;

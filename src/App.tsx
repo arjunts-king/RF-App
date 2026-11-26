@@ -56,6 +56,15 @@ const PeriodCloseView = lazy(() => import('./components/inventory/PeriodCloseVie
 const InventoryReportsHub = lazy(() => import('./components/inventory/InventoryReportsHub').then(m => ({ default: m.InventoryReportsHub })));
 const InventoryAuditView = lazy(() => import('./components/inventory/InventoryAuditView').then(m => ({ default: m.InventoryAuditView })));
 
+import { PerformanceSidebar, PerformanceNavTab } from './components/performance/PerformanceSidebar';
+import { PerformanceProvider } from './context/PerformanceContext';
+const PerformanceDashboard = lazy(() => import('./components/performance/PerformanceDashboard').then(m => ({ default: m.PerformanceDashboard })));
+const ExpenseAnalysisView = lazy(() => import('./components/performance/ExpenseAnalysisView').then(m => ({ default: m.ExpenseAnalysisView })));
+const SalesAnalysisView = lazy(() => import('./components/performance/SalesAnalysisView').then(m => ({ default: m.SalesAnalysisView })));
+const SpeciesLedgerView = lazy(() => import('./components/performance/SpeciesLedgerView').then(m => ({ default: m.SpeciesLedgerView })));
+const ExceptionReportView = lazy(() => import('./components/performance/ExceptionReportView').then(m => ({ default: m.ExceptionReportView })));
+const PerformanceAuditView = lazy(() => import('./components/performance/PerformanceAuditView').then(m => ({ default: m.PerformanceAuditView })));
+
 import {
   LayoutDashboard,
   PlusCircle,
@@ -70,7 +79,8 @@ import {
   FileText,
   Home,
   ShoppingBag,
-  Boxes
+  Boxes,
+  Activity
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -82,6 +92,7 @@ const MainLayout: React.FC = () => {
   const [salesTab, setSalesTab] = useState<SalesNavTab>('sales-dashboard');
   const [editingSalesInvoiceId, setEditingSalesInvoiceId] = useState<string | null>(null);
   const [inventoryTab, setInventoryTab] = useState<InventoryNavTab>('inv-dashboard');
+  const [performanceTab, setPerformanceTab] = useState<PerformanceNavTab>('perf-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { permissions } = useAuth();
@@ -104,7 +115,7 @@ const MainLayout: React.FC = () => {
     setSalesTab(tab);
   };
 
-  const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'home', tab: string) => {
+  const handleNavigateDirect = (module: 'purchase' | 'production' | 'sales' | 'inventory' | 'performance' | 'home', tab: string) => {
     if (module === 'home') {
       setActiveModule('home');
       return;
@@ -118,6 +129,8 @@ const MainLayout: React.FC = () => {
       handleSelectSalesTab(tab as SalesNavTab);
     } else if (module === 'inventory') {
       setInventoryTab(tab as InventoryNavTab);
+    } else if (module === 'performance') {
+      setPerformanceTab(tab as PerformanceNavTab);
     }
     setIsMobileMenuOpen(false);
   };
@@ -161,8 +174,10 @@ const MainLayout: React.FC = () => {
               <ProductionSidebar activeTab={productionTab} onTabChange={setProductionTab} />
             ) : activeModule === 'sales' ? (
               <SalesSidebar activeTab={salesTab} onTabChange={handleSelectSalesTab} />
-            ) : (
+            ) : activeModule === 'inventory' ? (
               <InventorySidebar activeTab={inventoryTab} onTabChange={setInventoryTab} />
+            ) : (
+              <PerformanceSidebar activeTab={performanceTab} onTabChange={setPerformanceTab} />
             )}
           </div>
         )}
@@ -183,6 +198,8 @@ const MainLayout: React.FC = () => {
                       ? 'Procurement Menu'
                       : activeModule === 'production'
                       ? 'Production Menu'
+                      : activeModule === 'performance'
+                      ? 'Performance Analysis'
                       : 'Commercial Export Menu'}
                   </span>
                 </div>
@@ -195,7 +212,7 @@ const MainLayout: React.FC = () => {
               </div>
 
               {/* Module Switcher in mobile drawer */}
-              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-5 gap-1 text-[10px] font-bold text-center">
+              <div className="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-6 gap-1 text-[10px] font-bold text-center">
                 <button
                   onClick={() => {
                     setActiveModule('home');
@@ -237,6 +254,14 @@ const MainLayout: React.FC = () => {
                 >
                   Stock
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveModule('performance');
+                  }}
+                  className={`py-1.5 rounded-lg transition ${activeModule === 'performance' ? 'bg-rose-600 text-white' : 'text-ink-700 hover:bg-white'}`}
+                >
+                  Perf
+                </button>
 
               </div>
 
@@ -270,6 +295,14 @@ const MainLayout: React.FC = () => {
                     activeTab={inventoryTab}
                     onTabChange={(tab) => {
                       setInventoryTab(tab);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  />
+                ) : activeModule === 'performance' ? (
+                  <PerformanceSidebar
+                    activeTab={performanceTab}
+                    onTabChange={(tab) => {
+                      setPerformanceTab(tab);
                       setIsMobileMenuOpen(false);
                     }}
                   />
@@ -444,7 +477,7 @@ const MainLayout: React.FC = () => {
                 <ExcelImportView defaultModule="sales" onNavigate={(tab) => handleSelectSalesTab(tab as SalesNavTab)} />
               )}
             </>
-          ) : (
+          ) : activeModule === 'inventory' ? (
             <>
               {inventoryTab === 'inv-dashboard' && (
                 <InventoryDashboard onNavigateTab={(tab) => setInventoryTab(tab as InventoryNavTab)} />
@@ -459,6 +492,17 @@ const MainLayout: React.FC = () => {
               )}
               {inventoryTab === 'period-close' && <PeriodCloseView />}
               {inventoryTab === 'audit-log' && <InventoryAuditView />}
+            </>
+          ) : (
+            <>
+              {performanceTab === 'perf-dashboard' && (
+                <PerformanceDashboard onNavigate={(tab) => setPerformanceTab(tab as PerformanceNavTab)} />
+              )}
+              {performanceTab === 'expense-analysis' && <ExpenseAnalysisView />}
+              {performanceTab === 'sales-analysis' && <SalesAnalysisView />}
+              {performanceTab === 'species-ledger' && <SpeciesLedgerView />}
+              {performanceTab === 'exception-report' && <ExceptionReportView />}
+              {performanceTab === 'perf-audit' && <PerformanceAuditView />}
             </>
           )}
           </Suspense>
@@ -631,6 +675,16 @@ const MainLayout: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveModule('performance')}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+            activeModule === 'performance' ? 'text-rose-600' : 'text-ink-500'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Perf</span>
+        </button>
+
+        <button
           onClick={() => setIsMobileMenuOpen(true)}
           className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-ink-500 hover:text-rose-600"
         >
@@ -648,7 +702,9 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <DataProvider>
-            <MainLayout />
+            <PerformanceProvider>
+              <MainLayout />
+            </PerformanceProvider>
           </DataProvider>
         </ToastProvider>
       </AuthProvider>
