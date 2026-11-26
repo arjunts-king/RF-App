@@ -108,6 +108,7 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
   // Lookups
   const customerMap = new Map(customers.map((c) => [c.id, c]));
   const portMap = new Map(ports.map((p) => [p.id, p]));
+  const speciesMap = new Map(species.map((sp) => [sp.id, sp]));
 
   // Filtered List
   const filteredInvoices = salesInvoices.filter((inv) => {
@@ -128,7 +129,14 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
       const matchCust = consigneeName.includes(q) || buyerName.includes(q);
       const matchPort = (portMap.get(inv.portOfDischargeId)?.name || inv.portOfDischarge || '').toLowerCase().includes(q);
       const matchRemarks = inv.remarks?.toLowerCase().includes(q);
-      return matchNo || matchSo || matchOrder || matchCust || matchPort || matchRemarks;
+      const matchLineItem = inv.lineItems?.some((l) => {
+        const spName = speciesMap.get(l.speciesId)?.name.toLowerCase() || '';
+        const desc = l.productDescription?.toLowerCase() || '';
+        const grade = l.gradeSize?.toLowerCase() || '';
+        const hsn = l.hsCode?.toLowerCase() || '';
+        return spName.includes(q) || desc.includes(q) || grade.includes(q) || hsn.includes(q);
+      });
+      return matchNo || matchSo || matchOrder || matchCust || matchPort || matchRemarks || Boolean(matchLineItem);
     }
 
     return true;
@@ -452,6 +460,30 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
         </div>
 
         <div className="flex items-center gap-2">
+          {filteredInvoices.some((inv) => inv.lineItems && inv.lineItems.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                const visibleIds = paginatedInvoices.map((inv) => inv.id);
+                const allVisibleExpanded = visibleIds.length > 0 && visibleIds.every((id) => expandedIds.includes(id));
+                if (allVisibleExpanded) {
+                  setExpandedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+                } else {
+                  setExpandedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+                }
+              }}
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs"
+              title="Expand or collapse product-wise line item tables for all visible invoices"
+            >
+              <Layers className="w-3.5 h-3.5 text-rose-600" />
+              <span>
+                {paginatedInvoices.length > 0 && paginatedInvoices.every((inv) => expandedIds.includes(inv.id))
+                  ? 'Collapse Items'
+                  : 'Expand All Items'}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={handleExportExcel}
             className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs"
@@ -593,31 +625,42 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
                           )}
                         </div>
 
-                        {/* Inline Item Chips (Species, Grade/Size, Cartons) */}
+                        {/* Inline Item Chips (Product, Grade/Size, Cartons, Weight) */}
                         {inv.lineItems && inv.lineItems.length > 0 && (
                           <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                            {inv.lineItems.slice(0, 3).map((l, idx) => (
-                              <span
-                                key={l.id || idx}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 border border-rose-200 rounded text-[10px] font-semibold text-rose-900"
-                                title={`${l.productDescription}: Grade ${l.gradeSize || 'N/A'}, ${l.cartonsCount ? l.cartonsCount + ' cs, ' : ''}${l.weightKg} kg @ $${l.ratePerKg}/kg`}
-                              >
-                                {l.gradeSize ? (
-                                  <strong className="text-rose-700 font-bold">{l.gradeSize}</strong>
-                                ) : (
-                                  <span>{l.productDescription}</span>
-                                )}
-                                {l.cartonsCount > 0 && <span className="text-ink-500">({l.cartonsCount}cs)</span>}
-                                <span className="text-ink-600 font-mono text-[9px]">{l.weightKg}kg</span>
-                              </span>
-                            ))}
-                            {inv.lineItems.length > 3 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(inv.id)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ink-900 text-white rounded text-[10px] font-bold hover:bg-rose-700 transition cursor-pointer"
+                              title="Click to toggle full product-wise line item table"
+                            >
+                              <Layers className="w-2.5 h-2.5" />
+                              <span>{inv.lineItems.length} {inv.lineItems.length === 1 ? 'item' : 'items'}</span>
+                            </button>
+                            {inv.lineItems.slice(0, 4).map((l, idx) => {
+                              const resolvedName = l.productDescription || speciesMap.get(l.speciesId)?.name || 'Product';
+                              return (
+                                <span
+                                  key={l.id || idx}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 border border-rose-200 rounded text-[10px] font-semibold text-rose-900"
+                                  title={`${resolvedName}${l.gradeSize ? ` (${l.gradeSize})` : ''}: ${l.cartonsCount ? l.cartonsCount + ' cs, ' : ''}${l.weightKg} kg @ $${l.ratePerKg}/kg`}
+                                >
+                                  <span className="truncate max-w-[140px]">{resolvedName}</span>
+                                  {l.gradeSize && (
+                                    <strong className="text-rose-700 font-bold">{l.gradeSize}</strong>
+                                  )}
+                                  {l.cartonsCount > 0 && <span className="text-ink-500">({l.cartonsCount}cs)</span>}
+                                  <span className="text-ink-600 font-mono text-[9px]">{l.weightKg}kg</span>
+                                </span>
+                              );
+                            })}
+                            {inv.lineItems.length > 4 && (
                               <button
                                 type="button"
                                 onClick={() => toggleExpand(inv.id)}
                                 className="text-[10px] text-rose-700 font-bold hover:underline"
                               >
-                                +{inv.lineItems.length - 3} more
+                                +{inv.lineItems.length - 4} more
                               </button>
                             )}
                           </div>
@@ -834,10 +877,15 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-ink-800">
-                                  {inv.lineItems.map((line, idx) => (
+                                  {inv.lineItems.map((line, idx) => {
+                                    const spName = speciesMap.get(line.speciesId)?.name;
+                                    const productLabel = line.productDescription && line.productDescription !== 'FROZEN SEAFOOD'
+                                      ? line.productDescription
+                                      : (spName || line.productDescription || 'Export Finish');
+                                    return (
                                     <tr key={line.id || idx} className="hover:bg-rose-50/30">
                                       <td className="py-1.5 px-2 font-mono text-ink-400">{idx + 1}</td>
-                                      <td className="py-1.5 px-2 font-medium">{line.productDescription || 'Export Finish'}</td>
+                                      <td className="py-1.5 px-2 font-medium">{productLabel}</td>
                                       <td className="py-1.5 px-2 text-center">
                                         {line.gradeSize ? (
                                           <span className="px-2 py-0.5 bg-rose-100/70 text-rose-800 font-bold rounded-md font-mono text-[11px] border border-rose-200">
@@ -863,7 +911,8 @@ export const SalesInvoiceList: React.FC<SalesInvoiceListProps> = ({ onNavigate, 
                                         {line.hsCode || '-'}
                                       </td>
                                     </tr>
-                                  ))}
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>

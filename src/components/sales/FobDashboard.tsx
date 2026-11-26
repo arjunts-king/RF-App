@@ -1327,6 +1327,30 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                       <td className="py-2.5 px-3">
                         <div className="font-bold text-ink-800">{cust?.name || inv.consigneeName || inv.buyerName || 'Overseas Customer'}</div>
                         <div className="text-[11px] text-ink-500">{pod?.name || inv.portOfDischarge || 'POD'} ({cust?.country || inv.countryOfDestination || 'Global'})</div>
+                        {inv.lineItems && inv.lineItems.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded text-[10px] font-bold">
+                              {inv.lineItems.length} {inv.lineItems.length === 1 ? 'item' : 'items'}
+                            </span>
+                            {inv.lineItems.slice(0, 3).map((l, idx) => {
+                              const label = l.productDescription || speciesMap.get(l.speciesId)?.name || 'Product';
+                              return (
+                                <span
+                                  key={l.id || idx}
+                                  className="px-1.5 py-0.2 bg-gray-100 text-ink-700 rounded text-[10px] font-medium truncate max-w-[140px]"
+                                  title={`${label}${l.gradeSize ? ` (${l.gradeSize})` : ''} - ${l.weightKg}kg`}
+                                >
+                                  {label}{l.gradeSize ? ` · ${l.gradeSize}` : ''}
+                                </span>
+                              );
+                            })}
+                            {inv.lineItems.length > 3 && (
+                              <span className="text-[10px] text-rose-700 font-bold">
+                                +{inv.lineItems.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-semibold">
                         {formatKg(inv.totalWeightKg)}

@@ -44,7 +44,28 @@ export async function parseExcelWorkbook(file: File): Promise<{
 
         const sheets = workbook.SheetNames.map((name) => {
           const sheet = workbook.Sheets[name];
-          const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+          let rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+
+          // If the sheet has a title/banner row above the real table headers, SheetJS produces __EMPTY keys.
+          // Scan the top 10 rows to locate the actual header row and re-parse from that range.
+          if (rows.length > 0) {
+            const firstKeys = Object.keys(rows[0] || {});
+            const emptyKeysCount = firstKeys.filter((k) => k.startsWith('__EMPTY')).length;
+            if (emptyKeysCount >= Math.max(1, Math.floor(firstKeys.length / 2))) {
+              const rawMatrix = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: '' });
+              for (let rIdx = 0; rIdx < Math.min(10, rawMatrix.length); rIdx++) {
+                const candidate = rawMatrix[rIdx] || [];
+                const nonEmptyStrings = candidate.filter(
+                  (cell) => typeof cell === 'string' && cell.trim().length > 0
+                );
+                if (nonEmptyStrings.length >= 3) {
+                  rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { range: rIdx, defval: '' });
+                  break;
+                }
+              }
+            }
+          }
+
           return { name, rows };
         });
 

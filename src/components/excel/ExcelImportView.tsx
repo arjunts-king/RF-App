@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { PageHeader } from '../common/PageHeader';
@@ -8,6 +8,11 @@ import {
   downloadExcelTemplate,
   exportDataToExcel
 } from '../../utils/excelImport';
+import {
+  classifySalesSheetName,
+  extractSalesInvoiceRowsFromSheets,
+  groupSalesInvoiceRows
+} from '../../utils/salesExcelImport';
 import {
   FileSpreadsheet,
   Upload,
@@ -43,6 +48,7 @@ interface ImportSummary {
   createdPorts?: number;
   createdSizes?: number;
   createdSlabTypes?: number;
+  importedInvoices?: { invoiceNo: string; lineCount: number; totalWeightKg: number; totalAmountCurrency: number }[];
 }
 
 export type ModuleCategory = 'purchase' | 'production' | 'sales';
@@ -313,7 +319,10 @@ export const ExcelImportView: React.FC<{
         const hasPur = names.some((n) => n.includes('purchase'));
         const hasProc = names.some((n) => n.includes('process') || n.includes('production'));
         const hasSlab = names.some((n) => n.includes('slab'));
-        const hasInv = names.some((n) => n.includes('invoice') || n.includes('export') || n.includes('sales'));
+        const hasSalesSheet = sheets.some((s) => {
+          const cls = classifySalesSheetName(s.name);
+          return cls === 'detailed-invoices' || cls === 'summary-invoices' || cls === 'line-items';
+        });
         const hasCust = names.some((n) => n.includes('customer') || n.includes('buyer'));
         const hasPort = names.some((n) => n.includes('port'));
 
@@ -321,7 +330,7 @@ export const ExcelImportView: React.FC<{
           setSelectedModule('production');
           setSelectedEntity('production-multi-sheet');
           showToast('Detected Production multi-sheet workbook. Switched to Production Module.', 'info');
-        } else if (hasInv || (hasCust && hasPort)) {
+        } else if (hasSalesSheet || (hasCust && hasPort)) {
           setSelectedModule('sales');
           setSelectedEntity('sales-multi-sheet');
           showToast('Detected Sales & Export multi-sheet workbook. Switched to Sales Module.', 'info');
@@ -358,12 +367,18 @@ export const ExcelImportView: React.FC<{
         else if (
           sName.includes('export') ||
           sName.includes('sales') ||
+          sName.includes('invoice') ||
           colKeys.includes('portofloading') ||
           colKeys.includes('portofdischarge') ||
           colKeys.includes('fobvaluecurrency') ||
           colKeys.includes('fobvalue') ||
           colKeys.includes('consignee') ||
-          colKeys.includes('cartonscount')
+          colKeys.includes('consigneename') ||
+          colKeys.includes('cartonscount') ||
+          colKeys.includes('noofcartons') ||
+          colKeys.includes('commercialinvoiceno') ||
+          (selectedModule === 'sales' &&
+            (colKeys.includes('invoiceno') || colKeys.includes('invoicenumber') || colKeys.includes('weightkg') || colKeys.includes('netweightkg')))
         ) {
           setSelectedModule('sales');
           setSelectedEntity('sales-invoices');
@@ -432,6 +447,27 @@ export const ExcelImportView: React.FC<{
   };
 
   const activeRows = sheetsData[activeSheetIndex]?.rows || [];
+
+  const previewSalesInvoiceGroups = useMemo(() => {
+    if (
+      sheetsData.length === 0 ||
+      (selectedEntity !== 'sales-invoices' && selectedEntity !== 'sales-multi-sheet')
+    ) {
+      return [];
+    }
+    const rowsToPreview =
+      selectedEntity === 'sales-multi-sheet' || sheetsData.length > 1
+        ? extractSalesInvoiceRowsFromSheets(sheetsData)
+        : activeRows;
+    return groupSalesInvoiceRows(rowsToPreview, salesInvoices.length);
+  }, [sheetsData, activeRows, selectedEntity, salesInvoices.length]);
+
+  const previewSalesLineCount = useMemo(
+    () => previewSalesInvoiceGroups.reduce((sum, g) => sum + g.rows.length, 0),
+    [previewSalesInvoiceGroups]
+  );
+
+  const hasAnyRows = sheetsData.some((s) => s.rows.length > 0);
 
   const handleExecuteImport = () => {
     if (!sheetsData.length) return;
@@ -519,32 +555,44 @@ export const ExcelImportView: React.FC<{
         let totalSpeciesAdded = 0;
         let totalSizesAdded = 0;
         let totalLinesAdded = 0;
+        let importedInvoices: { invoiceNo: string; lineCount: number; totalWeightKg: number; totalAmountCurrency: number }[] = [];
         const allErrors: string[] = [];
 
+        // 1. Import master sheets first (skipping report sheets like Product Breakdown Summary)
         sheetsData.forEach((sheet) => {
-          const sheetNameNorm = sheet.name.toLowerCase().trim();
-          if (sheetNameNorm.includes('invoice') || sheetNameNorm.includes('export') || sheetNameNorm.includes('sales')) {
-            const res = bulkImportSalesInvoices(sheet.rows, autoCreateMaster);
-            totalInvoicesAdded += res.added;
-            totalLinesAdded += res.totalLines || 0;
-            totalCustomersAdded += res.createdCustomers || 0;
-            totalPortsAdded += res.createdPorts || 0;
-            totalSpeciesAdded += res.createdSpecies || 0;
-            totalSizesAdded += res.createdSizes || 0;
-            allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('customer') || sheetNameNorm.includes('buyer')) {
+          const cls = classifySalesSheetName(sheet.name);
+          if (cls === 'customers') {
             const res = bulkImportCustomers(sheet.rows);
             totalCustomersAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('port')) {
+          } else if (cls === 'ports') {
             const res = bulkImportPorts(sheet.rows);
             totalPortsAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('product') || sheetNameNorm.includes('specie')) {
+          } else if (cls === 'products') {
             const res = bulkImportSpecies(sheet.rows);
             totalSpeciesAdded += res.added;
             allErrors.push(...res.errors);
-          } else if (sheetNameNorm.includes('realiz') || sheetNameNorm.includes('settle')) {
+          }
+        });
+
+        // 2. Join any separate header + LineItems sheets or detailed invoice sheets cleanly in one pass
+        const mergedInvoiceRows = extractSalesInvoiceRowsFromSheets(sheetsData);
+        if (mergedInvoiceRows.length > 0) {
+          const res = bulkImportSalesInvoices(mergedInvoiceRows, autoCreateMaster);
+          totalInvoicesAdded += res.added;
+          totalLinesAdded += res.totalLines || 0;
+          totalCustomersAdded += res.createdCustomers || 0;
+          totalPortsAdded += res.createdPorts || 0;
+          totalSpeciesAdded += res.createdSpecies || 0;
+          totalSizesAdded += res.createdSizes || 0;
+          if (res.importedInvoices) importedInvoices = res.importedInvoices;
+          allErrors.push(...res.errors);
+        }
+
+        // 3. Apply realization settlements if present
+        sheetsData.forEach((sheet) => {
+          if (classifySalesSheetName(sheet.name) === 'realizations') {
             const res = bulkImportSalesRealizations(sheet.rows);
             totalInvoicesAdded += res.updated;
             allErrors.push(...res.errors);
@@ -558,6 +606,7 @@ export const ExcelImportView: React.FC<{
           createdPorts: totalPortsAdded,
           createdSpecies: totalSpeciesAdded,
           createdSizes: totalSizesAdded,
+          importedInvoices,
           errors: allErrors
         });
       } else if (selectedEntity === 'purchases') {
@@ -586,7 +635,11 @@ export const ExcelImportView: React.FC<{
           errors: res.errors
         });
       } else if (selectedEntity === 'sales-invoices') {
-        const res = bulkImportSalesInvoices(activeRows, autoCreateMaster);
+        const rowsToImport =
+          sheetsData.length > 1
+            ? extractSalesInvoiceRowsFromSheets(sheetsData)
+            : activeRows;
+        const res = bulkImportSalesInvoices(rowsToImport.length > 0 ? rowsToImport : activeRows, autoCreateMaster);
         setImportSummary({
           added: res.added,
           totalLines: res.totalLines,
@@ -594,7 +647,8 @@ export const ExcelImportView: React.FC<{
           createdCustomers: res.createdCustomers,
           createdPorts: res.createdPorts,
           createdSpecies: res.createdSpecies,
-          createdSizes: res.createdSizes
+          createdSizes: res.createdSizes,
+          importedInvoices: res.importedInvoices
         });
       } else if (selectedEntity === 'sales-realizations') {
         const res = bulkImportSalesRealizations(activeRows);
@@ -1244,7 +1298,7 @@ export const ExcelImportView: React.FC<{
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2">
             <div className="text-xs text-ink-500">
               Target Entity:{' '}
               <strong className="text-ink-900">
@@ -1254,9 +1308,9 @@ export const ExcelImportView: React.FC<{
 
             <button
               onClick={handleExecuteImport}
-              disabled={isProcessing || activeRows.length === 0}
+              disabled={isProcessing || (selectedEntity === 'sales-multi-sheet' ? !hasAnyRows : activeRows.length === 0)}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all ${
-                isProcessing || activeRows.length === 0
+                isProcessing || (selectedEntity === 'sales-multi-sheet' ? !hasAnyRows : activeRows.length === 0)
                   ? 'bg-gray-200 text-ink-400 cursor-not-allowed'
                   : 'bg-rose-600 hover:bg-rose-700 text-white hover:shadow-md'
               }`}
@@ -1274,6 +1328,38 @@ export const ExcelImportView: React.FC<{
               )}
             </button>
           </div>
+
+          {previewSalesInvoiceGroups.length > 0 && (
+            <div className="p-3.5 bg-rose-50/50 border border-rose-200 rounded-xl space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-bold text-rose-900 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-rose-600" />
+                  Product-Wise Grouping Preview: {previewSalesInvoiceGroups.length} Invoice{previewSalesInvoiceGroups.length > 1 ? 's' : ''} · {previewSalesLineCount} Line Item{previewSalesLineCount > 1 ? 's' : ''}
+                </span>
+                <span className="text-[11px] text-rose-700 font-medium">
+                  All product rows per invoice will be imported together
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {previewSalesInvoiceGroups.slice(0, 12).map((grp) => (
+                  <span
+                    key={grp.groupKey}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-rose-200 rounded-lg text-[11px] font-semibold text-ink-800"
+                  >
+                    <span className="font-mono font-bold text-rose-700">{grp.displayInvoiceNo}</span>
+                    <span className="px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded text-[10px] font-bold">
+                      {grp.rows.length} {grp.rows.length === 1 ? 'item' : 'items'}
+                    </span>
+                  </span>
+                ))}
+                {previewSalesInvoiceGroups.length > 12 && (
+                  <span className="text-[11px] font-semibold text-rose-700 px-1.5 py-0.5">
+                    +{previewSalesInvoiceGroups.length - 12} more invoices
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1386,6 +1472,34 @@ export const ExcelImportView: React.FC<{
               </div>
             )}
           </div>
+
+          {importSummary.importedInvoices && importSummary.importedInvoices.length > 0 && (
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+              <div className="text-xs font-bold text-ink-900 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-rose-600" />
+                  Imported Invoices &amp; Product Line Counts ({importSummary.importedInvoices.length})
+                </span>
+                <span className="text-[11px] font-semibold text-ink-500">
+                  Total {importSummary.totalLines || 0} product items
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                {importSummary.importedInvoices.map((inv) => (
+                  <span
+                    key={inv.invoiceNo}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-[11px] font-semibold text-ink-800"
+                  >
+                    <span className="font-mono font-bold text-rose-700">{inv.invoiceNo}</span>
+                    <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[10px] font-bold">
+                      {inv.lineCount} {inv.lineCount === 1 ? 'item' : 'items'}
+                    </span>
+                    <span className="text-ink-500 font-mono text-[10px]">{inv.totalWeightKg} Kg</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {importSummary.errors.length > 0 && (
             <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-2">

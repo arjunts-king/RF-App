@@ -33,6 +33,19 @@ import {
 } from '../utils/excelFormatters.ts';
 
 import {
+  getPrioritizedFlexibleValue,
+  groupSalesInvoiceRows,
+  classifySalesSheetName,
+  extractSalesInvoiceRowsFromSheets,
+  INVOICE_NO_CANDIDATE_KEYS,
+  INVOICE_NO_EXCLUDE_SUBSTRINGS,
+  LINE_WEIGHT_CANDIDATE_KEYS,
+  LINE_WEIGHT_EXCLUDE_SUBSTRINGS,
+  LINE_RATE_CANDIDATE_KEYS,
+  LINE_RATE_EXCLUDE_SUBSTRINGS
+} from '../utils/salesExcelImport.ts';
+
+import {
   calculatePerpetualInventory
 } from '../utils/inventoryValuation.ts';
 
@@ -6450,4 +6463,186 @@ test('Suite 79: Deepsea purchase box extraction from imported Excel & ledger/rep
   assert.ok(purchaseEntry, 'Purchase entry must exist in supplier ledger statement');
   assert.ok(purchaseEntry.briefDetails.includes('40 Boxes'), 'Supplier ledger briefDetails must include "40 Boxes"');
 });
+
+test('Suite 80: Multi-item sales invoice Excel grouping, merged continuation rows, prioritized columns, and multi-sheet joining', () => {
+  // 1. Merged/blank continuation rows: Invoice No, Date & Customer only on row 1 of each invoice
+  const mergedRows = [
+    {
+      'Invoice No': 'RF/EXP/10/26-27',
+      'Invoice Date': '19-10-2026',
+      'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+      'Product': 'Frozen Vannamei HLSO',
+      'Size': '21/25',
+      'No of Cartons': 100,
+      'Net Weight (Kg)': 2000,
+      'Rate per Kg (USD)': 9.8
+    },
+    {
+      'Invoice No': '',
+      'Invoice Date': '',
+      'Customer / Consignee': '',
+      'Product': 'Indian Squid Cleaned Tubes',
+      'Size': 'U/10',
+      'No of Cartons': 50,
+      'Net Weight (Kg)': 1000,
+      'Rate per Kg (USD)': 6.5
+    },
+    {
+      'Invoice No': '',
+      'Invoice Date': '',
+      'Customer / Consignee': '',
+      'Product': 'Frozen Ribbonfish Whole',
+      'Size': '300/500',
+      'No of Cartons': 80,
+      'Net Weight (Kg)': 1600,
+      'Rate per Kg (USD)': 3.2
+    },
+    {
+      'Invoice No': 'Total',
+      'Invoice Date': '',
+      'Customer / Consignee': '',
+      'Product': '',
+      'Net Weight (Kg)': 4600
+    },
+    {
+      'Invoice No': 'RF/EXP/11/26-27',
+      'Invoice Date': '20-10-2026',
+      'Customer / Consignee': 'Pacific Rim Imports LLC',
+      'Product': 'Yellowfin Tuna Steaks',
+      'Size': 'Large',
+      'No of Cartons': 80,
+      'Net Weight (Kg)': 1600,
+      'Rate per Kg (USD)': 11.2
+    }
+  ];
+
+  const groupedMerged = groupSalesInvoiceRows(mergedRows, 0);
+  assert.equal(groupedMerged.length, 2, 'Must group continuation rows under RF/EXP/10/26-27 and skip Total footer');
+  assert.equal(groupedMerged[0].displayInvoiceNo, 'RF/EXP/10/26-27');
+  assert.equal(groupedMerged[0].rows.length, 3, 'First invoice must retain all 3 product rows');
+  assert.equal(groupedMerged[1].displayInvoiceNo, 'RF/EXP/11/26-27');
+  assert.equal(groupedMerged[1].rows.length, 1, 'Second invoice must have 1 product row');
+
+  // 2. Column priority: Order No / Invoice Date / Exchange Rate / Invoice Total Net Weight must NOT shadow Invoice No / Line Rate / Line Weight
+  const reorderedColumnsRow = {
+    'Order No': 'PO-LINE-99',
+    'Invoice Date': '2026-10-21',
+    'Shipping Bill No': '2780281',
+    'Exchange Rate (Estimated)': 85.2,
+    'Invoice Total Net Weight (Kg)': 12000,
+    'Commercial Invoice No': 'RF/EXP/12/26-27',
+    'Product / Species': 'Frozen Indian Mackerel',
+    'Net Weight (Kg)': '2,400',
+    'Product-wise Rate / Kg': 4.15
+  };
+
+  assert.equal(
+    getPrioritizedFlexibleValue(reorderedColumnsRow, INVOICE_NO_CANDIDATE_KEYS, {
+      excludeSubstrings: INVOICE_NO_EXCLUDE_SUBSTRINGS
+    }),
+    'RF/EXP/12/26-27',
+    'Commercial Invoice No must take priority over Order No, Invoice Date, and Shipping Bill No'
+  );
+  assert.equal(
+    parseNumeric(
+      getPrioritizedFlexibleValue(reorderedColumnsRow, LINE_WEIGHT_CANDIDATE_KEYS, {
+        excludeSubstrings: LINE_WEIGHT_EXCLUDE_SUBSTRINGS
+      })
+    ),
+    2400,
+    'Line Net Weight (Kg) must take priority over Invoice Total Net Weight (Kg) and parse comma-formatted numbers'
+  );
+  assert.equal(
+    parseNumeric(
+      getPrioritizedFlexibleValue(reorderedColumnsRow, LINE_RATE_CANDIDATE_KEYS, {
+        excludeSubstrings: LINE_RATE_EXCLUDE_SUBSTRINGS
+      })
+    ),
+    4.15,
+    'Product-wise Rate / Kg must take priority over Exchange Rate'
+  );
+  assert.equal(
+    parseNumeric(
+      getPrioritizedFlexibleValue(
+        { 'Exchange Rate': 85, 'Rate per Kg (USD)': 9.8 },
+        LINE_RATE_CANDIDATE_KEYS,
+        { excludeSubstrings: LINE_RATE_EXCLUDE_SUBSTRINGS }
+      )
+    ),
+    9.8,
+    'Rate per Kg (USD) must match and never be excluded by USD substring'
+  );
+
+  // 3. Multi-sheet backup workbook (SalesInvoices + LineItems) preserves all line items
+  const backupSheets = [
+    {
+      name: 'SalesInvoices',
+      rows: [
+        {
+          'Invoice No': 'EXP-2026-01',
+          'Invoice Date': '2026-10-19',
+          'Customer / Consignee': 'Tokyo Seafood Trading Co.',
+          'Total Net Weight (Kg)': 3000,
+          'Total Amount': 26100
+        }
+      ]
+    },
+    {
+      name: 'LineItems',
+      rows: [
+        {
+          'Invoice No': 'EXP-2026-01',
+          'Line #': 1,
+          'Species / Product': 'Frozen Vannamei HLSO',
+          'Size': '21/25',
+          'Cartons': 100,
+          'Net Weight (Kg)': 2000,
+          'Rate per Kg': 9.8
+        },
+        {
+          'Invoice No': 'EXP-2026-01',
+          'Line #': 2,
+          'Species / Product': 'Indian Squid Tubes',
+          'Size': 'U/10',
+          'Cartons': 50,
+          'Net Weight (Kg)': 1000,
+          'Rate per Kg': 6.5
+        }
+      ]
+    }
+  ];
+
+  const joinedBackupRows = extractSalesInvoiceRowsFromSheets(backupSheets);
+  assert.equal(joinedBackupRows.length, 2, 'SalesInvoices + LineItems must join into 2 product-wise rows');
+  const joinedGroups = groupSalesInvoiceRows(joinedBackupRows, 0);
+  assert.equal(joinedGroups.length, 1);
+  assert.equal(joinedGroups[0].rows.length, 2, 'Joined invoice must retain both product lines');
+
+  // 4. Detailed Export Workbook (Sales Invoices (Detailed) + Invoices Summary + Product Breakdown Summary) must NOT be overwritten by Invoices Summary
+  assert.equal(classifySalesSheetName('Sales Invoices (Detailed)'), 'detailed-invoices');
+  assert.equal(classifySalesSheetName('Invoices Summary'), 'summary-invoices');
+  assert.equal(classifySalesSheetName('Product Breakdown Summary'), 'ignore');
+
+  const detailedWorkbookSheets = [
+    {
+      name: 'Sales Invoices (Detailed)',
+      rows: [
+        { 'Commercial Invoice No': 'EXP-2026-02', 'Product / Species': 'Item A', 'Net Weight (Kg)': 1000, 'Product-wise Rate / Kg': 5 },
+        { 'Commercial Invoice No': 'EXP-2026-02', 'Product / Species': 'Item B', 'Net Weight (Kg)': 1500, 'Product-wise Rate / Kg': 6 }
+      ]
+    },
+    {
+      name: 'Invoices Summary',
+      rows: [{ 'Commercial Invoice No': 'EXP-2026-02', 'Total Net Weight (Kg)': 2500 }]
+    },
+    {
+      name: 'Product Breakdown Summary',
+      rows: [{ 'Product / Species': 'Item A', 'Total Net Weight (Kg)': 1000 }]
+    }
+  ];
+
+  const extractedDetailed = extractSalesInvoiceRowsFromSheets(detailedWorkbookSheets);
+  assert.equal(extractedDetailed.length, 2, 'Invoices Summary must not overwrite or duplicate Sales Invoices (Detailed)');
+});
+
 

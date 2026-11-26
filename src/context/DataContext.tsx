@@ -84,6 +84,22 @@ import {
   getNextInvoiceSequenceNumber
 } from '../utils/calculations';
 import { normalizeKey, getFlexibleValue, formatExcelDate, extractBoxesCountFromRow, parseNumeric } from '../utils/excelFormatters';
+import {
+  getPrioritizedFlexibleValue,
+  groupSalesInvoiceRows,
+  INVOICE_NO_CANDIDATE_KEYS,
+  INVOICE_NO_EXCLUDE_SUBSTRINGS,
+  INVOICE_DATE_CANDIDATE_KEYS,
+  INVOICE_CUSTOMER_CANDIDATE_KEYS,
+  INVOICE_CUSTOMER_EXCLUDE_SUBSTRINGS,
+  LINE_PRODUCT_CANDIDATE_KEYS,
+  LINE_WEIGHT_CANDIDATE_KEYS,
+  LINE_WEIGHT_EXCLUDE_SUBSTRINGS,
+  LINE_RATE_CANDIDATE_KEYS,
+  LINE_RATE_EXCLUDE_SUBSTRINGS,
+  LINE_AMOUNT_CANDIDATE_KEYS,
+  LINE_AMOUNT_EXCLUDE_SUBSTRINGS
+} from '../utils/salesExcelImport';
 import { computeSettlementReconciliation } from '../utils/collectionAnalysis';
 import { calculatePerpetualInventory } from '../utils/inventoryValuation';
 import { safeSet, getNewerIdbSnapshot, sanitizeAuditValue } from '../utils/storage';
@@ -286,7 +302,16 @@ interface DataContextType {
   bulkImportSalesInvoices: (
     rawRows: Record<string, any>[],
     autoCreateMaster?: boolean
-  ) => { added: number; totalLines?: number; errors: string[]; createdCustomers?: number; createdPorts?: number; createdSpecies?: number; createdSizes?: number };
+  ) => {
+    added: number;
+    totalLines?: number;
+    errors: string[];
+    createdCustomers?: number;
+    createdPorts?: number;
+    createdSpecies?: number;
+    createdSizes?: number;
+    importedInvoices?: { invoiceNo: string; lineCount: number; totalWeightKg: number; totalAmountCurrency: number }[];
+  };
   bulkImportSalesRealizations: (
     rawRows: Record<string, any>[]
   ) => { updated: number; errors: string[] };
@@ -6322,121 +6347,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const mutableCustomers = [...customers];
     const mutablePorts = [...ports];
     const mutableSpecies = [...species];
-    const mutableSizes = [...sizes];
+    const mutableSizes = [...(salesSizes.length > 0 ? salesSizes : sizes)];
     const mutableCounts = [...counts];
 
-    // Group rows by Invoice No or Date + Customer
-    const invoiceGroups: { [key: string]: { headerRow: Record<string, any>; rows: { row: Record<string, any>; rowNum: number }[] } } = {};
+    // Group rows by Invoice No (or continuation rows / Date + Customer), preserving every product row
+    const invoiceGroups = groupSalesInvoiceRows(rawRows, salesInvoices.length);
 
-    let currentGroupKey = '';
-    let lastDate = '';
-    let lastCustomer = '';
+    invoiceGroups.forEach((group) => {
+      const { groupKey: invNoKey, displayInvoiceNo, headerRow, rows } = group;
 
-    rawRows.forEach((row, idx) => {
-      const rowNum = idx + 2;
-      const hasData = Object.values(row).some((v) => v !== undefined && v !== null && String(v).trim() !== '');
-      if (!hasData) return;
-
-      const rawInvNo = String(
-        getFlexibleValue(row, [
-          'salesordernumber',
-          'salesorderno',
-          'salesorder',
-          'salesorderid',
-          'invoiceno',
-          'invoicenumber',
-          'invoice',
-          'exportinvoiceno',
-          'billno',
-          'ordernumber',
-          'orderno',
-          'order',
-          'referenceno',
-          'reference'
-        ]) || ''
-      ).trim();
-      const rawDate = formatExcelDate(
-        getFlexibleValue(row, [
-          'orderdate',
-          'salesorderdate',
-          'invoicedate',
-          'date',
-          'billdate',
-          'shippingdate',
-          'expectedshipmentdate'
-        ])
-      );
-      const rawCust = String(
-        getFlexibleValue(row, [
-          'customername',
-          'customer',
-          'consignee',
-          'buyername',
-          'buyer',
-          'client',
-          'shippingpartytradername',
-          'shippingpartylegalname',
-          'company'
-        ]) || ''
-      ).trim();
-
-      let groupKey = '';
-
-      if (rawInvNo) {
-        groupKey = rawInvNo.toUpperCase();
-      } else {
-        const isContinuation =
-          Boolean(currentGroupKey) &&
-          (!rawDate || rawDate === lastDate) &&
-          (!rawCust || !lastCustomer || rawCust.toLowerCase() === lastCustomer.toLowerCase());
-
-        if (isContinuation) {
-          groupKey = currentGroupKey;
-        } else {
-          const newInvNo = `EXP-${new Date().getFullYear()}-${String(salesInvoices.length + Object.keys(invoiceGroups).length + 1).padStart(4, '0')}`;
-          groupKey = newInvNo.toUpperCase();
-        }
-      }
-
-      currentGroupKey = groupKey;
-      if (rawDate) lastDate = rawDate;
-      if (rawCust) lastCustomer = rawCust;
-
-      if (!invoiceGroups[groupKey]) {
-        invoiceGroups[groupKey] = {
-          headerRow: row,
-          rows: []
-        };
-      }
-      invoiceGroups[groupKey].rows.push({ row, rowNum });
-    });
-
-    Object.entries(invoiceGroups).forEach(([invNoKey, group]) => {
-      const { headerRow, rows } = group;
-
-      const rawDate = getFlexibleValue(headerRow, [
-        'orderdate',
-        'salesorderdate',
-        'invoicedate',
-        'date',
-        'billdate',
-        'shippingdate',
-        'expectedshipmentdate'
-      ]);
+      const rawDate =
+        getPrioritizedFlexibleValue(headerRow, INVOICE_DATE_CANDIDATE_KEYS, {
+          excludeSubstrings: ['advance', 'balance', 'realization', 'order']
+        }) ?? getPrioritizedFlexibleValue(headerRow, INVOICE_DATE_CANDIDATE_KEYS);
       const invoiceDate = formatExcelDate(rawDate);
 
       const rawCust = String(
-        getFlexibleValue(headerRow, [
-          'customername',
-          'customer',
-          'consignee',
-          'buyername',
-          'buyer',
-          'client',
-          'shippingpartytradername',
-          'shippingpartylegalname',
-          'company'
-        ]) || ''
+        getPrioritizedFlexibleValue(headerRow, INVOICE_CUSTOMER_CANDIDATE_KEYS, {
+          excludeSubstrings: INVOICE_CUSTOMER_EXCLUDE_SUBSTRINGS
+        }) || ''
       ).trim();
       let matchedCust = mutableCustomers.find(
         (c) => c.code.toLowerCase() === rawCust.toLowerCase() || c.name.toLowerCase() === rawCust.toLowerCase()
@@ -6493,8 +6422,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const getOrCreatePort = (val: string): string => {
         const cleanVal = String(val || '').trim();
         if (!cleanVal) return mutablePorts[0]?.id || '';
+        const cleanLower = cleanVal.toLowerCase();
         const matched = mutablePorts.find(
-          (p) => p.code.toLowerCase() === cleanVal.toLowerCase() || p.name.toLowerCase() === cleanVal.toLowerCase() || p.name.toLowerCase().includes(cleanVal.toLowerCase())
+          (p) =>
+            p.code.toLowerCase() === cleanLower ||
+            p.name.toLowerCase() === cleanLower ||
+            p.name.toLowerCase().includes(cleanLower) ||
+            cleanLower.includes(p.name.toLowerCase()) ||
+            (p.code && cleanLower.includes(p.code.toLowerCase()))
         );
         if (!matched && autoCreateMaster) {
           const newPort: PortMaster = {
@@ -6523,11 +6458,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const allowedCurrs: SalesCurrency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR', 'AED', 'SGD'];
       const currency: SalesCurrency = allowedCurrs.includes(rawCurr as SalesCurrency) ? (rawCurr as SalesCurrency) : 'USD';
 
-      const rawExRate = parseFloat(getFlexibleValue(headerRow, ['exchangerate', 'rate', 'forexrate', 'usdrate']) || '84.5');
-      const exchangeRate = !isNaN(rawExRate) && rawExRate > 0 ? Number(rawExRate.toFixed(2)) : 84.5;
+      const rawExRate = parseNumeric(
+        getPrioritizedFlexibleValue(headerRow, ['exchangerateestimated', 'exchangerate', 'forexrate', 'usdrate', 'rate'], {
+          excludeSubstrings: ['rateperkg', 'ratekg', 'itemprice', 'unitprice', 'price']
+        }),
+        84.5
+      );
+      const exchangeRate = rawExRate > 0 ? Number(rawExRate.toFixed(4)) : 84.5;
 
-      const orderNo = String(getFlexibleValue(headerRow, ['orderno', 'order', 'pono', 'poref']) || '').trim();
-      const remarks = String(getFlexibleValue(headerRow, ['remarks', 'notes', 'comment']) || '').trim();
+      const orderNo = String(getFlexibleValue(headerRow, ['buyerorderporef', 'pono', 'poref', 'orderno', 'order']) || '').trim();
+      const remarks = String(getFlexibleValue(headerRow, ['remarksnotes', 'remarks', 'notes', 'comment']) || '').trim();
 
       const salesValUsdCandidateKeys = [
         'cfusd',
@@ -6670,20 +6610,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       rows.forEach(({ row, rowNum }) => {
         const rawItemDesc = String(getFlexibleValue(row, ['itemdesc', 'description', 'desc', 'sku']) || '').trim();
         const rawSpec = String(
-          getFlexibleValue(row, [
-            'itemname',
-            'productnameexportreadyname',
-            'productname',
-            'exportproduct',
-            'species',
-            'speciesname',
-            'item',
-            'commodity'
-          ]) || ''
+          getPrioritizedFlexibleValue(row, LINE_PRODUCT_CANDIDATE_KEYS) || rawItemDesc || ''
         ).trim();
 
         // Extract Grade/Size: check explicit column, then Item Desc, then Item Name
-        let extractedSize = String(getFlexibleValue(row, ['size', 'sizename', 'gradesize', 'grade']) || '').trim();
+        let extractedSize = String(
+          getPrioritizedFlexibleValue(row, ['gradesize', 'size', 'sizename', 'grade', 'packsize', 'countsize']) || ''
+        ).trim();
         if (!extractedSize && rawItemDesc) {
           const sizeMatch = rawItemDesc.match(/\b(U\/\d+|\d+\/\d+|\d+\/UP|\d+-\d+)\b/i);
           if (sizeMatch) extractedSize = sizeMatch[1].toUpperCase();
@@ -6703,13 +6636,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           getFlexibleValue(row, ['purchasespecies', 'purchasespeciesname', 'rawspecies', 'rawspeciesname']) || ''
         ).trim();
 
-        let matchedSpec = mutableSpecies.find(
-          (sp) => sp.code.toLowerCase() === cleanSpec.toLowerCase() ||
-                  sp.name.toLowerCase() === cleanSpec.toLowerCase() ||
-                  sp.name.toLowerCase() === rawSpec.toLowerCase() ||
-                  sp.name.toLowerCase().includes(cleanSpec.toLowerCase()) ||
-                  cleanSpec.toLowerCase().includes(sp.name.toLowerCase())
-        );
+        let matchedSpec = (cleanSpec || rawSpec)
+          ? mutableSpecies.find(
+              (sp) =>
+                sp.code.toLowerCase() === cleanSpec.toLowerCase() ||
+                sp.name.toLowerCase() === cleanSpec.toLowerCase() ||
+                sp.name.toLowerCase() === rawSpec.toLowerCase() ||
+                (cleanSpec.length >= 3 &&
+                  (sp.name.toLowerCase().includes(cleanSpec.toLowerCase()) ||
+                    cleanSpec.toLowerCase().includes(sp.name.toLowerCase())))
+            )
+          : undefined;
 
         if (!matchedSpec && (cleanSpec || rawSpec) && autoCreateMaster) {
           const specNameToUse = cleanSpec || rawSpec;
@@ -6720,7 +6657,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             rawSpeciesName: rawPurchaseSpec || undefined,
             scientificName: '',
             category: 'Export Finish',
-            hsCode: String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hs', 'sac']) || '03061790'),
+            hsCode: String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hsitccode', 'hs', 'sac']) || '03061790'),
             active: true
           };
           mutableSpecies.push(newSpec);
@@ -6728,18 +6665,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           createdSpecies++;
         }
         const speciesId = matchedSpec?.id || mutableSpecies[0]?.id || '';
-        const hsCode = String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hs', 'sac']) || matchedSpec?.hsCode || '03061790');
+        const hsCode = String(getFlexibleValue(row, ['hsnsac', 'hscode', 'hsitccode', 'hs', 'sac']) || matchedSpec?.hsCode || '03061790');
 
-        let matchedSize = extractedSize
-          ? mutableSizes.find((sz) => sz.name.toLowerCase() === extractedSize.toLowerCase() || sz.code.toLowerCase() === extractedSize.toLowerCase() || sz.name.toLowerCase().includes(extractedSize.toLowerCase()))
+        const rawCount = String(getFlexibleValue(row, ['piececount', 'count', 'countname']) || '').trim();
+        const effectiveSizeLabel = extractedSize || (rawCount && rawCount !== '-' ? rawCount : '');
+
+        let matchedSize = effectiveSizeLabel
+          ? mutableSizes.find(
+              (sz) =>
+                sz.name.toLowerCase() === effectiveSizeLabel.toLowerCase() ||
+                sz.code.toLowerCase() === effectiveSizeLabel.toLowerCase() ||
+                sz.name.toLowerCase().includes(effectiveSizeLabel.toLowerCase())
+            )
           : undefined;
 
-        if (!matchedSize && extractedSize && autoCreateMaster) {
+        if (!matchedSize && effectiveSizeLabel && effectiveSizeLabel !== '-' && autoCreateMaster) {
           const newSize: Size = {
             id: `size-${Date.now()}-${mutableSizes.length + 1}`,
-            code: extractedSize.toUpperCase().replace(/\s+/g, '-'),
-            name: extractedSize,
-            description: `Grade / Size ${extractedSize}`,
+            code: effectiveSizeLabel.toUpperCase().replace(/\s+/g, '-'),
+            name: effectiveSizeLabel,
+            description: `Grade / Size ${effectiveSizeLabel}`,
             active: true
           };
           mutableSizes.push(newSize);
@@ -6748,21 +6693,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         const sizeId = matchedSize?.id || mutableSizes[0]?.id || '';
 
-        const rawCount = String(getFlexibleValue(row, ['count', 'countname']) || '').trim();
-        const matchedCount = mutableCounts.find((c) => c.name.toLowerCase().includes(rawCount.toLowerCase()));
+        const matchedCount = rawCount && rawCount !== '-'
+          ? mutableCounts.find((c) => c.name.toLowerCase().includes(rawCount.toLowerCase()))
+          : undefined;
         const countId = matchedCount?.id || undefined;
 
-        const rawWeight = parseFloat(getFlexibleValue(row, [
-          'quantityordered',
-          'quantityinvoiced',
-          'quantity',
-          'qty',
-          'netweightkg',
-          'weightkg',
-          'netweight',
-          'weight',
-          'qtykg'
-        ]) || '');
+        const rawWeightVal = getPrioritizedFlexibleValue(row, LINE_WEIGHT_CANDIDATE_KEYS, {
+          excludeSubstrings: LINE_WEIGHT_EXCLUDE_SUBSTRINGS
+        });
+        const rawWeight = parseNumeric(rawWeightVal, NaN);
         if (isNaN(rawWeight) || rawWeight <= 0) {
           errors.push(`Row ${rowNum} (${invNoKey}): Net Weight (Kg) is missing or must be greater than 0.`);
           return;
@@ -6771,7 +6710,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Extract Cartons Count
         let cartonsCount = 0;
-        const rawCartons = parseFloat(getFlexibleValue(row, ['cartonscount', 'cartons', 'boxes', 'cases', 'pkgs', 'packages']) || '');
+        const rawCartonsVal = getPrioritizedFlexibleValue(
+          row,
+          ['noofcartons', 'cartonscount', 'cartons', 'ctns', 'ctn', 'noofctns', 'boxes', 'noofboxes', 'cases', 'pkgs', 'packages'],
+          { excludeSubstrings: ['invoicetotal'] }
+        );
+        const rawCartons = parseNumeric(rawCartonsVal, NaN);
         if (!isNaN(rawCartons) && rawCartons > 0) {
           cartonsCount = Math.round(rawCartons);
         } else if (rawItemDesc) {
@@ -6792,37 +6736,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        const rawRate = parseFloat(getFlexibleValue(row, [
-          'itemprice',
-          'price',
-          'unitprice',
-          'rateperkg',
-          'rate',
-          'priceperkg'
-        ]) || '0');
-        const ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(2)) : 0;
+        const rawRateVal = getPrioritizedFlexibleValue(row, LINE_RATE_CANDIDATE_KEYS, {
+          excludeSubstrings: LINE_RATE_EXCLUDE_SUBSTRINGS
+        });
+        const rawRate = parseNumeric(rawRateVal, 0);
+        let ratePerKg = !isNaN(rawRate) && rawRate >= 0 ? Number(rawRate.toFixed(4)) : 0;
 
-        const rawLineTotal = parseFloat(getFlexibleValue(row, [
-          'itemtotal',
-          'totalitemamount',
-          'linetotal',
-          'lineamount',
-          'amountcurrency',
-          'amount'
-        ]) || '');
+        const rawLineTotalVal = getPrioritizedFlexibleValue(row, LINE_AMOUNT_CANDIDATE_KEYS, {
+          targetCurrency: 'USD',
+          excludeSubstrings: LINE_AMOUNT_EXCLUDE_SUBSTRINGS
+        });
+        const rawLineTotal = parseNumeric(rawLineTotalVal, NaN);
         const amountCurrency = !isNaN(rawLineTotal) && rawLineTotal > 0
           ? Number(rawLineTotal.toFixed(2))
           : Number((weightKg * ratePerKg).toFixed(2));
 
-        let rawSalesUsdVal = parseFloat(getFlexibleValue(row, salesValUsdCandidateKeys, 'USD') || '');
-        const rawSalesInrVal = parseFloat(getFlexibleValue(row, salesValInrCandidateKeys, 'INR') || '');
+        if (ratePerKg === 0 && amountCurrency > 0 && weightKg > 0) {
+          ratePerKg = Number((amountCurrency / weightKg).toFixed(4));
+        }
+
+        let rawSalesUsdVal = parseNumeric(getFlexibleValue(row, salesValUsdCandidateKeys, 'USD'), NaN);
+        const rawSalesInrVal = parseNumeric(getFlexibleValue(row, salesValInrCandidateKeys, 'INR'), NaN);
         if ((isNaN(rawSalesUsdVal) || rawSalesUsdVal <= 0) && !isNaN(rawSalesInrVal) && rawSalesInrVal > 0) {
           rawSalesUsdVal = Number((rawSalesInrVal / exchangeRate).toFixed(2));
         }
         const rowSalesUsd = !isNaN(rawSalesUsdVal) && rawSalesUsdVal > 0 ? Number(rawSalesUsdVal.toFixed(2)) : null;
 
-        let rawFreightUsd = parseFloat(getFlexibleValue(row, freightUsdCandidateKeys, 'USD') || '');
-        let rawFreightInr = parseFloat(getFlexibleValue(row, freightInrCandidateKeys, 'INR') || '');
+        let rawFreightUsd = parseNumeric(getFlexibleValue(row, freightUsdCandidateKeys, 'USD'), NaN);
+        let rawFreightInr = parseNumeric(getFlexibleValue(row, freightInrCandidateKeys, 'INR'), NaN);
         if (!isNaN(rawFreightUsd) && rawFreightUsd > 0 && (isNaN(rawFreightInr) || rawFreightInr <= 0)) {
           rawFreightInr = Number((rawFreightUsd * exchangeRate).toFixed(2));
         } else if (!isNaN(rawFreightInr) && rawFreightInr > 0 && (isNaN(rawFreightUsd) || rawFreightUsd <= 0)) {
@@ -6831,8 +6772,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const rowFreightUsd = !isNaN(rawFreightUsd) && rawFreightUsd > 0 ? Number(rawFreightUsd.toFixed(2)) : null;
         const rowFreightInr = !isNaN(rawFreightInr) && rawFreightInr > 0 ? Number(rawFreightInr.toFixed(2)) : null;
 
-        let rawFobUsdVal = parseFloat(getFlexibleValue(row, fobUsdCandidateKeys, 'USD') || '');
-        let rawFobInrVal = parseFloat(getFlexibleValue(row, fobInrCandidateKeys, 'INR') || '');
+        let rawFobUsdVal = parseNumeric(getFlexibleValue(row, fobUsdCandidateKeys, 'USD'), NaN);
+        let rawFobInrVal = parseNumeric(getFlexibleValue(row, fobInrCandidateKeys, 'INR'), NaN);
 
         // Derive FOB from Sales minus Freight if explicit FOB is absent
         if ((isNaN(rawFobUsdVal) || rawFobUsdVal <= 0) && rowFreightUsd !== null && rowFreightUsd > 0) {
@@ -6853,8 +6794,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const rowFobUsd = !isNaN(rawFobUsdVal) && rawFobUsdVal > 0 ? Number(rawFobUsdVal.toFixed(2)) : null;
         const rowFobInr = !isNaN(rawFobInrVal) && rawFobInrVal > 0 ? Number(rawFobInrVal.toFixed(2)) : null;
 
-        let rawPurUsdVal = parseFloat(getFlexibleValue(row, purchaseUsdCandidateKeys, 'USD') || '');
-        let rawPurInrVal = parseFloat(getFlexibleValue(row, purchaseInrCandidateKeys, 'INR') || '');
+        let rawPurUsdVal = parseNumeric(getFlexibleValue(row, purchaseUsdCandidateKeys, 'USD'), NaN);
+        let rawPurInrVal = parseNumeric(getFlexibleValue(row, purchaseInrCandidateKeys, 'INR'), NaN);
 
         if (!isNaN(rawPurUsdVal) && rawPurUsdVal > 0 && (isNaN(rawPurInrVal) || rawPurInrVal <= 0)) {
           rawPurInrVal = Number((rawPurUsdVal * exchangeRate).toFixed(2));
@@ -6881,7 +6822,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             purchaseValueCurrency: rowPurUsd || undefined,
             purchaseValueINR: rowPurInr || undefined,
             productDescription: rawSpec || matchedSpec?.name || 'FROZEN SEAFOOD',
-            gradeSize: extractedSize || undefined
+            gradeSize: effectiveSizeLabel && effectiveSizeLabel !== '-' ? effectiveSizeLabel : undefined
           },
           rowSalesUsd,
           rowFreightUsd,
@@ -6907,7 +6848,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const calculatedSumAmount = Number(candidates.reduce((s, c) => s + c.line.amountCurrency, 0).toFixed(2));
       let totalAmountCurrency = calculatedSumAmount;
 
+      const isSingleRowLineMatch =
+        candidates.length > 1 &&
+        validSalesUsd.length === 1 &&
+        firstRowSalesUsd !== null &&
+        Math.abs(firstRowSalesUsd - candidates[0].line.amountCurrency) < 0.01 &&
+        calculatedSumAmount > firstRowSalesUsd + 0.01;
+
       const isFullInvoiceSalesOnFirstRow =
+        !isSingleRowLineMatch &&
         firstRowSalesUsd !== null &&
         firstRowSalesUsd > 0 &&
         (validSalesUsd.length === 1 || validSalesUsd.every(v => Math.abs(v - firstRowSalesUsd) < 0.01));
@@ -7166,16 +7115,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const invRecord: SalesInvoice = {
         id: `inv-${Date.now()}-${newInvoices.length}-${Math.random().toString(36).substr(2, 5)}`,
         invoiceNo: String(
-          getFlexibleValue(headerRow, [
-            'salesordernumber',
-            'salesorderno',
-            'salesorder',
-            'invoiceno',
-            'invoicenumber',
-            'invoice',
-            'exportinvoiceno',
-            'billno'
-          ]) || invNoKey
+          getPrioritizedFlexibleValue(headerRow, INVOICE_NO_CANDIDATE_KEYS, {
+            excludeSubstrings: INVOICE_NO_EXCLUDE_SUBSTRINGS
+          }) ||
+            displayInvoiceNo ||
+            invNoKey
         ).trim(),
         invoiceDate,
         financialYear: businessSettings.financialYear,
@@ -7194,6 +7138,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currency,
         exchangeRate,
         remarks,
+        hsnCode: Array.from(new Set(lineItems.map((l) => l.hsCode).filter(Boolean))).join(', ') || undefined,
         lineItems,
         totalCartons,
         totalWeightKg,
@@ -7243,6 +7188,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const totalImportedLines = newInvoices.reduce((sum, inv) => sum + (inv.lineItems?.length || 0), 0);
 
     if (newInvoices.length > 0) {
+      mutatedKeysRef.current.add('sales_invoices');
       setSalesInvoices((prev) => {
         const incomingMap = new Map(newInvoices.map((inv) => [inv.invoiceNo.trim().toUpperCase(), inv]));
         const updatedPrev = prev.map((inv) => {
@@ -7253,12 +7199,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           return inv;
         });
-        return sortSalesInvoicesByNumber([...updatedPrev, ...Array.from(incomingMap.values())]);
+        const sorted = sortSalesInvoicesByNumber([...updatedPrev, ...Array.from(incomingMap.values())]);
+        safeSet(`${DB_PREFIX}sales_invoices`, sorted);
+        return sorted;
       });
-      if (createdCustomers > 0) setCustomers([...mutableCustomers]);
-      if (createdPorts > 0) setPorts([...mutablePorts]);
-      if (createdSpecies > 0) setSpecies([...mutableSpecies]);
-      if (createdSizes > 0) setSizes([...mutableSizes]);
+      if (createdCustomers > 0) {
+        mutatedKeysRef.current.add('customers');
+        setCustomers([...mutableCustomers]);
+      }
+      if (createdPorts > 0) {
+        mutatedKeysRef.current.add('ports');
+        setPorts([...mutablePorts]);
+      }
+      if (createdSpecies > 0) {
+        mutatedKeysRef.current.add('species');
+        setSpecies([...mutableSpecies]);
+      }
+      if (createdSizes > 0) {
+        mutatedKeysRef.current.add('sales_sizes');
+        setSalesSizes([...mutableSizes]);
+        setSizes((prev) => {
+          const existingIds = new Set(prev.map((s) => s.id));
+          const addedSizes = mutableSizes.filter((s) => !existingIds.has(s.id));
+          return addedSizes.length > 0 ? [...prev, ...addedSizes] : prev;
+        });
+      }
 
       logAudit('CREATE', 'SALES_INVOICE', `Excel bulk import: ${newInvoices.length} sales invoices imported (${totalImportedLines} line items)`, {
         newValues: {
@@ -7281,7 +7246,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdCustomers,
       createdPorts,
       createdSpecies,
-      createdSizes
+      createdSizes,
+      importedInvoices: newInvoices.map((inv) => ({
+        invoiceNo: inv.invoiceNo,
+        lineCount: inv.lineItems.length,
+        totalWeightKg: inv.totalWeightKg,
+        totalAmountCurrency: inv.totalAmountCurrency
+      }))
     };
   };
 
