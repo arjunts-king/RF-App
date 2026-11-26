@@ -314,37 +314,190 @@ export function exportLedgerExcel(title: string, rows: { particulars: string; am
   XLSX.writeFile(wb, `${title.replace(/[^a-z0-9]+/gi, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-export function printPdfReport(title: string, headers: string[], rows: (string | number)[][], totalsRow?: (string | number)[]): void {
+export function printPdfReport(
+  title: string,
+  headers: string[],
+  rows: (string | number)[][],
+  totalsRow?: (string | number)[],
+  orientation: 'auto' | 'portrait' | 'landscape' = 'auto'
+): void {
   const win = window.open('', '_blank');
   if (!win) return;
+
+  const useLandscape =
+    orientation === 'landscape' || (orientation === 'auto' && headers.length > 6);
+  const isWide = headers.length >= 12;
+
+  const formatCellHtml = (cell: string | number, isHeader = false) => {
+    const str = String(cell ?? '');
+    if (isHeader) return str;
+    const isNegative = /^\(.*\)$/.test(str.trim()) || str.trim().startsWith('-₹') || str.trim().startsWith('-$');
+    const isPending = str.toLowerCase().includes('pending');
+    if (isNegative) {
+      return `<span class="neg">${str}</span>`;
+    }
+    if (isPending) {
+      return `<span class="pend">${str}</span>`;
+    }
+    return str;
+  };
+
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
       <title>${title}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; }
-        h1 { font-size: 18px; margin-bottom: 4px; }
-        p { font-size: 11px; color: #666; margin-bottom: 14px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-        th { background: #f8f1f3; font-weight: bold; }
-        tr.totals { background: #881337; color: #fff; font-weight: bold; }
-        @media print { body { padding: 0; } }
+        @page {
+          size: A4 ${useLandscape ? 'landscape' : 'portrait'};
+          margin: ${useLandscape ? '9mm' : '12mm'};
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+          padding: 16px;
+          color: #1e1e24;
+          background: #ffffff;
+          margin: 0;
+        }
+        .report-banner {
+          background: linear-gradient(135deg, #881337 0%, #be123c 60%, #e11d48 100%);
+          color: #ffffff;
+          padding: 14px 18px;
+          border-radius: 10px;
+          margin-bottom: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .report-banner h1 {
+          font-size: ${isWide ? '16px' : '18px'};
+          margin: 0 0 3px 0;
+          letter-spacing: -0.01em;
+        }
+        .report-banner p {
+          font-size: 10px;
+          color: #ffe4e6;
+          margin: 0;
+        }
+        .report-badge {
+          background: rgba(255, 255, 255, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          color: #ffffff;
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: ${isWide ? '8.5px' : '10.5px'};
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        th, td {
+          border: 1px solid #fecdd3;
+          padding: ${isWide ? '4px 5px' : '6px 8px'};
+          text-align: left;
+          vertical-align: middle;
+        }
+        thead tr.totals td {
+          background: #4c0519;
+          color: #ffffff;
+          font-weight: 700;
+          border-color: #881337;
+        }
+        thead tr.cols th {
+          background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+          color: #881337;
+          font-weight: 700;
+          text-transform: uppercase;
+          font-size: ${isWide ? '7.8px' : '9.5px'};
+          letter-spacing: 0.02em;
+        }
+        tbody tr:nth-child(even) {
+          background: #fff8f9;
+        }
+        tbody tr:nth-child(odd) {
+          background: #ffffff;
+        }
+        tbody tr.profit-row td {
+          background: #ecfdf5 !important;
+          color: #065f46;
+          font-weight: 800;
+          border-top: 2px solid #10b981;
+        }
+        tbody tr.loss-row td {
+          background: #fef2f2 !important;
+          color: #991b1b;
+          font-weight: 800;
+          border-top: 2px solid #ef4444;
+        }
+        tbody tr.divider-row td {
+          background: #f1f5f9 !important;
+          color: #475569;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        .neg {
+          color: #b91c1c;
+          font-weight: 700;
+        }
+        .pend {
+          color: #b45309;
+          font-weight: 700;
+        }
+        .footer-note {
+          margin-top: 10px;
+          font-size: 9px;
+          color: #64748b;
+          display: flex;
+          justify-content: space-between;
+        }
+        @media print {
+          body { padding: 0; }
+        }
       </style>
     </head>
     <body>
-      <h1>${title}</h1>
-      <p>Generated on ${new Date().toLocaleString()}</p>
+      <div class="report-banner">
+        <div>
+          <h1>${title}</h1>
+          <p>Coastal Marine — Performance Analysis · Generated ${new Date().toLocaleString()}</p>
+        </div>
+        <div class="report-badge">${useLandscape ? 'A4 Landscape' : 'A4 Portrait'} · ${rows.length} Rows</div>
+      </div>
       <table>
         <thead>
           ${totalsRow ? `<tr class="totals">${totalsRow.map((c) => `<td>${c}</td>`).join('')}</tr>` : ''}
-          <tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr>
+          <tr class="cols">${headers.map((h) => `<th>${h}</th>`).join('')}</tr>
         </thead>
         <tbody>
-          ${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}
+          ${rows
+            .map((r) => {
+              const first = String(r[0] ?? '').toLowerCase();
+              let rowClass = '';
+              if (first.includes('profit/(loss)') || first.includes('profit / (loss)')) {
+                const amtStr = String(r[1] ?? '');
+                rowClass = amtStr.includes('(') || amtStr.includes('-') ? 'loss-row' : 'profit-row';
+              } else if (first === 'less:') {
+                rowClass = 'divider-row';
+              }
+              return `<tr class="${rowClass}">${r.map((c) => `<td>${formatCellHtml(c)}</td>`).join('')}</tr>`;
+            })
+            .join('')}
         </tbody>
       </table>
+      <div class="footer-note">
+        <span>Seafood Purchase &amp; Export Management — Performance Analysis</span>
+        <span>Tip: Enable "Background graphics" in your browser print dialog for full colour PDF.</span>
+      </div>
       <script>window.onload = function() { window.print(); };</script>
     </body>
     </html>
