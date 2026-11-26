@@ -63,6 +63,7 @@ const ExpenseAnalysisView = lazy(() => import('./components/performance/ExpenseA
 const SalesAnalysisView = lazy(() => import('./components/performance/SalesAnalysisView').then(m => ({ default: m.SalesAnalysisView })));
 const SpeciesLedgerView = lazy(() => import('./components/performance/SpeciesLedgerView').then(m => ({ default: m.SpeciesLedgerView })));
 const ExceptionReportView = lazy(() => import('./components/performance/ExceptionReportView').then(m => ({ default: m.ExceptionReportView })));
+const PerformanceExcelImportView = lazy(() => import('./components/performance/PerformanceExcelImportView').then(m => ({ default: m.PerformanceExcelImportView })));
 const PerformanceAuditView = lazy(() => import('./components/performance/PerformanceAuditView').then(m => ({ default: m.PerformanceAuditView })));
 
 import {
@@ -502,6 +503,9 @@ const MainLayout: React.FC = () => {
               {performanceTab === 'sales-analysis' && <SalesAnalysisView />}
               {performanceTab === 'species-ledger' && <SpeciesLedgerView />}
               {performanceTab === 'exception-report' && <ExceptionReportView />}
+              {performanceTab === 'perf-excel-import' && (
+                <PerformanceExcelImportView onNavigate={(tab) => setPerformanceTab(tab as PerformanceNavTab)} />
+              )}
               {performanceTab === 'perf-audit' && <PerformanceAuditView />}
             </>
           )}

@@ -7,6 +7,7 @@ import {
   TrendingUp,
   BookOpen,
   ShieldAlert,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export type PerformanceNavTab =
@@ -15,6 +16,7 @@ export type PerformanceNavTab =
   | 'sales-analysis'
   | 'species-ledger'
   | 'exception-report'
+  | 'perf-excel-import'
   | 'perf-audit';
 
 interface PerformanceSidebarProps {
@@ -82,6 +84,12 @@ export const PerformanceSidebar: React.FC<PerformanceSidebarProps> = ({
           id: 'exception-report',
           label: 'Exception & Reconciliation',
           icon: ShieldAlert,
+        },
+        {
+          id: 'perf-excel-import',
+          label: 'Excel Import & Migration',
+          icon: FileSpreadsheet,
+          show: permissions.canEnterPerformanceData,
         },
         {
           id: 'perf-audit',

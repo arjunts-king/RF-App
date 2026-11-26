@@ -263,6 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       title: 'CONTROL & AUDIT',
       items: [
         { id: 'exception-report', label: 'Exception & Reconciliation', icon: ShieldAlert, desc: 'Missing expenses, unmapped products & tie-outs' },
+        { id: 'perf-excel-import', label: 'Excel Import & Migration', icon: FileSpreadsheet, desc: 'Bulk migrate expenses, Drawback & RoTDEP from Excel', show: permissions.canEnterPerformanceData },
         { id: 'perf-audit', label: 'Performance Audit Log', icon: ShieldAlert, desc: 'Full audit trail of performance entries', show: permissions.canViewAuditLog }
       ]
     }
