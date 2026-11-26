@@ -350,7 +350,7 @@ export function printPdfReport(
       <style>
         @page {
           size: A4 ${useLandscape ? 'landscape' : 'portrait'};
-          margin: ${useLandscape ? '9mm' : '12mm'};
+          margin: ${useLandscape ? '8mm' : '10mm'};
         }
         * {
           -webkit-print-color-adjust: exact !important;
@@ -360,35 +360,47 @@ export function printPdfReport(
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
           padding: 16px;
-          color: #1e1e24;
+          color: #0f172a;
           background: #ffffff;
           margin: 0;
         }
         .report-banner {
-          background: linear-gradient(135deg, #881337 0%, #be123c 60%, #e11d48 100%);
-          color: #ffffff;
+          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #ecfdf5 100%);
+          color: #0f172a;
           padding: 14px 18px;
-          border-radius: 10px;
+          border-radius: 12px;
+          border: 1px solid #cbd5e1;
+          border-left: 5px solid #4f46e5;
           margin-bottom: 12px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
+        .report-banner .eyebrow {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #4f46e5;
+          margin-bottom: 3px;
+        }
         .report-banner h1 {
           font-size: ${isWide ? '16px' : '18px'};
+          font-weight: 800;
+          color: #0f172a;
           margin: 0 0 3px 0;
           letter-spacing: -0.01em;
         }
         .report-banner p {
           font-size: 10px;
-          color: #ffe4e6;
+          color: #475569;
           margin: 0;
         }
         .report-badge {
-          background: rgba(255, 255, 255, 0.18);
-          border: 1px solid rgba(255, 255, 255, 0.35);
-          color: #ffffff;
-          padding: 4px 10px;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          color: #065f46;
+          padding: 5px 12px;
           border-radius: 999px;
           font-size: 10px;
           font-weight: 700;
@@ -398,31 +410,34 @@ export function printPdfReport(
           width: 100%;
           border-collapse: collapse;
           font-size: ${isWide ? '8.5px' : '10.5px'};
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
+          border: 1px solid #e2e8f0;
         }
         th, td {
-          border: 1px solid #fecdd3;
-          padding: ${isWide ? '4px 5px' : '6px 8px'};
+          border: 1px solid #e2e8f0;
+          padding: ${isWide ? '4.5px 5.5px' : '6.5px 9px'};
           text-align: left;
           vertical-align: middle;
         }
         thead tr.totals td {
-          background: #4c0519;
-          color: #ffffff;
-          font-weight: 700;
-          border-color: #881337;
+          background: #eef2ff;
+          color: #1e1b4b;
+          font-weight: 800;
+          border-top: 2px solid #6366f1;
+          border-bottom: 2px solid #c7d2fe;
         }
         thead tr.cols th {
-          background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
-          color: #881337;
+          background: #f1f5f9;
+          color: #334155;
           font-weight: 700;
           text-transform: uppercase;
           font-size: ${isWide ? '7.8px' : '9.5px'};
-          letter-spacing: 0.02em;
+          letter-spacing: 0.03em;
+          border-bottom: 2px solid #cbd5e1;
         }
         tbody tr:nth-child(even) {
-          background: #fff8f9;
+          background: #f8fafc;
         }
         tbody tr:nth-child(odd) {
           background: #ffffff;
@@ -431,22 +446,22 @@ export function printPdfReport(
           background: #ecfdf5 !important;
           color: #065f46;
           font-weight: 800;
-          border-top: 2px solid #10b981;
+          border-top: 2px solid #6ee7b7;
         }
         tbody tr.loss-row td {
-          background: #fef2f2 !important;
-          color: #991b1b;
+          background: #fff1f2 !important;
+          color: #9f1239;
           font-weight: 800;
-          border-top: 2px solid #ef4444;
+          border-top: 2px solid #fda4af;
         }
         tbody tr.divider-row td {
-          background: #f1f5f9 !important;
-          color: #475569;
+          background: #eff6ff !important;
+          color: #1e40af;
           font-weight: 700;
           text-transform: uppercase;
         }
         .neg {
-          color: #b91c1c;
+          color: #be123c;
           font-weight: 700;
         }
         .pend {
@@ -468,8 +483,9 @@ export function printPdfReport(
     <body>
       <div class="report-banner">
         <div>
+          <div class="eyebrow">Performance Analysis &amp; Profitability Statement</div>
           <h1>${title}</h1>
-          <p>Coastal Marine — Performance Analysis · Generated ${new Date().toLocaleString()}</p>
+          <p>Coastal Marine · Generated ${new Date().toLocaleString()}</p>
         </div>
         <div class="report-badge">${useLandscape ? 'A4 Landscape' : 'A4 Portrait'} · ${rows.length} Rows</div>
       </div>
