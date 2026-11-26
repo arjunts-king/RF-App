@@ -3745,8 +3745,8 @@ test('Quota Recovery, Audit Sanitization, Invoice Field Preservation & PWA Cache
   assert.ok(listCode.includes('consignee?.country || inv.countryOfDestination'), 'Invoice list must fall back to inv.countryOfDestination');
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
-  assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
+  assert.ok(swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35') || swCode.includes('seafood-pwa-v34') || swCode.includes('seafood-pwa-v33') || swCode.includes('seafood-pwa-v32') || swCode.includes('seafood-pwa-v31') || swCode.includes('seafood-pwa-v30') || swCode.includes('seafood-pwa-v29') || swCode.includes('seafood-pwa-v28') || swCode.includes('seafood-pwa-v27') || swCode.includes('seafood-pwa-v26') || swCode.includes('seafood-pwa-v25') || swCode.includes('seafood-pwa-v24') || swCode.includes('seafood-pwa-v23'), 'Service worker must bump cache version');
+  assert.ok(mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35') || mainCode.includes('sw.js?v=34') || mainCode.includes('sw.js?v=33') || mainCode.includes('sw.js?v=32') || mainCode.includes('sw.js?v=31') || mainCode.includes('sw.js?v=30') || mainCode.includes('sw.js?v=29') || mainCode.includes('sw.js?v=28') || mainCode.includes('sw.js?v=27') || mainCode.includes('sw.js?v=26') || mainCode.includes('sw.js?v=25') || mainCode.includes('sw.js?v=24') || mainCode.includes('sw.js?v=23'), 'main.tsx must register updated sw.js');
 });
 
 // ============================================================================
@@ -6079,10 +6079,10 @@ test('Sales Product Search Precision: Mackerel strict isolation against Ribbonfi
 
   // 2. Verify Service Worker cache version is bumped to v35/v36 for fresh asset delivery
   const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
-  assert.ok(swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v37');
+  assert.ok(swCode.includes('seafood-pwa-v39') || swCode.includes('seafood-pwa-v37') || swCode.includes('seafood-pwa-v36') || swCode.includes('seafood-pwa-v35'), 'sw.js CACHE_VERSION must be bumped to seafood-pwa-v39');
 
   const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
-  assert.ok(mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=35 or v=36 query parameter');
+  assert.ok(mainCode.includes('sw.js?v=39') || mainCode.includes('sw.js?v=36') || mainCode.includes('sw.js?v=35'), 'main.tsx must register sw.js with v=39 query parameter');
 
   // 3. Test search filter simulation across 32 catalog products
   const content = fs.readFileSync(path.resolve('src/data/exportSalesData.ts'), 'utf8');
@@ -6646,5 +6646,45 @@ test('Suite 80: Multi-item sales invoice Excel grouping, merged continuation row
   const extractedDetailed = extractSalesInvoiceRowsFromSheets(detailedWorkbookSheets);
   assert.equal(extractedDetailed.length, 2, 'Invoices Summary must not overwrite or duplicate Sales Invoices (Detailed)');
 });
+
+// ============================================================================
+// SUITE 81: Combobox Inline Cursor UX & Tab Key Navigation Integrity
+// ============================================================================
+test('Combobox Inline Cursor UX & Tab Key Navigation Integrity across Commercial Invoice Entry', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  // 1. Verify ProductCombobox has inline editable input with visible cursor & Tab handling
+  const prodCode = fs.readFileSync(path.resolve('src/components/sales/ProductCombobox.tsx'), 'utf8');
+  assert.ok(prodCode.includes('cursor-text'), 'ProductCombobox must apply cursor-text for active blinking text cursor');
+  assert.ok(prodCode.includes('ref={inputRef}'), 'ProductCombobox must attach inputRef directly to inline input');
+  assert.ok(prodCode.includes('e.key === \'Tab\''), 'ProductCombobox must handle Tab key navigation');
+  assert.ok(prodCode.includes('tabIndex={-1}'), 'ProductCombobox action buttons must have tabIndex={-1} to avoid Tab traps');
+
+  // 2. Verify SizeCombobox has inline editable input with visible cursor & Tab handling
+  const sizeCode = fs.readFileSync(path.resolve('src/components/sales/SizeCombobox.tsx'), 'utf8');
+  assert.ok(sizeCode.includes('cursor-text'), 'SizeCombobox must apply cursor-text for active blinking text cursor');
+  assert.ok(sizeCode.includes('ref={inputRef}'), 'SizeCombobox must attach inputRef directly to inline input');
+  assert.ok(sizeCode.includes('e.key === \'Tab\''), 'SizeCombobox must handle Tab key navigation');
+  assert.ok(sizeCode.includes('tabIndex={-1}'), 'SizeCombobox action buttons must have tabIndex={-1}');
+
+  // 3. Verify CustomerCombobox and PortCombobox have inline inputs with cursor-text
+  const custCode = fs.readFileSync(path.resolve('src/components/sales/CustomerCombobox.tsx'), 'utf8');
+  assert.ok(custCode.includes('cursor-text'), 'CustomerCombobox must apply cursor-text for active text cursor');
+  const portCode = fs.readFileSync(path.resolve('src/components/sales/PortCombobox.tsx'), 'utf8');
+  assert.ok(portCode.includes('cursor-text'), 'PortCombobox must apply cursor-text for active text cursor');
+
+  // 4. Verify SalesInvoiceEntryForm Tab navigation & row auto-append on Tab key
+  const formCode = fs.readFileSync(path.resolve('src/components/sales/SalesInvoiceEntryForm.tsx'), 'utf8');
+  assert.ok(formCode.includes('e.key === \'Tab\' && !e.shiftKey'), 'handleRateKeyDown must support Tab key navigation to advance to next row');
+  assert.ok(formCode.includes('tabIndex={-1}'), 'Line delete buttons and helper buttons must have tabIndex={-1}');
+
+  // 5. Verify Service Worker cache version is v39 and main.tsx registers v39
+  const swCode = fs.readFileSync(path.resolve('public/sw.js'), 'utf8');
+  assert.ok(swCode.includes('seafood-pwa-v39'), 'sw.js CACHE_VERSION must be seafood-pwa-v39');
+  const mainCode = fs.readFileSync(path.resolve('src/main.tsx'), 'utf8');
+  assert.ok(mainCode.includes('sw.js?v=39'), 'main.tsx must register sw.js?v=39');
+});
+
 
 

@@ -420,13 +420,30 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
   };
 
   const handleRateKeyDown = (e: React.KeyboardEvent, idx: number, line: LineItemDraft) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
       if (idx === lines.length - 1) {
-        if (isLineCompleted(line)) {
-          autoAppendNextLineIfCompleted(line.id, undefined, true);
+        const hasData = Boolean(
+          line.productDescription.trim() ||
+          line.speciesId ||
+          line.gradeSize.trim() ||
+          line.sizeId ||
+          (line.weightKg !== '' && line.weightKg !== 0) ||
+          (line.ratePerKg !== '' && line.ratePerKg !== 0)
+        );
+        if (hasData) {
+          e.preventDefault();
+          const newLine = createBlankLine(lines.length);
+          setLines((prev) => [...prev, newLine]);
+          setTimeout(() => {
+            const el = descInputRefs.current.get(newLine.id);
+            if (el) {
+              el.focus();
+              el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }, 60);
         }
-      } else {
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
         const nextLine = lines[idx + 1];
         if (nextLine) {
           const el = descInputRefs.current.get(nextLine.id);
@@ -1463,6 +1480,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               <label className="block text-[11px] font-bold text-ink-700">COMMODITY Title (Row 10)</label>
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => {
                   setIsCommodityManual(false);
                   setCommodityDescription(deriveCommodityTitle(lines, species));
@@ -1501,6 +1519,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               <label className="block text-[11px] font-bold text-ink-700">SCIENTIFIC NAME</label>
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => {
                   setIsScientificManual(false);
                   setScientificName(deriveScientificName(lines, species));
@@ -1530,6 +1549,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
               <label className="block text-[11px] font-bold text-ink-700">HSN / ITC (HS) CODE (Terms of Delivery & Payment)</label>
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => {
                   setIsHsnManual(false);
                   setHsnCode(deriveHsnCode(lines, species));
@@ -1779,6 +1799,7 @@ export const SalesInvoiceEntryForm: React.FC<SalesInvoiceEntryFormProps> = ({
                   <td className="py-2 px-3 text-center">
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => handleRemoveLine(l.id)}
                       disabled={lines.length <= 1}
                       title="Delete Line"
