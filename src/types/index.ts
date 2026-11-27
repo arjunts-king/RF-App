@@ -517,6 +517,17 @@ export interface SalesInvoice {
   balancePaymentINR?: number; // Actual balance payment in INR (balancePaymentAmountCurrency * balanceExchangeRate)
   balanceBankRef?: string; // Balance Bank Reference / FIRC / Wire Advice
   balanceExchangeRate?: number; // Forward exchange rate for balance payment (pre-determined with bank)
+  isSplitBalance?: boolean; // Whether balance payment was received in 2 parts with different forward rates
+  balancePart1AmountCurrency?: number;
+  balancePart1ExchangeRate?: number;
+  balancePart1INR?: number;
+  balancePart1Date?: string;
+  balancePart1BankRef?: string;
+  balancePart2AmountCurrency?: number;
+  balancePart2ExchangeRate?: number;
+  balancePart2INR?: number;
+  balancePart2Date?: string;
+  balancePart2BankRef?: string;
   totalShortfallUSD?: number; // Total shortfall in realization in USD (advanceShortfallUSD + balanceShortfallUSD)
   bankPreDeterminedExchangeRate?: number; // Primary/legacy exchange rate of that invoice (pre determined with bank)
 

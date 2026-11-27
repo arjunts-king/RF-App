@@ -46,11 +46,22 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   const [advanceReceivedDate, setAdvanceReceivedDate] = useState<string>('');
   const [advanceBankRef, setAdvanceBankRef] = useState<string>('');
 
-  // Balance Payment (Balance as per Actual Price vs Actual Received)
+  // Balance Payment (Balance as per Actual Price vs Actual Received — single or 2 parts)
   const [balanceActualPriceUSD, setBalanceActualPriceUSD] = useState<string>('');
+  const [isSplitBalance, setIsSplitBalance] = useState<boolean>(false);
   const [balancePaymentAmount, setBalancePaymentAmount] = useState<string>('');
   const [balancePaymentDate, setBalancePaymentDate] = useState<string>('');
   const [balanceBankRef, setBalanceBankRef] = useState<string>('');
+
+  const [balancePart1Amount, setBalancePart1Amount] = useState<string>('');
+  const [balancePart1Rate, setBalancePart1Rate] = useState<string>('');
+  const [balancePart1Date, setBalancePart1Date] = useState<string>('');
+  const [balancePart1BankRef, setBalancePart1BankRef] = useState<string>('');
+
+  const [balancePart2Amount, setBalancePart2Amount] = useState<string>('');
+  const [balancePart2Rate, setBalancePart2Rate] = useState<string>('');
+  const [balancePart2Date, setBalancePart2Date] = useState<string>('');
+  const [balancePart2BankRef, setBalancePart2BankRef] = useState<string>('');
 
   // Bank & Notes
   const [bankAccountId, setBankAccountId] = useState<string>('');
@@ -98,6 +109,18 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       setBalancePaymentDate(invoice.balancePaymentDate || '');
       setBalanceBankRef(invoice.balanceBankRef || '');
 
+      const splitActive = Boolean(invoice.isSplitBalance || (invoice.balancePart2AmountCurrency && invoice.balancePart2AmountCurrency > 0));
+      setIsSplitBalance(splitActive);
+      setBalancePart1Amount(invoice.balancePart1AmountCurrency ? String(invoice.balancePart1AmountCurrency) : (invoice.balancePaymentAmountCurrency ? String(invoice.balancePaymentAmountCurrency) : ''));
+      setBalancePart1Rate(invoice.balancePart1ExchangeRate ? String(invoice.balancePart1ExchangeRate) : String(initialBalRate));
+      setBalancePart1Date(invoice.balancePart1Date || invoice.balancePaymentDate || '');
+      setBalancePart1BankRef(invoice.balancePart1BankRef || invoice.balanceBankRef || '');
+
+      setBalancePart2Amount(invoice.balancePart2AmountCurrency ? String(invoice.balancePart2AmountCurrency) : '');
+      setBalancePart2Rate(invoice.balancePart2ExchangeRate ? String(invoice.balancePart2ExchangeRate) : String(initialBalRate));
+      setBalancePart2Date(invoice.balancePart2Date || '');
+      setBalancePart2BankRef(invoice.balancePart2BankRef || '');
+
       // Pick receiving bank account
       const firstRealizationAcc = invoice.realizations?.find((r) => r.bankAccountId)?.bankAccountId;
       setBankAccountId(firstRealizationAcc || bankAccounts[0]?.id || '');
@@ -116,7 +139,15 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   const currentAdvTermsUSD = parseFloat(advanceTermsUSD) || 0;
   const currentAdvUSD = parseFloat(advanceReceived) || 0;
   const currentBalPriceUSD = parseFloat(balanceActualPriceUSD) || 0;
-  const currentBalUSD = parseFloat(balancePaymentAmount) || 0;
+
+  const part1USD = parseFloat(balancePart1Amount) || 0;
+  const part1Rate = parseFloat(balancePart1Rate) || currentBalRate;
+  const part2USD = parseFloat(balancePart2Amount) || 0;
+  const part2Rate = parseFloat(balancePart2Rate) || currentBalRate;
+
+  const currentBalUSD = isSplitBalance
+    ? Number((part1USD + part2USD).toFixed(2))
+    : (parseFloat(balancePaymentAmount) || 0);
 
   // Compute reconciliation: when only advance realization is done (balance not settled yet),
   // remaining amount stays strictly Unrealized Balance — never Shortfall.
@@ -140,16 +171,19 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   } = reconciliation;
 
   const currentAdvINR = currentAdvUSD * currentAdvRate;
-  const currentBalINR = currentBalUSD * currentBalRate;
+  const part1INR = part1USD * part1Rate;
+  const part2INR = part2USD * part2Rate;
+  const currentBalINR = isSplitBalance ? (part1INR + part2INR) : (currentBalUSD * currentBalRate);
+  const effectiveBalRate = isSplitBalance && currentBalUSD > 0 ? currentBalINR / currentBalUSD : currentBalRate;
 
   const outstandingAfterAdv = computeOutstandingFromAdvance(
     invoice.totalAmountCurrency,
     currentAdvUSD,
-    currentBalRate
+    effectiveBalRate
   );
 
   const totalSettledINR = currentAdvINR + currentBalINR;
-  const remainingINR = remainingUSD * currentBalRate;
+  const remainingINR = remainingUSD * effectiveBalRate;
 
   const weightedAverageRate =
     totalSettledUSD > 0
@@ -208,9 +242,20 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       return;
     }
 
-    if (currentBalUSD > 0 && !balancePaymentDate) {
+    if (!isSplitBalance && currentBalUSD > 0 && !balancePaymentDate) {
       alert('Please select the date of receiving the balance payment.');
       return;
+    }
+
+    if (isSplitBalance) {
+      if (part1USD > 0 && (!balancePart1Date || part1Rate <= 0)) {
+        alert('Please enter a valid Date and Forward Rate for Balance Part 1.');
+        return;
+      }
+      if (part2USD > 0 && (!balancePart2Date || part2Rate <= 0)) {
+        alert('Please enter a valid Date and Forward Rate for Balance Part 2.');
+        return;
+      }
     }
 
     if (totalSettledUSD > invoice.totalAmountCurrency + 1) {
@@ -224,7 +269,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
     const res = updateInvoiceSettlement(invoice.id, {
       bankPreDeterminedExchangeRate: Number(weightedAverageRate.toFixed(7)),
       advanceExchangeRate: hasAdvForwardRate ? parsedAdvRate : undefined,
-      balanceExchangeRate: currentBalRate,
+      balanceExchangeRate: Number(effectiveBalRate.toFixed(7)),
       advanceTermsUSD: currentAdvTermsUSD > 0 ? currentAdvTermsUSD : undefined,
       advanceReceivedCurrency: currentAdvUSD > 0 ? currentAdvUSD : undefined,
       advanceShortfallUSD: isSettled && advShortfallUSD > 0 ? advShortfallUSD : undefined,
@@ -233,8 +278,17 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       balanceActualPriceUSD: isSettled && currentBalPriceUSD > 0 ? currentBalPriceUSD : undefined,
       balancePaymentAmountCurrency: currentBalUSD > 0 ? currentBalUSD : undefined,
       balanceShortfallUSD: isSettled && balShortfallUSD > 0 ? balShortfallUSD : undefined,
-      balancePaymentDate: currentBalUSD > 0 ? balancePaymentDate : undefined,
-      balanceBankRef: currentBalUSD > 0 ? balanceBankRef.trim() : undefined,
+      balancePaymentDate: currentBalUSD > 0 ? (isSplitBalance ? (balancePart2Date || balancePart1Date) : balancePaymentDate) : undefined,
+      balanceBankRef: currentBalUSD > 0 ? (isSplitBalance ? [balancePart1BankRef.trim(), balancePart2BankRef.trim()].filter(Boolean).join(' / ') : balanceBankRef.trim()) : undefined,
+      isSplitBalance: isSplitBalance && currentBalUSD > 0,
+      balancePart1AmountCurrency: isSplitBalance && part1USD > 0 ? part1USD : undefined,
+      balancePart1ExchangeRate: isSplitBalance && part1USD > 0 ? part1Rate : undefined,
+      balancePart1Date: isSplitBalance && part1USD > 0 ? balancePart1Date : undefined,
+      balancePart1BankRef: isSplitBalance && part1USD > 0 ? balancePart1BankRef.trim() : undefined,
+      balancePart2AmountCurrency: isSplitBalance && part2USD > 0 ? part2USD : undefined,
+      balancePart2ExchangeRate: isSplitBalance && part2USD > 0 ? part2Rate : undefined,
+      balancePart2Date: isSplitBalance && part2USD > 0 ? balancePart2Date : undefined,
+      balancePart2BankRef: isSplitBalance && part2USD > 0 ? balancePart2BankRef.trim() : undefined,
       totalShortfallUSD: isSettled && totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
       bankAccountId: bankAccountId || undefined,
       notes: notes.trim() || undefined
@@ -289,7 +343,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                 </span>
               )}
               <span className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200" title="Balance Forward Rate">
-                Bal: ₹{currentBalRate.toFixed(2)}
+                Bal: ₹{effectiveBalRate.toFixed(2)}
               </span>
             </div>
             <span className="text-[10px] text-ink-500 mt-0.5 block">
@@ -704,7 +758,32 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextSplit = !isSplitBalance;
+                  setIsSplitBalance(nextSplit);
+                  if (nextSplit && !balancePart1Amount && balancePaymentAmount) {
+                    setBalancePart1Amount(balancePaymentAmount);
+                    setBalancePart1Date(balancePaymentDate || today);
+                    setBalancePart1Rate(balanceExchangeRate);
+                    setBalancePart1BankRef(balanceBankRef);
+                  } else if (!nextSplit && (part1USD > 0 || part2USD > 0)) {
+                    setBalancePaymentAmount(String(Number((part1USD + part2USD).toFixed(2))));
+                    setBalancePaymentDate(balancePart2Date || balancePart1Date || today);
+                    setBalanceBankRef([balancePart1BankRef, balancePart2BankRef].filter(Boolean).join(' / '));
+                  }
+                }}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${
+                  isSplitBalance
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-white text-indigo-800 border-indigo-200 hover:bg-indigo-50'
+                }`}
+                title="Toggle between single balance settlement and 2-part balance settlement with separate forward rates"
+              >
+                {isSplitBalance ? '✓ 2-Part Balance Active' : 'Split Balance (2 Parts)'}
+              </button>
               <button
                 type="button"
                 onClick={handleRecalcBalPrice}
@@ -713,14 +792,16 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
               >
                 Recalc Bal Price
               </button>
-              <button
-                type="button"
-                onClick={handleFillFullBalance}
-                className="text-[11px] font-bold px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>Fill Remaining Balance</span>
-              </button>
+              {!isSplitBalance && (
+                <button
+                  type="button"
+                  onClick={handleFillFullBalance}
+                  className="text-[11px] font-bold px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Fill Remaining Balance</span>
+                </button>
+              )}
               {currentBalUSD > 0 && (
                 <button
                   type="button"
@@ -728,6 +809,12 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
                     setBalancePaymentAmount('');
                     setBalancePaymentDate('');
                     setBalanceBankRef('');
+                    setBalancePart1Amount('');
+                    setBalancePart1Date('');
+                    setBalancePart1BankRef('');
+                    setBalancePart2Amount('');
+                    setBalancePart2Date('');
+                    setBalancePart2BankRef('');
                   }}
                   className="text-[11px] font-medium text-rose-600 hover:underline"
                 >
@@ -737,110 +824,285 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">
-                Balance as per Actual Price (USD)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={balanceActualPriceUSD}
-                  onChange={(e) => setBalanceActualPriceUSD(e.target.value)}
-                  placeholder="e.g. 35000"
-                  disabled={!permissions.canManageSalesRealization}
-                  className="w-full pl-7 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
-                />
+          {!isSplitBalance ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                  Balance as per Actual Price (USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={balanceActualPriceUSD}
+                    onChange={(e) => setBalanceActualPriceUSD(e.target.value)}
+                    placeholder="e.g. 35000"
+                    disabled={!permissions.canManageSalesRealization}
+                    className="w-full pl-7 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-ink-500 mt-1">
+                  <span>Shipping price balance</span>
+                  {currentBalPriceUSD > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setBalancePaymentAmount(String(currentBalPriceUSD))}
+                      className="text-emerald-700 font-bold hover:underline"
+                    >
+                      Match to Actual
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-ink-500 mt-1">
-                <span>Shipping price balance</span>
-                {currentBalPriceUSD > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setBalancePaymentAmount(String(currentBalPriceUSD))}
-                    className="text-emerald-700 font-bold hover:underline"
-                  >
-                    Match to Actual
-                  </button>
+
+              <div>
+                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                  Actual Balance Received (USD) {currentBalUSD > 0 && <span className="text-rose-600">*</span>}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={balancePaymentAmount}
+                    onChange={(e) => setBalancePaymentAmount(e.target.value)}
+                    placeholder="e.g. 34800"
+                    disabled={!permissions.canManageSalesRealization}
+                    className="w-full pl-7 pr-3 py-2 bg-white border border-emerald-300 rounded-xl font-bold text-xs outline-none focus:border-emerald-600 text-emerald-900"
+                  />
+                </div>
+                {currentBalUSD > 0 && (
+                  <span className="text-[10px] text-emerald-700 font-medium block mt-1">
+                    {((currentBalUSD / invoice.totalAmountCurrency) * 100).toFixed(1)}% of invoice value
+                  </span>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-emerald-900 mb-1">
-                Actual Balance Received (USD) {currentBalUSD > 0 && <span className="text-rose-600">*</span>}
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600">$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={balancePaymentAmount}
-                  onChange={(e) => setBalancePaymentAmount(e.target.value)}
-                  placeholder="e.g. 34800"
-                  disabled={!permissions.canManageSalesRealization}
-                  className="w-full pl-7 pr-3 py-2 bg-white border border-emerald-300 rounded-xl font-bold text-xs outline-none focus:border-emerald-600 text-emerald-900"
-                />
+              <div>
+                <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                  Date of Receiving Balance {currentBalUSD > 0 && <span className="text-rose-600">*</span>}
+                </label>
+                <div className="relative">
+                  <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
+                  <input
+                    type="date"
+                    value={balancePaymentDate}
+                    onChange={(e) => setBalancePaymentDate(e.target.value)}
+                    required={currentBalUSD > 0}
+                    disabled={!permissions.canManageSalesRealization}
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
-              {currentBalUSD > 0 && (
-                <span className="text-[10px] text-emerald-700 font-medium block mt-1">
-                  {((currentBalUSD / invoice.totalAmountCurrency) * 100).toFixed(1)}% of invoice value
-                </span>
-              )}
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">
-                Date of Receiving Balance {currentBalUSD > 0 && <span className="text-rose-600">*</span>}
-              </label>
-              <div className="relative">
-                <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
-                <input
-                  type="date"
-                  value={balancePaymentDate}
-                  onChange={(e) => setBalancePaymentDate(e.target.value)}
-                  required={currentBalUSD > 0}
-                  disabled={!permissions.canManageSalesRealization}
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-xs outline-none focus:border-emerald-500"
-                />
+              <div>
+                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                  Balance Forward Rate (INR/USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.0000001"
+                    value={balanceExchangeRate}
+                    onChange={(e) => setBalanceExchangeRate(e.target.value)}
+                    placeholder="e.g. 84.7500000"
+                    disabled={!permissions.canManageSalesRealization}
+                    className="w-full pl-8 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-emerald-900 mb-1">
-                Balance Forward Rate (INR/USD)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">₹</span>
+              <div>
+                <label className="block text-[11px] font-bold text-ink-700 mb-1">Balance Bank Ref / FIRC / Wire #</label>
                 <input
-                  type="number"
-                  step="any"
-                  min="0.0000001"
-                  value={balanceExchangeRate}
-                  onChange={(e) => setBalanceExchangeRate(e.target.value)}
-                  placeholder="e.g. 84.7500000"
+                  type="text"
+                  value={balanceBankRef}
+                  onChange={(e) => setBalanceBankRef(e.target.value)}
+                  placeholder="e.g. FIRC-HDFC-BAL-9934"
                   disabled={!permissions.canManageSalesRealization}
-                  className="w-full pl-8 pr-3 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium text-xs outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Balance Actual Price Reference */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white/80 p-3 rounded-xl border border-emerald-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-ink-700 mb-1">
+                    Balance as per Actual Price (USD)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-500">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={balanceActualPriceUSD}
+                      onChange={(e) => setBalanceActualPriceUSD(e.target.value)}
+                      placeholder="e.g. 35000"
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full pl-7 pr-3 py-1.5 bg-white border border-emerald-200 rounded-xl font-bold text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase">Combined Balance Received</span>
+                  <span className="text-sm font-black text-emerald-800">
+                    {invoice.currency} {currentBalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[10px] font-bold text-ink-500 uppercase">Weighted Balance Forward Rate</span>
+                  <span className="text-sm font-black text-indigo-800">
+                    ₹{effectiveBalRate.toFixed(4)} / {invoice.currency}
+                  </span>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-ink-700 mb-1">Balance Bank Ref / FIRC / Wire #</label>
-              <input
-                type="text"
-                value={balanceBankRef}
-                onChange={(e) => setBalanceBankRef(e.target.value)}
-                placeholder="e.g. FIRC-HDFC-BAL-9934"
-                disabled={!permissions.canManageSalesRealization}
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-medium text-xs outline-none focus:border-emerald-500"
-              />
+              {/* Part 1 */}
+              <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
+                    Balance Part 1 (Tranche 1)
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-700">
+                    Credited: {formatINR(part1INR)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 1 Amount (USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={balancePart1Amount}
+                      onChange={(e) => setBalancePart1Amount(e.target.value)}
+                      placeholder="e.g. 20000"
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-emerald-200 rounded-lg font-bold text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 1 Forward Rate (₹)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.0000001"
+                      value={balancePart1Rate}
+                      onChange={(e) => setBalancePart1Rate(e.target.value)}
+                      placeholder="e.g. 84.50"
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-emerald-200 rounded-lg font-bold text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 1 Date</label>
+                    <input
+                      type="date"
+                      value={balancePart1Date}
+                      onChange={(e) => setBalancePart1Date(e.target.value)}
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg font-semibold text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 1 Bank Ref / FIRC</label>
+                    <input
+                      type="text"
+                      value={balancePart1BankRef}
+                      onChange={(e) => setBalancePart1BankRef(e.target.value)}
+                      placeholder={`BAL1-${invoice.invoiceNo}`}
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg font-medium text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Part 2 */}
+              <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold text-indigo-900 uppercase tracking-wider">
+                    Balance Part 2 (Tranche 2)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetTotal = currentBalPriceUSD > 0 ? currentBalPriceUSD : Math.max(0, invoice.totalAmountCurrency - currentAdvUSD);
+                        const rem = Math.max(0, Number((targetTotal - part1USD).toFixed(2)));
+                        setBalancePart2Amount(String(rem));
+                        if (!balancePart2Date) setBalancePart2Date(today);
+                        if (!balancePart2BankRef) setBalancePart2BankRef(`BAL2-${invoice.invoiceNo}`);
+                      }}
+                      className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded"
+                    >
+                      Fill Remaining
+                    </button>
+                    <span className="text-[11px] font-bold text-indigo-700">
+                      Credited: {formatINR(part2INR)}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 2 Amount (USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={balancePart2Amount}
+                      onChange={(e) => setBalancePart2Amount(e.target.value)}
+                      placeholder="e.g. 15000"
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg font-bold text-xs outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 2 Forward Rate (₹)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.0000001"
+                      value={balancePart2Rate}
+                      onChange={(e) => setBalancePart2Rate(e.target.value)}
+                      placeholder="e.g. 85.10"
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg font-bold text-xs outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 2 Date</label>
+                    <input
+                      type="date"
+                      value={balancePart2Date}
+                      onChange={(e) => setBalancePart2Date(e.target.value)}
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg font-semibold text-xs outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-ink-600 mb-1">Part 2 Bank Ref / FIRC</label>
+                    <input
+                      type="text"
+                      value={balancePart2BankRef}
+                      onChange={(e) => setBalancePart2BankRef(e.target.value)}
+                      placeholder={`BAL2-${invoice.invoiceNo}`}
+                      disabled={!permissions.canManageSalesRealization}
+                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg font-medium text-xs outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Balance Shortfall Alert if actual < actual balance price */}
           {balShortfallUSD > 0 && (
@@ -860,7 +1122,10 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
           {currentBalUSD > 0 && (
             <div className="p-2.5 bg-emerald-100/60 rounded-xl flex items-center justify-between text-xs text-emerald-900 font-semibold">
-              <span>Actual Balance Credited in Indian Rupees (₹) @ ₹{currentBalRate.toFixed(2)}:</span>
+              <span>
+                Actual Balance Credited in Indian Rupees (₹) @ ₹{effectiveBalRate.toFixed(4)}
+                {isSplitBalance ? ' (2-Part Weighted)' : ''}:
+              </span>
               <span className="text-sm font-black">{formatINR(currentBalINR)}</span>
             </div>
           )}

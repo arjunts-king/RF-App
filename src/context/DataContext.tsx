@@ -245,6 +245,15 @@ interface DataContextType {
       balancePaymentDate?: string;
       balanceBankRef?: string;
       balanceExchangeRate?: number;
+      isSplitBalance?: boolean;
+      balancePart1AmountCurrency?: number;
+      balancePart1ExchangeRate?: number;
+      balancePart1Date?: string;
+      balancePart1BankRef?: string;
+      balancePart2AmountCurrency?: number;
+      balancePart2ExchangeRate?: number;
+      balancePart2Date?: string;
+      balancePart2BankRef?: string;
       totalShortfallUSD?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
@@ -3634,6 +3643,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       balancePaymentDate?: string;
       balanceBankRef?: string;
       balanceExchangeRate?: number;
+      isSplitBalance?: boolean;
+      balancePart1AmountCurrency?: number;
+      balancePart1ExchangeRate?: number;
+      balancePart1Date?: string;
+      balancePart1BankRef?: string;
+      balancePart2AmountCurrency?: number;
+      balancePart2ExchangeRate?: number;
+      balancePart2Date?: string;
+      balancePart2BankRef?: string;
       totalShortfallUSD?: number;
       bankPreDeterminedExchangeRate?: number;
       bankAccountId?: string;
@@ -3678,7 +3696,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? (settlementData.advanceBankRef?.trim() || invoice.advanceBankRef || `ADV-${invoice.invoiceNo}`)
       : undefined;
 
-    const balanceUSD = Number(settlementData.balancePaymentAmountCurrency) || 0;
+    const isSplitBalance = Boolean(settlementData.isSplitBalance);
+    const balPart1USD = isSplitBalance ? (Number(settlementData.balancePart1AmountCurrency) || 0) : 0;
+    const balPart2USD = isSplitBalance ? (Number(settlementData.balancePart2AmountCurrency) || 0) : 0;
+    const balPart1Rate = isSplitBalance && Number(settlementData.balancePart1ExchangeRate) > 0
+      ? Number(Number(settlementData.balancePart1ExchangeRate).toFixed(7))
+      : balanceRate;
+    const balPart2Rate = isSplitBalance && Number(settlementData.balancePart2ExchangeRate) > 0
+      ? Number(Number(settlementData.balancePart2ExchangeRate).toFixed(7))
+      : balanceRate;
+    const balPart1INR = isSplitBalance && balPart1USD > 0 ? Number((balPart1USD * balPart1Rate).toFixed(2)) : 0;
+    const balPart2INR = isSplitBalance && balPart2USD > 0 ? Number((balPart2USD * balPart2Rate).toFixed(2)) : 0;
+    const balPart1Date = isSplitBalance && balPart1USD > 0
+      ? (settlementData.balancePart1Date || invoice.balancePart1Date || new Date().toISOString().split('T')[0])
+      : undefined;
+    const balPart2Date = isSplitBalance && balPart2USD > 0
+      ? (settlementData.balancePart2Date || invoice.balancePart2Date || new Date().toISOString().split('T')[0])
+      : undefined;
+    const balPart1BankRef = isSplitBalance && balPart1USD > 0
+      ? (settlementData.balancePart1BankRef?.trim() || `BAL1-${invoice.invoiceNo}`)
+      : undefined;
+    const balPart2BankRef = isSplitBalance && balPart2USD > 0
+      ? (settlementData.balancePart2BankRef?.trim() || `BAL2-${invoice.invoiceNo}`)
+      : undefined;
+
+    const balanceUSD = isSplitBalance
+      ? Number((balPart1USD + balPart2USD).toFixed(2))
+      : (Number(settlementData.balancePaymentAmountCurrency) || 0);
     let balanceActualPriceUSD = balanceUSD > 0
       ? (Number(settlementData.balanceActualPriceUSD) > 0
           ? Number(Number(settlementData.balanceActualPriceUSD).toFixed(2))
@@ -3711,15 +3755,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       : undefined;
 
     const balanceDate = balanceUSD > 0
-      ? (settlementData.balancePaymentDate || invoice.balancePaymentDate || new Date().toISOString().split('T')[0])
+      ? (isSplitBalance
+          ? (balPart2Date || balPart1Date || new Date().toISOString().split('T')[0])
+          : (settlementData.balancePaymentDate || invoice.balancePaymentDate || new Date().toISOString().split('T')[0]))
       : undefined;
     const balanceBankRef = balanceUSD > 0
-      ? (settlementData.balanceBankRef?.trim() || invoice.balanceBankRef || `BAL-${invoice.invoiceNo}`)
+      ? (isSplitBalance
+          ? ([balPart1BankRef, balPart2BankRef].filter(Boolean).join(' / ') || `BAL-${invoice.invoiceNo}`)
+          : (settlementData.balanceBankRef?.trim() || invoice.balanceBankRef || `BAL-${invoice.invoiceNo}`))
       : undefined;
 
     const effectiveAdvRate = advanceRate || balanceRate;
     const advanceINR = advanceUSD > 0 ? Number((advanceUSD * effectiveAdvRate).toFixed(2)) : 0;
-    const balanceINR = Number((balanceUSD * balanceRate).toFixed(2));
+    const balanceINR = isSplitBalance
+      ? Number((balPart1INR + balPart2INR).toFixed(2))
+      : Number((balanceUSD * balanceRate).toFixed(2));
+    const effectiveBalanceRate = isSplitBalance && balanceUSD > 0
+      ? Number((balanceINR / balanceUSD).toFixed(7))
+      : balanceRate;
 
     const totalRealizedCurrency = reconciliation.totalRealizedCurrency;
     const totalRealizedINR = Number((advanceINR + balanceINR).toFixed(2));
@@ -3745,7 +3798,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createdBy: currentUser.email
       });
     }
-    if (balanceUSD > 0 && balanceDate) {
+    if (isSplitBalance) {
+      if (balPart1USD > 0 && balPart1Date) {
+        updatedRealizations.push({
+          id: `real-bal1-${invoice.id}`,
+          settlementDate: balPart1Date,
+          realizedAmountCurrency: balPart1USD,
+          exchangeRateRealized: balPart1Rate,
+          amountINR: balPart1INR,
+          bankRefNo: balPart1BankRef || `BAL1-${invoice.invoiceNo}`,
+          bankAccountId: settlementData.bankAccountId,
+          notes: settlementData.notes ? `Balance Part 1: ${settlementData.notes}` : 'Balance settlement Part 1',
+          paymentType: 'Balance',
+          contractTermsAmountUSD: balPart2USD > 0 ? undefined : balanceActualPriceUSD,
+          shortfallUSD: balPart2USD > 0 ? undefined : balanceShortfallUSD,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email
+        });
+      }
+      if (balPart2USD > 0 && balPart2Date) {
+        updatedRealizations.push({
+          id: `real-bal2-${invoice.id}`,
+          settlementDate: balPart2Date,
+          realizedAmountCurrency: balPart2USD,
+          exchangeRateRealized: balPart2Rate,
+          amountINR: balPart2INR,
+          bankRefNo: balPart2BankRef || `BAL2-${invoice.invoiceNo}`,
+          bankAccountId: settlementData.bankAccountId,
+          notes: settlementData.notes ? `Balance Part 2: ${settlementData.notes}` : 'Balance settlement Part 2',
+          paymentType: 'Balance',
+          contractTermsAmountUSD: balanceActualPriceUSD,
+          shortfallUSD: balanceShortfallUSD,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email
+        });
+      }
+    } else if (balanceUSD > 0 && balanceDate) {
       updatedRealizations.push({
         id: `real-bal-${invoice.id}`,
         settlementDate: balanceDate,
@@ -3780,10 +3868,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       balanceActualPriceUSD: balanceActualPriceUSD && balanceActualPriceUSD > 0 ? balanceActualPriceUSD : undefined,
       balancePaymentAmountCurrency: balanceUSD > 0 ? balanceUSD : undefined,
       balanceShortfallUSD: balanceShortfallUSD && balanceShortfallUSD > 0 ? balanceShortfallUSD : undefined,
-      balanceExchangeRate: balanceRate,
+      balanceExchangeRate: effectiveBalanceRate,
       balancePaymentDate: balanceUSD > 0 ? balanceDate : undefined,
       balancePaymentINR: balanceUSD > 0 ? balanceINR : undefined,
       balanceBankRef: balanceUSD > 0 ? balanceBankRef : undefined,
+      isSplitBalance: isSplitBalance && balanceUSD > 0 ? true : undefined,
+      balancePart1AmountCurrency: isSplitBalance && balPart1USD > 0 ? balPart1USD : undefined,
+      balancePart1ExchangeRate: isSplitBalance && balPart1USD > 0 ? balPart1Rate : undefined,
+      balancePart1INR: isSplitBalance && balPart1USD > 0 ? balPart1INR : undefined,
+      balancePart1Date: isSplitBalance && balPart1USD > 0 ? balPart1Date : undefined,
+      balancePart1BankRef: isSplitBalance && balPart1USD > 0 ? balPart1BankRef : undefined,
+      balancePart2AmountCurrency: isSplitBalance && balPart2USD > 0 ? balPart2USD : undefined,
+      balancePart2ExchangeRate: isSplitBalance && balPart2USD > 0 ? balPart2Rate : undefined,
+      balancePart2INR: isSplitBalance && balPart2USD > 0 ? balPart2INR : undefined,
+      balancePart2Date: isSplitBalance && balPart2USD > 0 ? balPart2Date : undefined,
+      balancePart2BankRef: isSplitBalance && balPart2USD > 0 ? balPart2BankRef : undefined,
       totalShortfallUSD: totalShortfallUSD && totalShortfallUSD > 0 ? totalShortfallUSD : undefined,
       bankPreDeterminedExchangeRate: bankRate,
       realizations: updatedRealizations,
@@ -3948,6 +4047,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         balancePaymentDate: undefined,
         balancePaymentINR: undefined,
         balanceBankRef: undefined,
+        isSplitBalance: undefined,
+        balancePart1AmountCurrency: undefined,
+        balancePart1ExchangeRate: undefined,
+        balancePart1INR: undefined,
+        balancePart1Date: undefined,
+        balancePart1BankRef: undefined,
+        balancePart2AmountCurrency: undefined,
+        balancePart2ExchangeRate: undefined,
+        balancePart2INR: undefined,
+        balancePart2Date: undefined,
+        balancePart2BankRef: undefined,
         totalShortfallUSD: undefined,
         realizations: [],
         totalRealizedCurrency: 0,
