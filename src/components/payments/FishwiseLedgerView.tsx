@@ -498,16 +498,26 @@ export const FishwiseLedgerView: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Inward Weight (Kg) */}
+                      {/* Inward Weight (Kg) & Boxes */}
                       <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums font-bold text-sky-950">
                         {row.inwardWeightKg !== null ? (
                           <div>
-                            <div>{row.inwardWeightKg.toLocaleString('en-IN')} Kg</div>
-                            {row.boxesCount && row.boxesCount > 0 ? (
-                              <div className="text-[9px] print:text-[7.5px] font-bold text-amber-800">
-                                {row.boxesCount} Boxes
+                            {row.inwardWeightKg > 0 ? (
+                              <>
+                                <div>{row.inwardWeightKg.toLocaleString('en-IN')} Kg</div>
+                                {row.boxesCount && row.boxesCount > 0 ? (
+                                  <div className="text-[9px] print:text-[7.5px] font-bold text-amber-800">
+                                    {row.boxesCount.toLocaleString('en-IN')} Boxes
+                                  </div>
+                                ) : null}
+                              </>
+                            ) : row.boxesCount && row.boxesCount > 0 ? (
+                              <div className="text-amber-800">
+                                {row.boxesCount.toLocaleString('en-IN')} Boxes
                               </div>
-                            ) : null}
+                            ) : (
+                              '0 Kg'
+                            )}
                           </div>
                         ) : ''}
                       </td>
@@ -572,7 +582,12 @@ export const FishwiseLedgerView: React.FC = () => {
                   Totals &amp; Net Cumulative Position
                 </td>
                 <td className="py-3 px-2 print:px-1 text-right text-sky-950 tabular-nums whitespace-nowrap">
-                  {totalInwardWeightKg > 0 ? `${totalInwardWeightKg.toLocaleString('en-IN')} Kg` : '—'}
+                  <div>{totalInwardWeightKg > 0 ? `${totalInwardWeightKg.toLocaleString('en-IN')} Kg` : '—'}</div>
+                  {statement.rows.reduce((s, r) => s + (r.boxesCount || 0), 0) > 0 && (
+                    <div className="text-[9px] text-amber-800">
+                      {statement.rows.reduce((s, r) => s + (r.boxesCount || 0), 0).toLocaleString('en-IN')} Boxes
+                    </div>
+                  )}
                 </td>
                 <td className="py-3 px-2 print:px-1 text-right text-amber-800 tabular-nums whitespace-nowrap">
                   {totalOutwardWeightKg > 0 ? `-${totalOutwardWeightKg.toLocaleString('en-IN')} Kg` : '—'}

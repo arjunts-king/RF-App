@@ -2275,8 +2275,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false };
     }
 
-    if (!purchaseData.weightKg || purchaseData.weightKg <= 0) {
-      showToast('Validation Error: Weight must be greater than 0 Kg.', 'error');
+    const hasBoxes = (Number(purchaseData.boxesCount) || 0) > 0;
+    if ((!purchaseData.weightKg || purchaseData.weightKg <= 0) && !hasBoxes) {
+      showToast('Validation Error: Weight must be greater than 0 Kg (or enter No. of Boxes).', 'error');
       return { success: false };
     }
 
@@ -2313,7 +2314,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const supplier = suppliers.find((s) => s.id === purchaseData.supplierId);
 
     const derived = computePurchaseFields({
-      weightKg: purchaseData.weightKg,
+      weightKg: Number(purchaseData.weightKg) || 0,
       ratePerKg: purchaseData.ratePerKg,
       damageWeightKg: purchaseData.damageWeightKg,
       damageRatePerKg: purchaseData.damageRatePerKg,
@@ -5404,11 +5405,37 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ])
       );
 
+      const boxesCount = extractBoxesCountFromRow(row);
       const weightVal = parseNumeric(
-        getFlexibleValue(row, ['weightkg', 'weight', 'kg', 'quantity', 'qty', 'netweight'])
+        getFlexibleValue(row, [
+          'weightkg',
+          'weight',
+          'kg',
+          'kgs',
+          'quantity',
+          'qty',
+          'netweight',
+          'netweightkg',
+          'purchaseweight',
+          'purchaseweightkg',
+          'totalweight',
+          'totalweightkg',
+          'wtkg',
+          'wt'
+        ])
       );
       let rateVal = parseNumeric(
-        getFlexibleValue(row, ['rateperkginr', 'rateperkg', 'ratekg', 'rate', 'price', 'unitprice', 'pricekg'])
+        getFlexibleValue(row, [
+          'rateperkginr',
+          'rateperkg',
+          'ratekg',
+          'rateperbox',
+          'boxrate',
+          'rate',
+          'price',
+          'unitprice',
+          'pricekg'
+        ])
       );
 
       // Skip summary / total rows (e.g. Total, Grand Total)
@@ -5428,18 +5455,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // If rate is missing or zero, auto-derive from Fish Purchase or Final Purchase Value
-      if ((rateVal <= 0) && weightVal > 0) {
+      const denomQty = weightVal > 0 ? weightVal : boxesCount > 0 ? boxesCount : 0;
+      if (rateVal <= 0 && denomQty > 0) {
         if (explicitFishPurchase > 0) {
-          rateVal = Number((explicitFishPurchase / weightVal).toFixed(4));
+          rateVal = Number((explicitFishPurchase / denomQty).toFixed(4));
         } else if (explicitFinalPurchase > 0 && explicitTotalExpenses > 0) {
-          rateVal = Number(((explicitFinalPurchase - explicitTotalExpenses) / weightVal).toFixed(4));
+          rateVal = Number(((explicitFinalPurchase - explicitTotalExpenses) / denomQty).toFixed(4));
         } else if (explicitFinalPurchase > 0) {
-          rateVal = Number((explicitFinalPurchase / weightVal).toFixed(4));
+          rateVal = Number((explicitFinalPurchase / denomQty).toFixed(4));
         }
       }
 
-      if (!weightVal || weightVal <= 0) {
-        errors.push(`Row ${rowNum}: Invalid or zero Weight.`);
+      // Allow box-only Deepsea rows (boxesCount > 0 with weightVal === 0) or explicit purchase value rows
+      const hasValidQtyOrValue = weightVal > 0 || boxesCount > 0 || explicitFishPurchase > 0 || explicitFinalPurchase > 0;
+      if (!hasValidQtyOrValue) {
+        errors.push(`Row ${rowNum}: Invalid or zero Weight (and no Boxes / Purchase Value provided).`);
         return;
       }
       if (rateVal === undefined || isNaN(rateVal) || rateVal < 0) {
@@ -5724,8 +5754,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
-      // 5. Numeric & Optional Fields
-      const boxesCount = extractBoxesCountFromRow(row);
+      // 5. Numeric & Optional Fields (boxesCount already extracted above)
       const damageWeightKg = parseNumeric(getFlexibleValue(row, ['damageweightkg', 'damageweight', 'damagekg']));
       const damageRatePerKg = parseNumeric(getFlexibleValue(row, ['damagerateperkg', 'damagerate', 'damageratekg']));
       const amountPaid = parseNumeric(getFlexibleValue(row, ['amountpaidnowinr', 'amountpaid', 'paid', 'payment', 'advance']));
@@ -6053,11 +6082,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       maxPurNum++;
       const purchaseId = `PUR-${String(maxPurNum).padStart(5, '0')}`;
 
-      // If explicit Fish Purchase or Final Purchase was specified in Excel, preserve exact values
-      const finalPurchaseValue = explicitFishPurchase > 0 ? explicitFishPurchase : derived.purchaseValue;
-      const finalGrossPurchaseValue = explicitFishPurchase > 0 ? Number((explicitFishPurchase - derived.damageAmount).toFixed(2)) : derived.grossPurchaseValue;
+      // If explicit Fish Purchase or Final Purchase was specified in Excel, preserve exact values;
+      // for box-only rows (weightVal === 0 && boxesCount > 0), compute purchase value from boxesCount * rateVal
+      const computedBasePurchaseValue =
+        weightVal === 0 && boxesCount > 0 && rateVal > 0
+          ? Number((boxesCount * rateVal).toFixed(2))
+          : derived.purchaseValue;
+      const finalPurchaseValue = explicitFishPurchase > 0 ? explicitFishPurchase : computedBasePurchaseValue;
+      const finalGrossPurchaseValue =
+        explicitFishPurchase > 0
+          ? Number((explicitFishPurchase - derived.damageAmount).toFixed(2))
+          : weightVal === 0 && boxesCount > 0
+          ? Number(Math.max(0, finalPurchaseValue - derived.damageAmount).toFixed(2))
+          : derived.grossPurchaseValue;
       const finalTotalCost = explicitFinalPurchase > 0 ? explicitFinalPurchase : Number((finalGrossPurchaseValue + derived.totalExpenses).toFixed(2));
-      const finalEffectiveRate = weightVal > 0 ? Number((finalTotalCost / weightVal).toFixed(2)) : derived.effectiveRatePerKg;
+      const finalEffectiveRate =
+        weightVal > 0
+          ? Number((finalTotalCost / weightVal).toFixed(2))
+          : boxesCount > 0
+          ? Number((finalTotalCost / boxesCount).toFixed(2))
+          : derived.effectiveRatePerKg;
       const finalBalancePayable = Number(Math.max(0, finalTotalCost - amountPaid).toFixed(2));
       const finalPaymentStatus = derivePaymentStatus(finalTotalCost, amountPaid);
 
