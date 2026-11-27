@@ -218,7 +218,9 @@ interface DataContextType {
   addPurchase: (purchaseData: Partial<Purchase>) => { success: boolean; purchaseId?: string; warnings?: string[] };
   updatePurchase: (id: string, updates: Partial<Purchase>, editReason?: string) => { success: boolean; message?: string };
   voidPurchase: (id: string, voidReason: string) => { success: boolean; message?: string };
+  bulkVoidPurchases: (ids: string[], voidReason: string) => { success: boolean; count: number; message?: string };
   deletePurchasePermanently: (id: string) => { success: boolean; message?: string };
+  bulkDeletePurchasesPermanently: (ids: string[]) => { success: boolean; count: number; message?: string };
 
   // Production Entry Actions
   addProcessingEntry: (entryData: Partial<DailyProcessingEntry>) => { success: boolean; entryNo?: string; warning?: string };
@@ -2598,6 +2600,103 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logAudit('DELETE', 'Purchase', existing.purchaseId, { changeReason: 'Permanently deleted by Admin' });
     showToast(`Purchase ${existing.purchaseId} purged.`, 'warning');
     return { success: true };
+  };
+
+  const bulkVoidPurchases = (ids: string[], voidReason: string): { success: boolean; count: number; message?: string } => {
+    if (!permissions.canVoid) {
+      return { success: false, count: 0, message: 'Unauthorized: Only Owner/Admin and Master Accountant can void.' };
+    }
+    if (!voidReason.trim()) {
+      return { success: false, count: 0, message: 'Void reason is mandatory.' };
+    }
+    const idSet = new Set(ids);
+    const affectedExpBatches = new Set<string>();
+    const affectedYldBatches = new Set<string>();
+    let count = 0;
+
+    let allPurchases = purchases.map((p) => {
+      if (idSet.has(p.id) && !p.isVoided) {
+        count++;
+        if (p.expenseBatchNo) affectedExpBatches.add(p.expenseBatchNo);
+        if (p.yieldBatchNo) affectedYldBatches.add(p.yieldBatchNo);
+        return {
+          ...p,
+          isVoided: true,
+          voidReason: voidReason.trim(),
+          updatedBy: currentUser.email,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return p;
+    });
+
+    affectedExpBatches.forEach((expBatch) => {
+      const remainingExpRows = allPurchases.filter((p) => p.expenseBatchNo === expBatch && !p.isVoided);
+      if (remainingExpRows.length > 0) {
+        const { updatedPurchases } = allocateBatchExpenses(remainingExpRows);
+        const expMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (expMap.has(p.id) ? expMap.get(p.id)! : p));
+      }
+    });
+
+    affectedYldBatches.forEach((yldBatch) => {
+      const remainingYldRows = allPurchases.filter((p) => p.yieldBatchNo === yldBatch && !p.isVoided);
+      if (remainingYldRows.length > 0) {
+        const { updatedPurchases } = allocateBatchYield(remainingYldRows);
+        const yldMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (yldMap.has(p.id) ? yldMap.get(p.id)! : p));
+      }
+    });
+
+    mutatedKeysRef.current.add('purchases');
+    setPurchases(allPurchases);
+    safeSet(`${DB_PREFIX}purchases`, allPurchases);
+    logAudit('VOID', 'Purchase', `BULK (${count})`, { changeReason: voidReason.trim() });
+    return { success: true, count };
+  };
+
+  const bulkDeletePurchasesPermanently = (ids: string[]): { success: boolean; count: number; message?: string } => {
+    if (!permissions.canPermanentlyDelete) {
+      return { success: false, count: 0, message: 'Unauthorized: Owner/Admin only.' };
+    }
+    const idSet = new Set(ids);
+    const affectedExpBatches = new Set<string>();
+    const affectedYldBatches = new Set<string>();
+    let count = 0;
+
+    let allPurchases = purchases.filter((p) => {
+      if (idSet.has(p.id)) {
+        count++;
+        if (p.expenseBatchNo) affectedExpBatches.add(p.expenseBatchNo);
+        if (p.yieldBatchNo) affectedYldBatches.add(p.yieldBatchNo);
+        return false;
+      }
+      return true;
+    });
+
+    affectedExpBatches.forEach((expBatch) => {
+      const remainingExpRows = allPurchases.filter((p) => p.expenseBatchNo === expBatch && !p.isVoided);
+      if (remainingExpRows.length > 0) {
+        const { updatedPurchases } = allocateBatchExpenses(remainingExpRows);
+        const expMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (expMap.has(p.id) ? expMap.get(p.id)! : p));
+      }
+    });
+
+    affectedYldBatches.forEach((yldBatch) => {
+      const remainingYldRows = allPurchases.filter((p) => p.yieldBatchNo === yldBatch && !p.isVoided);
+      if (remainingYldRows.length > 0) {
+        const { updatedPurchases } = allocateBatchYield(remainingYldRows);
+        const yldMap = new Map(updatedPurchases.map((p) => [p.id, p]));
+        allPurchases = allPurchases.map((p) => (yldMap.has(p.id) ? yldMap.get(p.id)! : p));
+      }
+    });
+
+    mutatedKeysRef.current.add('purchases');
+    setPurchases(allPurchases);
+    safeSet(`${DB_PREFIX}purchases`, allPurchases);
+    logAudit('DELETE', 'Purchase', `BULK (${count})`, { changeReason: `Bulk permanently deleted ${count} purchase records by Admin` });
+    return { success: true, count };
   };
 
   const addPayment = (paymentData: Omit<PaymentRecord, 'id' | 'paymentNo' | 'createdAt' | 'isVoided' | 'createdBy'>) => {
@@ -7886,7 +7985,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addPurchase,
     updatePurchase,
     voidPurchase,
+    bulkVoidPurchases,
     deletePurchasePermanently,
+    bulkDeletePurchasesPermanently,
 
     addProcessingEntry,
     updateProcessingEntry,

@@ -47,7 +47,9 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
     expenseTypes,
     updatePurchase,
     voidPurchase,
+    bulkVoidPurchases,
     deletePurchasePermanently,
+    bulkDeletePurchasesPermanently,
     businessSettings
   } = useData();
   const { permissions } = useAuth();
@@ -436,25 +438,24 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
 
   const handleBulkConfirmVoid = () => {
     if (!bulkVoidReason.trim()) return;
-    const targetPurchases = purchases.filter((p) => selectedIds.includes(p.id) && !p.isVoided);
-    let count = 0;
-    for (const p of targetPurchases) {
-      const res = voidPurchase(p.id, bulkVoidReason.trim());
-      if (res.success) count++;
+    const res = bulkVoidPurchases(selectedIds, bulkVoidReason.trim());
+    if (res.success) {
+      showToast(`Successfully voided ${res.count} purchase records.`, 'success');
+    } else if (res.message) {
+      showToast(res.message, 'error');
     }
-    showToast(`Successfully voided ${count} purchase records.`, 'success');
     setIsBulkVoidModalOpen(false);
     setBulkVoidReason('');
     setSelectedIds([]);
   };
 
   const handleBulkConfirmDelete = () => {
-    let count = 0;
-    for (const id of selectedIds) {
-      const res = deletePurchasePermanently(id);
-      if (res.success) count++;
+    const res = bulkDeletePurchasesPermanently(selectedIds);
+    if (res.success) {
+      showToast(`Permanently deleted ${res.count} purchase records.`, 'success');
+    } else if (res.message) {
+      showToast(res.message, 'error');
     }
-    showToast(`Permanently deleted ${count} purchase records.`, 'success');
     setIsBulkDeleteModalOpen(false);
     setSelectedIds([]);
   };
