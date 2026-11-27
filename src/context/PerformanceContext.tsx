@@ -434,7 +434,11 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           invoice.totalAmountCurrency || lines.reduce((s, l) => s + (Number(l.amountCurrency) || 0), 0);
         const totalFobINR =
           invoice.totalFobValueINR || lines.reduce((s, l) => s + (Number(l.fobValueINR) || 0), 0);
-        const exchangeRate = invoice.exchangeRate || 83;
+        const hasAdvanceOrBalance =
+          Boolean(invoice.advanceReceivedCurrency && invoice.advanceReceivedCurrency > 0) ||
+          Boolean(invoice.balancePaymentAmountCurrency && invoice.balancePaymentAmountCurrency > 0) ||
+          Boolean(invoice.totalRealizedCurrency && invoice.totalRealizedCurrency > 0);
+        const exchangeRate = hasAdvanceOrBalance ? (invoice.exchangeRate || 0) : 0;
 
         const realizations: any[] = (invoice as any).realizations || [];
         const totalRealizedINRFromSettlement = realizations.reduce(
@@ -447,11 +451,14 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         if (totalRealizedINRFromSettlement > 0) {
           salesAmountINR = Number(totalRealizedINRFromSettlement.toFixed(2));
           salesBasis = 'realized';
-        } else if ((invoice as any).realizationStatus === 'Fully Realized' && totalFobINR > 0) {
+        } else if (hasAdvanceOrBalance && (invoice as any).realizationStatus === 'Fully Realized' && totalFobINR > 0) {
           salesAmountINR = Number(totalFobINR.toFixed(2));
           salesBasis = 'realized';
-        } else {
+        } else if (hasAdvanceOrBalance && exchangeRate > 0) {
           salesAmountINR = Number((totalSalesUSD * exchangeRate).toFixed(2));
+          salesBasis = 'estimated';
+        } else {
+          salesAmountINR = 0;
           salesBasis = 'estimated';
         }
 

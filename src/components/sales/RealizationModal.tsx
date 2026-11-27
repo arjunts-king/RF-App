@@ -71,18 +71,22 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
   // Sync state whenever invoice changes
   useEffect(() => {
     if (invoice) {
-      const initialBankRate = invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 84.50;
-      const initialBalRate = invoice.balanceExchangeRate || initialBankRate;
       const hasSavedAdvance = Boolean(invoice.advanceReceivedCurrency && invoice.advanceReceivedCurrency > 0);
+      const hasSavedBalance = Boolean(invoice.balancePaymentAmountCurrency && invoice.balancePaymentAmountCurrency > 0);
+      const hasAnyRealization = hasSavedAdvance || hasSavedBalance || Boolean(invoice.totalRealizedCurrency && invoice.totalRealizedCurrency > 0);
+
+      const initialBankRate = hasAnyRealization ? (invoice.bankPreDeterminedExchangeRate || invoice.exchangeRate || 0) : 0;
+      const initialBalRate = hasAnyRealization ? (invoice.balanceExchangeRate || initialBankRate) : 0;
       const hasExplicitAdvRate = Boolean(
+        hasAnyRealization &&
         invoice.advanceExchangeRate &&
         invoice.advanceExchangeRate > 0 &&
         (hasSavedAdvance || invoice.advanceExchangeRate !== initialBalRate)
       );
 
-      setBankPreDeterminedExchangeRate(String(initialBankRate));
+      setBankPreDeterminedExchangeRate(initialBankRate > 0 ? String(initialBankRate) : '');
       setAdvanceExchangeRate(hasExplicitAdvRate ? String(invoice.advanceExchangeRate) : '');
-      setBalanceExchangeRate(String(initialBalRate));
+      setBalanceExchangeRate(initialBalRate > 0 ? String(initialBalRate) : '');
 
       const defaultAdvTerms = invoice.advanceTermsUSD !== undefined
         ? String(invoice.advanceTermsUSD)
@@ -112,12 +116,12 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       const splitActive = Boolean(invoice.isSplitBalance || (invoice.balancePart2AmountCurrency && invoice.balancePart2AmountCurrency > 0));
       setIsSplitBalance(splitActive);
       setBalancePart1Amount(invoice.balancePart1AmountCurrency ? String(invoice.balancePart1AmountCurrency) : (invoice.balancePaymentAmountCurrency ? String(invoice.balancePaymentAmountCurrency) : ''));
-      setBalancePart1Rate(invoice.balancePart1ExchangeRate ? String(invoice.balancePart1ExchangeRate) : String(initialBalRate));
+      setBalancePart1Rate(invoice.balancePart1ExchangeRate ? String(invoice.balancePart1ExchangeRate) : (initialBalRate > 0 ? String(initialBalRate) : ''));
       setBalancePart1Date(invoice.balancePart1Date || invoice.balancePaymentDate || '');
       setBalancePart1BankRef(invoice.balancePart1BankRef || invoice.balanceBankRef || '');
 
       setBalancePart2Amount(invoice.balancePart2AmountCurrency ? String(invoice.balancePart2AmountCurrency) : '');
-      setBalancePart2Rate(invoice.balancePart2ExchangeRate ? String(invoice.balancePart2ExchangeRate) : String(initialBalRate));
+      setBalancePart2Rate(invoice.balancePart2ExchangeRate ? String(invoice.balancePart2ExchangeRate) : (initialBalRate > 0 ? String(initialBalRate) : ''));
       setBalancePart2Date(invoice.balancePart2Date || '');
       setBalancePart2BankRef(invoice.balancePart2BankRef || '');
 
@@ -130,7 +134,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
 
   if (!invoice) return null;
 
-  const currentBankRate = parseFloat(bankPreDeterminedExchangeRate) || 84.50;
+  const currentBankRate = parseFloat(bankPreDeterminedExchangeRate) || 0;
   const parsedAdvRate = parseFloat(advanceExchangeRate);
   const hasAdvForwardRate = advanceExchangeRate.trim() !== '' && !isNaN(parsedAdvRate) && parsedAdvRate > 0;
   const currentBalRate = parseFloat(balanceExchangeRate) || currentBankRate;
@@ -232,7 +236,7 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
       return;
     }
 
-    if (currentBalRate <= 0) {
+    if (currentBalUSD > 0 && currentBalRate <= 0) {
       alert('Please enter a valid Balance Forward Rate.');
       return;
     }

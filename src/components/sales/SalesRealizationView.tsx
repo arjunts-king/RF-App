@@ -1013,12 +1013,13 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
                 filteredInvoices.map((inv) => {
                   const consignee = customerMap.get(inv.consigneeId);
                   const buyer = inv.buyerId ? customerMap.get(inv.buyerId) : consignee;
-                  const bankRate = inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 84.5;
-                  const advRate = inv.advanceExchangeRate || bankRate;
-                  const balRate = inv.balanceExchangeRate || bankRate;
                   const advUSD = inv.advanceReceivedCurrency || 0;
-                  const advINR = inv.advanceReceivedINR || (advUSD > 0 ? Number((advUSD * advRate).toFixed(2)) : 0);
                   const balUSD = inv.balancePaymentAmountCurrency || 0;
+                  const hasAnyRealization = advUSD > 0 || balUSD > 0 || (inv.totalRealizedCurrency || 0) > 0;
+                  const bankRate = hasAnyRealization ? (inv.bankPreDeterminedExchangeRate || inv.exchangeRate || 0) : 0;
+                  const advRate = hasAnyRealization ? (inv.advanceExchangeRate || bankRate) : 0;
+                  const balRate = hasAnyRealization ? (inv.balanceExchangeRate || bankRate) : 0;
+                  const advINR = inv.advanceReceivedINR || (advUSD > 0 ? Number((advUSD * advRate).toFixed(2)) : 0);
                   const balINR = inv.balancePaymentINR || (balUSD > 0 ? Number((balUSD * balRate).toFixed(2)) : 0);
 
                   const advPct = inv.totalAmountCurrency > 0 ? ((advUSD / inv.totalAmountCurrency) * 100).toFixed(0) : '0';
@@ -1089,27 +1090,31 @@ export const SalesRealizationView: React.FC<{ onNavigate?: (tab: string) => void
 
                       {/* Pre-determined Bank Forward Rates */}
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap bg-rose-50/30">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center justify-center gap-1 font-mono text-[10px] font-bold">
-                            {inv.advanceExchangeRate || advUSD > 0 ? (
-                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title={`Advance Forward Rate: ₹${formatForwardRate(advRate)}`}>
-                                Adv: ₹{formatForwardRate(advRate)}
+                        {!hasAnyRealization ? (
+                          <span className="text-[11px] font-mono font-bold text-ink-400">₹0.00</span>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center justify-center gap-1 font-mono text-[10px] font-bold">
+                              {inv.advanceExchangeRate || advUSD > 0 ? (
+                                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 rounded border border-blue-200" title={`Advance Forward Rate: ₹${formatForwardRate(advRate)}`}>
+                                  Adv: ₹{formatForwardRate(advRate)}
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 bg-gray-100 text-ink-500 rounded border border-gray-200" title="Advance Forward Rate (Optional — No Advance)">
+                                  Adv: —
+                                </span>
+                              )}
+                              <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200" title={`Balance Forward Rate: ₹${formatForwardRate(balRate)}`}>
+                                Bal: ₹{formatForwardRate(balRate)}
                               </span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 bg-gray-100 text-ink-500 rounded border border-gray-200" title="Advance Forward Rate (Optional — No Advance)">
-                                Adv: —
+                            </div>
+                            {inv.averageRealizedExchangeRate && inv.totalRealizedCurrency > 0 && (
+                              <span className="text-[9px] font-semibold text-rose-700" title={`Weighted Average Realized Rate: ₹${formatForwardRate(inv.averageRealizedExchangeRate)}`}>
+                                Avg: ₹{formatForwardRate(inv.averageRealizedExchangeRate)}
                               </span>
                             )}
-                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200" title={`Balance Forward Rate: ₹${formatForwardRate(balRate)}`}>
-                              Bal: ₹{formatForwardRate(balRate)}
-                            </span>
                           </div>
-                          {inv.averageRealizedExchangeRate && inv.totalRealizedCurrency > 0 && (
-                            <span className="text-[9px] font-semibold text-rose-700" title={`Weighted Average Realized Rate: ₹${formatForwardRate(inv.averageRealizedExchangeRate)}`}>
-                              Avg: ₹{formatForwardRate(inv.averageRealizedExchangeRate)}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </td>
 
                       {/* Advance Received (Contract Terms vs Actual) */}

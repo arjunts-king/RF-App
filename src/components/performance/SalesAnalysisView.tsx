@@ -114,7 +114,7 @@ export const SalesAnalysisView: React.FC = () => {
     const rows = filteredEntries.map((e) => [
       e.speciesHeadName, formatDDMMYYYY(e.invoiceDate), e.invoiceNo,
       e.cartonsCount, e.weightKg.toFixed(2),
-      e.salesAmountUSD.toFixed(2), e.salesAmountINR.toFixed(2),
+      e.salesAmountUSD.toFixed(2), e.salesAmountINR > 0 ? e.salesAmountINR.toFixed(2) : '',
       e.drawbackReceived.toFixed(2), e.rodtepReceived.toFixed(2),
     ]);
     printPdfReport('Sales Analysis', headers, rows, totalsRow);
@@ -226,21 +226,29 @@ export const SalesAnalysisView: React.FC = () => {
                         {formatUSD(entry.salesAmountUSD)}
                       </td>
                       <td className="px-2.5 py-2 text-right whitespace-nowrap border-r border-gray-100">
-                        <div className="font-bold text-ink-900">{formatINR(entry.salesAmountINR)}</div>
-                        <span
-                          className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
-                            entry.salesBasis === 'realized'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-amber-50 text-amber-700'
-                          }`}
-                          title={
-                            entry.salesBasis === 'realized'
-                              ? 'Realized INR from settlement'
-                              : `Estimated: USD × ${entry.exchangeRate}`
-                          }
-                        >
-                          {entry.salesBasis === 'realized' ? 'Realized' : `Est @${entry.exchangeRate}`}
-                        </span>
+                        {entry.salesAmountINR > 0 ? (
+                          <>
+                            <div className="font-bold text-ink-900">{formatINR(entry.salesAmountINR)}</div>
+                            <span
+                              className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                                entry.salesBasis === 'realized'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}
+                              title={
+                                entry.salesBasis === 'realized'
+                                  ? 'Realized INR from settlement'
+                                  : `Estimated: USD × ${entry.exchangeRate}`
+                              }
+                            >
+                              {entry.salesBasis === 'realized' ? 'Realized' : `Est @${entry.exchangeRate}`}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-ink-300" title="No advance or balance realized (Exchange Rate: ₹0.00)">
+                            —
+                          </span>
+                        )}
                       </td>
 
                       {/* Drawback */}

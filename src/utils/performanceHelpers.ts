@@ -288,7 +288,7 @@ export function exportSalesAnalysisExcel(entries: PerformanceSalesEntry[]): void
       e.cartonsCount,
       e.weightKg,
       e.salesAmountUSD,
-      e.salesAmountINR,
+      e.salesAmountINR > 0 ? e.salesAmountINR : '',
       e.drawbackReceived,
       e.rodtepReceived,
     ]),
