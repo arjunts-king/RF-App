@@ -1,22 +1,38 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { Modal } from '../common/Modal';
 import {
   Boxes,
-    Search,
-    Download,
+  Search,
+  Download,
   Printer,
   AlertTriangle,
   CheckCircle2,
-    } from 'lucide-react';
+  Plus,
+} from 'lucide-react';
 
 export const InventoryPositionView: React.FC = () => {
-  const { inventoryCalculation } = useData();
+  const {
+    inventoryCalculation,
+    savePhysicalStockCount,
+    postPhysicalStockCount,
+  } = useData();
+  const { permissions } = useAuth();
   const { stockPositions } = inventoryCalculation;
 
   const [asOnDate, setAsOnDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Add / Update Closing Stock Modal
+  const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+  const [closingItemId, setClosingItemId] = useState<string>('');
+  const [closingDate, setClosingDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [closingQty, setClosingQty] = useState<string>('');
+  const [closingRate, setClosingRate] = useState<string>('');
+  const [closingRemarks, setClosingRemarks] = useState<string>('Manual Closing Stock Entry');
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -121,15 +137,32 @@ export const InventoryPositionView: React.FC = () => {
               Stock Position as on Date
             </h1>
             <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              Moving Average Valuation
+              FIFO Valuation
             </span>
           </div>
           <p className="text-xs text-ink-500 font-medium mt-1">
-            Real-time balances on hand, unit weighted average rates, low-stock thresholds and days-of-cover analysis.
+            Real-time balances on hand by Species Head, FIFO unit rates, low-stock thresholds and days-of-cover analysis.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {(permissions.canRecordStockCounts || permissions.canManageInventoryAdjustments) && (
+            <button
+              onClick={() => {
+                const first = stockPositions[0];
+                setClosingItemId(first?.inventoryItemId || '');
+                setClosingDate(asOnDate);
+                setClosingQty(first ? String(first.quantityOnHand) : '0');
+                setClosingRate(first ? String(first.averageCostPerKg) : '0');
+                setClosingRemarks('Closing Stock Entry');
+                setIsClosingModalOpen(true);
+              }}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Closing Stock</span>
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
@@ -361,6 +394,148 @@ export const InventoryPositionView: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Add / Update Closing Stock Modal */}
+      <Modal
+        isOpen={isClosingModalOpen}
+        onClose={() => setIsClosingModalOpen(false)}
+        title="Add / Update Closing Stock"
+        subtitle="Record physical closing stock for any Species Head (posted directly to FIFO inventory)"
+        maxWidth="max-w-lg"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const pos = stockPositions.find((p) => p.inventoryItemId === closingItemId);
+            if (!pos) return;
+            const bookQty = pos.quantityOnHand || 0;
+            const targetQty = Math.max(0, parseFloat(closingQty) || 0);
+            const rate = Math.max(0, parseFloat(closingRate) || pos.averageCostPerKg || 0);
+            const varianceQty = Number((targetQty - bookQty).toFixed(3));
+            const varianceVal = Number((varianceQty * rate).toFixed(2));
+
+            const res = savePhysicalStockCount({
+              countDate: closingDate,
+              items: [
+                {
+                  inventoryItemId: pos.inventoryItemId,
+                  bookQuantityKg: bookQty,
+                  countedQuantityKg: targetQty,
+                  varianceQuantityKg: varianceQty,
+                  varianceKg: varianceQty,
+                  unitCost: rate,
+                  varianceValue: varianceVal,
+                },
+              ],
+              totalVarianceQtyKg: varianceQty,
+              totalVarianceValue: varianceVal,
+              remarks: closingRemarks || 'Closing Stock Entry',
+              referenceNo: `CLS-${closingDate}`,
+            });
+
+            if (res.countId) {
+              postPhysicalStockCount(res.countId);
+            }
+            setIsClosingModalOpen(false);
+          }}
+          className="space-y-4 text-xs"
+        >
+          <div>
+            <label className="block font-bold text-ink-700 mb-1">Species Head / Inventory Item</label>
+            <select
+              value={closingItemId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setClosingItemId(id);
+                const pos = stockPositions.find((p) => p.inventoryItemId === id);
+                if (pos) {
+                  setClosingQty(String(pos.quantityOnHand));
+                  setClosingRate(String(pos.averageCostPerKg));
+                }
+              }}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-500"
+            >
+              {stockPositions.map((p) => (
+                <option key={p.inventoryItemId} value={p.inventoryItemId}>
+                  {p.itemName} (Current: {p.quantityOnHand.toLocaleString('en-IN')} Kg)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-ink-700 mb-1">Closing Stock Date</label>
+              <input
+                type="date"
+                required
+                value={closingDate}
+                onChange={(e) => setClosingDate(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold outline-none focus:border-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-ink-700 mb-1">Closing Stock Qty (Kg)</label>
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                required
+                value={closingQty}
+                onChange={(e) => setClosingQty(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-ink-700 mb-1">Valuation Rate (₹ / Kg)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={closingRate}
+                onChange={(e) => setClosingRate(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:border-rose-500"
+              />
+            </div>
+            <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col justify-center">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase">Closing Stock Value</span>
+              <span className="text-sm font-black text-emerald-900">
+                {formatCurrency((parseFloat(closingQty) || 0) * (parseFloat(closingRate) || 0))}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-ink-700 mb-1">Remarks</label>
+            <input
+              type="text"
+              value={closingRemarks}
+              onChange={(e) => setClosingRemarks(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-rose-500"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <button
+              type="button"
+              onClick={() => setIsClosingModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 text-ink-700 font-bold rounded-xl"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl"
+            >
+              Save &amp; Post Closing Stock
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

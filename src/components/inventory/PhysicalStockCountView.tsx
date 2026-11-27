@@ -43,11 +43,14 @@ export const PhysicalStockCountView: React.FC = () => {
     setCountDate(new Date().toISOString().split('T')[0]);
     setCountRemarks('Monthly warehouse physical audit');
 
-    // Pre-populate with current book quantities
+    // Pre-populate with current book quantities across all Species Head items
     const initialMap: Record<string, string> = {};
-    inventoryItems.forEach((item) => {
-      const pos = inventoryCalculation.stockPositions.find((p) => p.inventoryItemId === item.id);
-      initialMap[item.id] = String(pos ? pos.quantityOnHand : 0);
+    const targetList =
+      inventoryCalculation.stockPositions.length > 0
+        ? inventoryCalculation.stockPositions
+        : inventoryItems.map((i) => ({ inventoryItemId: i.id, quantityOnHand: 0, averageCostPerKg: 0 }));
+    targetList.forEach((pos) => {
+      initialMap[pos.inventoryItemId] = String(pos.quantityOnHand || 0);
     });
     setCountedQuantities(initialMap);
     setIsModalOpen(true);
@@ -64,11 +67,15 @@ export const PhysicalStockCountView: React.FC = () => {
     let totalVarQty = 0;
     let totalVarVal = 0;
 
-    inventoryItems.forEach((item) => {
-      const pos = inventoryCalculation.stockPositions.find((p) => p.inventoryItemId === item.id);
-      const bookQty = pos ? pos.quantityOnHand : 0;
-      const unitCost = pos ? pos.averageCostPerKg : 0;
-      const countedQty = parseFloat(countedQuantities[item.id]) || 0;
+    const targetList =
+      inventoryCalculation.stockPositions.length > 0
+        ? inventoryCalculation.stockPositions
+        : inventoryItems.map((i) => ({ inventoryItemId: i.id, quantityOnHand: 0, averageCostPerKg: 0 }));
+
+    targetList.forEach((pos) => {
+      const bookQty = pos.quantityOnHand || 0;
+      const unitCost = pos.averageCostPerKg || 0;
+      const countedQty = parseFloat(countedQuantities[pos.inventoryItemId]) || 0;
       const varianceQty = Number((countedQty - bookQty).toFixed(3));
       const varianceVal = Number((varianceQty * unitCost).toFixed(2));
 
@@ -76,7 +83,7 @@ export const PhysicalStockCountView: React.FC = () => {
       totalVarVal += varianceVal;
 
       items.push({
-        inventoryItemId: item.id,
+        inventoryItemId: pos.inventoryItemId,
         bookQuantityKg: bookQty,
         countedQuantityKg: countedQty,
         varianceQuantityKg: varianceQty,
@@ -277,17 +284,19 @@ export const PhysicalStockCountView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
-                  {inventoryItems.map((item) => {
-                    const pos = inventoryCalculation.stockPositions.find((p) => p.inventoryItemId === item.id);
-                    const bookQty = pos ? pos.quantityOnHand : 0;
-                    const countedVal = parseFloat(countedQuantities[item.id]) || 0;
+                  {(inventoryCalculation.stockPositions.length > 0
+                    ? inventoryCalculation.stockPositions
+                    : inventoryItems.map((i) => ({ inventoryItemId: i.id, itemName: i.name, itemCode: i.code, quantityOnHand: 0 }))
+                  ).map((pos) => {
+                    const bookQty = pos.quantityOnHand || 0;
+                    const countedVal = parseFloat(countedQuantities[pos.inventoryItemId]) || 0;
                     const diff = Number((countedVal - bookQty).toFixed(3));
 
                     return (
-                      <tr key={item.id} className="hover:bg-gray-50/50">
+                      <tr key={pos.inventoryItemId} className="hover:bg-gray-50/50">
                         <td className="py-2 px-3">
-                          <div className="font-bold text-ink-900">{item.name}</div>
-                          <div className="text-[10px] text-ink-400 font-mono">{item.code}</div>
+                          <div className="font-bold text-ink-900">{pos.itemName}</div>
+                          <div className="text-[10px] text-ink-400 font-mono">{pos.itemCode}</div>
                         </td>
                         <td className="py-2 px-3 text-right font-mono font-semibold text-ink-700">
                           {formatKg(bookQty)}
@@ -298,8 +307,8 @@ export const PhysicalStockCountView: React.FC = () => {
                             step="0.001"
                             min="0"
                             required
-                            value={countedQuantities[item.id] ?? ''}
-                            onChange={(e) => handleQtyChange(item.id, e.target.value)}
+                            value={countedQuantities[pos.inventoryItemId] ?? ''}
+                            onChange={(e) => handleQtyChange(pos.inventoryItemId, e.target.value)}
                             className="w-28 text-right font-mono font-bold text-ink-900 px-2 py-1 border border-gray-300 rounded-lg outline-none focus:border-rose-600"
                           />
                         </td>
