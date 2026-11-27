@@ -1239,7 +1239,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}physical_counts`, physicalStockCounts); }, [physicalStockCounts, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}period_close_locks`, periodCloseLocks); }, [periodCloseLocks, isIdbReady]);
 
-  // Perpetual moving average inventory valuation engine
+  // Perpetual FIFO inventory valuation engine connected by Species Head
   const inventoryCalculation = useMemo(() => {
     return calculatePerpetualInventory({
       inventoryItems,
@@ -1250,9 +1250,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       salesInvoices,
       stockAdjustments,
       physicalCounts: physicalStockCounts,
-      speciesList: species,
+      speciesList: [...species, ...purchaseSpecies],
+      speciesHeads,
       suppliers,
-      customers
+      customers,
+      valuationMethod: 'fifo'
     });
   }, [
     inventoryItems,
@@ -1264,6 +1266,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     stockAdjustments,
     physicalStockCounts,
     species,
+    purchaseSpecies,
+    speciesHeads,
     suppliers,
     customers
   ]);

@@ -17,9 +17,11 @@ import type {
   SalesInvoice,
   SalesInvoiceLine,
   Species,
+  SpeciesHead,
   Customer,
   Supplier
 } from '../types/index.ts';
+import { inferSpeciesHeadFromName } from '../data/speciesHeadsData.ts';
 
 export type { InventoryCalculationResult };
 
@@ -64,15 +66,67 @@ function cleanKey(val: string | undefined | null): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function resolveHeadForName(
+  name: string | undefined | null,
+  speciesHeads: SpeciesHead[]
+): SpeciesHead | null {
+  if (!name || !name.trim() || speciesHeads.length === 0) return null;
+  const norm = cleanKey(name);
+  if (!norm) return null;
+
+  // 1. Exact or substring match against SpeciesHead names
+  const exact = speciesHeads.find((h) => cleanKey(h.name) === norm);
+  if (exact) return exact;
+
+  const inferred = inferSpeciesHeadFromName(name);
+  if (inferred) {
+    const byId = speciesHeads.find((h) => h.id === inferred.speciesHeadId);
+    if (byId) return byId;
+    const byName = speciesHeads.find((h) => cleanKey(h.name) === cleanKey(inferred.speciesHeadName));
+    if (byName) return byName;
+  }
+
+  // 2. Partial match (longest head name first)
+  const sorted = [...speciesHeads].sort((a, b) => b.name.length - a.name.length);
+  const sub = sorted.find((h) => {
+    const hn = cleanKey(h.name);
+    return hn.length >= 3 && (norm.includes(hn) || hn.includes(norm));
+  });
+  return sub || null;
+}
+
 /**
- * Resolves which InventoryItem a Purchase record maps to.
+ * Resolves which InventoryItem a Purchase record maps to (Species Head first, then explicit mappings).
  */
 export function findInventoryItemForPurchase(
   p: Purchase,
   items: InventoryItem[],
   mappings: InventoryItemMapping[],
-  speciesList: Species[]
+  speciesList: Species[],
+  speciesHeads: SpeciesHead[] = []
 ): InventoryItem | null {
+  const sp = speciesList.find((s) => s.id === p.speciesId);
+
+  // 0. Species Head connection (links purchase species & sales products under one Species Head)
+  if (speciesHeads.length > 0) {
+    let targetHead: SpeciesHead | undefined;
+    if (sp?.speciesHeadId) {
+      targetHead = speciesHeads.find((h) => h.id === sp.speciesHeadId);
+    }
+    if (!targetHead && sp?.speciesHeadName) {
+      targetHead = speciesHeads.find((h) => cleanKey(h.name) === cleanKey(sp.speciesHeadName));
+    }
+    if (!targetHead) {
+      targetHead = resolveHeadForName(sp?.rawSpeciesName || sp?.name || p.speciesId, speciesHeads) || undefined;
+    }
+    if (targetHead) {
+      const headItem =
+        items.find((i) => !i.isDeleted && i.id === `inv-head-${targetHead!.id}`) ||
+        items.find((i) => !i.isDeleted && cleanKey(i.name) === cleanKey(targetHead!.name));
+      if (headItem) return headItem;
+    }
+  }
+
   // 1. Explicit mapping in mappings table
   const explicit = mappings.find(
     (m) =>
@@ -87,33 +141,58 @@ export function findInventoryItemForPurchase(
   }
 
   // 2. Mapping by species.inventoryItemId
-  const sp = speciesList.find((s) => s.id === p.speciesId);
   if (sp?.inventoryItemId) {
     const item = items.find((i) => i.id === sp.inventoryItemId && !i.isDeleted);
     if (item) return item;
   }
 
-  // 3. Fallback matching by name heuristics (Vannamei, Tiger, Tuna, Squid)
-  const spName = cleanKey(sp?.name || '');
+  // 3. Fallback matching by name heuristics (only when spName is non-empty)
+  const spName = cleanKey(sp?.rawSpeciesName || sp?.name || '');
+  if (!spName) return null;
   const matched = items.find((i) => {
     if (i.isDeleted) return false;
     const iName = cleanKey(i.name);
     const iCode = cleanKey(i.code);
-    return iName.includes(spName) || spName.includes(iName) || iCode.includes(spName);
+    return (iName.length > 0 && (iName.includes(spName) || spName.includes(iName))) || (iCode.length > 0 && iCode.includes(spName));
   });
 
   return matched || null;
 }
 
 /**
- * Resolves which InventoryItem a SalesInvoiceLine maps to.
+ * Resolves which InventoryItem a SalesInvoiceLine maps to (Species Head first, then explicit mappings).
  */
 export function findInventoryItemForSalesLine(
   line: SalesInvoiceLine,
   items: InventoryItem[],
   mappings: InventoryItemMapping[],
-  speciesList: Species[]
+  speciesList: Species[],
+  speciesHeads: SpeciesHead[] = []
 ): InventoryItem | null {
+  const prod =
+    speciesList.find((s) => s.id === line.speciesId) ||
+    speciesList.find((s) => s.name && line.productDescription && cleanKey(s.name) === cleanKey(line.productDescription));
+
+  // 0. Species Head connection (links sales product & purchase species under one Species Head)
+  if (speciesHeads.length > 0) {
+    let targetHead: SpeciesHead | undefined;
+    if (prod?.speciesHeadId) {
+      targetHead = speciesHeads.find((h) => h.id === prod.speciesHeadId);
+    }
+    if (!targetHead && prod?.speciesHeadName) {
+      targetHead = speciesHeads.find((h) => cleanKey(h.name) === cleanKey(prod.speciesHeadName));
+    }
+    if (!targetHead) {
+      targetHead = resolveHeadForName(prod?.rawSpeciesName || prod?.name || line.productDescription || line.speciesId, speciesHeads) || undefined;
+    }
+    if (targetHead) {
+      const headItem =
+        items.find((i) => !i.isDeleted && i.id === `inv-head-${targetHead!.id}`) ||
+        items.find((i) => !i.isDeleted && cleanKey(i.name) === cleanKey(targetHead!.name));
+      if (headItem) return headItem;
+    }
+  }
+
   // 1. Explicit mapping in mappings table
   const explicit = mappings.find(
     (m) =>
@@ -127,19 +206,19 @@ export function findInventoryItemForSalesLine(
   }
 
   // 2. Check if the sales product references an inventory item or raw species
-  const prod = speciesList.find((s) => s.id === line.speciesId);
   if (prod?.inventoryItemId) {
     const item = items.find((i) => i.id === prod.inventoryItemId && !i.isDeleted);
     if (item) return item;
   }
 
-  // 3. Match by rawSpeciesName or product name
+  // 3. Match by rawSpeciesName or product name (only when rawKey is non-empty)
   const rawKey = cleanKey(prod?.rawSpeciesName || prod?.name || line.productDescription);
+  if (!rawKey) return null;
   const matched = items.find((i) => {
     if (i.isDeleted) return false;
     const iName = cleanKey(i.name);
     const iCode = cleanKey(i.code);
-    return iName.includes(rawKey) || rawKey.includes(iName) || iCode.includes(rawKey);
+    return (iName.length > 0 && (iName.includes(rawKey) || rawKey.includes(iName))) || (iCode.length > 0 && iCode.includes(rawKey));
   });
 
   return matched || null;
@@ -160,10 +239,12 @@ export function calculatePerpetualInventory(params: {
   stockAdjustments?: StockAdjustment[];
   physicalCounts?: PhysicalStockCount[];
   speciesList?: Species[];
+  speciesHeads?: SpeciesHead[];
   suppliers?: Supplier[];
   customers?: Customer[];
   gradesList?: any[];
   sizesList?: any[];
+  valuationMethod?: 'moving_average' | 'fifo';
 }): InventoryCalculationResult {
   const inventoryItems = params.inventoryItems || params.items || [];
   const mappings = params.mappings || [];
@@ -174,10 +255,30 @@ export function calculatePerpetualInventory(params: {
   const stockAdjustments = params.stockAdjustments || [];
   const physicalCounts = params.physicalCounts || [];
   const speciesList = params.speciesList || [];
+  const speciesHeads = params.speciesHeads || [];
   const suppliers = params.suppliers || [];
   const customers = params.customers || [];
+  const valuationMethod = params.valuationMethod || 'moving_average';
 
-  const activeItems = inventoryItems.filter((i) => !i.isDeleted);
+  // When speciesHeads are provided, ensure one InventoryItem per SpeciesHead (using purchase_weight basis)
+  const speciesHeadItems: InventoryItem[] = speciesHeads
+    .filter((sh) => sh.active !== false)
+    .map((sh) => ({
+      id: `inv-head-${sh.id}`,
+      code: sh.code,
+      name: sh.name,
+      unit: 'Kg' as const,
+      quantityBasis: 'purchase_weight' as const,
+      minimumStockQuantity: 500,
+      category: sh.category || 'Fish',
+      description: `Species Head consolidated inventory for ${sh.name}`,
+      active: true,
+    }));
+
+  const activeItems =
+    speciesHeadItems.length > 0
+      ? speciesHeadItems
+      : inventoryItems.filter((i) => !i.isDeleted);
   const exceptions: InventoryException[] = [];
   const rawEvents: RawInventoryEvent[] = [];
 
@@ -214,7 +315,7 @@ export function calculatePerpetualInventory(params: {
   // 2. PURCHASE RECEIPTS (Priority 2)
   const activePurchases = purchases.filter((p) => !p.isVoided);
   activePurchases.forEach((p) => {
-    const matchedItem = findInventoryItemForPurchase(p, activeItems, mappings, speciesList);
+    const matchedItem = findInventoryItemForPurchase(p, activeItems, mappings, speciesList, speciesHeads);
     const sp = speciesMap.get(p.speciesId);
     const speciesName = sp?.name || 'Seafood Lot';
     const sup = supplierMap.get(p.supplierId);
@@ -291,7 +392,7 @@ export function calculatePerpetualInventory(params: {
     const origPurchase = activePurchases.find((p) => p.id === pr.purchaseId);
     if (!origPurchase) return;
 
-    const matchedItem = findInventoryItemForPurchase(origPurchase, activeItems, mappings, speciesList);
+    const matchedItem = findInventoryItemForPurchase(origPurchase, activeItems, mappings, speciesList, speciesHeads);
     if (!matchedItem) return;
 
     // Original purchase rate per kg
@@ -428,7 +529,7 @@ export function calculatePerpetualInventory(params: {
 
   activeSales.forEach((inv) => {
     inv.lineItems.forEach((line) => {
-      const matchedItem = findInventoryItemForSalesLine(line, activeItems, mappings, speciesList);
+      const matchedItem = findInventoryItemForSalesLine(line, activeItems, mappings, speciesList, speciesHeads);
       if (!matchedItem) {
         const prod = speciesMap.get(line.speciesId);
         const prodName = prod?.name || line.productDescription || line.speciesId;
@@ -479,7 +580,7 @@ export function calculatePerpetualInventory(params: {
     return a.timestamp - b.timestamp;
   });
 
-  // GROUP EVENTS BY INVENTORY ITEM AND COMPUTE MOVING AVERAGE VALUATION
+  // GROUP EVENTS BY INVENTORY ITEM AND COMPUTE FIFO OR MOVING AVERAGE VALUATION
   const movementsByItem: Record<string, InventoryMovement[]> = {};
   const allComputedMovements: InventoryMovement[] = [];
   const movementValuationMap = new Map<string, { unitCost: number; movementValue: number }>();
@@ -491,66 +592,130 @@ export function calculatePerpetualInventory(params: {
     let balanceQty = 0;
     let balanceValue = 0;
     let currentAverageCost = 0;
+    // FIFO layers queue: oldest first
+    const fifoLayers: Array<{ qty: number; unitCost: number }> = [];
 
     itemEvents.forEach((ev) => {
       let rate = 0;
       let movementValue = 0;
       let isNegative = false;
 
-      if (ev.quantityIn > 0) {
-        // === RECEIPT (Stock In) ===
-        // Formula: New Average Cost = (Value on hand + Receipt value) / (Qty on hand + Receipt qty)
-        const incomingQty = ev.quantityIn;
-        const incomingValue = ev.receiptValue !== undefined
-          ? ev.receiptValue
-          : roundValue(incomingQty * (ev.fixedRate || currentAverageCost));
+      if (valuationMethod === 'fifo') {
+        if (ev.quantityIn > 0) {
+          const incomingQty = ev.quantityIn;
+          const incomingValue =
+            ev.receiptValue !== undefined
+              ? ev.receiptValue
+              : roundValue(incomingQty * (ev.fixedRate || currentAverageCost));
+          rate = incomingQty > 0 ? roundRate(incomingValue / incomingQty) : currentAverageCost;
+          movementValue = incomingValue;
 
-        rate = incomingQty > 0 ? roundRate(incomingValue / incomingQty) : currentAverageCost;
-        movementValue = incomingValue;
+          fifoLayers.push({ qty: incomingQty, unitCost: rate });
+          balanceQty = roundQty(balanceQty + incomingQty);
+          balanceValue = roundValue(balanceValue + incomingValue);
+          currentAverageCost = balanceQty > 0 ? roundRate(balanceValue / balanceQty) : rate;
+        } else if (ev.quantityOut > 0) {
+          const outgoingQty = ev.quantityOut;
+          let remainingToConsume = outgoingQty;
+          let consumedValue = 0;
 
-        const newBalanceQty = roundQty(balanceQty + incomingQty);
-        const newBalanceValue = roundValue(balanceValue + incomingValue);
+          while (remainingToConsume > 0.0001 && fifoLayers.length > 0) {
+            const oldest = fifoLayers[0];
+            if (oldest.qty <= remainingToConsume) {
+              consumedValue += oldest.qty * oldest.unitCost;
+              remainingToConsume = roundQty(remainingToConsume - oldest.qty);
+              fifoLayers.shift();
+            } else {
+              consumedValue += remainingToConsume * oldest.unitCost;
+              oldest.qty = roundQty(oldest.qty - remainingToConsume);
+              remainingToConsume = 0;
+            }
+          }
 
-        if (newBalanceQty > 0) {
-          currentAverageCost = roundRate(newBalanceValue / newBalanceQty);
-        } else {
-          currentAverageCost = rate;
-        }
+          if (remainingToConsume > 0.0001) {
+            // Shortfall beyond available FIFO layers (negative stock)
+            const fallbackRate = ev.fixedRate !== undefined ? ev.fixedRate : currentAverageCost;
+            consumedValue += remainingToConsume * fallbackRate;
+          }
 
-        balanceQty = newBalanceQty;
-        balanceValue = newBalanceValue;
-      } else if (ev.quantityOut > 0) {
-        // === ISSUE (Stock Out) ===
-        // Valued at current Moving Average Cost at that exact moment. Average cost remains unchanged!
-        const outgoingQty = ev.quantityOut;
-        rate = ev.fixedRate !== undefined ? ev.fixedRate : currentAverageCost;
-        movementValue = roundValue(outgoingQty * rate);
+          movementValue = roundValue(consumedValue);
+          rate = outgoingQty > 0 ? roundRate(movementValue / outgoingQty) : 0;
+          const newBalanceQty = roundQty(balanceQty - outgoingQty);
 
-        const newBalanceQty = roundQty(balanceQty - outgoingQty);
+          if (newBalanceQty < 0) {
+            isNegative = true;
+            exceptions.push({
+              id: `exc-neg-stock-${ev.id}`,
+              type: 'negative_stock',
+              severity: 'high',
+              title: `Negative Stock on ${item.name}`,
+              description: `Movement on ${ev.date} (${ev.referenceDescription}) caused balance to drop below zero to ${newBalanceQty} Kg.`,
+              referenceId: ev.referenceId,
+              date: ev.date,
+              affectedItem: item.name,
+              suggestedAction: 'Verify if a purchase receipt is missing or entered with a later date.'
+            });
+          }
 
-        // Check for negative stock
-        if (newBalanceQty < 0) {
-          isNegative = true;
-          exceptions.push({
-            id: `exc-neg-stock-${ev.id}`,
-            type: 'negative_stock',
-            severity: 'high',
-            title: `Negative Stock on ${item.name}`,
-            description: `Movement on ${ev.date} (${ev.referenceDescription}) caused balance to drop below zero to ${newBalanceQty} Kg.`,
-            referenceId: ev.referenceId,
-            date: ev.date,
-            affectedItem: item.name,
-            suggestedAction: 'Verify if a purchase receipt is missing or entered with a later date.'
-          });
-        }
-
-        balanceQty = newBalanceQty;
-        // Balance value = balance quantity * current average cost
-        if (ev.movementType === 'purchase_return') {
-          balanceValue = roundValue(Math.max(0, balanceValue - movementValue));
+          balanceQty = newBalanceQty;
+          balanceValue = roundValue(
+            balanceQty >= 0
+              ? fifoLayers.reduce((s, l) => s + l.qty * l.unitCost, 0)
+              : balanceQty * rate
+          );
           currentAverageCost = balanceQty > 0 ? roundRate(balanceValue / balanceQty) : 0;
-        } else {
-          balanceValue = roundValue(balanceQty * currentAverageCost);
+        }
+      } else {
+        // Moving Weighted Average Cost
+        if (ev.quantityIn > 0) {
+          const incomingQty = ev.quantityIn;
+          const incomingValue = ev.receiptValue !== undefined
+            ? ev.receiptValue
+            : roundValue(incomingQty * (ev.fixedRate || currentAverageCost));
+
+          rate = incomingQty > 0 ? roundRate(incomingValue / incomingQty) : currentAverageCost;
+          movementValue = incomingValue;
+
+          const newBalanceQty = roundQty(balanceQty + incomingQty);
+          const newBalanceValue = roundValue(balanceValue + incomingValue);
+
+          if (newBalanceQty > 0) {
+            currentAverageCost = roundRate(newBalanceValue / newBalanceQty);
+          } else {
+            currentAverageCost = rate;
+          }
+
+          balanceQty = newBalanceQty;
+          balanceValue = newBalanceValue;
+        } else if (ev.quantityOut > 0) {
+          const outgoingQty = ev.quantityOut;
+          rate = ev.fixedRate !== undefined ? ev.fixedRate : currentAverageCost;
+          movementValue = roundValue(outgoingQty * rate);
+
+          const newBalanceQty = roundQty(balanceQty - outgoingQty);
+
+          if (newBalanceQty < 0) {
+            isNegative = true;
+            exceptions.push({
+              id: `exc-neg-stock-${ev.id}`,
+              type: 'negative_stock',
+              severity: 'high',
+              title: `Negative Stock on ${item.name}`,
+              description: `Movement on ${ev.date} (${ev.referenceDescription}) caused balance to drop below zero to ${newBalanceQty} Kg.`,
+              referenceId: ev.referenceId,
+              date: ev.date,
+              affectedItem: item.name,
+              suggestedAction: 'Verify if a purchase receipt is missing or entered with a later date.'
+            });
+          }
+
+          balanceQty = newBalanceQty;
+          if (ev.movementType === 'purchase_return') {
+            balanceValue = roundValue(Math.max(0, balanceValue - movementValue));
+            currentAverageCost = balanceQty > 0 ? roundRate(balanceValue / balanceQty) : 0;
+          } else {
+            balanceValue = roundValue(balanceQty * currentAverageCost);
+          }
         }
       }
 
