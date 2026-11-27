@@ -516,7 +516,7 @@ export const FishwiseLedgerView: React.FC = () => {
                                 {row.boxesCount.toLocaleString('en-IN')} Boxes
                               </div>
                             ) : (
-                              '0 Kg'
+                              <span className="text-ink-400 italic">Nil</span>
                             )}
                           </div>
                         ) : ''}

@@ -2276,8 +2276,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     const hasBoxes = (Number(purchaseData.boxesCount) || 0) > 0;
-    if ((!purchaseData.weightKg || purchaseData.weightKg <= 0) && !hasBoxes) {
-      showToast('Validation Error: Weight must be greater than 0 Kg (or enter No. of Boxes).', 'error');
+    const hasAmount = (Number(purchaseData.purchaseValue) || 0) > 0;
+    if ((!purchaseData.weightKg || purchaseData.weightKg <= 0) && !hasBoxes && !hasAmount) {
+      showToast('Validation Error: Weight must be greater than 0 Kg (or enter Boxes / Amount).', 'error');
       return { success: false };
     }
 
@@ -5349,7 +5350,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'fishtotal',
           'grosspurchasevalue',
           'purchasevalue',
-          'grossvalue'
+          'grossvalue',
+          'purchaseamountinr',
+          'purchaseamount',
+          'netamountinr',
+          'netamount',
+          'billamountinr',
+          'billamount',
+          'totalamountinr',
+          'totalamount',
+          'amountinr',
+          'amount',
+          'valueinr',
+          'value'
         ])
       );
 
@@ -6088,11 +6101,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         weightVal === 0 && boxesCount > 0 && rateVal > 0
           ? Number((boxesCount * rateVal).toFixed(2))
           : derived.purchaseValue;
-      const finalPurchaseValue = explicitFishPurchase > 0 ? explicitFishPurchase : computedBasePurchaseValue;
+      const resolvedExplicitOrBase =
+        explicitFishPurchase > 0
+          ? explicitFishPurchase
+          : weightVal === 0 && boxesCount === 0 && explicitFinalPurchase > 0
+          ? Math.max(0, Number((explicitFinalPurchase - derived.totalExpenses).toFixed(2)))
+          : computedBasePurchaseValue;
+      const finalPurchaseValue = resolvedExplicitOrBase;
       const finalGrossPurchaseValue =
         explicitFishPurchase > 0
           ? Number((explicitFishPurchase - derived.damageAmount).toFixed(2))
-          : weightVal === 0 && boxesCount > 0
+          : weightVal === 0
           ? Number(Math.max(0, finalPurchaseValue - derived.damageAmount).toFixed(2))
           : derived.grossPurchaseValue;
       const finalTotalCost = explicitFinalPurchase > 0 ? explicitFinalPurchase : Number((finalGrossPurchaseValue + derived.totalExpenses).toFixed(2));

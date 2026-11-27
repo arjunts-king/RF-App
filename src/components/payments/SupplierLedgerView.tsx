@@ -293,7 +293,7 @@ export const SupplierLedgerView: React.FC = () => {
                   </td>
                   <td className="py-2.5 px-2 print:px-1 whitespace-nowrap font-medium">{row.formattedDate}</td>
                   <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
-                    {row.weightKg !== null ? `${row.weightKg.toLocaleString('en-IN')} Kg` : ''}
+                    {row.weightKg !== null ? (row.weightKg > 0 ? `${row.weightKg.toLocaleString('en-IN')} Kg` : 'Nil') : ''}
                   </td>
                   <td className="py-2.5 px-2 print:px-1 text-right whitespace-nowrap tabular-nums">
                     {row.purchaseRatePerKg !== null ? formatINR(row.purchaseRatePerKg) : ''}

@@ -928,7 +928,15 @@ export const PurchaseList: React.FC<PurchaseListProps> = ({ onNavigate, onSelect
                       </td>
 
                       <td className="py-3 px-4 text-right font-bold whitespace-nowrap">
-                        <div>{formatKg(p.weightKg)}</div>
+                        <div>
+                          {p.weightKg > 0 ? (
+                            formatKg(p.weightKg)
+                          ) : p.boxesCount && p.boxesCount > 0 ? (
+                            <span className="text-amber-800 font-bold">{p.boxesCount} Boxes <span className="text-ink-400 font-normal">(Wt: Nil)</span></span>
+                          ) : (
+                            <span className="text-ink-400 font-semibold italic">Nil</span>
+                          )}
+                        </div>
                         {p.boxesCount > 0 && (
                           <div className="mt-0.5">
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">

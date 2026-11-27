@@ -761,7 +761,7 @@ export function buildFishwiseLedgerWordTableXml(
         ? `${(row.inwardWeightKg || 0).toLocaleString('en-IN')} Kg`
         : row.boxesCount
         ? `${row.boxesCount.toLocaleString('en-IN')} Boxes`
-        : '0 Kg';
+        : 'Nil';
 
       return `
       <w:tr w:rsidR="00687369">
