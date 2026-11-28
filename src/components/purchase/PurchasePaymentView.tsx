@@ -779,18 +779,6 @@ export const PurchasePaymentView: React.FC<PurchasePaymentViewProps> = ({
                     <span className="font-semibold text-ink-800">{selectedSupplier.phone || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-ink-500">Primary Bank:</span>
-                    <span className="font-semibold text-ink-800">{selectedSupplier.bankName || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-ink-500">Account No:</span>
-                    <span className="font-mono font-semibold text-ink-800">{selectedSupplier.bankAccount || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-ink-500">IFSC Code:</span>
-                    <span className="font-mono font-semibold text-ink-800">{selectedSupplier.bankIfsc || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-ink-500">Credit Period:</span>
                     <span className="font-semibold text-ink-800">{selectedSupplier.creditDays || selectedSupplier.paymentTerms || '0 Days'}</span>
                   </div>
@@ -1277,8 +1265,6 @@ export const PurchasePaymentView: React.FC<PurchasePaymentViewProps> = ({
                       <div className="mt-1 space-y-0.5">
                         <strong className="text-sm text-ink-900 block">{sup?.name || 'N/A'}</strong>
                         <p className="text-[11px] text-ink-600">Code: {sup?.code} • Phone: {sup?.phone || 'N/A'}</p>
-                        <p className="text-[11px] text-ink-600">Bank: {sup?.bankName || 'N/A'} • A/c: {sup?.bankAccount || 'N/A'}</p>
-                        <p className="text-[11px] font-mono text-ink-600">IFSC: {sup?.bankIfsc || 'N/A'}</p>
                       </div>
                     );
                   })()}

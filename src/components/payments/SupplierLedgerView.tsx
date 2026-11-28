@@ -214,9 +214,7 @@ export const SupplierLedgerView: React.FC = () => {
             </div>
 
             <div>
-              <span className="text-ink-500 block uppercase font-bold text-[10px]">Bank &amp; Credit Terms:</span>
-              <p className="text-ink-900 font-semibold mt-0.5">{selectedSupplier.bankName}</p>
-              <p className="text-ink-700">A/c: <strong>{selectedSupplier.bankAccount}</strong> (IFSC: {selectedSupplier.bankIfsc})</p>
+              <span className="text-ink-500 block uppercase font-bold text-[10px]">Credit Terms:</span>
               <p className="text-ink-700 mt-1">
                 Terms: {selectedSupplier.paymentTerms || (selectedSupplier.creditDays ? `Net ${selectedSupplier.creditDays} Days` : 'Immediate')}{' '}
                 {selectedSupplier.creditDays ? (

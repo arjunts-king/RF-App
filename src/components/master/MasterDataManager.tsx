@@ -733,7 +733,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                     <th className="py-2.5 px-3">Type</th>
                     <th className="py-2.5 px-3">Contact</th>
                     <th className="py-2.5 px-3">Credit Terms</th>
-                    <th className="py-2.5 px-3">Bank Details</th>
                     <th className="py-2.5 px-3 text-right">Opening Bal</th>
                     <th className="py-2.5 px-3 text-center">Status</th>
                     <th className="py-2.5 px-3 text-center">Actions</th>
@@ -767,10 +766,6 @@ export const MasterDataManager: React.FC<MasterDataManagerProps> = ({ onNavigate
                       <td className="py-3 px-3">
                         <div>{s.creditDays > 0 ? `${s.creditDays} Credit Days` : 'Immediate / Cash'}</div>
                         <div className="text-[10px] text-ink-500">{s.paymentTerms || (s.creditDays > 0 ? `Net ${s.creditDays} Days` : 'No Credit Terms')}</div>
-                      </td>
-                      <td className="py-3 px-3 text-[11px]">
-                        <div>{s.bankName}</div>
-                        <div className="text-[10px] text-ink-500">A/c: {s.bankAccount}</div>
                       </td>
                       <td className="py-3 px-3 text-right">{formatINR(s.openingBalance)}</td>
                       <td className="py-3 px-3 text-center">

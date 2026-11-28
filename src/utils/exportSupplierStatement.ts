@@ -621,7 +621,7 @@ export function buildSupplierLedgerWordTableXml(
         </w:p>
         <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
           <w:pPr><w:jc w:val="right"/><w:rPr><w:color w:val="475569"/><w:sz w:val="14"/><w:szCs w:val="14"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="14"/><w:szCs w:val="14"/></w:rPr><w:t>GSTIN: ${escapeXml(supplier?.gstin || 'Unregistered')} · A/c: ${escapeXml(supplier?.bankAccount || 'N/A')} (${escapeXml(supplier?.bankIfsc || 'N/A')})</w:t></w:r>
+          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="14"/><w:szCs w:val="14"/></w:rPr><w:t>GSTIN: ${escapeXml(supplier?.gstin || 'Unregistered')}</w:t></w:r>
         </w:p>
       </w:tc>
     </w:tr>

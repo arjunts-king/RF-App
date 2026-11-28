@@ -9,7 +9,6 @@ import { exportRealizationToWord } from '../../utils/exportRealizationStatement'
 import { RealizationStatementModal } from './RealizationStatementModal';
 import {
   Calendar,
-  Building,
   FileCheck,
   CheckCircle2,
   AlertCircle,
@@ -1135,30 +1134,10 @@ export const RealizationModal: React.FC<RealizationModalProps> = ({ isOpen, onCl
           )}
         </div>
 
-        {/* SECTION 4: RECEIVING BANK ACCOUNT & INTERNAL NOTES */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        {/* SECTION 4: INTERNAL NOTES */}
+        <div className="text-xs">
           <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Realization Bank Account</label>
-            <div className="relative">
-              <Building className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
-              <select
-                value={bankAccountId}
-                onChange={(e) => setBankAccountId(e.target.value)}
-                disabled={!permissions.canManageSalesRealization}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl font-medium text-xs outline-none focus:border-rose-600"
-              >
-                <option value="">Select Company Account...</option>
-                {bankAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.bank})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-ink-700 mb-1">Settlement Notes / Bank Advice Remarks</label>
+            <label className="block text-[11px] font-bold text-ink-700 mb-1">Settlement Notes / Advice Remarks</label>
             <input
               type="text"
               value={notes}
