@@ -16,11 +16,12 @@ import {
   Search,
   Globe,
   FileSpreadsheet,
-  Download
+  Download,
+  Sparkles
 } from 'lucide-react';
 
 export const PortManager: React.FC = () => {
-  const { ports, addPort, updatePort, deletePort, togglePortActive, bulkImportPorts } = useData();
+  const { ports, addPort, updatePort, deletePort, togglePortActive, bulkImportPorts, deduplicatePorts } = useData();
   const { permissions } = useAuth();
   const { showToast } = useToast();
 
@@ -198,6 +199,18 @@ export const PortManager: React.FC = () => {
     e.target.value = '';
   };
 
+  const handleDeduplicatePorts = () => {
+    const { removedCount, remappedInvoices } = deduplicatePorts();
+    if (removedCount > 0) {
+      showToast(
+        `Removed ${removedCount} duplicate port(s) and updated ${remappedInvoices} invoice(s) to the original port.`,
+        'success'
+      );
+    } else {
+      showToast('No duplicate ports found in Port Master.', 'info');
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Figma Header Block */}
@@ -215,6 +228,15 @@ export const PortManager: React.FC = () => {
             : undefined
         }
         secondaryActions={[
+          ...(permissions.canManageSalesMasterData
+            ? [
+                {
+                  label: 'Remove Duplicates',
+                  onClick: handleDeduplicatePorts,
+                  icon: Sparkles
+                }
+              ]
+            : []),
           {
             label: 'Export CSV',
             onClick: handleExportCSV,

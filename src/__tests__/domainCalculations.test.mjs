@@ -50,6 +50,11 @@ import {
 } from '../utils/inventoryValuation.ts';
 
 import {
+  normalizePortKey,
+  deduplicatePortsWithInvoices
+} from '../utils/portDeduplication.ts';
+
+import {
   computeOutstandingFromAdvance,
   computeSettlementReconciliation,
   getSettledInvoiceShortfallBreakdown,
@@ -6752,6 +6757,65 @@ test('Strict Species Search Isolation: Mackerel search returns ONLY authentic ma
   assert.ok(!matched.some((m) => m.name.toLowerCase().includes('van')), 'Zero Vannamei products can match mackerel');
   assert.ok(!matched.some((m) => m.category === 'Shrimp'), 'Zero Shrimp products can match mackerel');
 });
+
+test('Port Master deduplication: merges word-order/prefix duplicates and remaps invoice port IDs to original', () => {
+  assert.equal(normalizePortKey('Port of Lat Krabang'), 'latkrabang');
+  assert.equal(normalizePortKey('Lat Krabang Port'), 'latkrabang');
+  assert.equal(normalizePortKey('Lat Krabang, Thailand'), 'latkrabang');
+  assert.equal(normalizePortKey('Port of Cochin'), 'cochin');
+  assert.equal(normalizePortKey('Cochin Port, India'), 'cochin');
+
+  const ports = [
+    { id: 'port-inmaa', code: 'INMAA', name: 'Chennai Port', country: 'India', active: true },
+    { id: 'port-thlkr', code: 'THLKR', name: 'Lat Krabang Port', country: 'Thailand', active: true },
+    { id: 'port-1795700000001', code: 'PORTO', name: 'Port of Lat Krabang', country: 'Overseas', active: true },
+    { id: 'port-1795700000002', code: 'PORTO', name: 'Port of Chennai', country: 'India', active: true }
+  ];
+
+  const invoices = [
+    {
+      id: 'inv-1',
+      invoiceNo: 'EXP-001',
+      portOfLoadingId: 'port-1795700000002',
+      portOfLoading: 'Port of Chennai',
+      portOfDischargeId: 'port-1795700000001',
+      portOfDischarge: 'Port of Lat Krabang',
+      finalDestinationId: 'port-1795700000001',
+      finalDestination: 'Port of Lat Krabang',
+      totalAmount: 50000
+    },
+    {
+      id: 'inv-2',
+      invoiceNo: 'EXP-002',
+      portOfLoadingId: 'port-inmaa',
+      portOfLoading: 'Chennai Port',
+      portOfDischargeId: 'port-thlkr',
+      portOfDischarge: 'Lat Krabang Port',
+      finalDestinationId: 'port-thlkr',
+      finalDestination: 'Lat Krabang Port',
+      totalAmount: 75000
+    }
+  ];
+
+  const result = deduplicatePortsWithInvoices(ports, invoices, new Set(['port-inmaa', 'port-thlkr']));
+  assert.equal(result.removedCount, 2);
+  assert.equal(result.remappedInvoices, 1);
+  assert.equal(result.ports.length, 2);
+  assert.deepEqual(
+    result.ports.map((p) => p.id),
+    ['port-inmaa', 'port-thlkr']
+  );
+
+  // inv-1 must now point to the original verified port IDs and names without losing any other data
+  assert.equal(result.salesInvoices[0].portOfLoadingId, 'port-inmaa');
+  assert.equal(result.salesInvoices[0].portOfLoading, 'Chennai Port');
+  assert.equal(result.salesInvoices[0].portOfDischargeId, 'port-thlkr');
+  assert.equal(result.salesInvoices[0].portOfDischarge, 'Lat Krabang Port');
+  assert.equal(result.salesInvoices[0].finalDestinationId, 'port-thlkr');
+  assert.equal(result.salesInvoices[0].finalDestination, 'Lat Krabang Port');
+  assert.equal(result.salesInvoices[0].totalAmount, 50000);
+});
+
 
 
 

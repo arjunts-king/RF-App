@@ -35,6 +35,7 @@ import {
   PeriodCloseLock,
   InventoryCalculationResult
 } from '../types';
+import { normalizePortKey, deduplicatePortsWithInvoices } from '../utils/portDeduplication';
 import {
   DEFAULT_BUSINESS_SETTINGS,
   INITIAL_SUPPLIERS,
@@ -197,6 +198,7 @@ interface DataContextType {
   deletePort: (id: string) => { success: boolean; message?: string };
   togglePortActive: (id: string) => void;
   bulkImportPorts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
+  deduplicatePorts: () => { removedCount: number; remappedInvoices: number };
 
   // Species Head Master Actions (Sales Module Product Integration)
   addSpeciesHead: (head: Omit<SpeciesHead, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -713,8 +715,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const saved = localStorage.getItem(`${DB_PREFIX}ports`);
     const list: PortMaster[] = saved ? JSON.parse(saved) : VERIFIED_PORTS;
-    const existingNames = new Set(list.map((p) => p.name.trim().toLowerCase()));
-    const missing = VERIFIED_PORTS.filter((p) => !existingNames.has(p.name.trim().toLowerCase()));
+    const existingKeys = new Set(list.map((p) => normalizePortKey(p.name)).filter(Boolean));
+    const missing = VERIFIED_PORTS.filter((p) => !existingKeys.has(normalizePortKey(p.name)));
     return [...list, ...missing];
   });
 
@@ -1222,6 +1224,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}customers`, customers); }, [customers, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}ports`, ports); }, [ports, isIdbReady]);
+  useEffect(() => {
+    if (!isIdbReady || ports.length <= 1) return;
+    const verifiedIds = new Set(VERIFIED_PORTS.map((p) => p.id));
+    const result = deduplicatePortsWithInvoices(ports, salesInvoices, verifiedIds);
+    if (result.removedCount > 0) {
+      mutatedKeysRef.current.add('ports');
+      mutatedKeysRef.current.add('sales_invoices');
+      setPorts(result.ports);
+      setSalesInvoices(result.salesInvoices);
+      safeSet(`${DB_PREFIX}ports`, result.ports);
+      safeSet(`${DB_PREFIX}sales_invoices`, result.salesInvoices);
+    }
+  }, [isIdbReady, ports]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}species_heads`, speciesHeads); }, [speciesHeads, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}sales_sizes`, salesSizes); }, [salesSizes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}processing_entries`, processingEntries); }, [processingEntries, isIdbReady]);
@@ -1863,6 +1878,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       showToast('Unauthorized: Only Master Accountant and Admin can manage Ports.', 'error');
       return;
     }
+    const targetKey = normalizePortKey(portData.name);
+    const existing = ports.find((p) => normalizePortKey(p.name) === targetKey && targetKey !== '');
+    if (existing) {
+      showToast(`Port "${existing.name}" already exists (matched "${portData.name}").`, 'info');
+      return;
+    }
     const newPort: PortMaster = {
       ...portData,
       id: `port-${Date.now()}`
@@ -1870,6 +1891,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPorts((prev) => [...prev, newPort]);
     logAudit('CREATE', 'PortMaster', newPort.name, { newValues: newPort });
     showToast(`Port "${newPort.name}" added.`, 'success');
+  };
+
+  const deduplicatePorts = (): { removedCount: number; remappedInvoices: number } => {
+    const verifiedIds = new Set(VERIFIED_PORTS.map((p) => p.id));
+    const result = deduplicatePortsWithInvoices(ports, salesInvoices, verifiedIds);
+    if (result.removedCount > 0) {
+      mutatedKeysRef.current.add('ports');
+      mutatedKeysRef.current.add('sales_invoices');
+      setPorts(result.ports);
+      setSalesInvoices(result.salesInvoices);
+      safeSet(`${DB_PREFIX}ports`, result.ports);
+      safeSet(`${DB_PREFIX}sales_invoices`, result.salesInvoices);
+      logAudit('EDIT', 'PortMaster', 'Deduplicate Ports', {
+        newValues: {
+          removedCount: result.removedCount,
+          remappedInvoices: result.remappedInvoices,
+          mergedPairs: result.mergedPairs
+        }
+      });
+    }
+    return {
+      removedCount: result.removedCount,
+      remappedInvoices: result.remappedInvoices
+    };
   };
 
   const updatePort = (id: string, updates: Partial<PortMaster>) => {
@@ -6713,18 +6758,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           );
         }
         const cleanLower = cleanVal.toLowerCase();
-        const matched = mutablePorts.find(
-          (p) =>
-            p.code.toLowerCase() === cleanLower ||
+        const cleanNormKey = normalizePortKey(cleanVal);
+        const matched = mutablePorts.find((p) => {
+          const pNormKey = normalizePortKey(p.name);
+          const pCodeLower = (p.code || '').toLowerCase();
+          return (
+            (cleanNormKey !== '' && pNormKey === cleanNormKey) ||
+            (pCodeLower !== '' && pCodeLower !== 'porto' && pCodeLower === cleanLower) ||
             p.name.toLowerCase() === cleanLower ||
             p.name.toLowerCase().includes(cleanLower) ||
             cleanLower.includes(p.name.toLowerCase()) ||
-            (p.code && cleanLower.includes(p.code.toLowerCase()))
-        );
+            (pCodeLower.length === 5 && pCodeLower !== 'porto' && cleanLower.includes(pCodeLower))
+          );
+        });
         if (!matched && autoCreateMaster) {
+          const derivedCode = (cleanNormKey || cleanVal.replace(/[^a-zA-Z0-9]/g, '')).slice(0, 5).toUpperCase() || 'PORTX';
           const newPort: PortMaster = {
             id: `port-${Date.now()}-${mutablePorts.length + 1}`,
-            code: cleanVal.slice(0, 5).toUpperCase(),
+            code: derivedCode,
             name: cleanVal,
             country: role === 'pol' ? 'India' : 'Overseas',
             active: true
@@ -7988,6 +8039,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     deletePort,
     togglePortActive,
     bulkImportPorts,
+    deduplicatePorts,
 
     addSpeciesHead,
     updateSpeciesHead,
