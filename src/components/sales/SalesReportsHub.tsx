@@ -851,7 +851,7 @@ export const SalesReportsHub: React.FC = () => {
       const podName = rawPodName || 'Overseas Discharge Port';
 
       const targetPort = destPortMode === 'pol' ? pol : rawPodPort;
-      const targetName = destPortMode === 'pol' ? polName : podName;
+      const targetName = (targetPort?.name || (destPortMode === 'pol' ? polName : podName)).trim();
       const targetCode = targetPort?.code || (destPortMode === 'pol' ? 'POL' : 'POD');
       const targetCountry =
         destPortMode === 'pol'
@@ -862,7 +862,7 @@ export const SalesReportsHub: React.FC = () => {
               rawPodPort?.country,
               finalPort?.country
             ) || 'Overseas Export';
-      const key = targetName;
+      const key = `${targetName.toLowerCase()}||${targetCountry}`;
 
       const cur = podAggMap.get(key) || {
         name: targetName,
@@ -875,7 +875,6 @@ export const SalesReportsHub: React.FC = () => {
       };
       podAggMap.set(key, {
         ...cur,
-        country: cur.country === 'Overseas Export' && targetCountry !== 'Overseas Export' ? targetCountry : cur.country,
         weight: cur.weight + inv.totalWeightKg,
         usd: cur.usd + inv.totalAmountCurrency,
         count: cur.count + 1
@@ -3166,6 +3165,27 @@ export const SalesReportsHub: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
+              {podBreakdown.length > 0 && (
+                <tfoot>
+                  <tr className="bg-rose-50/60 border-t-2 border-rose-200 font-extrabold text-xs text-ink-900">
+                    <td className="py-2.5 px-3" colSpan={destPortMode === 'pod' ? 4 : 3}>
+                      Total ({podBreakdown.length} {destPortMode === 'pol' ? 'Loading Ports' : 'Discharge Ports'})
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {podBreakdown.reduce((s, r) => s + r.count, 0)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {formatKg(podBreakdown.reduce((s, r) => s + r.weight, 0))}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-rose-950">
+                      ${podBreakdown.reduce((s, r) => s + r.usd, 0).toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {podBreakdown.reduce((s, r) => s + r.pct, 0).toFixed(1)}%
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
