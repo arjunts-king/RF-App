@@ -187,15 +187,43 @@ export const SalesReportsHub: React.FC = () => {
     ).sort().reverse();
   }, [activeInvoices]);
 
+  const cleanCountryName = (raw?: string): string => {
+    const trimmed = String(raw || '').trim();
+    if (!trimmed) return '';
+    // If string contains a comma (e.g. "Port of Laem Chabang, Thailand"), take the trailing country segment
+    const candidate = trimmed.includes(',') ? trimmed.split(',').pop()!.trim() : trimmed;
+    const lower = candidate.toLowerCase();
+    // Reject strings that look like port names or generic placeholders
+    if (
+      /\b(port|terminal|harbour|harbor|icd|seaport|wharf|dock|berth)\b/i.test(lower) ||
+      ['overseas', 'global', 'unknown', 'other', 'n/a', 'export', 'overseas export'].includes(lower)
+    ) {
+      return '';
+    }
+    if (lower === 'thaila' || lower === 'thailand') return 'Thailand';
+    if (lower === 'usa' || lower === 'u.s.a.' || lower === 'united states') return 'USA';
+    if (lower === 'uae' || lower === 'u.a.e.' || lower === 'united arab emirates') return 'UAE';
+    if (lower === 'uk' || lower === 'u.k.' || lower === 'united kingdom') return 'UK';
+    // Title-case normalized country name
+    return candidate
+      .toLowerCase()
+      .replace(/\b\w/g, (ch) => ch.toUpperCase());
+  };
+
   const availableCountries = useMemo(() => {
     return Array.from(
       new Set(
         activeInvoices
-          .map((inv) => inv.countryOfDestination || customerMap.get(inv.consigneeId)?.country)
-          .filter(Boolean) as string[]
+          .map((inv) => {
+            const custCountry = cleanCountryName(customerMap.get(inv.consigneeId)?.country);
+            const destCountry = cleanCountryName(inv.countryOfDestination);
+            const podCountry = cleanCountryName(portMap.get(inv.portOfDischargeId)?.country);
+            return custCountry || destCountry || podCountry;
+          })
+          .filter(Boolean)
       )
     ).sort();
-  }, [activeInvoices, customerMap]);
+  }, [activeInvoices, customerMap, portMap]);
 
   const formatMonthLabel = (m: string) => {
     if (m === 'ALL') return 'All FY 2026-27 (Full Year Overview)';
@@ -753,7 +781,7 @@ export const SalesReportsHub: React.FC = () => {
     });
   }, [activeInvoices, destMonth, destPolFilter, portMap]);
 
-  const podBreakdown = useMemo(() => {
+  const podBreakdownUnfiltered = useMemo(() => {
     const podAggMap = new Map<
       string,
       { name: string; code: string; country: string; loadingPort: string; weight: number; usd: number; count: number }
@@ -813,19 +841,20 @@ export const SalesReportsHub: React.FC = () => {
       const targetName = destPortMode === 'pol' ? polName : podName;
       const targetCode = targetPort?.code || (destPortMode === 'pol' ? 'POL' : 'POD');
       let targetCountry =
-        targetPort?.country ||
+        cleanCountryName(targetPort?.country) ||
         (destPortMode === 'pol'
           ? 'India'
-          : (inv.countryOfDestination && inv.countryOfDestination.toLowerCase() !== 'india'
-              ? inv.countryOfDestination
-              : cust?.country) || 'Overseas Export');
+          : cleanCountryName(cust?.country) ||
+            cleanCountryName(inv.countryOfDestination) ||
+            'Overseas Export');
       if (destPortMode === 'pod' && targetCountry.trim().toLowerCase() === 'india') {
         targetCountry =
-          (inv.countryOfDestination && inv.countryOfDestination.trim().toLowerCase() !== 'india'
-            ? inv.countryOfDestination
-            : cust?.country && cust.country.trim().toLowerCase() !== 'india'
-            ? cust.country
-            : 'Overseas Export');
+          cleanCountryName(cust?.country) ||
+          cleanCountryName(inv.countryOfDestination) ||
+          'Overseas Export';
+        if (targetCountry.trim().toLowerCase() === 'india') {
+          targetCountry = 'Overseas Export';
+        }
       }
       const key = targetName;
 
@@ -848,27 +877,39 @@ export const SalesReportsHub: React.FC = () => {
 
     const totalDestUSD = Array.from(podAggMap.values()).reduce((s, v) => s + v.usd, 0);
 
-    let list = Array.from(podAggMap.entries())
-      .map(([key, data]) => {
-        const pct = totalDestUSD > 0 ? (data.usd / totalDestUSD) * 100 : 0;
-        return {
-          id: key,
-          ...data,
-          pct
-        };
-      })
-      .filter((p) => {
-        if (destCountryFilter && p.country !== destCountryFilter) return false;
-        if (destSearch) {
-          const q = destSearch.toLowerCase();
-          const matchName = p.name.toLowerCase().includes(q);
-          const matchCode = p.code.toLowerCase().includes(q);
-          const matchCountry = p.country.toLowerCase().includes(q);
-          const matchPol = p.loadingPort.toLowerCase().includes(q);
-          if (!matchName && !matchCode && !matchCountry && !matchPol) return false;
-        }
-        return true;
-      });
+    return Array.from(podAggMap.entries()).map(([key, data]) => {
+      const pct = totalDestUSD > 0 ? (data.usd / totalDestUSD) * 100 : 0;
+      return {
+        id: key,
+        ...data,
+        pct
+      };
+    });
+  }, [destAnalysisInvoices, portMap, customerMap, destPortMode]);
+
+  const availableDestCountries = useMemo(() => {
+    return Array.from(
+      new Set(
+        podBreakdownUnfiltered
+          .map((p) => cleanCountryName(p.country))
+          .filter(Boolean)
+      )
+    ).sort();
+  }, [podBreakdownUnfiltered]);
+
+  const podBreakdown = useMemo(() => {
+    let list = podBreakdownUnfiltered.filter((p) => {
+      if (destCountryFilter && p.country !== destCountryFilter) return false;
+      if (destSearch) {
+        const q = destSearch.toLowerCase();
+        const matchName = p.name.toLowerCase().includes(q);
+        const matchCode = p.code.toLowerCase().includes(q);
+        const matchCountry = p.country.toLowerCase().includes(q);
+        const matchPol = p.loadingPort.toLowerCase().includes(q);
+        if (!matchName && !matchCode && !matchCountry && !matchPol) return false;
+      }
+      return true;
+    });
 
     if (destSortBy === 'usd') list.sort((a, b) => b.usd - a.usd);
     else if (destSortBy === 'weight') list.sort((a, b) => b.weight - a.weight);
@@ -876,7 +917,7 @@ export const SalesReportsHub: React.FC = () => {
     else if (destSortBy === 'pol') list.sort((a, b) => a.loadingPort.localeCompare(b.loadingPort) || b.usd - a.usd);
 
     return list;
-  }, [destAnalysisInvoices, portMap, destPortMode, destCountryFilter, destSearch, destSortBy]);
+  }, [podBreakdownUnfiltered, destCountryFilter, destSearch, destSortBy]);
 
   const topPort = podBreakdown[0];
 
@@ -3014,8 +3055,8 @@ export const SalesReportsHub: React.FC = () => {
               onChange={(e) => setDestCountryFilter(e.target.value)}
               className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
             >
-              <option value="">All Destination Countries ({availableCountries.length})</option>
-              {availableCountries.map((c) => (
+              <option value="">All Destination Countries ({availableDestCountries.length})</option>
+              {availableDestCountries.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
