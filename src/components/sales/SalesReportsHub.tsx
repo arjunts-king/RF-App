@@ -728,25 +728,57 @@ export const SalesReportsHub: React.FC = () => {
   // --------------------------------------------------------------------------
   const [destMonth, setDestMonth] = useState<string>('ALL');
   const [destCountryFilter, setDestCountryFilter] = useState<string>('');
+  const [destPolFilter, setDestPolFilter] = useState<string>('');
+  const [destPortMode, setDestPortMode] = useState<'pod' | 'pol'>('pod');
   const [destSearch, setDestSearch] = useState<string>('');
-  const [destSortBy, setDestSortBy] = useState<'usd' | 'weight' | 'count'>('usd');
+  const [destSortBy, setDestSortBy] = useState<'usd' | 'weight' | 'count' | 'pol'>('usd');
+
+  const availableLoadingPorts = useMemo(() => {
+    const set = new Set<string>();
+    activeInvoices.forEach((inv) => {
+      const lp = portMap.get(inv.portOfLoadingId)?.name || inv.portOfLoading || '';
+      if (lp) set.add(lp);
+    });
+    return Array.from(set).sort();
+  }, [activeInvoices, portMap]);
 
   const destAnalysisInvoices = useMemo(() => {
-    return destMonth === 'ALL'
-      ? activeInvoices
-      : activeInvoices.filter((inv) => inv.invoiceDate.startsWith(destMonth));
-  }, [activeInvoices, destMonth]);
+    return activeInvoices.filter((inv) => {
+      if (destMonth !== 'ALL' && !inv.invoiceDate.startsWith(destMonth)) return false;
+      if (destPolFilter) {
+        const lp = portMap.get(inv.portOfLoadingId)?.name || inv.portOfLoading || '';
+        if (lp !== destPolFilter) return false;
+      }
+      return true;
+    });
+  }, [activeInvoices, destMonth, destPolFilter, portMap]);
 
   const podBreakdown = useMemo(() => {
-    const podAggMap = new Map<string, { name: string; code: string; country: string; weight: number; usd: number; count: number }>();
+    const podAggMap = new Map<
+      string,
+      { name: string; code: string; country: string; loadingPort: string; weight: number; usd: number; count: number }
+    >();
     destAnalysisInvoices.forEach((inv) => {
-      const p = portMap.get(inv.portOfDischargeId);
-      const podName = inv.portOfDischarge || p?.name || 'Port of Qingdao, China';
-      const podCode = p?.code || 'POD';
-      const podCountry = p?.country || inv.countryOfDestination || 'Export';
-      const key = podName;
+      const pod = portMap.get(inv.portOfDischargeId);
+      const pol = portMap.get(inv.portOfLoadingId);
+      const podName = inv.portOfDischarge || pod?.name || 'Port of Qingdao, China';
+      const polName = inv.portOfLoading || pol?.name || 'Cochin Port, India';
 
-      const cur = podAggMap.get(key) || { name: podName, code: podCode, country: podCountry, weight: 0, usd: 0, count: 0 };
+      const targetPort = destPortMode === 'pol' ? pol : pod;
+      const targetName = destPortMode === 'pol' ? polName : podName;
+      const targetCode = targetPort?.code || (destPortMode === 'pol' ? 'POL' : 'POD');
+      const targetCountry = targetPort?.country || (destPortMode === 'pol' ? 'India' : inv.countryOfDestination || 'Export');
+      const key = targetName;
+
+      const cur = podAggMap.get(key) || {
+        name: targetName,
+        code: targetCode,
+        country: targetCountry,
+        loadingPort: polName,
+        weight: 0,
+        usd: 0,
+        count: 0
+      };
       podAggMap.set(key, {
         ...cur,
         weight: cur.weight + inv.totalWeightKg,
@@ -773,7 +805,8 @@ export const SalesReportsHub: React.FC = () => {
           const matchName = p.name.toLowerCase().includes(q);
           const matchCode = p.code.toLowerCase().includes(q);
           const matchCountry = p.country.toLowerCase().includes(q);
-          if (!matchName && !matchCode && !matchCountry) return false;
+          const matchPol = p.loadingPort.toLowerCase().includes(q);
+          if (!matchName && !matchCode && !matchCountry && !matchPol) return false;
         }
         return true;
       });
@@ -781,15 +814,18 @@ export const SalesReportsHub: React.FC = () => {
     if (destSortBy === 'usd') list.sort((a, b) => b.usd - a.usd);
     else if (destSortBy === 'weight') list.sort((a, b) => b.weight - a.weight);
     else if (destSortBy === 'count') list.sort((a, b) => b.count - a.count);
+    else if (destSortBy === 'pol') list.sort((a, b) => a.loadingPort.localeCompare(b.loadingPort) || b.usd - a.usd);
 
     return list;
-  }, [destAnalysisInvoices, portMap, destCountryFilter, destSearch, destSortBy]);
+  }, [destAnalysisInvoices, portMap, destPortMode, destCountryFilter, destSearch, destSortBy]);
 
   const topPort = podBreakdown[0];
 
   const isDestFiltered = Boolean(
     destMonth !== 'ALL' ||
     destCountryFilter ||
+    destPolFilter ||
+    destPortMode !== 'pod' ||
     destSearch ||
     destSortBy !== 'usd'
   );
@@ -797,6 +833,8 @@ export const SalesReportsHub: React.FC = () => {
   const resetDestFilters = () => {
     setDestMonth('ALL');
     setDestCountryFilter('');
+    setDestPolFilter('');
+    setDestPortMode('pod');
     setDestSearch('');
     setDestSortBy('usd');
   };
@@ -1246,6 +1284,7 @@ export const SalesReportsHub: React.FC = () => {
       const data = podBreakdown.map((p) => ({
         Port: p.name,
         Code: p.code,
+        LoadingPort: p.loadingPort,
         Country: p.country,
         Shipments: p.count,
         WeightKg: p.weight,
@@ -1253,15 +1292,16 @@ export const SalesReportsHub: React.FC = () => {
         SharePct: p.pct.toFixed(1) + '%'
       }));
       const csv = convertToCSV(data, [
-        { key: 'Port', label: 'Port of Discharge' },
+        { key: 'Port', label: destPortMode === 'pol' ? 'Port of Loading' : 'Port of Discharge' },
         { key: 'Code', label: 'Port Code' },
+        { key: 'LoadingPort', label: 'Port of Loading' },
         { key: 'Country', label: 'Country' },
         { key: 'Shipments', label: 'Shipments Count' },
         { key: 'WeightKg', label: 'Net Weight (Kg)' },
         { key: 'AmountUSD', label: 'Total USD' },
         { key: 'SharePct', label: 'Share %' }
       ]);
-      downloadFile(csv, `Destination_Analysis_${destMonth}.csv`);
+      downloadFile(csv, `Port_Analysis_${destPortMode.toUpperCase()}_${destMonth}.csv`);
     } else if (activeReport === 'realization-ageing') {
       const data = filteredAgeingInvoices.map((inv) => ({
         InvoiceNo: inv.invoiceNo,
@@ -2889,6 +2929,28 @@ export const SalesReportsHub: React.FC = () => {
             </select>
 
             <select
+              value={destPortMode}
+              onChange={(e) => setDestPortMode(e.target.value as 'pod' | 'pol')}
+              className="text-xs font-bold px-3 py-2 bg-rose-50 border border-rose-200 rounded-xl focus:border-rose-400 outline-none transition text-rose-900"
+            >
+              <option value="pod">Group by: Port of Discharge (POD)</option>
+              <option value="pol">Group by: Port of Loading (POL)</option>
+            </select>
+
+            <select
+              value={destPolFilter}
+              onChange={(e) => setDestPolFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Loading Ports ({availableLoadingPorts.length})</option>
+              {availableLoadingPorts.map((lp) => (
+                <option key={lp} value={lp}>
+                  POL: {lp}
+                </option>
+              ))}
+            </select>
+
+            <select
               value={destCountryFilter}
               onChange={(e) => setDestCountryFilter(e.target.value)}
               className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
@@ -2909,6 +2971,7 @@ export const SalesReportsHub: React.FC = () => {
               <option value="usd">Sort by: Value (USD)</option>
               <option value="weight">Sort by: Volume (Kg)</option>
               <option value="count">Sort by: Shipments Count</option>
+              <option value="pol">Sort by: Port of Loading</option>
             </select>
           </div>
 
@@ -2957,8 +3020,9 @@ export const SalesReportsHub: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-[11px] font-bold text-ink-500 uppercase border-b border-gray-200">
-                  <th className="py-2.5 px-3">Port of Discharge</th>
+                  <th className="py-2.5 px-3">{destPortMode === 'pol' ? 'Port of Loading' : 'Port of Discharge'}</th>
                   <th className="py-2.5 px-3">UN/LOCODE</th>
+                  {destPortMode === 'pod' && <th className="py-2.5 px-3">Port of Loading</th>}
                   <th className="py-2.5 px-3">Country</th>
                   <th className="py-2.5 px-3 text-right">Shipments</th>
                   <th className="py-2.5 px-3 text-right">Net Weight (Kg)</th>
@@ -2971,6 +3035,7 @@ export const SalesReportsHub: React.FC = () => {
                   <tr key={row.id} className="hover:bg-rose-50/20">
                     <td className="py-2.5 px-3 font-bold text-ink-900">{row.name}</td>
                     <td className="py-2.5 px-3 font-mono text-[11px] text-ink-600">{row.code}</td>
+                    {destPortMode === 'pod' && <td className="py-2.5 px-3 text-ink-700">{row.loadingPort}</td>}
                     <td className="py-2.5 px-3 text-ink-700">{row.country}</td>
                     <td className="py-2.5 px-3 text-right font-semibold">{row.count}</td>
                     <td className="py-2.5 px-3 text-right font-bold">{formatKg(row.weight)}</td>
