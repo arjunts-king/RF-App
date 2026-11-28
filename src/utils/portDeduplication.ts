@@ -201,3 +201,104 @@ export function deduplicatePortsWithInvoices(
     mergedPairs
   };
 }
+
+export interface RestoreMissingPortsResult {
+  ports: PortMaster[];
+  salesInvoices: SalesInvoice[];
+  restoredCount: number;
+  relinkedInvoices: number;
+}
+
+/**
+ * Restores any missing original VERIFIED_PORTS and any missing ports
+ * referenced by existing SalesInvoice records (by ID or display name),
+ * and re-links dangling invoice port IDs to the restored/matching PortMaster.
+ */
+export function restoreMissingPorts(
+  currentPorts: PortMaster[],
+  verifiedPorts: PortMaster[],
+  salesInvoices: SalesInvoice[]
+): RestoreMissingPortsResult {
+  const nextPorts = [...(currentPorts || [])];
+  const byId = new Map<string, PortMaster>();
+  const byNormKey = new Map<string, PortMaster>();
+
+  for (const p of nextPorts) {
+    byId.set(p.id, p);
+    const key = normalizePortKey(p.name);
+    if (key && !byNormKey.has(key)) byNormKey.set(key, p);
+  }
+
+  let restoredCount = 0;
+
+  // 1. Restore any missing VERIFIED_PORTS (matching by ID or normalized name key)
+  for (const vp of verifiedPorts || []) {
+    const key = normalizePortKey(vp.name);
+    if (byId.has(vp.id) || (key && byNormKey.has(key))) continue;
+    const restored = { ...vp };
+    nextPorts.push(restored);
+    byId.set(restored.id, restored);
+    if (key) byNormKey.set(key, restored);
+    restoredCount++;
+  }
+
+  // 2. Restore / re-link any ports referenced in existing salesInvoices whose ID is missing
+  let relinkedInvoices = 0;
+  const nextInvoices = (salesInvoices || []).map((inv) => {
+    let changed = false;
+    const nextInv = { ...inv };
+
+    const resolveOrRestore = (
+      idField: 'portOfLoadingId' | 'portOfDischargeId' | 'finalDestinationId',
+      nameField: 'portOfLoading' | 'portOfDischarge' | 'finalDestination',
+      defaultCountry: string
+    ) => {
+      const pid = nextInv[idField];
+      const pname = String(nextInv[nameField] || '').trim();
+
+      if (pid && byId.has(pid)) return;
+
+      // Try matching by normalized name first
+      const key = normalizePortKey(pname);
+      if (key && byNormKey.has(key)) {
+        const target = byNormKey.get(key)!;
+        nextInv[idField] = target.id;
+        changed = true;
+        return;
+      }
+
+      // If invoice has a port name that isn't in Port Master at all, restore it
+      if (pname) {
+        const newId = pid || `port-restored-${key || Date.now()}-${nextPorts.length + 1}`;
+        const derivedCode = (key || pname.replace(/[^a-zA-Z0-9]/g, '')).slice(0, 5).toUpperCase() || 'PORTX';
+        const restoredPort: PortMaster = {
+          id: newId,
+          code: derivedCode,
+          name: pname.split(',')[0].trim() || pname,
+          country: defaultCountry,
+          active: true
+        };
+        nextPorts.push(restoredPort);
+        byId.set(restoredPort.id, restoredPort);
+        if (key) byNormKey.set(key, restoredPort);
+        nextInv[idField] = restoredPort.id;
+        restoredCount++;
+        changed = true;
+      }
+    };
+
+    resolveOrRestore('portOfLoadingId', 'portOfLoading', 'India');
+    resolveOrRestore('portOfDischargeId', 'portOfDischarge', 'Overseas');
+    resolveOrRestore('finalDestinationId', 'finalDestination', 'Overseas');
+
+    if (changed) relinkedInvoices++;
+    return nextInv;
+  });
+
+  return {
+    ports: nextPorts,
+    salesInvoices: nextInvoices,
+    restoredCount,
+    relinkedInvoices
+  };
+}

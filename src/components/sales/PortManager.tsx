@@ -200,14 +200,15 @@ export const PortManager: React.FC = () => {
   };
 
   const handleDeduplicatePorts = () => {
-    const { removedCount, remappedInvoices } = deduplicatePorts();
-    if (removedCount > 0) {
-      showToast(
-        `Removed ${removedCount} duplicate port(s) and updated ${remappedInvoices} invoice(s) to the original port.`,
-        'success'
-      );
+    const { removedCount, remappedInvoices, restoredCount } = deduplicatePorts();
+    if (restoredCount > 0 || removedCount > 0) {
+      const parts: string[] = [];
+      if (restoredCount > 0) parts.push(`restored ${restoredCount} missing original port(s)`);
+      if (removedCount > 0) parts.push(`removed ${removedCount} duplicate port(s)`);
+      if (remappedInvoices > 0) parts.push(`updated ${remappedInvoices} invoice(s)`);
+      showToast(`Port Master synced: ${parts.join(', ')}.`, 'success');
     } else {
-      showToast('No duplicate ports found in Port Master.', 'info');
+      showToast('All original ports are present and no duplicates were found.', 'info');
     }
   };
 

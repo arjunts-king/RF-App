@@ -51,7 +51,8 @@ import {
 
 import {
   normalizePortKey,
-  deduplicatePortsWithInvoices
+  deduplicatePortsWithInvoices,
+  restoreMissingPorts
 } from '../utils/portDeduplication.ts';
 
 import {
@@ -6814,6 +6815,44 @@ test('Port Master deduplication: merges word-order/prefix duplicates and remaps 
   assert.equal(result.salesInvoices[0].finalDestinationId, 'port-thlkr');
   assert.equal(result.salesInvoices[0].finalDestination, 'Lat Krabang Port');
   assert.equal(result.salesInvoices[0].totalAmount, 50000);
+});
+
+test('Port Master restoration: brings back missing VERIFIED_PORTS (Laem Chabang, Lat Krabang) and invoice-referenced ports', () => {
+  const currentPorts = [
+    { id: 'port-maa', code: 'INMAA', name: 'Chennai Port', country: 'India', active: true }
+  ];
+  const verifiedPorts = [
+    { id: 'port-maa', code: 'INMAA', name: 'Chennai Port', country: 'India', active: true },
+    { id: 'port-lch', code: 'THLCH', name: 'Port of Laem Chabang', country: 'Thailand', active: true },
+    { id: 'port-lkr', code: 'THLKR', name: 'Port of Lat Krabang', country: 'Thailand', active: true }
+  ];
+  const invoices = [
+    {
+      id: 'inv-lch',
+      portOfLoadingId: 'port-maa',
+      portOfDischargeId: 'deleted-lch-id',
+      portOfDischarge: 'Port of Laem Chabang',
+      finalDestinationId: 'deleted-lkr-id',
+      finalDestination: 'Lat Krabang Port'
+    },
+    {
+      id: 'inv-custom',
+      portOfLoadingId: 'port-maa',
+      portOfDischargeId: 'deleted-busan-id',
+      portOfDischarge: 'Busan Port',
+      finalDestinationId: 'deleted-busan-id',
+      finalDestination: 'Busan Port'
+    }
+  ];
+
+  const restored = restoreMissingPorts(currentPorts, verifiedPorts, invoices);
+  assert.equal(restored.restoredCount, 3); // Laem Chabang, Lat Krabang, and Busan Port
+  assert.equal(restored.relinkedInvoices, 2);
+  assert.ok(restored.ports.some((p) => p.id === 'port-lch' && p.name === 'Port of Laem Chabang'));
+  assert.ok(restored.ports.some((p) => p.id === 'port-lkr' && p.name === 'Port of Lat Krabang'));
+  assert.ok(restored.ports.some((p) => p.name === 'Busan Port'));
+  assert.equal(restored.salesInvoices[0].portOfDischargeId, 'port-lch');
+  assert.equal(restored.salesInvoices[0].finalDestinationId, 'port-lkr');
 });
 
 

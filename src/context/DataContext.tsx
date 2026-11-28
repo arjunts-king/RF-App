@@ -35,7 +35,7 @@ import {
   PeriodCloseLock,
   InventoryCalculationResult
 } from '../types';
-import { normalizePortKey, deduplicatePortsWithInvoices } from '../utils/portDeduplication';
+import { normalizePortKey, deduplicatePortsWithInvoices, restoreMissingPorts } from '../utils/portDeduplication';
 import {
   DEFAULT_BUSINESS_SETTINGS,
   INITIAL_SUPPLIERS,
@@ -198,7 +198,7 @@ interface DataContextType {
   deletePort: (id: string) => { success: boolean; message?: string };
   togglePortActive: (id: string) => void;
   bulkImportPorts: (records: Record<string, any>[]) => { added: number; updated: number; errors: string[] };
-  deduplicatePorts: () => { removedCount: number; remappedInvoices: number };
+  deduplicatePorts: () => { removedCount: number; remappedInvoices: number; restoredCount: number };
 
   // Species Head Master Actions (Sales Module Product Integration)
   addSpeciesHead: (head: Omit<SpeciesHead, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -1117,7 +1117,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setCustomers(idbCustomers);
         }
         if (!mutatedKeysRef.current.has('ports') && Array.isArray(idbPorts) && idbPorts.length > 0) {
-          setPorts(idbPorts);
+          const baseInvoices =
+            !mutatedKeysRef.current.has('sales_invoices') && Array.isArray(idbInvoices) && idbInvoices.length > 0
+              ? sortSalesInvoicesByNumber(idbInvoices)
+              : salesInvoices;
+          const restored = restoreMissingPorts(idbPorts, VERIFIED_PORTS, baseInvoices);
+          const deduped = deduplicatePortsWithInvoices(
+            restored.ports,
+            restored.salesInvoices,
+            new Set(VERIFIED_PORTS.map((p) => p.id))
+          );
+          setPorts(deduped.ports);
+          if (restored.relinkedInvoices > 0 || deduped.remappedInvoices > 0) {
+            setSalesInvoices(deduped.salesInvoices);
+          }
         }
         if (!mutatedKeysRef.current.has('species_heads') && Array.isArray(idbSpeciesHeads) && idbSpeciesHeads.length > 0) {
           setSpeciesHeads((prev) => {
@@ -1224,17 +1237,45 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}slab_types`, slabTypes); }, [slabTypes, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}customers`, customers); }, [customers, isIdbReady]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}ports`, ports); }, [ports, isIdbReady]);
+  const hasRestoredPortsOnLoadRef = useRef(false);
   useEffect(() => {
-    if (!isIdbReady || ports.length <= 1) return;
+    if (!isIdbReady) return;
     const verifiedIds = new Set(VERIFIED_PORTS.map((p) => p.id));
-    const result = deduplicatePortsWithInvoices(ports, salesInvoices, verifiedIds);
-    if (result.removedCount > 0) {
+    let workingPorts = ports;
+    let workingInvoices = salesInvoices;
+    let changedPorts = false;
+    let changedInvoices = false;
+
+    if (!hasRestoredPortsOnLoadRef.current) {
+      hasRestoredPortsOnLoadRef.current = true;
+      const restored = restoreMissingPorts(workingPorts, VERIFIED_PORTS, workingInvoices);
+      if (restored.restoredCount > 0 || restored.relinkedInvoices > 0) {
+        workingPorts = restored.ports;
+        workingInvoices = restored.salesInvoices;
+        changedPorts = restored.restoredCount > 0;
+        changedInvoices = restored.relinkedInvoices > 0;
+      }
+    }
+
+    if (workingPorts.length > 1) {
+      const deduped = deduplicatePortsWithInvoices(workingPorts, workingInvoices, verifiedIds);
+      if (deduped.removedCount > 0) {
+        workingPorts = deduped.ports;
+        workingInvoices = deduped.salesInvoices;
+        changedPorts = true;
+        if (deduped.remappedInvoices > 0) changedInvoices = true;
+      }
+    }
+
+    if (changedPorts) {
       mutatedKeysRef.current.add('ports');
+      setPorts(workingPorts);
+      safeSet(`${DB_PREFIX}ports`, workingPorts);
+    }
+    if (changedInvoices) {
       mutatedKeysRef.current.add('sales_invoices');
-      setPorts(result.ports);
-      setSalesInvoices(result.salesInvoices);
-      safeSet(`${DB_PREFIX}ports`, result.ports);
-      safeSet(`${DB_PREFIX}sales_invoices`, result.salesInvoices);
+      setSalesInvoices(workingInvoices);
+      safeSet(`${DB_PREFIX}sales_invoices`, workingInvoices);
     }
   }, [isIdbReady, ports]);
   useEffect(() => { if (isIdbReady) safeSet(`${DB_PREFIX}species_heads`, speciesHeads); }, [speciesHeads, isIdbReady]);
@@ -1893,27 +1934,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showToast(`Port "${newPort.name}" added.`, 'success');
   };
 
-  const deduplicatePorts = (): { removedCount: number; remappedInvoices: number } => {
+  const deduplicatePorts = (): { removedCount: number; remappedInvoices: number; restoredCount: number } => {
     const verifiedIds = new Set(VERIFIED_PORTS.map((p) => p.id));
-    const result = deduplicatePortsWithInvoices(ports, salesInvoices, verifiedIds);
-    if (result.removedCount > 0) {
+    const restored = restoreMissingPorts(ports, VERIFIED_PORTS, salesInvoices);
+    const result = deduplicatePortsWithInvoices(restored.ports, restored.salesInvoices, verifiedIds);
+    if (restored.restoredCount > 0 || restored.relinkedInvoices > 0 || result.removedCount > 0) {
       mutatedKeysRef.current.add('ports');
       mutatedKeysRef.current.add('sales_invoices');
       setPorts(result.ports);
       setSalesInvoices(result.salesInvoices);
       safeSet(`${DB_PREFIX}ports`, result.ports);
       safeSet(`${DB_PREFIX}sales_invoices`, result.salesInvoices);
-      logAudit('EDIT', 'PortMaster', 'Deduplicate Ports', {
+      logAudit('EDIT', 'PortMaster', 'Restore & Deduplicate Ports', {
         newValues: {
+          restoredCount: restored.restoredCount,
           removedCount: result.removedCount,
-          remappedInvoices: result.remappedInvoices,
+          remappedInvoices: result.remappedInvoices + restored.relinkedInvoices,
           mergedPairs: result.mergedPairs
         }
       });
     }
     return {
       removedCount: result.removedCount,
-      remappedInvoices: result.remappedInvoices
+      remappedInvoices: result.remappedInvoices + restored.relinkedInvoices,
+      restoredCount: restored.restoredCount
     };
   };
 
