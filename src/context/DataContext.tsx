@@ -233,6 +233,14 @@ interface DataContextType {
   // Sales Invoice & Commercial Export Actions
   addSalesInvoice: (invoiceData: Partial<SalesInvoice>) => { success: boolean; invoiceNo?: string; warnings?: string[] };
   updateSalesInvoice: (id: string, updates: Partial<SalesInvoice>, editReason?: string) => { success: boolean; message?: string };
+  bulkUpdateSalesInvoicePorts: (
+    updates: Array<{
+      invoiceId: string;
+      portOfLoadingId: string;
+      portOfDischargeId: string;
+      finalDestinationId: string;
+    }>
+  ) => { updatedCount: number };
   addInvoiceRealization: (invoiceId: string, realization: Omit<RealizationRecord, 'id' | 'createdAt' | 'createdBy'>) => { success: boolean; message?: string };
   updateInvoiceSettlement: (
     invoiceId: string,
@@ -1932,6 +1940,64 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPorts((prev) => [...prev, newPort]);
     logAudit('CREATE', 'PortMaster', newPort.name, { newValues: newPort });
     showToast(`Port "${newPort.name}" added.`, 'success');
+  };
+
+  const bulkUpdateSalesInvoicePorts = (
+    updates: Array<{
+      invoiceId: string;
+      portOfLoadingId: string;
+      portOfDischargeId: string;
+      finalDestinationId: string;
+    }>
+  ): { updatedCount: number } => {
+    if (!permissions.canCreateEditSales) {
+      showToast('Unauthorized: You do not have permission to edit sales invoices.', 'error');
+      return { updatedCount: 0 };
+    }
+    if (!updates || updates.length === 0) return { updatedCount: 0 };
+
+    const portById = new Map(ports.map((p) => [p.id, p]));
+    const updateById = new Map(updates.map((u) => [u.invoiceId, u]));
+    let updatedCount = 0;
+
+    const nextInvoices = salesInvoices.map((inv) => {
+      const u = updateById.get(inv.id);
+      if (!u) return inv;
+
+      const pol = portById.get(u.portOfLoadingId);
+      const pod = portById.get(u.portOfDischargeId);
+      const fd = portById.get(u.finalDestinationId);
+      const destCountry =
+        (fd?.country && fd.country.trim().toLowerCase() !== 'india' && fd.country.trim().toLowerCase() !== 'overseas'
+          ? fd.country
+          : pod?.country && pod.country.trim().toLowerCase() !== 'india' && pod.country.trim().toLowerCase() !== 'overseas'
+          ? pod.country
+          : inv.countryOfDestination) || inv.countryOfDestination;
+
+      updatedCount++;
+      return {
+        ...inv,
+        portOfLoadingId: u.portOfLoadingId,
+        portOfLoading: pol?.name || inv.portOfLoading,
+        portOfDischargeId: u.portOfDischargeId,
+        portOfDischarge: pod?.name || inv.portOfDischarge,
+        finalDestinationId: u.finalDestinationId,
+        finalDestination: fd ? `${fd.name}${fd.country ? `, ${fd.country}` : ''}` : inv.finalDestination,
+        countryOfDestination: destCountry,
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    if (updatedCount > 0) {
+      mutatedKeysRef.current.add('sales_invoices');
+      setSalesInvoices(nextInvoices);
+      safeSet(`${DB_PREFIX}sales_invoices`, nextInvoices);
+      logAudit('EDIT', 'SalesInvoice', 'Bulk Port Correction', {
+        newValues: { updatedCount, invoiceIds: updates.map((u) => u.invoiceId) }
+      });
+    }
+
+    return { updatedCount };
   };
 
   const deduplicatePorts = (): { removedCount: number; remappedInvoices: number; restoredCount: number } => {
@@ -8113,6 +8179,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     addSalesInvoice,
     updateSalesInvoice,
+    bulkUpdateSalesInvoicePorts,
     addInvoiceRealization,
     updateInvoiceSettlement,
     deleteInvoiceRealization,

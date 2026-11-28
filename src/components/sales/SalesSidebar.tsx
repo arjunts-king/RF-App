@@ -21,6 +21,7 @@ export type SalesNavTab =
   | 'fob-dashboard'
   | 'invoice-entry'
   | 'invoices'
+  | 'port-correction'
   | 'realizations'
   | 'customers'
   | 'ports'
@@ -80,6 +81,14 @@ export const SalesSidebar: React.FC<SalesSidebarProps> = ({ activeTab, onTabChan
           icon: FileText,
           badge: 'Register',
           desc: 'Audit invoices, status & export documentation'
+        },
+        {
+          id: 'port-correction',
+          label: 'Invoice Port Correction',
+          icon: Anchor,
+          badge: 'Bulk Edit',
+          desc: 'Correct POL, POD & Final Destination across all invoices',
+          show: permissions.canCreateEditSales
         }
       ]
     },
