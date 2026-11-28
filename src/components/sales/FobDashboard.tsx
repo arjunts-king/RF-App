@@ -219,6 +219,8 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
     // Averages (FOB averages calculated strictly over shipments with verified FOB to prevent rate dilution)
     const fobInvoices = filteredInvoices.filter((i) => (i.totalFobValueCurrency || 0) > 0);
+    const fobVerifiedCount = fobInvoices.length;
+    const outstandingCount = filteredInvoices.filter((i) => i.realizationStatus !== 'Fully Realized').length;
     const fobWeightKg = Number(fobInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0).toFixed(2));
     const avgFobPerKgUSD = fobWeightKg > 0 ? Number((totalFobUSD / fobWeightKg).toFixed(2)) : 0;
     const avgFobPerKgINR = fobWeightKg > 0 && totalFobINR > 0 ? Number((totalFobINR / fobWeightKg).toFixed(2)) : 0;
@@ -232,6 +234,8 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
 
     return {
       totalInvoices,
+      fobVerifiedCount,
+      outstandingCount,
       totalWeightKg,
       totalWeightMT,
       totalCartons,
@@ -536,7 +540,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                   Executive FOB Valuation Ledger
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 font-mono text-rose-800 border border-rose-200">
-                  {stats.totalInvoices} Invoices (All 71 Verified FOB) • {stats.totalCartons.toLocaleString()} Cartons
+                  {stats.totalInvoices} Invoices ({stats.fobVerifiedCount} Verified FOB) • {stats.totalCartons.toLocaleString()} Cartons
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-ink-950">
@@ -604,7 +608,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
               </div>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/80 border border-amber-200 rounded-xl font-medium text-amber-900 shadow-2xs backdrop-blur-sm">
                 <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span>Payment Status: <strong>0% Realized (All 71 Shipments Outstanding)</strong></span>
+                <span>Payment Status: <strong>{stats.realizationPct}% Realized ({stats.outstandingCount} Shipments Outstanding)</strong></span>
               </div>
             </div>
           </div>
@@ -869,7 +873,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                   <span className="text-2xl font-black text-rose-900 tracking-tight">
                     {formatUSD(stats.totalFobUSD)}
                   </span>
-                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">USD (All 71 Invoices)</span>
+                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">USD ({stats.totalInvoices} Invoices)</span>
                 </div>
               )}
               {(currencyMode === 'dual' || currencyMode === 'inr') && (
@@ -883,7 +887,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
             </div>
           </div>
           <div className="text-[11px] text-ink-500 pt-3 flex items-center justify-between border-t border-gray-100 mt-2">
-            <span>Avg FOB Rate (71 Shipments):</span>
+            <span>Avg FOB Rate ({stats.fobVerifiedCount} Shipments):</span>
             <strong className="text-ink-800">
               {formatUSD(stats.avgFobPerKgUSD)}/Kg {stats.avgFobPerKgINR > 0 ? `• ${formatINR(stats.avgFobPerKgINR)}/Kg` : ''}
             </strong>
@@ -903,7 +907,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
                   <span className="text-2xl font-black text-emerald-900 tracking-tight">
                     {formatUSD(stats.totalSalesUSD)}
                   </span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">USD (71 Invoices)</span>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">USD ({stats.totalInvoices} Invoices)</span>
                 </div>
               )}
               {(currencyMode === 'dual' || currencyMode === 'inr') && (
@@ -987,7 +991,7 @@ export const FobDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = ({
           <div className="text-[11px] text-ink-500 pt-3 flex items-center justify-between border-t border-gray-100 mt-2">
             <span>Settlement Status:</span>
             <strong className="text-amber-700 font-bold">
-              {stats.realizationPct}% Realized • All 71 Shipments Awaiting Remittance
+              {stats.realizationPct}% Realized • {stats.outstandingCount} Shipments Awaiting Remittance
             </strong>
           </div>
         </div>
