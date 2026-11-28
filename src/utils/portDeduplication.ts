@@ -302,3 +302,55 @@ export function restoreMissingPorts(
     relinkedInvoices
   };
 }
+
+const GENERIC_COUNTRY_PLACEHOLDERS = new Set([
+  'overseas',
+  'global',
+  'unknown',
+  'other',
+  'n/a',
+  'export',
+  'overseas export'
+]);
+
+/**
+ * Extracts and normalizes a clean country name, rejecting port-like strings
+ * (e.g. "Port of Laem Chabang") and generic placeholders.
+ */
+export function cleanCountryName(raw?: string): string {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return '';
+  const candidate = trimmed.includes(',') ? trimmed.split(',').pop()!.trim() : trimmed;
+  const lower = candidate.toLowerCase();
+  if (
+    /\b(port|terminal|harbour|harbor|icd|seaport|wharf|dock|berth)\b/i.test(lower) ||
+    GENERIC_COUNTRY_PLACEHOLDERS.has(lower)
+  ) {
+    return '';
+  }
+  if (lower === 'thaila' || lower === 'thailand') return 'Thailand';
+  if (lower === 'usa' || lower === 'u.s.a.' || lower === 'united states') return 'USA';
+  if (lower === 'uae' || lower === 'u.a.e.' || lower === 'united arab emirates') return 'UAE';
+  if (lower === 'uk' || lower === 'u.k.' || lower === 'united kingdom') return 'UK';
+  return candidate.toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+/**
+ * Resolves the clean destination country for a SalesInvoice from its discharge
+ * port, consignee/customer, countryOfDestination, or final destination port.
+ */
+export function resolveInvoiceDestinationCountry(
+  inv: SalesInvoice,
+  customerCountry?: string,
+  podCountry?: string,
+  finalDestCountry?: string
+): string {
+  const candidates = [
+    cleanCountryName(podCountry),
+    cleanCountryName(customerCountry),
+    cleanCountryName(inv.countryOfDestination),
+    cleanCountryName(finalDestCountry)
+  ].filter((c) => c && c.toLowerCase() !== 'india');
+
+  return candidates[0] || '';
+}

@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { SalesInvoice } from '../../types';
 import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
+import { resolveInvoiceDestinationCountry } from '../../utils/portDeduplication';
 import { convertToCSV, downloadFile } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import { BentoCard } from '../common/BentoCard';
@@ -50,6 +51,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [selectedPolIds, setSelectedPolIds] = useState<string[]>([]);
   const [selectedPodIds, setSelectedPodIds] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [kpiViewMode, setKpiViewMode] = useState<'carousel' | 'grid'>('carousel');
@@ -138,6 +140,27 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     [ports]
   );
 
+  const countryOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    salesInvoices.forEach((inv) => {
+      if (inv.isVoided) return;
+      const country = resolveInvoiceDestinationCountry(
+        inv,
+        customerMap.get(inv.consigneeId)?.country,
+        portMap.get(inv.portOfDischargeId)?.country,
+        portMap.get(inv.finalDestinationId)?.country
+      );
+      if (country) counts.set(country, (counts.get(country) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([country, count]) => ({
+        id: country,
+        label: country,
+        badge: `${count} inv`
+      }));
+  }, [salesInvoices, customerMap, portMap]);
+
   const currencyOptions = useMemo(
     () => [
       { id: 'USD', label: 'USD ($)', subLabel: 'US Dollar' },
@@ -173,6 +196,15 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
       }
       if (selectedPolIds.length > 0 && !selectedPolIds.includes(inv.portOfLoadingId)) return false;
       if (selectedPodIds.length > 0 && !selectedPodIds.includes(inv.portOfDischargeId)) return false;
+      if (selectedCountries.length > 0) {
+        const invCountry = resolveInvoiceDestinationCountry(
+          inv,
+          customerMap.get(inv.consigneeId)?.country,
+          portMap.get(inv.portOfDischargeId)?.country,
+          portMap.get(inv.finalDestinationId)?.country
+        );
+        if (!invCountry || !selectedCountries.includes(invCountry)) return false;
+      }
       if (selectedCurrencies.length > 0 && !selectedCurrencies.includes(inv.currency)) return false;
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(inv.realizationStatus)) return false;
 
@@ -278,8 +310,11 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     selectedProductIds,
     selectedPolIds,
     selectedPodIds,
+    selectedCountries,
     selectedCurrencies,
     selectedStatuses,
+    customerMap,
+    portMap,
     speciesMap,
     speciesHeads,
     productOptions
@@ -697,9 +732,10 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     if (selectedCustomerIds.length > 0) tags.push({ label: 'Clients', value: `${selectedCustomerIds.length} active`, color: 'rose' });
     if (selectedProductIds.length > 0) tags.push({ label: 'Products', value: `${selectedProductIds.length} active`, color: 'blue' });
     if (selectedPodIds.length > 0) tags.push({ label: 'Ports', value: `${selectedPodIds.length} active`, color: 'emerald' });
+    if (selectedCountries.length > 0) tags.push({ label: 'Countries', value: `${selectedCountries.length} active`, color: 'amber' });
     if (selectedStatuses.length > 0) tags.push({ label: 'Status', value: `${selectedStatuses.length} active`, color: 'purple' });
     return tags;
-  }, [startDate, endDate, selectedCustomerIds, selectedProductIds, selectedPodIds, selectedStatuses]);
+  }, [startDate, endDate, selectedCustomerIds, selectedProductIds, selectedPodIds, selectedCountries, selectedStatuses]);
 
   // CSV Export for Pending Outstanding Invoices
   const handleExportOutstandingCSV = () => {
@@ -749,6 +785,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     setSelectedProductIds([]);
     setSelectedPolIds([]);
     setSelectedPodIds([]);
+    setSelectedCountries([]);
     setSelectedCurrencies([]);
     setSelectedStatuses([]);
   };
@@ -761,6 +798,7 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
     selectedProductIds.length > 0 ||
     selectedPolIds.length > 0 ||
     selectedPodIds.length > 0 ||
+    selectedCountries.length > 0 ||
     selectedCurrencies.length > 0 ||
     selectedStatuses.length > 0
   );
@@ -943,6 +981,17 @@ export const SalesDashboard: React.FC<{ onNavigate?: (tab: string) => void }> = 
             icon={Anchor}
             badgeColor="emerald"
             placeholder="Search discharge ports..."
+          />
+
+          {/* Multi-select Destination Country */}
+          <MultiSelectFilter
+            label="Country"
+            options={countryOptions}
+            selectedIds={selectedCountries}
+            onChange={setSelectedCountries}
+            icon={Globe}
+            badgeColor="amber"
+            placeholder="Search countries..."
           />
 
           {/* Multi-select Currency */}

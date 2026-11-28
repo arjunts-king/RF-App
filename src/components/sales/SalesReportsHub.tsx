@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { formatINR, formatKg, formatForwardRate } from '../../utils/calculations';
 import { getSettledInvoiceShortfallBreakdown } from '../../utils/collectionAnalysis';
+import { resolveInvoiceDestinationCountry } from '../../utils/portDeduplication';
 import { convertToCSV, downloadFile, triggerPrint } from '../../utils/exportUtils';
 import { PageHeader } from '../common/PageHeader';
 import {
@@ -258,6 +259,7 @@ export const SalesReportsHub: React.FC = () => {
   const [regStartDate, setRegStartDate] = useState<string>('2026-04-01');
   const [regEndDate, setRegEndDate] = useState<string>(today);
   const [regCustomerFilter, setRegCustomerFilter] = useState<string>('');
+  const [regCountryFilter, setRegCountryFilter] = useState<string>('');
   const [regPortFilter, setRegPortFilter] = useState<string>('');
   const [regStatusFilter, setRegStatusFilter] = useState<string>('');
   const [regSearch, setRegSearch] = useState<string>('');
@@ -267,6 +269,15 @@ export const SalesReportsHub: React.FC = () => {
       if (regStartDate && inv.invoiceDate < regStartDate) return false;
       if (regEndDate && inv.invoiceDate > regEndDate) return false;
       if (regCustomerFilter && inv.consigneeId !== regCustomerFilter) return false;
+      if (regCountryFilter) {
+        const invCountry = resolveInvoiceDestinationCountry(
+          inv,
+          customerMap.get(inv.consigneeId)?.country,
+          portMap.get(inv.portOfDischargeId)?.country,
+          portMap.get(inv.finalDestinationId)?.country
+        );
+        if (invCountry !== regCountryFilter) return false;
+      }
       if (regPortFilter && inv.portOfDischargeId !== regPortFilter) return false;
       if (regStatusFilter && inv.realizationStatus !== regStatusFilter) return false;
       if (regSearch) {
@@ -279,7 +290,7 @@ export const SalesReportsHub: React.FC = () => {
       }
       return true;
     });
-  }, [activeInvoices, regStartDate, regEndDate, regCustomerFilter, regPortFilter, regStatusFilter, regSearch, customerMap, portMap]);
+  }, [activeInvoices, regStartDate, regEndDate, regCustomerFilter, regCountryFilter, regPortFilter, regStatusFilter, regSearch, customerMap, portMap]);
 
   const regTotalWeight = registerInvoices.reduce((s, inv) => s + inv.totalWeightKg, 0);
   const regTotalUSD = registerInvoices.reduce((s, inv) => s + inv.totalAmountCurrency, 0);
@@ -317,6 +328,7 @@ export const SalesReportsHub: React.FC = () => {
     regStartDate !== '2026-04-01' ||
     regEndDate !== today ||
     regCustomerFilter ||
+    regCountryFilter ||
     regPortFilter ||
     regStatusFilter ||
     regSearch
@@ -326,6 +338,7 @@ export const SalesReportsHub: React.FC = () => {
     setRegStartDate('2026-04-01');
     setRegEndDate(today);
     setRegCustomerFilter('');
+    setRegCountryFilter('');
     setRegPortFilter('');
     setRegStatusFilter('');
     setRegSearch('');
@@ -1799,6 +1812,19 @@ export const SalesReportsHub: React.FC = () => {
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.country})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={regCountryFilter}
+              onChange={(e) => setRegCountryFilter(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 bg-white border border-gray-200 rounded-xl focus:border-rose-400 outline-none transition text-ink-800"
+            >
+              <option value="">All Countries ({availableCountries.length})</option>
+              {availableCountries.map((c) => (
+                <option key={c} value={c}>
+                  {c}
                 </option>
               ))}
             </select>
