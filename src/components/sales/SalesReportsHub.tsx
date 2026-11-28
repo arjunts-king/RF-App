@@ -758,16 +758,75 @@ export const SalesReportsHub: React.FC = () => {
       string,
       { name: string; code: string; country: string; loadingPort: string; weight: number; usd: number; count: number }
     >();
+    const isIndianPort = (name?: string, country?: string) => {
+      const c = (country || '').trim().toLowerCase();
+      const n = (name || '').trim().toLowerCase();
+      if (c === 'india') return true;
+      return (
+        n === 'india' ||
+        n.includes(', india') ||
+        n.includes('cochin') ||
+        n.includes('kochi') ||
+        n.includes('mangalore') ||
+        n.includes('tuticorin') ||
+        n.includes('vizag') ||
+        n.includes('visakhapatnam') ||
+        n.includes('chennai') ||
+        n.includes('mumbai') ||
+        n.includes('nhava sheva') ||
+        n.includes('jnpt')
+      );
+    };
+
     destAnalysisInvoices.forEach((inv) => {
       const pod = portMap.get(inv.portOfDischargeId);
+      const finalPort = portMap.get(inv.finalDestinationId);
       const pol = portMap.get(inv.portOfLoadingId);
-      const podName = inv.portOfDischarge || pod?.name || 'Port of Qingdao, China';
+      const cust = customerMap.get(inv.consigneeId);
+
       const polName = inv.portOfLoading || pol?.name || 'Cochin Port, India';
 
-      const targetPort = destPortMode === 'pol' ? pol : pod;
+      // Resolve true overseas discharge port (never show India as a discharge port for export invoices)
+      let rawPodName = inv.portOfDischarge || pod?.name || '';
+      let rawPodPort = pod;
+      if (isIndianPort(rawPodName, pod?.country)) {
+        if (inv.finalDestination && !isIndianPort(inv.finalDestination, finalPort?.country)) {
+          rawPodName = inv.finalDestination;
+          rawPodPort = finalPort;
+        } else if (finalPort && !isIndianPort(finalPort.name, finalPort.country)) {
+          rawPodName = finalPort.name;
+          rawPodPort = finalPort;
+        } else if (inv.countryOfDestination && inv.countryOfDestination.toLowerCase() !== 'india') {
+          rawPodName = `${inv.countryOfDestination} Port`;
+          rawPodPort = undefined;
+        } else if (cust?.country && cust.country.toLowerCase() !== 'india') {
+          rawPodName = `${cust.country} Port`;
+          rawPodPort = undefined;
+        } else {
+          rawPodName = 'Overseas Discharge Port';
+          rawPodPort = undefined;
+        }
+      }
+      const podName = rawPodName || 'Overseas Discharge Port';
+
+      const targetPort = destPortMode === 'pol' ? pol : rawPodPort;
       const targetName = destPortMode === 'pol' ? polName : podName;
       const targetCode = targetPort?.code || (destPortMode === 'pol' ? 'POL' : 'POD');
-      const targetCountry = targetPort?.country || (destPortMode === 'pol' ? 'India' : inv.countryOfDestination || 'Export');
+      let targetCountry =
+        targetPort?.country ||
+        (destPortMode === 'pol'
+          ? 'India'
+          : (inv.countryOfDestination && inv.countryOfDestination.toLowerCase() !== 'india'
+              ? inv.countryOfDestination
+              : cust?.country) || 'Overseas Export');
+      if (destPortMode === 'pod' && targetCountry.trim().toLowerCase() === 'india') {
+        targetCountry =
+          (inv.countryOfDestination && inv.countryOfDestination.trim().toLowerCase() !== 'india'
+            ? inv.countryOfDestination
+            : cust?.country && cust.country.trim().toLowerCase() !== 'india'
+            ? cust.country
+            : 'Overseas Export');
+      }
       const key = targetName;
 
       const cur = podAggMap.get(key) || {

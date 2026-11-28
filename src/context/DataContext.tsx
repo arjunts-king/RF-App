@@ -6695,9 +6695,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const matchedBuyer = rawBuyer ? mutableCustomers.find((c) => c.name.toLowerCase().includes(rawBuyer.toLowerCase())) : undefined;
       const buyerId = matchedBuyer?.id;
 
-      const getOrCreatePort = (val: string): string => {
+      const getOrCreatePort = (val: string, role: 'pol' | 'pod' = 'pod'): string => {
         const cleanVal = String(val || '').trim();
-        if (!cleanVal) return mutablePorts[0]?.id || '';
+        if (!cleanVal) {
+          if (role === 'pol') {
+            return (
+              mutablePorts.find((p) => (p.country || '').toLowerCase() === 'india')?.id ||
+              mutablePorts[0]?.id ||
+              ''
+            );
+          }
+          return (
+            mutablePorts.find((p) => (p.country || '').toLowerCase() !== 'india')?.id ||
+            mutablePorts[1]?.id ||
+            mutablePorts[0]?.id ||
+            ''
+          );
+        }
         const cleanLower = cleanVal.toLowerCase();
         const matched = mutablePorts.find(
           (p) =>
@@ -6712,23 +6726,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: `port-${Date.now()}-${mutablePorts.length + 1}`,
             code: cleanVal.slice(0, 5).toUpperCase(),
             name: cleanVal,
-            country: 'Global',
+            country: role === 'pol' ? 'India' : 'Overseas',
             active: true
           };
           mutablePorts.push(newPort);
           createdPorts++;
           return newPort.id;
         }
-        return matched?.id || mutablePorts[0]?.id || '';
+        if (matched) return matched.id;
+        return role === 'pol'
+          ? mutablePorts.find((p) => (p.country || '').toLowerCase() === 'india')?.id || mutablePorts[0]?.id || ''
+          : mutablePorts.find((p) => (p.country || '').toLowerCase() !== 'india')?.id || mutablePorts[1]?.id || '';
       };
 
       const rawPol = getFlexibleValue(headerRow, ['portofloading', 'loadingport', 'pol', 'portloading']);
       const rawPod = getFlexibleValue(headerRow, ['portofdischarge', 'dischargeport', 'pod', 'portdischarge']);
       const rawDest = getFlexibleValue(headerRow, ['finaldestination', 'destinationport', 'destination', 'finaldest']);
 
-      const portOfLoadingId = getOrCreatePort(rawPol);
-      const portOfDischargeId = getOrCreatePort(rawPod);
-      const finalDestinationId = getOrCreatePort(rawDest || rawPod);
+      const portOfLoadingId = getOrCreatePort(rawPol, 'pol');
+      const portOfDischargeId = getOrCreatePort(rawPod || rawDest, 'pod');
+      const finalDestinationId = getOrCreatePort(rawDest || rawPod, 'pod');
 
       const rawCurr = String(getFlexibleValue(headerRow, ['currency', 'invoicecurrency', 'curr']) || 'USD').toUpperCase().trim();
       const allowedCurrs: SalesCurrency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR', 'AED', 'SGD'];
