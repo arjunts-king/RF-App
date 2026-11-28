@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Receipt,
   ShieldCheck,
-  CreditCard,
   Layers
 } from 'lucide-react';
 
@@ -104,9 +103,6 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
   // Selected Bank Account
   const targetAccId = invoice.realizations?.find((r) => r.bankAccountId)?.bankAccountId;
   const targetBank = (bankAccounts.find((b) => b.id === targetAccId) || bankAccounts[0]) as any;
-  const bankName = targetBank?.bankName || targetBank?.bank || targetBank?.name || 'State Bank of India';
-  const bankAccNo = targetBank?.accountNumber || targetBank?.code || 'Primary Forex EEFC / Export Current A/c';
-  const bankBranch = targetBank?.branch || (targetBank?.ifscCode ? `IFSC: ${targetBank.ifscCode}` : 'Commercial Overseas Branch');
 
   const handleDownloadWord = async () => {
     try {
@@ -448,25 +444,8 @@ export const RealizationStatementModal: React.FC<RealizationStatementModalProps>
               </table>
             </div>
 
-            {/* SECTION 4 & 5: RECONCILIATION SUMMARY & BANK ROUTING */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Beneficiary Bank Account Details */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 shadow-2xs space-y-1.5">
-                <div className="flex items-center gap-1.5 font-bold text-indigo-900 text-xs">
-                  <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Beneficiary Receiving Bank Account</span>
-                </div>
-                <div className="pt-1 text-xs">
-                  <div className="font-bold text-slate-900">{bankName}</div>
-                  <div className="text-slate-600 font-mono mt-0.5">
-                    A/C: {bankAccNo}
-                  </div>
-                  <div className="text-slate-500 text-[11px] mt-0.5">
-                    Branch: {bankBranch}
-                  </div>
-                </div>
-              </div>
-
+            {/* SECTION 4 & 5: RECONCILIATION SUMMARY */}
+            <div>
               {/* Statutory Reconciliation */}
               <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 shadow-2xs space-y-1 text-xs">
                 <div className="flex items-center justify-between pb-1 border-b border-slate-200">

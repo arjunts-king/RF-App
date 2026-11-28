@@ -10,7 +10,6 @@ import {
   X,
   CheckCircle2,
   ShieldCheck,
-  CreditCard,
   Search,
   Filter,
   Layers,
@@ -123,14 +122,7 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
       ? Math.min(100, Math.round(((totalRealizedUSD + totalShortfallUSD) / totalInvoicedUSD) * 100))
       : 100;
 
-  // Beneficiary Receiving Bank
   const targetBank = bankAccounts[0] as any;
-  const bankName = targetBank?.bankName || targetBank?.bank || targetBank?.name || 'State Bank of India';
-  const bankAccNo = targetBank?.accountNumber || targetBank?.code || 'Primary Forex EEFC / Export Current A/c';
-  const bankBranch =
-    targetBank?.branch || targetBank?.ifscCode
-      ? `${targetBank.branch || ''} (IFSC: ${targetBank.ifscCode || 'N.A.'})`
-      : 'Commercial Overseas Branch';
 
   // Filtered rows for interactive display (print will print all active invoices or filtered based on selection)
   const displayInvoices = useMemo(() => {
@@ -579,20 +571,8 @@ export const FullRealizationStatementModal: React.FC<FullRealizationStatementMod
             </div>
           </div>
 
-          {/* BENEFICIARY BANK ROUTING & STATUTORY TIE-OUT */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print-no-break">
-            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 shadow-2xs space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-indigo-900 text-xs">
-                <CreditCard className="w-4 h-4 text-indigo-600" />
-                <span>2. Beneficiary Receiving Bank Account Details</span>
-              </div>
-              <div className="pt-1 text-xs">
-                <div className="font-bold text-slate-900">{bankName}</div>
-                <div className="text-slate-600 font-mono mt-0.5">A/C: {bankAccNo}</div>
-                <div className="text-slate-500 text-[11px] mt-0.5">Branch: {bankBranch}</div>
-              </div>
-            </div>
-
+          {/* STATUTORY TIE-OUT */}
+          <div className="print-no-break">
             <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 shadow-2xs space-y-1.5 text-xs">
               <div className="flex items-center justify-between pb-1 border-b border-slate-200">
                 <span className="font-bold text-slate-900">Statutory Settlement Tie-Out</span>

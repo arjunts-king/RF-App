@@ -40,7 +40,7 @@ function formatRate(rate?: number): string {
 export function buildRealizationStatementTableXml(
   inv: Partial<SalesInvoice>,
   settings?: BusinessSettings,
-  bankAccount?: BankAccount
+  _bankAccount?: BankAccount
 ): string {
   const companyName = settings?.businessName || inv.exporterName || 'SEAFOOD EXPORTS INDIA PVT LTD';
   const companyAddress = settings?.address || inv.exporterAddress || 'Kochi, Kerala, India';
@@ -101,12 +101,6 @@ export function buildRealizationStatementTableXml(
 
   const statusText = isFullyRealized ? 'FULLY REALIZED' : (totalRealizedUSD > 0 ? 'PARTIALLY REALIZED' : 'NOT REALIZED');
   const statusBg = isFullyRealized ? '065F46' : (totalRealizedUSD > 0 ? '1E40AF' : '991B1B');
-
-  // Receiving Bank
-  const targetBank = bankAccount as any;
-  const bankName = targetBank?.bankName || targetBank?.bank || targetBank?.name || 'State Bank of India';
-  const bankAccNo = targetBank?.accountNumber || targetBank?.code || 'Primary Forex EEFC / Export Current A/c';
-  const bankBranch = targetBank?.branch || targetBank?.ifscCode ? `${targetBank.branch || ''} (IFSC: ${targetBank.ifscCode || 'N.A.'})` : 'Commercial Overseas Branch';
 
   const todayStr = formatDDMMYYYY(new Date().toISOString().split('T')[0]);
 
@@ -617,33 +611,14 @@ export function buildRealizationStatementTableXml(
         </w:tcPr>
         <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
           <w:pPr><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>4. STATUTORY RECONCILIATION &amp; BENEFICIARY BANK ROUTING</w:t></w:r>
+          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>4. STATUTORY REALIZATION RECONCILIATION</w:t></w:r>
         </w:p>
       </w:tc>
     </w:tr>
 
     <w:tr w:rsidR="00687369">
       <w:tc>
-        <w:tcPr><w:tcW w:w="4513" w:type="dxa"/><w:gridSpan w:val="2"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Receiving Bank Account Details</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>${escapeXml(bankName)}</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Account No: ${escapeXml(bankAccNo)}</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Branch: ${escapeXml(bankBranch)}</w:t></w:r>
-        </w:p>
-      </w:tc>
-      <w:tc>
-        <w:tcPr><w:tcW w:w="4513" w:type="dxa"/><w:gridSpan w:val="2"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
+        <w:tcPr><w:tcW w:w="9026" w:type="dxa"/><w:gridSpan w:val="4"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
         <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
           <w:pPr><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
           <w:r><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Statutory Realization Summary</w:t></w:r>
@@ -707,7 +682,7 @@ export function buildRealizationStatementTableXml(
 export async function exportRealizationToWord(
   invoice: SalesInvoice,
   settings?: BusinessSettings,
-  bankAccount?: BankAccount
+  _bankAccount?: BankAccount
 ): Promise<void> {
   const zip = await JSZip.loadAsync(SAMPLE_DOCX_TEMPLATE_BASE64, { base64: true });
   const origXml = await zip.file('word/document.xml')?.async('string');
@@ -729,7 +704,7 @@ export async function exportRealizationToWord(
   headerXml = headerXml.replace(/<w:t>INVOICE<\/w:t>/g, '<w:t></w:t>');
 
   const footerXml = origXml.substring(lastTable);
-  const tableXml = buildRealizationStatementTableXml(invoice, settings, bankAccount);
+  const tableXml = buildRealizationStatementTableXml(invoice, settings, _bankAccount);
 
   const newDocumentXml = headerXml + tableXml + footerXml;
   zip.file('word/document.xml', newDocumentXml);
@@ -755,7 +730,7 @@ export async function exportRealizationToWord(
 export function buildFullRealizationStatementTableXml(
   invoices: SalesInvoice[],
   settings?: BusinessSettings,
-  bankAccount?: BankAccount
+  _bankAccount?: BankAccount
 ): string {
   const companyName = settings?.businessName || 'SEAFOOD EXPORTS INDIA PVT LTD';
   const companyAddress = settings?.address || 'Kochi, Kerala, India';
@@ -827,15 +802,6 @@ export function buildFullRealizationStatementTableXml(
     totalInvoicedUSD > 0
       ? Math.min(100, Math.round(((totalRealizedUSD + totalShortfallUSD) / totalInvoicedUSD) * 100))
       : 100;
-
-  // Receiving Bank
-  const targetBank = bankAccount as any;
-  const bankName = targetBank?.bankName || targetBank?.bank || targetBank?.name || 'State Bank of India';
-  const bankAccNo = targetBank?.accountNumber || targetBank?.code || 'Primary Forex EEFC / Export Current A/c';
-  const bankBranch =
-    targetBank?.branch || targetBank?.ifscCode
-      ? `${targetBank.branch || ''} (IFSC: ${targetBank.ifscCode || 'N.A.'})`
-      : 'Commercial Overseas Branch';
 
   // Build rows for each invoice
   const tableRowsXml = activeInvoices
@@ -1230,33 +1196,14 @@ export function buildFullRealizationStatementTableXml(
         </w:tcPr>
         <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
           <w:pPr><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>2. STATUTORY SETTLEMENT RECONCILIATION &amp; BENEFICIARY BANK ROUTING</w:t></w:r>
+          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>2. STATUTORY SETTLEMENT RECONCILIATION SUMMARY</w:t></w:r>
         </w:p>
       </w:tc>
     </w:tr>
 
     <w:tr w:rsidR="00687369">
       <w:tc>
-        <w:tcPr><w:tcW w:w="4513" w:type="dxa"/><w:gridSpan w:val="5"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Beneficiary Receiving Bank Account Details</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:b/><w:color w:val="0F172A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Bank: ${escapeXml(bankName)}</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>A/C No: ${escapeXml(bankAccNo)}</w:t></w:r>
-        </w:p>
-        <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
-          <w:pPr><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
-          <w:r><w:rPr><w:color w:val="475569"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Branch: ${escapeXml(bankBranch)}</w:t></w:r>
-        </w:p>
-      </w:tc>
-      <w:tc>
-        <w:tcPr><w:tcW w:w="4513" w:type="dxa"/><w:gridSpan w:val="4"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
+        <w:tcPr><w:tcW w:w="9026" w:type="dxa"/><w:gridSpan w:val="9"/><w:shd w:val="clear" w:color="auto" w:fill="FFFFFF"/></w:tcPr>
         <w:p w14:paraId="${randId()}" w14:textId="77777777" w:rsidR="00687369">
           <w:pPr><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:pPr>
           <w:r><w:rPr><w:b/><w:color w:val="1E3A8A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Consolidated Realization Summary</w:t></w:r>
@@ -1320,7 +1267,7 @@ export function buildFullRealizationStatementTableXml(
 export async function exportFullRealizationToWord(
   invoices: SalesInvoice[],
   settings?: BusinessSettings,
-  bankAccount?: BankAccount
+  _bankAccount?: BankAccount
 ): Promise<void> {
   const zip = await JSZip.loadAsync(SAMPLE_DOCX_TEMPLATE_BASE64, { base64: true });
   const origXml = await zip.file('word/document.xml')?.async('string');
@@ -1340,7 +1287,7 @@ export async function exportFullRealizationToWord(
   headerXml = headerXml.replace(/<w:t>INVOICE<\/w:t>/g, '<w:t></w:t>');
 
   const footerXml = origXml.substring(lastTable);
-  const tableXml = buildFullRealizationStatementTableXml(invoices, settings, bankAccount);
+  const tableXml = buildFullRealizationStatementTableXml(invoices, settings, _bankAccount);
 
   const newDocumentXml = headerXml + tableXml + footerXml;
   zip.file('word/document.xml', newDocumentXml);

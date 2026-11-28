@@ -3505,7 +3505,8 @@ test('Realization & Settlement Statement: Word OpenXML and A4 PDF Statement gene
   assert.ok(xml.includes('1. COMMERCIAL SHIPMENT &amp; BUYER PARTICULARS'), 'Includes Section 1');
   assert.ok(xml.includes('2. AGREED BANK FORWARD EXCHANGE RATES'), 'Includes Section 2');
   assert.ok(xml.includes('3. DUAL-LEG SETTLEMENT BREAKDOWN'), 'Includes Section 3');
-  assert.ok(xml.includes('4. STATUTORY RECONCILIATION &amp; BENEFICIARY BANK ROUTING'), 'Includes Section 4');
+  assert.ok(xml.includes('4. STATUTORY REALIZATION RECONCILIATION'), 'Includes Section 4');
+  assert.ok(!xml.includes('Receiving Bank Account Details'), 'Excludes receiving bank account details');
   assert.ok(xml.includes('Declaration &amp; Audit Confirmation'), 'Includes Declaration & Audit section');
   assert.ok(xml.includes('PACIFIC SEAFOOD LLC'), 'Includes Consignee name');
   assert.ok(xml.includes('ROYAL FISHERIES PVT LTD'), 'Includes Company name');
@@ -3590,7 +3591,8 @@ test('Full Realization Statement: Consolidated Master Word OpenXML and A4 PDF ge
   assert.ok(fullXml.includes('PACIFIC SEAFOOD LLC'), 'Includes consignee 1');
   assert.ok(fullXml.includes('TOKYO SEAFOOD CO'), 'Includes consignee 2');
   assert.ok(fullXml.includes('CONSOLIDATED PORTFOLIO TOTALS (2 INVOICES)'), 'Includes totals row');
-  assert.ok(fullXml.includes('2. STATUTORY SETTLEMENT RECONCILIATION &amp; BENEFICIARY BANK ROUTING'), 'Includes Section 2');
+  assert.ok(fullXml.includes('2. STATUTORY SETTLEMENT RECONCILIATION SUMMARY'), 'Includes Section 2');
+  assert.ok(!fullXml.includes('Beneficiary Receiving Bank Account Details'), 'Excludes beneficiary bank account details');
   assert.ok(fullXml.includes('Declaration &amp; Audit Confirmation'), 'Includes declaration');
 });
 
