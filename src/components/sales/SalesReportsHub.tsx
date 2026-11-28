@@ -853,22 +853,15 @@ export const SalesReportsHub: React.FC = () => {
       const targetPort = destPortMode === 'pol' ? pol : rawPodPort;
       const targetName = destPortMode === 'pol' ? polName : podName;
       const targetCode = targetPort?.code || (destPortMode === 'pol' ? 'POL' : 'POD');
-      let targetCountry =
-        cleanCountryName(targetPort?.country) ||
-        (destPortMode === 'pol'
-          ? 'India'
-          : cleanCountryName(cust?.country) ||
-            cleanCountryName(inv.countryOfDestination) ||
-            'Overseas Export');
-      if (destPortMode === 'pod' && targetCountry.trim().toLowerCase() === 'india') {
-        targetCountry =
-          cleanCountryName(cust?.country) ||
-          cleanCountryName(inv.countryOfDestination) ||
-          'Overseas Export';
-        if (targetCountry.trim().toLowerCase() === 'india') {
-          targetCountry = 'Overseas Export';
-        }
-      }
+      const targetCountry =
+        destPortMode === 'pol'
+          ? cleanCountryName(targetPort?.country) || 'India'
+          : resolveInvoiceDestinationCountry(
+              inv,
+              cust?.country,
+              rawPodPort?.country,
+              finalPort?.country
+            ) || 'Overseas Export';
       const key = targetName;
 
       const cur = podAggMap.get(key) || {
@@ -882,6 +875,7 @@ export const SalesReportsHub: React.FC = () => {
       };
       podAggMap.set(key, {
         ...cur,
+        country: cur.country === 'Overseas Export' && targetCountry !== 'Overseas Export' ? targetCountry : cur.country,
         weight: cur.weight + inv.totalWeightKg,
         usd: cur.usd + inv.totalAmountCurrency,
         count: cur.count + 1

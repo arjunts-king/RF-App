@@ -52,7 +52,8 @@ import {
 import {
   normalizePortKey,
   deduplicatePortsWithInvoices,
-  restoreMissingPorts
+  restoreMissingPorts,
+  resolveInvoiceDestinationCountry
 } from '../utils/portDeduplication.ts';
 
 import {
@@ -6853,6 +6854,16 @@ test('Port Master restoration: brings back missing VERIFIED_PORTS (Laem Chabang,
   assert.ok(restored.ports.some((p) => p.name === 'Busan Port'));
   assert.equal(restored.salesInvoices[0].portOfDischargeId, 'port-lch');
   assert.equal(restored.salesInvoices[0].finalDestinationId, 'port-lkr');
+});
+
+test('Country resolution consistency: Thailand discharge port/consignee overrides noisy countryOfDestination typos', () => {
+  const country = resolveInvoiceDestinationCountry(
+    { countryOfDestination: 'China' },
+    'Thailand',
+    'Thailand',
+    'Thailand'
+  );
+  assert.equal(country, 'Thailand');
 });
 
 
